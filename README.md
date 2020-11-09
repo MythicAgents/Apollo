@@ -131,7 +131,8 @@ shinject | `shinject` | Inject given shellcode into a specified pid. Modal popup
 sleep | `sleep [seconds]` | Set the callback interval of the agent in seconds.
 socks | `socks [action] [port]` | Standup the socks server to proxy network traffic. Action must be `start` or `stop`. If `start`, require port.
 spawn | `spawn` | Spawn a new callback.
-spawnto_x64 | `spawnto_x64 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`. 
+spawnto_x64 | `spawnto_x64 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`.
+spawnto_x86 | `spawnto_x86 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`. 
 steal_token | `steal_token [pid]` | Attempts to steal the process's primary token specified by `[pid]` and apply it to our own session.
 unlink | `unlink` | Unlink a callback linked to via the `link` command.
 unload_assembly | `unload_assembly [Assembly.exe]` | Remove an assembly from the list of loaded assemblies.
