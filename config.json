@@ -1,0 +1,7 @@
+{
+	"exclude_payload_type": false,
+	"exclude_c2_profiles": false,
+	"exclude_documentation_payload": false,
+	"exclude_documentation_c2": false,
+	"exclude_agent_icons": false
+}
