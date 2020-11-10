@@ -244,7 +244,7 @@ namespace Apollo.CommandModules
                             job.Task.completed = true;
                             ApolloTaskResponse resp = new ApolloTaskResponse(job.Task, $"Successfully set {value_name} to {value_value}")
                             {
-                                artifacts = new Artifact[] { new Artifact() { artifact = $"Set {value_name} to {value_value} under {key}"} }
+                                artifacts = new Artifact[] { new Artifact() { artifact = $"Set {value_name} to {value_value} under {key}", base_artifact = "Registry Write"} }
                             };
                             job.SetComplete(resp);
                         }
