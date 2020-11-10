@@ -8,16 +8,7 @@ Currently, only two C2 profiles are available to use when creating a new Apollo 
 
 ### HTTP Profile
 
-The HTTP profile calls back to the Mythic server over the basic, non-dynamic profile. When selecting options to be stamped into Apollo at compile time, only the following will be respected:
-
-- Callback Interval
-- Callback Jitter
-- Callback Host
-- Callback Port
-- Encrypted Key Exchange Check
-- Domain Front
-- Kill Date
-- User Agent
+The HTTP profile calls back to the Mythic server over the basic, non-dynamic profile. When selecting options to be stamped into Apollo at compile time, all options are respected with the exception of those parameters relating to GET requests.
 
 ### SMB
 

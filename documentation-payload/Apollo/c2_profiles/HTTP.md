@@ -9,9 +9,12 @@ The `Apollo` agent uses a series of `POST` web requests to send responses for ta
 
 ### Profile Option Deviations
 
-#### GET Request URI and POST Request URI
+#### GET Requests 
 
-Currently the agent does not support these parameters and will callback always to `callback_host:callback_port/api/v1.4/agent_message`
+Currently the agent does not support any parameters in regards to GET parameters.
 
 #### Callback Host
-The URL for the redirector or Mythic server. This must include the protocol to use (e.g. `http://` or `https://`). 
+The URL for the redirector or Mythic server. This must include the protocol to use (e.g. `http://` or `https://`).
+
+#### Proxy Host
+If specified, must be of the same format as the Callback Host (e.g., `http://proxy.gateway`)
