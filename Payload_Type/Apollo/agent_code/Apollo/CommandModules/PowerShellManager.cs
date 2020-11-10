@@ -244,6 +244,9 @@ namespace Apollo.CommandModules
 
                 if (sacrificialProcess.Start())
                 {
+                    string status = "";
+                    status = $"Sacrificial process spawned {sacrificialApp} (PID: {sacrificialProcess.PID})\n";
+                    job.AddOutput(status);
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     asmResponse = new Mythic.Structs.AssemblyResponse()
