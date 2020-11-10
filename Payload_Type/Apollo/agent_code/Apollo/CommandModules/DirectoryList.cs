@@ -3,9 +3,11 @@
 #if DEBUG
 #undef LS
 #define LS
+#undef LS_FULL
+#define LS_FULL
 #endif
 
-#if LS
+#if LS || LS_FULL
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +25,7 @@ namespace Apollo.CommandModules
 
     public class DirectoryList
     {
-
+#if LS_FULL
         private static Dictionary<string, string>[] GetPermissions(FileInfo fi)
         {
             List<Dictionary<string, string>> permissions = new List<Dictionary<string, string>>();
@@ -71,7 +73,7 @@ namespace Apollo.CommandModules
             results["is_inherited"] = ace.IsInherited.ToString();
             return results;
         }
-
+#endif
         internal static string FormatPath(FileBrowserParameters parameters)
         {
             string path = "";
@@ -103,14 +105,207 @@ namespace Apollo.CommandModules
         /// <param name="implant">Agent this task is run on.</param>
         public static void Execute(Job job, Agent implant)
         {
-            WindowsIdentity ident = Credentials.CredentialManager.CurrentIdentity;
             Task task = job.Task;
             FileBrowserParameters parameters = JsonConvert.DeserializeObject<FileBrowserParameters>(task.parameters);
             if (string.IsNullOrEmpty(parameters.host))
                 parameters.host = Environment.GetEnvironmentVariable("COMPUTERNAME");
 
-            string path = FormatPath(parameters);
+            switch(job.Task.command)
+            {
+#if LS
+                case "ls":
+                    ListLite(job, parameters);
+                    break;
+#endif
+#if LS_FULL
+                case "ls_full":
+                    ListFull(job, parameters);
+                    break;
+#endif
+                default:
+                    job.SetError($"Unsupported command {job.Task.command} in DirectoryList.cs");
+                    break;
+            }
+            
 
+        }
+#if LS
+        private static void ListLite(Job job, FileBrowserParameters parameters)
+        {
+            string path = FormatPath(parameters);
+            List<Mythic.Structs.FileInformation> fileListResults = new List<Mythic.Structs.FileInformation>();
+            FileBrowserResponse resp;
+            if (File.Exists(path))
+            {
+                try
+                {
+                    FileInfo finfo = new FileInfo(path);
+
+                    resp = new FileBrowserResponse()
+                    {
+                        host = parameters.host,
+                        is_file = true,
+                        name = finfo.Name,
+                        parent_path = finfo.DirectoryName,
+                        success = true,
+                        access_time = finfo.LastAccessTimeUtc.ToString(),
+                        modify_time = finfo.LastWriteTimeUtc.ToString(),
+                        size = finfo.Length,
+                        files = new FileInformation[0]
+                    };
+                }
+                catch (Exception ex)
+                {
+                    resp = new FileBrowserResponse()
+                    {
+                        host = parameters.host,
+                        is_file = true,
+                        permissions = new Dictionary<string, string>[0],
+                        name = path,
+                        parent_path = "",
+                        success = false,
+                        access_time = "",
+                        modify_time = "",
+                        size = -1,
+                        files = new FileInformation[0]
+                    };
+                    job.SetError(string.Format("Error attempting to get file {0}: {1}", path, ex.Message));
+                }
+            }
+            else
+            {
+                try // Invalid path causes a crash if we don't handle exceptions
+                {
+                    DirectoryInfo pathDir = new DirectoryInfo(path);
+
+                    resp = new FileBrowserResponse()
+                    {
+                        host = parameters.host,
+                        is_file = false,
+                        permissions = new Dictionary<string, string>[0],
+                        name = pathDir.Name,
+                        parent_path = pathDir.Parent != null ? pathDir.Parent.FullName : "",
+                        success = true,
+                        access_time = pathDir.LastAccessTimeUtc.ToString(),
+                        modify_time = pathDir.LastWriteTimeUtc.ToString(),
+                        size = 0,
+                        files = new FileInformation[0]
+                    };
+
+                    string[] directories = Directory.GetDirectories(path);
+                    foreach (string dir in directories)
+                    {
+                        try
+                        {
+                            DirectoryInfo dirInfo = new DirectoryInfo(dir);
+
+                            fileListResults.Add(new Mythic.Structs.FileInformation()
+                            {
+                                full_name = dirInfo.FullName,
+                                name = dirInfo.Name,
+                                directory = dirInfo.Parent.ToString(),
+                                creation_date = dirInfo.CreationTimeUtc.ToString(),
+                                modify_time = dirInfo.LastWriteTimeUtc.ToString(),
+                                access_time = dirInfo.LastAccessTimeUtc.ToString(),
+                                permissions = new Dictionary<string, string>[0], // This isn't gonna be right.
+                                extended_attributes = dirInfo.Attributes.ToString(), // This isn't gonna be right.
+                                size = 0,
+                                is_file = false,
+                                owner = File.GetAccessControl(path).GetOwner(typeof(System.Security.Principal.NTAccount)).ToString(),
+                                group = "",
+                                hidden = ((dirInfo.Attributes & System.IO.FileAttributes.Hidden) == FileAttributes.Hidden)
+                            });
+                        }
+                        catch
+                        {
+                            // Suppress exceptions
+                        }
+                    }
+                }
+                catch (DirectoryNotFoundException e)
+                {
+                    resp = new FileBrowserResponse()
+                    {
+                        host = parameters.host,
+                        is_file = false,
+                        permissions = new Dictionary<string, string>[0],
+                        name = path,
+                        parent_path = "",
+                        success = false,
+                        access_time = "",
+                        modify_time = "",
+                        size = 0,
+                        files = new FileInformation[0]
+                    };
+                    job.SetError($"Error: {e.Message}");
+                    return;
+                }
+                catch (Exception e)
+                {
+                    resp = new FileBrowserResponse()
+                    {
+                        host = parameters.host,
+                        is_file = true,
+                        permissions = new Dictionary<string, string>[0],
+                        name = path,
+                        parent_path = "",
+                        success = false,
+                        access_time = "",
+                        modify_time = "",
+                        size = 0,
+                        files = new FileInformation[0]
+                    };
+                    job.SetError($"Error: {e.Message}");
+                    return;
+                }
+
+                try // Catch exceptions from Directory.GetFiles
+                {
+                    string[] files = Directory.GetFiles(path);
+                    foreach (string file in files)
+                    {
+                        try
+                        {
+                            FileInfo fileInfo = new FileInfo(file);
+                            fileListResults.Add(new Mythic.Structs.FileInformation()
+                            {
+                                full_name = fileInfo.FullName,
+                                name = fileInfo.Name,
+                                directory = fileInfo.DirectoryName,
+                                creation_date = fileInfo.CreationTimeUtc.ToString(),
+                                modify_time = fileInfo.LastWriteTimeUtc.ToString(),
+                                access_time = fileInfo.LastAccessTimeUtc.ToString(),
+                                permissions = new Dictionary<string, string>[0], // This isn't gonna be right.
+                                extended_attributes = fileInfo.Attributes.ToString(), // This isn't gonna be right.
+                                size = fileInfo.Length,
+                                is_file = true,
+                                owner = File.GetAccessControl(path).GetOwner(typeof(System.Security.Principal.NTAccount)).ToString(),
+                                group = "",
+                                hidden = ((fileInfo.Attributes & System.IO.FileAttributes.Hidden) == FileAttributes.Hidden)
+                            });
+
+                        }
+                        catch
+                        {
+                            // Suppress exceptions
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+
+                }
+            }
+
+            resp.files = fileListResults.ToArray();
+            job.SetComplete(resp);
+        }
+#endif
+
+#if LS_FULL
+        private static void ListFull(Job job, FileBrowserParameters parameters)
+        {
+            string path = FormatPath(parameters);
             List<Mythic.Structs.FileInformation> fileListResults = new List<Mythic.Structs.FileInformation>();
             FileBrowserResponse resp;
             if (File.Exists(path))
@@ -278,8 +473,8 @@ namespace Apollo.CommandModules
 
             resp.files = fileListResults.ToArray();
             job.SetComplete(resp);
-
         }
     }
 }
+#endif
 #endif
