@@ -178,22 +178,20 @@ namespace Apollo.CommandModules
                 return;
             }
 
-            if (implant.architecture == "x64")
-                sacrificialApplication = EvasionManager.SpawnTo64;
-            else
-                sacrificialApplication = EvasionManager.SpawnTo86;
+
+            var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
 
             try
             {
-                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(sacrificialApplication, commandLine, true);
+                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
 
                 if (sacrificialProcess.Start())
                 {
                     string status = "";
-                    if (!string.IsNullOrEmpty(commandLine))
-                        status = $"Spawned '{sacrificialApplication} {commandLine}' (PID: {sacrificialProcess.PID})";
-                    if (!string.IsNullOrEmpty(commandLine))
-                        status = $"Spawned {sacrificialApplication} (PID: {sacrificialProcess.PID})";
+                    if (!string.IsNullOrEmpty(startupArgs.Arguments))
+                        status = $"Spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})";
+                    else
+                        status = $"Spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})";
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     ApolloTaskResponse response;
@@ -441,22 +439,18 @@ namespace Apollo.CommandModules
                 return;
             }
 
-            if (implant.architecture == "x64")
-                sacrificialApplication = EvasionManager.SpawnTo64;
-            else
-                sacrificialApplication = EvasionManager.SpawnTo86;
-
+            var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
             try
             {
-                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(sacrificialApplication, commandLine, true);
+                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
 
                 if (sacrificialProcess.Start())
                 {
                     string status = "";
-                    if (!string.IsNullOrEmpty(commandLine))
-                        status = $"Spawned '{sacrificialApplication} {commandLine}' (PID: {sacrificialProcess.PID})";
+                    if (!string.IsNullOrEmpty(startupArgs.Arguments))
+                        status = $"Spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})";
                     else
-                        status = $"Spawned {sacrificialApplication} (PID: {sacrificialProcess.PID})";
+                        status = $"Spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})";
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     ApolloTaskResponse response; 

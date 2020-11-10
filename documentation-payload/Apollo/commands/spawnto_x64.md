@@ -8,13 +8,16 @@ hidden = false
 ## Summary
 Specify the default binary to be used for 64-bit post-exploitation jobs.
 
-### Arguments (positional)
-#### path
+### Arguments (positional or modal popup)
+#### path or application
 Specify the full path to a binary to spawn for 64-bit post-exploitation jobs.
+
+#### args or arguments
+Optional arguments to pass to the spawned binary.
 
 ## Usage
 ```
-spawnto_x64 [path]
+spawnto_x64 [path] [args]
 ```
 
 ## Detailed Summary

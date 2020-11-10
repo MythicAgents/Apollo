@@ -12,9 +12,12 @@ Specify the default binary to be used for 32-bit post-exploitation jobs.
 #### path
 Specify the full path to a binary to spawn for 32-bit post-exploitation jobs.
 
+#### args or arguments
+Optional arguments to pass to the spawned binary.
+
 ## Usage
 ```
-spawnto_x86 [path]
+spawnto_x86 [path] [args]
 ```
 
 ## Detailed Summary

