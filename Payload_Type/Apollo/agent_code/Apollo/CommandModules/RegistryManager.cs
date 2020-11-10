@@ -240,7 +240,14 @@ namespace Apollo.CommandModules
                             bRet = RegistryUtils.SetValue(key, value_name, value_value);
                         value_name = string.IsNullOrEmpty(value_name) ? "(Default)" : value_name;
                         if (bRet)
-                            job.SetComplete(string.Format("Successfully set {0} to {1}", value_name, value_value));
+                        {
+                            job.Task.completed = true;
+                            ApolloTaskResponse resp = new ApolloTaskResponse(job.Task, $"Successfully set {value_name} to {value_value}")
+                            {
+                                artifacts = new Artifact[] { new Artifact() { artifact = $"Set {value_name} to {value_value} under {key}"} }
+                            };
+                            job.SetComplete(resp);
+                        }
                         else
                             job.SetError(string.Format("Error setting {0} to {1}", value_name, value_value));
                     } catch (Exception ex)

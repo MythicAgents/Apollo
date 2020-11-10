@@ -14,7 +14,8 @@ using System.IO;
 using Apollo.Jobs;
 using Apollo.Tasks;
 using System.Linq;
-
+using System.Security.Cryptography;
+using Apollo.Utils;
 /// <summary>
 /// This task will upload a specified file from the Apfell server to the implant at the given file path
 /// </summary>
@@ -89,11 +90,15 @@ namespace Apollo.CommandModules
                 // Write file to disk
                 File.WriteAllBytes(filepath, contents);
                 FileInfo finfo = new FileInfo(filepath);
+                
                 ApolloTaskResponse resp = new ApolloTaskResponse(task, $"Wrote {contents.Length} bytes to {filepath}")
                 {
                     full_path = finfo.FullName,
-                    completed = true,
-                    file_id = parameters.file
+                    file_id = parameters.file,
+                    artifacts = new Mythic.Structs.Artifact[]
+                    {
+                        new Mythic.Structs.Artifact(){ base_artifact="File Create", artifact=$"{finfo.FullName} (MD5: {FileUtils.GetFileMD5(finfo.FullName)})"}
+                    }
                 };
                 //resp.user_output = $"Wrote {contents.Length} bytes to {filepath}";
                 job.SetComplete(resp);

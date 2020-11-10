@@ -45,6 +45,10 @@ namespace Apollo.CommandModules
                         {
                             new Mythic.Structs.RemovedFileInformation(){ host=args.host, path=finfo.FullName},
                         };
+                        resp.artifacts = new Mythic.Structs.Artifact[]
+                        {
+                            new Mythic.Structs.Artifact(){ artifact=$"{finfo.FullName}", base_artifact="File Delete"}
+                        };
                         job.SetComplete(resp);
                     }
                     catch (Exception e)
@@ -62,6 +66,10 @@ namespace Apollo.CommandModules
                         resp.removed_files = new Mythic.Structs.RemovedFileInformation[]
                         {
                             new Mythic.Structs.RemovedFileInformation(){ host=args.host, path=dirinfo.FullName}
+                        };
+                        resp.artifacts = new Mythic.Structs.Artifact[]
+                        {
+                            new Mythic.Structs.Artifact(){ artifact=$"{dirinfo.FullName}", base_artifact="Directory Delete"}
                         };
                         job.SetComplete(resp);
                     } catch (Exception ex)

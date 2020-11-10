@@ -108,6 +108,12 @@ namespace Mythic
             public string path;
         }
 
+        public struct Artifact
+        {
+            public string base_artifact;
+            public string artifact;
+        }
+
         /// <summary>
         /// When the Apfell server receives feedback from the "ps" task,
         /// each entry in the list should be populated with these attributes

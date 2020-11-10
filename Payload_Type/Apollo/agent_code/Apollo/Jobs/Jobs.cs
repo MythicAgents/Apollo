@@ -53,6 +53,9 @@ using Apollo.Tasks;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation.Runspaces;
+using System.CodeDom;
+using Mythic.Structs;
 
 namespace Apollo
 {
@@ -118,9 +121,44 @@ namespace Apollo
 
             internal void AddOutput(object output, bool completed=false, string status="")
             {
-                syncOutputQueue.Enqueue(output);
-                Task.completed = completed;
                 Task.status = status;
+                Task.completed = completed;
+#if MIMIKATZ || RUN || SHELL || POWERPICK || PSINJECT || EXECUTE_ASSEMBLY || ASSEMBLY_INJECT || SHINJECT || PRINTSPOOFER || SPAWN
+                if (completed && sacrificialProcess != null)
+                {
+                    string msg;
+                    if (sacrificialProcess.HasExited)
+                        msg = $"{sacrificialProcess.command} (PID: {sacrificialProcess.PID}, Exit Code: {sacrificialProcess.ExitCode})";
+                    else
+                        msg = $"{sacrificialProcess.command} (PID: {sacrificialProcess.PID})";
+                    if (output.GetType() != typeof(ApolloTaskResponse))
+                    {
+                        output = new ApolloTaskResponse(Task, output)
+                        {
+                            artifacts = new Artifact[]
+                            {
+                                new Artifact(){ artifact=msg, base_artifact="Process Create"}
+                            }
+                        };
+                    } else
+                    {
+                        ApolloTaskResponse temp = (ApolloTaskResponse)output;
+                        if (temp.artifacts == null)
+                            temp.artifacts = new Artifact[]
+                            {
+                                new Artifact(){artifact=msg, base_artifact="Process Create"}
+                            };
+                        output = temp;
+                    }
+                }
+#endif
+                if (output.GetType() == typeof(ApolloTaskResponse))
+                {
+                    var temp = (ApolloTaskResponse)output;
+                    temp.completed = completed;
+                    output = temp;
+                }
+                syncOutputQueue.Enqueue(output);
             }
 
             internal void SetError(object err)

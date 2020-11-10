@@ -10,6 +10,7 @@ using static Native.Structures;
 using static Native.Enums;
 using System.Runtime.InteropServices;
 using Apollo.Tasks;
+using System.Security.Cryptography;
 
 namespace Apollo.Utils
 {
@@ -100,5 +101,23 @@ namespace Apollo.Utils
             return false;
         }
 
+
+        internal static string GetFileMD5(string filename)
+        {
+            try
+            {
+                FileInfo finfo = new FileInfo(filename);
+                string hash;
+                using (var md5 = MD5.Create())
+                {
+                    using (var stream = File.OpenRead(finfo.FullName))
+                    {
+                        hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+                return hash;
+            } catch (Exception ex)
+            { return ""; }
+        }
     }
 }

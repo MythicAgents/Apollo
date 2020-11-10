@@ -50,7 +50,7 @@ namespace Apollo.SacrificialProcesses
 {
     internal class SacrificialProcess
     {
-        private string command;
+        internal string command { get; private set; }
         private ProcessInformation processInfo = new ProcessInformation();
         private StartupInfo startupInfo = new StartupInfo();
         private CreateProcessFlags processFlags = CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
@@ -158,6 +158,14 @@ namespace Apollo.SacrificialProcesses
         public void WaitForExit()
         {
             WaitForExit(-1);
+            HasExited = true;
+            if (Exited != null) Exited(this, EventArgs.Empty);
+            int dwExit = 0;
+            bool bRet = GetExitCodeProcess(processInfo.hProcess, out dwExit);
+            if (bRet)
+                ExitCode = dwExit;
+            else
+                ExitCode = Marshal.GetLastWin32Error();
         }
 
         public bool WaitForExit(int milliseconds)

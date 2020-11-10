@@ -13,6 +13,7 @@ using System.Security.Principal;
 using Apollo.Credentials;
 using Newtonsoft.Json;
 using System.IO;
+using Apollo.Utils;
 
 namespace Apollo.CommandModules
 {
@@ -50,10 +51,19 @@ namespace Apollo.CommandModules
                 return;
             }
 
+            FileInfo dest;
             try
             {
                 File.Copy(arguments.source, arguments.destination);
-                job.SetComplete($"Successfully copied \"{arguments.source}\" to \"{arguments.destination}\"");
+                dest = new FileInfo(arguments.destination);
+                ApolloTaskResponse resp = new ApolloTaskResponse(task, $"Successfully copied \"{arguments.source}\" to \"{arguments.destination}\"")
+                {
+                    artifacts = new Mythic.Structs.Artifact[]
+                    {
+                        new Mythic.Structs.Artifact(){ base_artifact = "File Create", artifact = $"{dest.FullName} (MD5: {FileUtils.GetFileMD5(dest.FullName)})"}
+                    }
+                };
+                job.SetComplete(resp);
             }
             catch (Exception ex)
             {

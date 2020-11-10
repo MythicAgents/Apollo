@@ -164,6 +164,7 @@ namespace Apollo
             public string file_id;
             public MythicCredential[] credentials;
             public RemovedFileInformation[] removed_files;
+            public Artifact[] artifacts;
 
             public ApolloTaskResponse(Task t, object userOutput = null, Mythic.Structs.EdgeNode[] nodes = null)
             {
@@ -182,6 +183,7 @@ namespace Apollo
                 keystrokes = null;
                 credentials = null;
                 removed_files = null;
+                artifacts = null;
 
                 if (userOutput != null && userOutput.GetType() != typeof(string))
                 {

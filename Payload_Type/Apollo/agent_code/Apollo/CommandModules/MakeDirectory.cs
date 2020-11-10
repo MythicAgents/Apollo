@@ -31,8 +31,16 @@ namespace Apollo.CommandModules
 
             try
             {
-                Directory.CreateDirectory(path);
-                job.SetComplete($"Created directory \"{path}\"");
+                var dinfo = Directory.CreateDirectory(path);
+                job.Task.completed = true;
+                ApolloTaskResponse resp = new ApolloTaskResponse(job.Task, $"Created directory {dinfo.FullName}")
+                {
+                    artifacts = new Mythic.Structs.Artifact[]
+                    {
+                        new Mythic.Structs.Artifact(){ base_artifact = "Directory Create", artifact=dinfo.FullName}
+                    }
+                };
+                job.SetComplete(resp);
             }
             catch (Exception e)
             {
