@@ -26,6 +26,13 @@ function(elem){
                                 "cell-style": cell_style
                             });
             }
+            if (rows.length == 0) {
+                rows.push({"account": "No permission data to show.",
+                            "rights": "",
+                            "type": "",
+                            "row-style": row_style,
+                            "cell-style": cell_style});
+            }
             var uniqueNameId = '#' + uniqueName;
             var modalBody = uniqueNameId + '_body';
             var modalTitle = uniqueNameId + '_title';
