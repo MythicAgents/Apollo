@@ -47,7 +47,7 @@ class Spawntox64Arguments(TaskArguments):
             parts = self.split_commandline()
             self.add_arg("application", parts[0])
             firstIndex = self.command_line.index(parts[0])
-            cmdline = self.command_line[firstIndex+len(parts[0]):]
+            cmdline = self.command_line[firstIndex+len(parts[0]):].strip()
             if cmdline[0] in ['"', "'"]:
                 cmdline = cmdline[1:].strip()
             self.add_arg("arguments", cmdline)
