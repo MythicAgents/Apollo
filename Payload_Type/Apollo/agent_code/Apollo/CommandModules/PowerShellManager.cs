@@ -242,7 +242,7 @@ namespace Apollo.CommandModules
                 {
                     string status = "";
                     if (!string.IsNullOrEmpty(startupArgs.Arguments))
-                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}'(PID: {sacrificialProcess.PID})\n";
+                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})\n";
                     else
                         status = $"Sacrificial process spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})\n";
                     job.AddOutput(status);

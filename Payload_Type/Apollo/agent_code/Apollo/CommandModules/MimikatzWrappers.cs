@@ -189,9 +189,9 @@ namespace Apollo.CommandModules
                 {
                     string status = "";
                     if (!string.IsNullOrEmpty(startupArgs.Arguments))
-                        status = $"Spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})";
+                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})";
                     else
-                        status = $"Spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})";
+                        status = $"Sacrificial process spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})";
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     ApolloTaskResponse response;
@@ -448,9 +448,9 @@ namespace Apollo.CommandModules
                 {
                     string status = "";
                     if (!string.IsNullOrEmpty(startupArgs.Arguments))
-                        status = $"Spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})";
+                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})";
                     else
-                        status = $"Spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})";
+                        status = $"Sacrificial process spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})";
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
                     ApolloTaskResponse response; 
