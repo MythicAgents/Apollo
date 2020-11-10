@@ -89,12 +89,13 @@ function(task, response){
       output += support_scripts['apollo_create_permission_additional_info_modal'](uniqueName);
       return output;
     } else {
-      var output = "Files in " + curdir + "\n\n";
+      var output = "<pre>Files in " + curdir + "\n\n";
       output += "creation_date,last_modified,last_accessed,owner,size,name\n";
       for (var j = 0; j < files.length; j++)
       {
         output += files[j]['creation_date'] + "," + files[j]['modify_time'] + "," + files[j]['access_time'] + "," + files[j]['owner'] + "," + support_scripts['apollo_file_size_to_human_readable_string'](files[j]['size']) + "," + files[j]['name'] + "\n";
       }
+      output += "</pre>"
       return output;
     }
   }
