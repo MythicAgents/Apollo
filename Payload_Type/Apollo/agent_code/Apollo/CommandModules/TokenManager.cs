@@ -130,7 +130,15 @@ namespace Apollo.CommandModules
 
             try
             {
-                j.SetComplete($"Successfully impersonated {CredentialManager.GetCurrentUsername()}");
+                string msg = $"Successfully impersonated {CredentialManager.GetCurrentUsername()}";
+                ApolloTaskResponse resp = new ApolloTaskResponse(task, msg)
+                {
+                    artifacts = new Artifact[]
+                    {
+                        new Artifact("Logon Event", $"New Type 9 Logon for {CredentialManager.GetCurrentUsername()}")
+                    }
+                };
+                j.SetComplete(resp);
             }
             catch (Exception ex)
             {
