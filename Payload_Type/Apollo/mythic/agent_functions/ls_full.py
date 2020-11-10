@@ -41,10 +41,10 @@ class LsFullArguments(TaskArguments):
 
 
 class LsFullCommand(CommandBase):
-    cmd = "ls"
+    cmd = "ls_full"
     needs_admin = False
-    help_cmd = "ls [path]"
-    description = "List files and folders in a specified directory (defaults to your current working directory.)"
+    help_cmd = "ls_full [path]"
+    description = "List files and folders in a specified directory (defaults to your current working directory) and retrieve associated permissions."
     version = 1
     is_exit = False
     is_file_browse = True
