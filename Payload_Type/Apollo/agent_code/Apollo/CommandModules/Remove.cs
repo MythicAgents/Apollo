@@ -11,6 +11,7 @@ using System;
 using Apollo.Tasks;
 using Newtonsoft.Json;
 using System.IO;
+using Apollo.Utils;
 
 namespace Apollo.CommandModules
 {
@@ -38,6 +39,7 @@ namespace Apollo.CommandModules
                     try
                     {
                         FileInfo finfo = new FileInfo(path);
+                        string hash = FileUtils.GetFileMD5(finfo.FullName);
                         System.IO.File.Delete(path);
                         task.completed = true;
                         resp = new ApolloTaskResponse(task, $"Successfully deleted file \"{path}\"");
@@ -47,7 +49,7 @@ namespace Apollo.CommandModules
                         };
                         resp.artifacts = new Mythic.Structs.Artifact[]
                         {
-                            new Mythic.Structs.Artifact(){ artifact=$"{finfo.FullName}", base_artifact="File Delete"}
+                            new Mythic.Structs.Artifact(){ artifact=$"{finfo.FullName} (MD5: {hash})", base_artifact="File Delete"}
                         };
                         job.SetComplete(resp);
                     }
