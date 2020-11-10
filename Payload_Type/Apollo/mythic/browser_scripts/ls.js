@@ -35,7 +35,7 @@ function(task, response){
               var fileExt = "." + files[j]['name'].split(".").slice(-1)[0].toLowerCase();
               // do big conditional for fancy icons <@:^)
               var icon = '<i class="fas fa-file"></i>';
-              if (archiveFormats.includes(fileExt)) {
+              /*if (archiveFormats.includes(fileExt)) {
                 icon = '<i class="fas fa-file-archive" data-toggle="tooltip" title="Archive Format" style="color:goldenrod;"></i>';
               } else if (diskImages.includes(fileExt)) {
                 icon = '<i class="fas fa-save" style="color:goldenrod;" data-toggle="tooltip" title="Disk Image Format"></i>';
@@ -53,7 +53,7 @@ function(task, response){
                 icon = '<i class="fas fa-key" data-toggle="tooltip" title="Private Key File"></i>';
               } else if (scriptFiles.includes(fileExt)) {
                 icon = '<i class="fas fa-file-code" style="color:rgb(25,142,117);" data-toggle="tooltip" title="Code File"></i>';
-              }
+              }*/
               rows.push({ "": copyicon,
                           "name": icon + ' ' + files[j]['name'],
                           "size": support_scripts['apollo_file_size_to_human_readable_string'](files[j]['size']),
