@@ -59,8 +59,8 @@ class Spawntox86Command(CommandBase):
     cmd = "spawnto_x86"
     needs_admin = False
     help_cmd = "spawnto_x86 [path]"
-    description = "Change the default binary used in post exploitation jobs to [path]."
-    version = 1
+    description = "Change the default binary used in post exploitation jobs to [path]. If [args] provided, the process is launched with those arguments."
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
