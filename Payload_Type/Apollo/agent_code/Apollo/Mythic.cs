@@ -112,6 +112,12 @@ namespace Mythic
         {
             public string base_artifact;
             public string artifact;
+
+            public Artifact(string baseArtifact, string artifactMsg)
+            {
+                base_artifact = baseArtifact;
+                artifact = artifactMsg;
+            }
         }
 
         /// <summary>
