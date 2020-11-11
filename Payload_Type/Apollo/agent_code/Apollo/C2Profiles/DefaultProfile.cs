@@ -156,6 +156,7 @@ namespace Mythic.C2Profiles
                 try
                 {
 #if USE_HTTPWEB
+                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
                     HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
                     request.KeepAlive = false;
                     request.Method = "Post";
