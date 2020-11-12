@@ -1,69 +1,15 @@
 ![Apollo](images/ApolloLandscape.svg)
 
-Apollo is a Windows agent written in C# using the 4.0 .NET Framework designed for SpecterOps training offerings. Apollo lacks some evasive tradecraft provided by some commercial and open-source tools, such as more evasive network communications, PE manipulation, AMSI disabling, and otherwise; however, this project (in tandem with Mythic) is designed in a way that encourages students and operators to extend its functionality should they be so motivated.
+Apollo is a Windows agent written in C# using the 4.0 .NET Framework designed to be used in SpecterOps training offerings. Apollo lacks some evasive tradecraft provided by other commercial and open-source tools, such as more evasive network communications, PE manipulation, AMSI evasion, and otherwise; however, this project (in tandem with Mythic) is designed to introduce several quality of life improvements for an operator.
 
-## Supported C2 Profiles
+## Installation
+To install Apollo, you'll need Mythic installed on a remote computer. You can find installation instructions for Mythic at the [Mythic project page](https://github.com/its-a-feature/Mythic/).
 
-Currently, only two C2 profiles are available to use when creating a new Apollo agent: HTTP and SMB.
+From the Mythic install root, run the command:
 
-### HTTP Profile
+`./install_agent_from_github.sh https://github.com/MythicAgents/Apollo`
 
-The HTTP profile calls back to the Mythic server over the basic, non-dynamic profile. When selecting options to be stamped into Apollo at compile time, all options are respected with the exception of those parameters relating to GET requests.
-
-### SMB
-
-The SMB profile only takes a pipe name on compilation. This pipe name can be randomly generated when creating the agent and can be generated based on a provided regex (e.g. `[0-9a-z]{4}\-[0-9a-z]{8}\-[0-9a-z]{8}\-[0-9a-z]{4}`). Currently there's an open issue with SMB messages, so SMB linking is non-functional.
-
-## SOCKSv5 Support
-
-SOCKS support is built-in to the agent and dispatched through the SocksManager file. To start the socks server, issue `socks start [port]`, and to stop it issue `socks stop`. You can view active SOCKS proxies by clicking on the dropdown of a callback and clicking "Socks Proxies."
-
-## Quality of Life Improvements
-
-### File Triage
-
-The `ls` command reports back a wealth of information and allows operators to easily copy file paths and examine permissions of files, in addition to being able to sort and filter files. Clicking the icon under the ACLs column will show all the permissions of a file. Additionally, this hooks into Mythic's native file browser.
-
-This shows typical ls output:
-![ls browserscript](images/ls01.png)
-
-Clicking the ACL icon shows permissions:
-![ls permissions](images/ls02.png)
-
-Interfaces with Mythic's filebrowser and caches data server-side:
-![ls mythic builtin](images/ls03.png)
-
-### Process Listings
-
-When issuing `ps_full`, additional details are retrieved such as:
-- Company name of the process executable
-- Description of the process executable
-- Full path of the process
-- Integrity level of the process
-- Desktop session
-- Process command line arguments
-
-This process listing also interfaces with Mythic's builtin process browser, which allows you to see process trees more easily.
-
-![ps_full](images/ps_full.png)
-
-### Assembly and PowerShell Script Caching
-
-Apollo can cache one or more .NET assemblies as well as one or more PowerShell Scripts with no size limitation on files.
-
-### Dynamic Injection Techniques
-
-The agent can change what code injection technique is in use by post-exploitation jobs that require injection through a suite of injection commands.
-
-### Job Tracking
-
-Agent jobs are tracked by job ID, by command, and by the arguments passed to the command so that you know what job correlates to what tasking.
-
-![jobs](images/jobs.png)
-
-### And more!
-
-There's a number of niceities that come with pairing an agent to Mythic C2 - too many to list!
+Once installed, restart Mythic to build a new agent.
 
 ## Commands Manual Quick Reference
 
@@ -105,7 +51,7 @@ ps | `ps` | List process information.
 psclear | `psclear` | Clears all PowerShell scripts known to the agent that were imported by `psimport`.
 psexec | `psexec` | Pivot to a remote computer by creating a new service. Modal popup.
 psimport | `psimport` | Reigster a powershell script to import on subsequent execution in `powerpick`/`psinject`/`powershell` commands. Can import more than one script (e.g., PowerView and PowerUp can both be loaded simultaneously.) To clear the script imports, use `psclear`.
-psinject | `psinject [pid] [x86|x64] [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
+psinject | `psinject [pid] [x86/x64] [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
 pth | `pth` | Modal popup. Use Mimikatz to patch LSASS and import credentials into memory.
 pwd | `pwd` | Print working directory.
 reg_query_subkeys | `reg_query_subkeys` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
@@ -129,3 +75,86 @@ unlink | `unlink` | Unlink a callback linked to via the `link` command.
 unload_assembly | `unload_assembly [Assembly.exe]` | Remove an assembly from the list of loaded assemblies.
 upload | `upload` | Upload a file to a remote path on the machine. Modal popup.
 whoami | `whoami` | Report access token for local and remote operations.
+
+## Supported C2 Profiles
+
+Currently, only two C2 profiles are available to use when creating a new Apollo agent: HTTP and SMB.
+
+### HTTP Profile
+
+The HTTP profile calls back to the Mythic server over the basic, non-dynamic profile. When selecting options to be stamped into Apollo at compile time, all options are respected with the exception of those parameters relating to GET requests.
+
+### SMB (Currently Defunct)
+
+The SMB profile only takes a pipe name on compilation. This pipe name can be randomly generated when creating the agent and can be generated based on a provided regex (e.g. `[0-9a-z]{4}\-[0-9a-z]{8}\-[0-9a-z]{8}\-[0-9a-z]{4}`). Currently there's an open issue with SMB messages, so SMB linking is non-functional.
+
+## SOCKSv5 Support
+
+SOCKS support is built-in to the agent and dispatched through the SocksManager file. To start the socks server, issue `socks start [port]`, and to stop it issue `socks stop`. You can view active SOCKS proxies by clicking on the dropdown of a callback and clicking "Socks Proxies."
+
+## Quality of Life Improvements
+
+### File Triage
+
+The `ls` command reports back a wealth of information and allows operators to easily copy file paths and examine permissions of files, in addition to being able to sort and filter files. Clicking the icon under the ACLs column will show all the permissions of a file. Additionally, this hooks into Mythic's native file browser.
+
+This shows typical ls output:
+![ls browserscript](images/ls01.png)
+
+Clicking the ACL icon shows permissions:
+![ls permissions](images/ls02.png)
+
+Interfaces with Mythic's filebrowser and caches data server-side:
+![ls mythic builtin](images/filebrowser.png)
+
+### Process Listings
+
+When issuing `ps_full`, additional details are retrieved such as:
+- Company name of the process executable
+- Description of the process executable
+- Full path of the process
+- Integrity level of the process
+- Desktop session
+- Process command line arguments
+
+This process listing also interfaces with Mythic's builtin process browser, which allows you to see process trees more easily.
+
+![ps_full](images/ps_full.png)
+
+Clicking the informational icon next to the name displays a popup window with more information.
+
+![ps_full](images/ps_full02.png)
+### Assembly and PowerShell Script Caching
+
+Apollo can cache one or more .NET assemblies as well as one or more PowerShell Scripts with no size limitation on imported files.
+
+### Dynamic Injection Techniques
+
+The agent can change what code injection technique is in use by post-exploitation jobs that require injection through a suite of injection commands. Currently, injection techniques that are supported:
+
+- CreateRemoteThread
+- QueueUserAPC (Early Bird)
+
+![injection](images/injection01.png)
+
+### Token Manipulation Tracking
+
+Apollo attempts to track the current access token in use by the agent through its own `whoami` command, which will track the impersonated user for local and remote operations.
+
+![whoami](images/whoami.png)
+
+### Job Tracking
+
+Agent jobs are tracked by job ID, by command, and by the arguments passed to the command so that you know what job correlates to what tasking.
+
+![jobs](images/jobs.png)
+
+### Artifact Tracking
+
+Commands that manipulate the disk, create new logons, or spawn new processes will document those changes in the Artifact Reporting page as shown below.
+
+![artifacts](images/reporting01.png)
+
+### And more!
+
+There's a number of niceities that come with pairing an agent to Mythic - too many to list in one README. Install the agent and see for yourself!
