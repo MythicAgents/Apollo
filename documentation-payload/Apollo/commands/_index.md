@@ -5,7 +5,7 @@ weight = 15
 pre = "<b>2. </b>"
 +++
 
-![logo](/agents/apollo/commands/ApolloLandscape.svg?width=600px)
+![logo](/agents/apollo/ApolloLandscape.svg?width=600px)
 
 ## Table of Contents
 
