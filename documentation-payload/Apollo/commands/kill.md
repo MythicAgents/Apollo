@@ -2,13 +2,13 @@
 title = "kill"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
-Kill the specified process.
+Kill a process by process ID.
 
-## Usage
+## Usage (Positional)
 ```
 kill [pid]
 ```

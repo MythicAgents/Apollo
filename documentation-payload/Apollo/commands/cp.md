@@ -2,48 +2,35 @@
 title = "cp"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Copy a specified file to another location.
 
-### Arguments (modal popup or positional)
-#### destiantion
+### Arguments (Positional or Popup)
+
+![args](../images/cp01.png)
+
+#### Destination
 The path to copy a file too.
 
-#### source
-The path to the original file to be copied.
+#### Source File
+The path to the original file that will be copied and placed in the location specified by `Destination`.
 
 ## Usage
 ```
-cp [source] [dest]
-```
-Or, in the pop up menu
-```
-destination: [path to file]
-source: [path to file]
+cp [source] [destination]
 ```
 Example
 ```
-cp
-```
-In the pop up menu
-```
-destination: C:\config.txt
-source: C:\Windows\Temp\config.txt
+cp test1.txt "C:\Program Files\test2.txt"
 ```
 
 ## Detailed Summary
-The `cd` command uses the `System.IO.File.Copy` method to copy a file from a source path to a destination path. This command accepts UNC paths for file copies.
+The `cp` command uses the `System.IO.File.Copy` method to copy a file from a source path to a destination path. This command accepts UNC paths for file copies. 
 
-## Detailed Usage
-Copy a file to a UNC path
-```
-cp
-```
-In the pop up menu
-```
-destination: C:\config.txt
-source: \\server1\C$\Windows\Temp\config.txt
-```
+
+{{% notice info %}}
+A File Create artifact is generated with the MD5 of the file copied.
+{{% /notice %}}

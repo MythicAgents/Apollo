@@ -2,13 +2,13 @@
 title = "sleep"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Change the agent's callback interval in seconds. Optionally specify the agent's jitter percentage for callback intervals.
 
-### Arguments (positional)
+### Arguments (Positional)
 #### interval 
 The amount of time an agent will wait before callback to the Mythic server in _seconds_.
 

@@ -2,13 +2,13 @@
 title = "reg_query_values"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Query value names of a specified registry key.
 
-### Arguments (modal popup or positional)
+### Arguments (Popup or Positional)
 #### Registry Key
 The registry key to retrieve values for. This  must be in the format of `HKLM:\SYSTEM\Setup`, where `HKLM` can be any of the following values:
 

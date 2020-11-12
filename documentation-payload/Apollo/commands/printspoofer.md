@@ -2,7 +2,7 @@
 title = "printspoofer"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
@@ -15,6 +15,8 @@ Execute `apollo.exe` as `SYSTEM`
 ```
 printspoofer -c apollo.exe
 ```
+
+>A process create artifact is generated for this command.
 
 ## References
 

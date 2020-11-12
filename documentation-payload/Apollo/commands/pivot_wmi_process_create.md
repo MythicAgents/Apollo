@@ -2,13 +2,17 @@
 title = "pivot_wmi_process_create"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
+
+{{% notice warning %}}
+This uses .NET's builtin WMI APIs that do not respect token impersonation. Do not use this command unless you're already in a context which has access to the remote machine.
+{{% /notice %}}
 
 ## Summary
 Perform lateral movement via WMI process creation.
 
-### Arguments (modal popup)
+### Arguments (Popup)
 #### computer
 The remote host to perform lateral movement too.
 

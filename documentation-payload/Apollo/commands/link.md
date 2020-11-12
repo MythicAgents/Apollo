@@ -2,18 +2,22 @@
 title = "link"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
+
+{{% notice warning %}}
+SMB is currently defunct. This command will not successfully stage or reconnect to an SMB agent until this profile is fixed.
+{{% /notice %}}
 
 ## Summary
 Link or re-link an agent to callback.
 
-### Arguments (modal popup)
+### Arguments (Popup)
 #### Host
 Select the host running an agent to connect too.
 
 #### Payload
-Select the payload template that is associated with the running payload on the remote host.
+Select the payload template that is associated with the running payload on the remote host. This determines what named pipe to establish connection with.
 
 #### C2 profile
 Select the C2 profile in use by the agent. Can only be SMB at this time.

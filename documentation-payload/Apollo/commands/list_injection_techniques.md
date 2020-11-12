@@ -2,7 +2,7 @@
 title = "list_injection_techniques"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
@@ -14,7 +14,7 @@ list_injection_techniques
 ```
 
 ## Detailed Summary
-The `list_injection_techniques` command displays the various process injection techniques the agent is capable of using for post-exploitation jobs. You can see the current technique being used by an agent with the `get_current_injection_technique` command. The technique can also be changed using the `set_injection_technique` command.
+The `list_injection_techniques` command displays the various process injection techniques the agent is capable of using for post-exploitation jobs. You can see the current technique being used by an agent with the [`get_current_injection_technique`](/agents/apollo/commands/get_current_injection_technique/) command. The technique can also be changed using the [`set_current_injection_technique`](/agents/apollo/commands/set_current_injection_technique/) command.
 
 You are encouraged to create your own injection technique and submit a new pull request!
 

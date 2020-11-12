@@ -2,7 +2,7 @@
 title = "list_scripts"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
@@ -14,4 +14,4 @@ list_scripts
 ```
 
 ## Detailed Summary
-The `list_scripts` command gathers a list of PowerShell scripts registered with the agent through the `psimport` command.
+The `list_scripts` command gathers a list of PowerShell scripts registered with the agent through the [`psimport`](/agents/apollo/commands/psimport/) command.

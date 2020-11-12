@@ -2,13 +2,13 @@
 title = "socks"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Start a SOCKS server to send traffic through your agent.
 
-### Arguments (positional or modal popup)
+### Arguments (Positional or Popup)
 
 #### action (required)
 Must be one of `start` or `stop`

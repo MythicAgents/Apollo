@@ -2,7 +2,7 @@
 title = "run"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
@@ -27,3 +27,7 @@ run ipconfig /all
 
 ## Detailed Summary
 The `run` command executes the specified binary with any supplied arguments. Any standard output or standard errors are returned to Apollo over an anonymous named pipe to be returned to Mythic.
+
+{{% notice info %}}
+A Process Create artifact is generated for this command.
+{{% /notice %}}

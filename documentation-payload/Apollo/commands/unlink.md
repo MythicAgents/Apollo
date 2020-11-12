@@ -2,8 +2,12 @@
 title = "unlink"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
+
+{{% notice warning %}}
+SMB is currently defunct. This command will not successfully unlink an SMB agent until this profile is fixed.
+{{% /notice %}}
 
 ## Summary
 Unlink a peer-to-peer callback from the current agent.

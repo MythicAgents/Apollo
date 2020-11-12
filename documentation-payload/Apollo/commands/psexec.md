@@ -2,27 +2,30 @@
 title = "psexec"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Launch an agent on a remote host using a new service.
 
-### Arguments (modal popup)
-#### computer (required)
+### Arguments (Popup)
+
+![psexec](../images/psexec01.png)
+
+#### Computer (Required)
 Remote host to laterally move too.
 
-#### template (required)
+#### Payload Template (Required)
 The payload template to generate a payload for. This template must be compatible with the `service_wrapper` wrapper payload.
 
-#### display_name
+#### Service Display Name
 Display name of the service to be displayed to end user. Defaults to "Apollo Service: NEWLY-GENERATED-UUID4-GUID"
 
-#### remote_path
-Path on remote host to write the payload file. Defaults to "C:\Users\Public\Apollo-NEWLY-GENERATED-UUID4-GUID.exe"
-
-#### service_name
+#### Service Name
 Name of the service to be created. Defaults to "ApolloService-NEWLY-GENERATED-UUID4-GUID"
+
+#### Remote Path
+Path on remote host to write the payload file. Defaults to "C:\Users\Public\Apollo-NEWLY-GENERATED-UUID4-GUID.exe"
 
 ## Usage
 ```

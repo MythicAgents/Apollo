@@ -2,11 +2,11 @@
 title = "unload_assembly"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
-Remove the specified assembly from the agent's cache of assemblies loaded via the `register_assembly` command.
+Remove the specified assembly from the agent's cache of assemblies loaded via the [`register_assembly`](/agents/apollo/commands/register_assembly/) command.
 
 ### Arguments (positional)
 #### assembly
@@ -23,4 +23,4 @@ unload_assembly SeatBelt.exe
 ```
 
 ## Detailed Usage
-The `unload_assembly` command removes the specified assembly from the agent's cache. This command is only valid for assembly files that have been loaded with the `register_assembly` command. Apollo tracks these files using filename whent he assembly was loaded, which means this name must match when unloading so that it can correctly be found by the agent.
+The `unload_assembly` command removes the specified assembly from the agent's cache. This command is only valid for assembly files that have been loaded with the [`register_assembly`](/agents/apollo/commands/register_assembly/) command. Apollo tracks these files using filename whent he assembly was loaded, which means this name must match when unloading so that it can correctly be found by the agent.

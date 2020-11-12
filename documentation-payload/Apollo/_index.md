@@ -4,13 +4,6 @@ chapter = true
 weight = 100
 +++
 
-+++
-title = "Overview"
-chapter = false
-weight = 5
-pre = "<b>1. </b>"
-+++
-
 ![logo](/agents/apollo/ApolloLandscape.svg?width=600px)
 
 ## Summary

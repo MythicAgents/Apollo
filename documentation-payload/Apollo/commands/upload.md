@@ -2,18 +2,24 @@
 title = "upload"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Upload a file from the Mythic server to the remote host.
 
-### Arguments (modal popup)
-#### file
+### Arguments (Popup)
+
+![args](../images/upload.png)
+
+#### File
 File browser to select local file to be uploaded.
 
-#### remote_path
+#### Destination
 The path to upload the file too. UNC paths are acceptable.
+
+#### Host
+Host to upload the file to.
 
 ## Usage
 ```
@@ -36,3 +42,5 @@ remote_path: C:\Windows\Temp\test.exe
 
 ## Detailed Summary
 The `upload` command recieves `512kb` chunks of a file from the Mythic server and saves those to the specified file path. If the file exist, the command will return an error.
+
+>A File Create artifact is generated with the MD5 of the uploaded file.
