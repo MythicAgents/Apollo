@@ -24,4 +24,6 @@ rmdir C:\config
 ## Detailed Summary
 The `rmdir` command uses the `System.IO.Directory.Delete` method to attempt to delete the specified directory.
 
->This command generates a Directory Delete artifact
+{{% notice info %}}
+A Directory Delete artifact is generated from this command.
+{{% /notice %}}

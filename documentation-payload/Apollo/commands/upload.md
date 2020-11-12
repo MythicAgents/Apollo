@@ -43,4 +43,6 @@ remote_path: C:\Windows\Temp\test.exe
 ## Detailed Summary
 The `upload` command recieves `512kb` chunks of a file from the Mythic server and saves those to the specified file path. If the file exist, the command will return an error.
 
->A File Create artifact is generated with the MD5 of the uploaded file.
+{{% notice info %}}
+A File Create artifact is generated from this command.
+{{% /notice %}}

@@ -20,4 +20,7 @@ Select credentials from drop down list.
 
 ## Detailed Summary
 The `make_token` command uses `LogonUserA` Windows API to create a new logon session and apply it to the current thread. This logon session is created with a logon type `9` or new credentials. 
->A New Logon artifact is generated from thsi command.
+
+{{% notice info %}}
+A New Logon artifact is generated from this command.
+{{% /notice %}}

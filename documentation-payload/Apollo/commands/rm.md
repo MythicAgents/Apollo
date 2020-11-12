@@ -24,4 +24,6 @@ rm C:\config.txt
 ## Detailed Summary
 The `rm` command uses the `System.IO.File.Delete` method to attempt to delete a specified file.
 
->This command generates a File Delete artifact.
+{{% notice info %}}
+A File Delete artifact is generated from this command.
+{{% /notice %}}

@@ -40,4 +40,4 @@ Value Name: [value name]
 New Value: [new value]
 ```
 
->Writing to the registry will create a Registry Write artifact in the artifacts view.
+>A Registry Write artifact is generated from this command.

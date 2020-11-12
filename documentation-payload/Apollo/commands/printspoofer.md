@@ -16,7 +16,9 @@ Execute `apollo.exe` as `SYSTEM`
 printspoofer -c apollo.exe
 ```
 
->A process create artifact is generated for this command.
+{{% notice info %}}
+A Process Create artifact is generated for this command.
+{{% /notice %}}
 
 ## References
 
