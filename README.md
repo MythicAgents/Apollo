@@ -11,6 +11,14 @@ From the Mythic install root, run the command:
 
 Once installed, restart Mythic to build a new agent.
 
+## Notable Features
+- Lateral Movement
+- UAC Bypass
+- Credential Tracking and Manipulation
+- .NET Assembly and PowerShell Script Execution
+- User Exploitation Suite
+- SOCKSv5 Support
+
 ## Commands Manual Quick Reference
 
 Command | Syntax | Description
