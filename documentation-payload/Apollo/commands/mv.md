@@ -2,18 +2,18 @@
 title = "mv"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Move a specified file to another location.
 
-### Arguments (modal popup)
-#### destiantion
-The path to move a file too.
+### Arguments (Positional or Popup)
+#### Destination
+The path to move the file to.
 
-#### source
-The path to the original file to be moved.
+#### Source File
+The path of the original file to be moved.
 
 ## Usage
 ```
@@ -37,13 +37,6 @@ source: C:\Windows\Temp\config.txt
 ## Detailed Summary
 The `mv` command uses the `System.IO.File.Move` method to movey a file from a source path to a destination path. This command accepts UNC paths for file moves.
 
-## Detailed Usage
-Move a file to a UNC path
-```
-mv
-```
-In the pop up menu
-```
-destination: C:\config.txt
-source: \\server1\C$\Windows\Temp\config.txt
-```
+{{% notice info %}}
+A File Move artifact is generated with the MD5 of the file moved from this command.
+{{% /notice %}}

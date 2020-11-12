@@ -2,13 +2,13 @@
 title = "rm"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Delete a specified file.
 
-### Arguments (positional)
+### Arguments (Positional)
 #### path
 Path to a the file to be deleted. If this is not a full path, the agent's current working directory will be used. 
 
@@ -23,3 +23,7 @@ rm C:\config.txt
 
 ## Detailed Summary
 The `rm` command uses the `System.IO.File.Delete` method to attempt to delete a specified file.
+
+{{% notice info %}}
+A File Delete artifact is generated from this command.
+{{% /notice %}}

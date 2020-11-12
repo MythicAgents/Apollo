@@ -2,13 +2,13 @@
 title = "reg_query_subkeys"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Query subkeys of a specified registry key.
 
-### Arguments (modal popup or positional)
+### Arguments (Positional or Popup)
 #### Registry Key
 The registry key to retrieve subkeys for. This  must be in the format of `HKLM:\SYSTEM\Setup`, where `HKLM` can be any of the following values:
 

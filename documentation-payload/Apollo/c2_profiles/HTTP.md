@@ -18,3 +18,6 @@ The URL for the redirector or Mythic server. This must include the protocol to u
 
 #### Proxy Host
 If specified, must be of the same format as the Callback Host (e.g., `http://proxy.gateway`)
+
+#### AESPSK
+If the AESPSK is blank, the agent will not be able to communicate with the server.

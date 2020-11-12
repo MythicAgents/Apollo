@@ -2,13 +2,13 @@
 title = "spawn"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Spawn a new Apollo agent based off the payload template given. (Note: Must be `Raw` format.)
 
-### Arguments (modal)
+### Arguments (Popup)
 #### Payload Template
 Template used to build and spawn a new agent from. This template must be of format `Raw` (aka shellcode) in order for this command to generate a new callback.
 
@@ -16,3 +16,7 @@ Template used to build and spawn a new agent from. This template must be of form
 ```
 spawn
 ```
+
+{{% notice info %}}
+A Process Create artifact is generated for this command.
+{{% /notice %}}

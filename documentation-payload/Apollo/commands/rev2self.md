@@ -2,7 +2,7 @@
 title = "rev2self"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary

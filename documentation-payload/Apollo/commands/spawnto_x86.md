@@ -2,13 +2,13 @@
 title = "spawnto_x86"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Specify the default binary to be used for 32-bit post-exploitation jobs.
 
-### Arguments (positional)
+### Arguments (Positional or Popup)
 #### path
 Specify the full path to a binary to spawn for 32-bit post-exploitation jobs.
 

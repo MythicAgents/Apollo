@@ -2,13 +2,13 @@
 title = "reg_write_value"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Write a new string or integer value to the specified Value Name that's within the specified Registry Key.
 
-### Arguments (modal popup or positional)
+### Arguments (Popup or Positional)
 
 #### Registry Key
 The registry key to retrieve subkeys for. This  must be in the format of `HKLM:\SYSTEM\Setup`, where `HKLM` can be any of the following values:
@@ -39,3 +39,5 @@ Registry Key: [key name]
 Value Name: [value name]
 New Value: [new value]
 ```
+
+>A Registry Write artifact is generated from this command.

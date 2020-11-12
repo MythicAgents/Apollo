@@ -2,14 +2,14 @@
 title = "cat"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 
 Print the contents of a file.
 
-### Arguments (positional)
+### Arguments (Positional)
 #### path
 Specify path to file to read contents
 

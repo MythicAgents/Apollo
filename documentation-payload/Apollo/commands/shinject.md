@@ -2,17 +2,17 @@
 title = "shinject"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Inject arbitrary shellcode into a remote process.
 
-### Arguments (modal popup)
-#### pid
+### Arguments (Popup)
+#### PID
 Target process ID to inject into.
 
-#### shellcode
+#### Shellcode
 File containing position independant shellcode.
 
 ## Usage

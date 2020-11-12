@@ -2,7 +2,7 @@
 title = "getprivs"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary

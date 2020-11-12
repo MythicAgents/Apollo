@@ -2,7 +2,7 @@
 title = "rmdir"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
@@ -23,3 +23,7 @@ rmdir C:\config
 
 ## Detailed Summary
 The `rmdir` command uses the `System.IO.Directory.Delete` method to attempt to delete the specified directory.
+
+{{% notice info %}}
+A Directory Delete artifact is generated from this command.
+{{% /notice %}}

@@ -2,13 +2,13 @@
 title = "spawnto_x64"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
 Specify the default binary to be used for 64-bit post-exploitation jobs.
 
-### Arguments (positional or modal popup)
+### Arguments (Positional or Popup)
 #### path or application
 Specify the full path to a binary to spawn for 64-bit post-exploitation jobs.
 

@@ -2,15 +2,19 @@
 title = "cd"
 chapter = false
 weight = 103
-hidden = false
+hidden = true
 +++
 
 ## Summary
-Change the process's current working directory to a specified directory. This command accepts relative paths such as "..\" as well.
+Change the process's current working directory to a specified directory. This command accepts relative paths such as `..\` as well.
+
+## Arguments
+### path
+Change to the directory specified by path.
 
 ## Usage
 ```
-cd [path to directory]
+cd [path]
 ```
 Example
 ```
