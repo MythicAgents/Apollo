@@ -20,7 +20,7 @@ A fully featured .NET 4.0 compatible training agent.
     build_parameters = {
         "version": BuildParameter(name="version", parameter_type=BuildParameterType.ChooseOne, description="Choose a target .NET Framework", choices=["4.0"]),
         "arch": BuildParameter(name="arch", parameter_type=BuildParameterType.ChooseOne, choices=["x64", "x86", "Any CPU"], default_value="any", description="Target architecture"),
-        "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Raw", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
+        "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
         "configuration": BuildParameter(name="configuration", parameter_type=BuildParameterType.ChooseOne, choices=["Release"], default_value="Release", description="Build a payload with or without debugging symbols.")
     }
     c2_profiles = ["HTTP", "SMBServer"]
@@ -95,7 +95,7 @@ A fully featured .NET 4.0 compatible training agent.
                     f.write(templateFile.encode())
             outputType = self.get_parameter('output_type').lower()
             file_ext = "exe"
-            if self.get_parameter('output_type') == "Raw":
+            if self.get_parameter('output_type') == "Shellcode":
                 outputType = "WinExe"
                 file_ext = "exe"
             elif self.get_parameter('output_type') == "DLL":
@@ -120,7 +120,7 @@ A fully featured .NET 4.0 compatible training agent.
                 output_path = "{}/Apollo/bin/{}/{}/Apollo.{}".format(agent_build_path.name, self.get_parameter('arch'), self.get_parameter('configuration'), file_ext)
             if os.path.exists(output_path):
                 resp.status = BuildStatus.Success
-                if self.get_parameter('output_type') != "Raw":
+                if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
                 else:

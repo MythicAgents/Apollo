@@ -10,7 +10,7 @@ class CdArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("Require path to change directory to.")
+            raise Exception("Require path to change directory to.\nUsage:\n\t{}".format(CdCommand.help_cmd))
 
 
 class CdCommand(CommandBase):

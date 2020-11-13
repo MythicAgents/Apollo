@@ -124,7 +124,7 @@ namespace Apollo.CommandModules
             catch (Exception e) // Catch exceptions from HTTP requests
             {
                 // Something failed, so we need to tell the server about it
-                job.SetError($"Error: {e.Message}\n\n{e.StackTrace}");
+                job.SetError($"Error: {e.Message}");
             }
         }
     }

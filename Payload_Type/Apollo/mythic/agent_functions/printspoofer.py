@@ -10,9 +10,13 @@ class PrintSpooferArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {}
+        self.args = {
+            "command": CommandParameter(name="Arguments to PrintSpoofer", type=ParameterType.String, description="Raw command line to pass to printspoofer.", required=True),
+        }
 
     async def parse_arguments(self):
+        if len(self.command_line) == 0:
+            raise Exception("No command line given.\n\tUsage: {}".format(PrintSpooferCommand.help_cmd))
         self.add_arg("command", self.command_line)
         self.add_arg("pipe_name", str(uuid4()))
 

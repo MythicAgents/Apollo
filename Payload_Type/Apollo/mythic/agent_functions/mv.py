@@ -45,7 +45,7 @@ class MvArguments(TaskArguments):
         else:
             cmds = self.split_commandline()
             if len(cmds) != 2:
-                raise Exception("Expected two arguments to mv, but got: {}".format(cmds))
+                raise Exception("Expected two arguments to mv, but got: {}\n\tUsage: {}".format(cmds, MvCommand.help_cmd))
             self.add_arg("source", cmds[0])
             self.add_arg("destination", cmds[1])
 

@@ -142,7 +142,7 @@ namespace Apollo.CommandModules
             }
             catch (Exception ex)
             {
-                j.SetError($"Unknown error: {ex.Message}\nStackTrace{ex.StackTrace}");
+                j.SetError($"Unknown error: {ex.Message}");
             }
         }
 #endif

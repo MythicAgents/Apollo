@@ -40,7 +40,7 @@ class Spawntox86Arguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("spawnto_x64 requires a path to an executable to be passed on the command line.")
+            raise Exception("spawnto_x86 requires a path to an executable to be passed on the command line.\n\tUsage: {}".format(Spawntox86Command.help_cmd))
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:

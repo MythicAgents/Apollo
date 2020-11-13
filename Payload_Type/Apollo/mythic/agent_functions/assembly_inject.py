@@ -17,14 +17,12 @@ class AssemblyInjectArguments(TaskArguments):
             "assembly_arguments": CommandParameter(name="Assembly Arguments", type=ParameterType.String, description="Arguments to pass to the assembly."),
         }
 
-    invalidNumberArgs = Exception("Invalid number of arguments given.")
-
     async def parse_arguments(self):
         if self.command_line == 0:
             raise self.invalidNumberArgs
         parts = self.command_line.split(" ", maxsplit=3)
         if len(parts) < 3:
-            raise self.invalidNumberArgs
+            raise Exception("Invalid number of arguments.\n\tUsage: {}".format(AssemblyInjectCommand.help_cmd))
         pid = parts[0]
         arch = parts[1]
         assembly_name = parts[2]

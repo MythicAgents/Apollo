@@ -29,7 +29,7 @@ namespace Apollo.CommandModules
             }
             catch (Exception e)
             {
-                job.SetError($"Error in pwd: {e.Message}\n\n{e.StackTrace}");
+                job.SetError($"Error in pwd: {e.Message}");
             }
         }
     }

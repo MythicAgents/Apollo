@@ -10,7 +10,7 @@ class NetSharesArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("Require a computer to be passed on the command line.")
+            raise Exception("Require a computer to be passed on the command line.\n\tUsage: {}".format(NetSharesCommand.help_cmd))
 
 
 class NetSharesCommand(CommandBase):

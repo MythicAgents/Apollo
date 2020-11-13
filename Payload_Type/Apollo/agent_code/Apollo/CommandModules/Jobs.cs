@@ -48,7 +48,7 @@ namespace Apollo.CommandModules
                     }
                     catch (Exception ex)
                     {
-                        job.SetError($"Failed to kill job {task.parameters}. Reason: {ex.Message}\n\tStackTrace: {ex.StackTrace}");
+                        job.SetError($"Failed to kill job {task.parameters}. Reason: {ex.Message}");
                     }
                     break;
 #endif

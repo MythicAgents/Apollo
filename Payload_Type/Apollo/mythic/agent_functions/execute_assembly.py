@@ -14,7 +14,7 @@ class ExecuteAssemblyArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("Require an assembly to execute.")
+            raise Exception("Require an assembly to execute.\n\tUsage: {}".format(ExecuteAssemblyCommand.help_cmd))
         parts = self.command_line.split(" ", maxsplit=1)
         self.add_arg("assembly_name", parts[0])
         self.add_arg("assembly_arguments", "")

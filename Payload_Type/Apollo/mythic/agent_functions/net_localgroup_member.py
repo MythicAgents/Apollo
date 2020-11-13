@@ -46,7 +46,7 @@ class NetLocalgroupMemberArguments(TaskArguments):
                 self.add_arg("computer", cmds[0])
                 self.add_arg("group", cmds[1])
             else:
-                raise Exception("Expected one or two arguments, but got: {}".format(cmds))
+                raise Exception("Expected one or two arguments, but got: {}\n\tUsage: {}".format(cmds, NetLocalgroupMemberCommand.help_cmd))
 
 class NetLocalgroupMemberCommand(CommandBase):
     cmd = "net_localgroup_member"

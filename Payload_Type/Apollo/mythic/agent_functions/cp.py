@@ -45,7 +45,7 @@ class CpArguments(TaskArguments):
         else:
             cmds = self.split_commandline()
             if len(cmds) != 2:
-                raise Exception("Invalid number of arguments given. Expected two, but received: {}".format(cmds))
+                raise Exception("Invalid number of arguments given. Expected two, but received: {}\n\tUsage: {}".format(cmds, CpCommand.help_cmd))
             self.add_arg("source", cmds[0])
             self.add_arg("destination", cmds[1])
 

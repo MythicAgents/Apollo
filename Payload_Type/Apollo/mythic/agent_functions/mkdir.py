@@ -10,7 +10,7 @@ class MkdirArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("Require the path of the new directory to call mkdir")
+            raise Exception("No path given.\n\tUsage: {}".format(MkdirCommand.help_cmd))
         pass
 
 

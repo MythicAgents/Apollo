@@ -24,7 +24,7 @@ class RmdirArguments(TaskArguments):
                 self.add_arg("host", host)
                 self.add_arg("path", self.command_line)
         else:
-            raise Exception("rm requires a path to remove.")
+            raise Exception("rmdir requires a path to remove.\n\tUsage: {}".format(RmdirCommand.help_cmd))
 
 
 class RmdirCommand(CommandBase):
