@@ -22,7 +22,7 @@ class PsInjectArguments(TaskArguments):
             parts = self.command_line.strip().split(" ", maxsplit=2)
             valid_arch = ["x86", "x64"]
             if len(parts) != 3:
-                raise Exception("Invalid command line arguments passed.")
+                raise Exception("Invalid command line arguments passed.\n\tUsage: {}".format(PsInjectCommand.help_cmd))
             try:
                 int(parts[0])
             except:

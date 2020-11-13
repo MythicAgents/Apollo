@@ -162,7 +162,7 @@ namespace Apollo.CommandModules
             }
             catch (Exception e)
             {
-                job.SetError($"Error invoking PowerShell: {e.Message}\n\n{e.StackTrace}");
+                job.SetError($"Error invoking PowerShell: {e.Message}");
             }
         }
 #endif

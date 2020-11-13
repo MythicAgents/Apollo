@@ -10,11 +10,19 @@ class MimikatzArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {}
+        self.args = {
+            "command": CommandParameter(name="Command(s)", type=ParameterType.String, description="Mimikatz command to run (can be one or more).", required=True),
+        }
 
     async def parse_arguments(self):
-        self.add_arg("command", self.command_line)
-        self.add_arg("pipe_name", str(uuid4()))
+        if len(self.command_line > 0):
+            if self.command_line[0] == "{":
+                self.load_args_from_json_string(self.command_line)
+            else:
+                self.add_arg("command", self.command_line)
+            self.add_arg("pipe_name", str(uuid4()))
+        else:
+            raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(MimikatzCommand.help_cmd))
 
 
 class MimikatzCommand(CommandBase):

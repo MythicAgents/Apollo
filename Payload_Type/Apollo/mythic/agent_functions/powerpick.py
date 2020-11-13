@@ -9,12 +9,17 @@ class PowerpickArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {}
+        self.args = {
+            "powershell_params": CommandParameter(name="Command", type=ParameterType.String, description="PowerShell command to execute.", required=True),
+        }
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
-            raise Exception("A command must be passed on the command line to PowerPick.")
-        self.add_arg("powershell_params", self.command_line)
+            raise Exception("A command must be passed on the command line to PowerPick.\n\tUsage: {}".format(PowerpickCommand.help_cmd))
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            self.add_arg("powershell_params", self.command_line)
         self.add_arg("pipe_name", str(uuid4()))
         pass
 

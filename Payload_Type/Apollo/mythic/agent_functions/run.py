@@ -10,7 +10,7 @@ class RunArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
-            raise Exception("run requires a path to an executable to run.")
+            raise Exception("run requires a path to an executable to run.\n\tUsage: {}".format(RunCommand.help_cmd))
         pass
 
 

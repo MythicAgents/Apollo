@@ -14,9 +14,9 @@ class ShInjectArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("No arguments given.")
+            raise Exception("No arguments given.\n\tUsage: {}".format(ShInjectCommand.help_cmd))
         if self.command_line[0] != "{":
-            raise Exception("Require JSON blob, but got raw command line.")
+            raise Exception("Require JSON blob, but got raw command line.\n\tUsage: {}".format(ShInjectCommand.help_cmd))
         self.load_args_from_json_string(self.command_line)
         pass
 

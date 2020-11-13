@@ -50,7 +50,7 @@ namespace Apollo.CommandModules
             }
             catch (Exception e)
             {
-                job.SetError(String.Format("Error killing process with PID {0}. Reason: {1}\nStack Trace:\n{2}", pid, e.Message, e.StackTrace));
+                job.SetError(String.Format("Error killing process with PID {0}. Reason: {1}", pid, e.Message));
             }
         }
     }

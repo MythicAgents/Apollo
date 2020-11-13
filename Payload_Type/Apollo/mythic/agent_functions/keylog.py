@@ -10,24 +10,30 @@ class KeylogArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {}
+        self.args = {
+            "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject keylogger into."),
+            "arch": CommandParameter(name="Process Architecture", type=ParameterType.String, choices=["x86", "x64"], description="Architecture of the remote process."),
+        }
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("Invalid number of parameters passed.")
-        valid_arch = ["x86", "x64"]
-        parts = self.command_line.split()
-        if len(parts) != 2:
-            raise Exception("Invalid number of parameters passed.")
-        try:
-            if int(parts[0]) % 4 != 0:
-                raise Exception("")
-        except:
-            raise Exception("Invalid PID given: {}".format(parts[0]))
-        if parts[1] not in valid_arch:
-            raise Exception("Invalid architecture given: {}. Must be one of {}".format(parts[1], ", ".join(valid_arch)))
-        self.add_arg("pid", int(parts[0]), ParameterType.Number)
-        self.add_arg("arch", parts[1])
+            raise Exception("Invalid number of parameters passed.\n\tUsage: {}".format(KeylogCommand.help_cmd))
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string()
+        else:
+            valid_arch = ["x86", "x64"]
+            parts = self.command_line.split()
+            if len(parts) != 2:
+                raise Exception("Invalid number of parameters passed.\n\tUsage: {}".format(KeylogCommand.help_cmd))
+            try:
+                if int(parts[0]) % 4 != 0:
+                    raise Exception("")
+            except:
+                raise Exception("Invalid PID given: {}".format(parts[0]))
+            if parts[1] not in valid_arch:
+                raise Exception("Invalid architecture given: {}. Must be one of {}".format(parts[1], ", ".join(valid_arch)))
+            self.add_arg("pid", int(parts[0]), ParameterType.Number)
+            self.add_arg("arch", parts[1])
 
 
 class KeylogCommand(CommandBase):

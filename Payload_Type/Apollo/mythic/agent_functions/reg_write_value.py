@@ -45,7 +45,7 @@ class RegWriteValueArguments(TaskArguments):
         else:
             cmds = self.split_commandline()
             if len(cmds) != 3:
-                raise Exception("Failed to parse command line arguments. Expected two arguments, got {}".format(cmds))
+                raise Exception("Failed to parse command line arguments. Expected two arguments, got {}\n\tUsage: {}".format(cmds, RegWriteValueBase.help_cmd))
             self.add_arg("key", cmds[0])
             self.add_arg("value_name", cmds[1])
             self.add_arg("value_value", cmds[2])

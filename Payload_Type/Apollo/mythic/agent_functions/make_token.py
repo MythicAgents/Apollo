@@ -13,7 +13,7 @@ class MakeTokenArguments(TaskArguments):
     async def parse_arguments(self):
         self.load_args_from_json_string(self.command_line)
         if self.args["credential"] is None:
-            raise Exception("Require a credential to use make_token with.")
+            raise Exception("make_token requires a cleartext credential.")
 
 
 class MakeTokenCommand(CommandBase):

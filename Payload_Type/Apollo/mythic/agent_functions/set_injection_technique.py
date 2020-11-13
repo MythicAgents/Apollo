@@ -10,7 +10,7 @@ class SetInjectionTechniqueArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
-            raise Exception("set_injection_technique requires an injection technique listed from get_injection_technique to be passed via the command line.")
+            raise Exception("set_injection_technique requires an injection technique listed from get_injection_technique to be passed via the command line.\n\tUsage: {}".format(SetInjectionTechniqueCommand.help_cmd))
         pass
 
 

@@ -10,7 +10,7 @@ class UnloadAssemblyArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("unload_assembly requires an assembly name to unload.")
+            raise Exception("unload_assembly requires an assembly name to unload.\n\tUsage: {}".format(UnloadAssemblyCommand.help_cmd))
         pass
 
 
