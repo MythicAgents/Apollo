@@ -460,7 +460,7 @@ namespace Apollo.CommandModules
             }
             catch (Exception e)
             {
-                job.SetError(String.Format("Error in psinject. Reason: {0}\n{1}", e.Message, e.StackTrace));
+                job.SetError(String.Format("Error in psinject. Reason: {0}", e.Message));
             }
         }
 #endif

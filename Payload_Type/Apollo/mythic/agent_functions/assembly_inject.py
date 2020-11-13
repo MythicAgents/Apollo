@@ -17,7 +17,7 @@ class AssemblyInjectArguments(TaskArguments):
             "assembly_arguments": CommandParameter(name="Assembly Arguments", type=ParameterType.String, description="Arguments to pass to the assembly."),
         }
 
-    invalidNumberArgs = Exception("Invalid number of arguments given.")
+    invalidNumberArgs = Exception("Invalid number of arguments given.\n\tUsage: {}".format(AssemblyInjectCommand.help_cmd))
 
     async def parse_arguments(self):
         if self.command_line == 0:

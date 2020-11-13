@@ -389,7 +389,7 @@ namespace Apollo.CommandModules
             }
             catch (Exception ex)
             {
-                job.SetError($"Error in assembly_inject. Reason: {ex.Message}\n\tStack Track: {ex.StackTrace}");
+                job.SetError($"Error while injecting assembly: {ex.Message}");
             }
 
         }

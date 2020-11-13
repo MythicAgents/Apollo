@@ -10,7 +10,7 @@ class CatArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("No file given to cat.")
+            raise Exception("Require file path to retrieve contents for.\n\tUsage: {}".format(CatCommand.help_cmd))
 
 
 class CatCommand(CommandBase):
