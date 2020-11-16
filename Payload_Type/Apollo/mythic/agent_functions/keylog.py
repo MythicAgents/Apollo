@@ -19,7 +19,7 @@ class KeylogArguments(TaskArguments):
         if len(self.command_line) == 0:
             raise Exception("Invalid number of parameters passed.\n\tUsage: {}".format(KeylogCommand.help_cmd))
         if self.command_line[0] == "{":
-            self.load_args_from_json_string()
+            self.load_args_from_json_string(self.command_line)
         else:
             valid_arch = ["x86", "x64"]
             parts = self.command_line.split()
