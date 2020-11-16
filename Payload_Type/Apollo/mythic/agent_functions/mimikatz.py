@@ -15,7 +15,7 @@ class MimikatzArguments(TaskArguments):
         }
 
     async def parse_arguments(self):
-        if len(self.command_line > 0):
+        if len(self.command_line):
             if self.command_line[0] == "{":
                 self.load_args_from_json_string(self.command_line)
             else:
