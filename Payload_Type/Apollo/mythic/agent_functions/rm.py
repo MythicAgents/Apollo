@@ -25,6 +25,14 @@ class RmArguments(TaskArguments):
                 self.add_arg("path", self.command_line)
         else:
             raise Exception("rm requires a path to remove.\n\tUsage: {}".format(RmCommand.help_cmd))
+        path = self.get_arg("path")
+        if path != "" and path != None:
+            path = path.strip()
+            if path[0] == '"' and path[-1] == '"':
+                path = path[1:-1]
+            elif path[0] == "'" and path[-1] == "'":
+                path = path[1:-1]
+            self.add_arg("path", path)
 
 
 class RmCommand(CommandBase):

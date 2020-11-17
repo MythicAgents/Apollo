@@ -1,7 +1,7 @@
-$ServerPath = "\\Win-3dma5kl5ghd\c$\Users\windev\Development\mythic\Payload_Types\Apollo\agent_code\Apollo\bin\Debug\";
-$ClientPath = "\\COMPUTER01\c$\Users\windev\Development\mythic\Payload_Types\Apollo\agent_code\Apollo\bin\Debug\";
-$WorkstationPath = "\\WORKSTATION01\c$\Users\windev\Development\mythic\Payload_Types\Apollo\agent_code\Apollo\bin\Debug\";
-$localpath  = "C:\Users\windev\Development\mythic\Payload_Types\Apollo\agent_code\Apollo\bin\Debug\"
+$ServerPath = "\\Win-3dma5kl5ghd\c$\Users\windev\Development\Apollo\Payload_Type\Apollo\agent_code\Apollo\bin\Debug\";
+$ClientPath = "\\COMPUTER01\c$\Users\windev\Development\Apollo\Payload_Type\Apollo\agent_code\Apollo\bin\Debug\";
+$WorkstationPath = "\\WORKSTATION01\c$\Users\windev\Development\Apollo\Payload_Type\Apollo\agent_code\Apollo\bin\Debug\";
+$localpath  = "C:\Users\windev\Development\Apollo\Payload_Type\Apollo\agent_code\Apollo\bin\Debug\"
 
 
 Get-ChildItem $localpath | % {

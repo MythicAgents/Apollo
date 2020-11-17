@@ -11,6 +11,10 @@ class MkdirArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("No path given.\n\tUsage: {}".format(MkdirCommand.help_cmd))
+        if self.command_line[0] == '"' and self.command_line[-1] == '"':
+            self.command_line = self.command_line[1:-1]
+        elif self.command_line[0] == "'" and self.command_line[-1] == "'":
+            self.command_line = self.command_line[1:-1]
         pass
 
 

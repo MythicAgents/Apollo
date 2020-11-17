@@ -11,7 +11,10 @@ class DownloadArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require a path to download.\n\tUsage: {}".format(DownloadCommand.help_cmd))
-
+        if self.command_line[0] == '"' and self.command_line[-1] == '"':
+            self.command_line = self.command_line[1:-1]
+        elif self.command_line[0] == "'" and self.command_line[-1] == "'":
+            self.command_line = self.command_line[1:-1]
 
 class DownloadCommand(CommandBase):
     cmd = "download"

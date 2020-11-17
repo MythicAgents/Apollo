@@ -11,7 +11,10 @@ class CatArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require file path to retrieve contents for.\n\tUsage: {}".format(CatCommand.help_cmd))
-
+        if self.command_line[0] == '"' and self.command_line[-1] == '"':
+            self.command_line = self.command_line[1:-1]
+        elif self.command_line[0] == "'" and self.command_line[-1] == "'":
+            self.command_line = self.command_line[1:-1]
 
 class CatCommand(CommandBase):
     cmd = "cat"

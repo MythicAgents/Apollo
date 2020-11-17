@@ -6,15 +6,12 @@ class LsArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {
-            "path": CommandParameter(name="Path", type=ParameterType.String, description="Path to list files from.", required=False),
-            "host": CommandParameter(name="Host", type=ParameterType.String, description="Host to query files from the given path.", required=False),
-        }
+        self.args = {}
 
     async def parse_arguments(self):
         if len(self.command_line) > 0:
+            # We'll never enter this control flow
             if self.command_line[0] == '{':
-                self.load_args_from_json_string(self.command_line)
                 temp_json = json.loads(self.command_line)
                 host = ""
                 path = temp_json['path']

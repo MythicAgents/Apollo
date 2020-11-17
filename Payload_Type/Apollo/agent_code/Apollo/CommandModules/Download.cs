@@ -34,9 +34,13 @@ namespace Apollo.CommandModules
         public static void Execute(Job job, Agent implant)
         {
             Task task = job.Task;
-            string filepath = task.parameters;
+            string filepath = task.parameters.Trim();
             string strReply;
             bool uploadResponse;
+            if (filepath[0] == '"' && filepath[filepath.Length - 1] == '"')
+                filepath = filepath.Substring(1, filepath.Length - 2);
+            else if (filepath[0] == '\'' && filepath[filepath.Length - 1] == '\'')
+                filepath = filepath.Substring(1, filepath.Length - 2);
             try // Try block for file upload task
             {
                 // Get file info to determine file size
