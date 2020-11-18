@@ -30,7 +30,7 @@ class MeterpreterArguments(TaskArguments):
             raise Exception("Invalid Architecture Type. Choices: x86, x64")
 
         # Verify payload type
-        if self.get_arg("payload_type" is None or self.get_arg("payload_type").lower() not in self.VALID_PAYLOAD_TYPES:
+        if self.get_arg("payload_type") is None or self.get_arg("payload_type").lower() not in self.VALID_PAYLOAD_TYPES:
             raise Exception("Invalid Architecture Type. Choices: reverse_tcp, reverse_http, reverse_https")
 
 
