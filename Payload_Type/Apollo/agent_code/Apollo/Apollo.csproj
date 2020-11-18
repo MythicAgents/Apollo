@@ -133,6 +133,7 @@
     <Compile Include="CommandModules\NetShares.cs" />
     <Compile Include="CommandModules\PrintSpoofer.cs" />
     <Compile Include="CommandModules\RegistryManager.cs" />
+    <Compile Include="CommandModules\Meterpreter.cs" />
     <Compile Include="CommandModules\Socks.cs" />
     <Compile Include="CommandModules\Spawn.cs" />
     <Compile Include="Evasion\EvasionManager.cs" />
