@@ -44,6 +44,7 @@ list_injection_techniques | `list_injection_techniques` | List all injection tec
 list_scripts | `list_scripts` | List all powershell scripts cached in the agent.
 ls | `ls [path]` | List files and folders in `[path]`. Defaults to current working directory.
 make_token | `make_token` | Impersonate a user using plaintext credentials. Modal popup.
+meterpreter | `meterpreter` | Insert a meterpreter stager payload into a specified pid. Modal popup.
 mimikatz | `mimikatz [args]` | Execute Mimikatz with the specified arguments.
 mkdir | `mkdir [dir]` | Create a directory.
 mv | `mv [source] [destination]` | Move a file from source to destination. Modal popup.
@@ -77,7 +78,7 @@ sleep | `sleep [seconds]` | Set the callback interval of the agent in seconds.
 socks | `socks [action] [port]` | Standup the socks server to proxy network traffic. Action must be `start` or `stop`. If `start`, require port.
 spawn | `spawn` | Spawn a new callback.
 spawnto_x64 | `spawnto_x64 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`.
-spawnto_x86 | `spawnto_x86 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`. 
+spawnto_x86 | `spawnto_x86 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`.
 steal_token | `steal_token [pid]` | Attempts to steal the process's primary token specified by `[pid]` and apply it to our own session.
 unlink | `unlink` | Unlink a callback linked to via the `link` command.
 unload_assembly | `unload_assembly [Assembly.exe]` | Remove an assembly from the list of loaded assemblies.
