@@ -129,6 +129,8 @@
 #define GET_CURRENT_INJECTION_TECHNIQUE
 #undef LIST_INJECTION_TECHNIQUES
 #define LIST_INJECTION_TECHNIQUES
+#undef METERPRETER
+#define METERPRETER
 
 #endif
 using System.Collections.Generic;
@@ -467,6 +469,9 @@ namespace Apollo
 #endif
 #if PSEXEC
                 { "psexec", "LateralMovement.PSExec" },
+#endif
+#if METERPRETER
+                {"meterpreter", "Meterpreter"},
 #endif
 
             };
