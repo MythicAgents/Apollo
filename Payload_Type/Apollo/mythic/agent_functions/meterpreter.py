@@ -12,8 +12,8 @@ class MeterpreterArguments(TaskArguments):
         super().__init__(command_line)
         self.args = {
             "pid": CommandParameter(name="PID", type=ParameterType.Number),
-            "payload_type": CommandParameter(name="Payload Type", type=ParameterType.ChooseOne, choices=["reverse_tcp"]),
-            "arch": CommandParameter(name="Architecture (x86/x64)", type=ParameterType.ChooseOne, choices=["reverse_tcp"]),
+            "payload_type": CommandParameter(name="Payload Type", type=ParameterType.ChooseOne, choices=self.VALID_PAYLOAD_TYPES),
+            "arch": CommandParameter(name="Architecture (x86/x64)", type=ParameterType.ChooseOne, choices=self.VALID_ARCHITECTURES),
             "lhost": CommandParameter(name="LHOST", type=ParameterType.String),
             "lport": CommandParameter(name="LPORT", type=ParameterType.Number)
         }
@@ -26,11 +26,11 @@ class MeterpreterArguments(TaskArguments):
         self.load_args_from_json_string(self.command_line)
 
         # Verify architecture type
-        if self.get_arg("arch").lower() not in self.VALID_ARCHITECTURES:
+        if self.get_arg("arch") is None or self.get_arg("arch").lower() not in self.VALID_ARCHITECTURES:
             raise Exception("Invalid Architecture Type. Choices: x86, x64")
 
         # Verify payload type
-        if self.get_arg("payload_type").lower() not in self.VALID_PAYLOAD_TYPES:
+        if self.get_arg("payload_type" is None or self.get_arg("payload_type").lower() not in self.VALID_PAYLOAD_TYPES:
             raise Exception("Invalid Architecture Type. Choices: reverse_tcp, reverse_http, reverse_https")
 
 
