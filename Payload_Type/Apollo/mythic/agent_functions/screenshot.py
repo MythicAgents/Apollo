@@ -15,6 +15,9 @@ class ScreenshotArguments(TaskArguments):
             "arch": CommandParameter(name="Architecture", type=ParameterType.String, choices=["x86", "x64"], description="Architecture of the remote process."),}
 
     async def parse_arguments(self):
+        if len(self.command_line == 0):
+            raise Exception("Usage: {}".format(ScreenshotCommand.help_cmd))
+
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
@@ -38,7 +41,7 @@ class ScreenshotArguments(TaskArguments):
 class ScreenshotCommand(CommandBase):
     cmd = "screenshot"
     needs_admin = False
-    help_cmd = "screenshot <pid> <x86/x64>"
+    help_cmd = "screenshot [pid] [x86/x64]"
     description = "Take a screenshot of the current desktop."
     version = 1
     is_exit = False
