@@ -55,8 +55,6 @@ namespace Apollo
 
                Agent implant = new Agent(profile);
                implant.Start();
-
-           // ReznokTestBed rb = new ReznokTestBed();
         }
     }
 
