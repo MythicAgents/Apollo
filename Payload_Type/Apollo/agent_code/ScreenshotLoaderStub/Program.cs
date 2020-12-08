@@ -1,6 +1,4 @@
-﻿//#define POWERPICK
-
-using System;
+﻿using System;
 using System.Management.Automation.Runspaces;
 using System.IO.Pipes;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -8,10 +6,8 @@ using System.Security.AccessControl;
 using IPC;
 using System.IO;
 using System.Drawing;
-using System;
 using System.Windows.Forms;
 using System.Collections.Generic;
-
 
 
 
@@ -50,7 +46,9 @@ namespace ScreenshotRunner
             }
 
             if (pipeServer == null)
+            {
                 KillJob(JobExitCode.PipeStartError);
+            }
 
             try
             {
@@ -78,26 +76,49 @@ namespace ScreenshotRunner
                 }
                 catch (Exception e)
                 {
+#if DEBUG
                     Console.WriteLine("ERROR: Unhandled exception in the ScreenshotRunner: {0}\n{1}", e.Message, e.StackTrace);
-                    //Console.WriteLine(e);
+#endif
                 }
 
                 BinaryFormatter bf = new BinaryFormatter();
+                bf.Binder = new ScreenshotMessageBinder();
 
-                List<byte[]> screenShots = new List<byte[]>();
+                List<ScreenshotMessage> screenshotMsgs = new List<ScreenshotMessage>();
 
                 foreach (Screen screen in Screen.AllScreens)
                 {
-                   screenShots.Add(GetScreenshot(screen));
+                    ScreenshotMessage msg = new ScreenshotMessage();
+
+                    try
+                    {
+                        msg.Capture = GetScreenshot(screen);
+                    }
+
+                    catch (Exception e)
+                    {
+                        msg.ErrorMessage = e.ToString();
+                    }
+
+                    screenshotMsgs.Add(msg);
                 }
 
 #if DEBUG
                 Console.WriteLine("Sending Screenshots Over Pipe...");
 #endif
-                bf.Serialize(pipeServer, screenShots);
-                }
 
+                foreach (ScreenshotMessage msg in screenshotMsgs)
+                {
+                    bf.Serialize(pipeServer, msg);
+                }
+#if DEBUG
+                Console.WriteLine("Sending Termination Message Over Pipe...");
+#endif
+                bf.Serialize(pipeServer, new ScreenshotTerminationMessage());
+            }
+#if DEBUG
             Console.WriteLine("Waiting for client to close pipe connection...");
+#endif
             while (pipeServer.IsConnected) { };
             
         }
@@ -107,7 +128,7 @@ namespace ScreenshotRunner
 
         public static byte[] GetScreenshot(Screen screen)
         {
-# if DEBUG
+#if DEBUG
             Console.WriteLine("Grabbing Screenshot...");
 #endif
 
@@ -138,7 +159,6 @@ namespace ScreenshotRunner
 
         static void Main(string[] args)
         {
-
         }
 
         private static void KillJob(JobExitCode exitCode)

