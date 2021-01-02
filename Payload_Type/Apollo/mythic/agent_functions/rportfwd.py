@@ -12,7 +12,7 @@ class PortFwdArguments(TaskArguments):
             "action": CommandParameter(name="action", choices=["start","stop","list","flush"], required=True, type=ParameterType.ChooseOne, description="Start,stop or list the port forward."),
             "port": CommandParameter(name="Local Port", required=False, type=ParameterType.Number, description="Port to listen on C2."),
             "rport": CommandParameter(name="Remote Port", required=False, type=ParameterType.Number, description="Port to be forwarded."),
-            "rip": CommandParameter(name="Remote Ip", required=False, type=ParameterType.Number, description="IP to be forwarded."),
+            "rip": CommandParameter(name="Remote Ip", required=False, type=ParameterType.String, description="IP to be forwarded."),
         }
 
     async def parse_arguments(self):
