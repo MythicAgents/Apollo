@@ -192,7 +192,7 @@ namespace Mythic.C2Profiles
             return "";
         }
 
-        public override string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] taskresp, SocksDatagram[] datagrams = null)
+        public override string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] taskresp, SocksDatagram[] datagrams = null, PortFwdDatagram[] rdatagrams=null)
         {
             try // Try block for HTTP requests
             {
