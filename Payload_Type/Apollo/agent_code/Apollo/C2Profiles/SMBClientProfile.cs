@@ -77,7 +77,7 @@ namespace Mythic.C2Profiles
             throw new NotImplementedException();
         }
 
-        public override string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] taskresp, SocksDatagram[] datagrams = null)
+        public override string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] taskresp, SocksDatagram[] datagrams = null, PortFwdDatagram[] rdatagrams=null)
         {
             throw new NotImplementedException();
         }
