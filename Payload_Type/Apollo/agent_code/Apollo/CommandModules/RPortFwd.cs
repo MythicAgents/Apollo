@@ -1,5 +1,12 @@
 #define COMMAND_NAME_UPPER
 
+#if DEBUG
+#undef RPORTFWD
+#define RPORTFWD
+#endif
+
+#if RPORTFWD
+
 using Apollo.Jobs;
 using Apollo.RPortFwdProxy;
 using Apollo.Tasks;
@@ -93,3 +100,5 @@ namespace Apollo.CommandModules
         }
     }
 }
+
+#endif
