@@ -223,10 +223,10 @@ namespace Apollo.RPortFwdProxy
                     Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>> specDatagram = entry.Value.GetMessagesBack();
                     message[entry.Key] = specDatagram;
                 }
-                default_struct = new PortFwdDatagram[0];
+                default_struct = new PortFwdDatagram[1];
                 default_struct[0] = new PortFwdDatagram() { data = message };
             }
-            default_struct = new PortFwdDatagram[0];
+            default_struct = new PortFwdDatagram[1];
             default_struct[0] = new PortFwdDatagram();
             return default_struct;
         }
