@@ -321,7 +321,7 @@ namespace Apollo
                 DispatchSocksDatagrams(tasks.SocksDatagrams);
             }
 
-            if (tasks.PortFwdDg != null)
+            if (tasks.PortFwdDg != null && tasks.PortFwdDg.Length > 0)
             {
                 DispatchPortFwdDatagrams(tasks.PortFwdDg);
             }
