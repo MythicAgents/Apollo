@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #undef BYPASSUAC
@@ -111,6 +111,8 @@
 #define SLEEP
 #undef SOCKS
 #define SOCKS
+#undef RPORTFWD
+#define RPORTFWD
 #undef SPAWN
 #define SPAWN
 #undef STEAL_TOKEN
@@ -428,6 +430,9 @@ namespace Apollo
 #endif
 #if SOCKS
                 { "socks", "Socks" },
+#endif
+#if RPORTFWD
+                { "rportfwd", "RPortFwd" },
 #endif
 #if SPAWN
                 { "spawn", "Spawn" },
