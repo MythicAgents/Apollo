@@ -49,7 +49,7 @@ namespace Apollo.CommandModules
                         job.SetError("Parameters to start Port Forward not found");
                         return;
                     }
-                    if (RPortFwdController.IsActive(port))
+                    if (!RPortFwdController.IsActive(port))
                     {
                         job.SetError("Port Forward is already active in that port.");
                         return;
