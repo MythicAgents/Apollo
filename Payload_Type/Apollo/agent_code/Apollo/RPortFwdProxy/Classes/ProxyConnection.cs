@@ -79,7 +79,7 @@ namespace Apollo.RPortFwdProxy.Classes
         {
             MythicPort = port;
             RemotePort = rport;
-            RemoteIp = rport;
+            RemoteIp = rip;
 
             operatorDispatchDatagram = new Thread(() => DispatchToOperators());
             operatorDispatchDatagram.Start();
