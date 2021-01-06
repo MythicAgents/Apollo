@@ -82,6 +82,7 @@ namespace Apollo.RPortFwdProxy.Classes
             RemoteIp = rport;
 
             operatorDispatchDatagram = new Thread(() => DispatchToOperators());
+            operatorDispatchDatagram.Start();
         }
 
         public string GetConfs()
@@ -119,6 +120,7 @@ namespace Apollo.RPortFwdProxy.Classes
                     operatorMapConn[entry.Key] = new_operatorconn;
                     Thread thread = new Thread(() => ReadFromTarget(entry.Key));
                     operatorReadQueue[entry.Key] = thread;
+                    operatorReadQueue[entry.Key].Start();
                 }
 
                 if (entry.Value.Count > 0)
