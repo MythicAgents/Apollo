@@ -341,7 +341,7 @@ namespace Mythic
             public Dictionary<string, string>[] delegates;
             public string message_id;
             public SocksDatagram[] socks;
-            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>>[] rportfwds;
+            public String[] rportfwds;
             // public DelegateMessages[] delegateMessages;
         }
 
