@@ -188,11 +188,6 @@ namespace Apollo.RPortFwdProxy
             // add this object to dictionary map of portforward
 
             // RetrieveDatagram will get Data back to mythic
-            if (is_retriever_active == false)
-            {
-                new Thread(() => RetrieveDatagram()).Start();
-                is_retriever_active = true;
-            }
 
             // DispatchDatagram will read general queue and send data to each proxy connection
             // start thread to keep adding to general queue messages from that proxyconnection object
