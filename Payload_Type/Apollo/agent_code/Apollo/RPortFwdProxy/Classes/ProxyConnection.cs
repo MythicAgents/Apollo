@@ -94,6 +94,7 @@ namespace Apollo.RPortFwdProxy.Classes
         {
             foreach (KeyValuePair<string, Queue> entry in operatorMapQueue)
             {
+                operatorDispatchDatagram.Abort();
                 lock (operatorReadQueue)
                 {
                     operatorReadQueue[entry.Key].Abort();
