@@ -220,6 +220,7 @@ namespace Apollo.RPortFwdProxy
                 }
                 default_struct = new PortFwdDatagram[1];
                 default_struct[0] = new PortFwdDatagram() { data = message };
+                return default_struct;
             }
             default_struct = new PortFwdDatagram[1];
             default_struct[0] = new PortFwdDatagram();
