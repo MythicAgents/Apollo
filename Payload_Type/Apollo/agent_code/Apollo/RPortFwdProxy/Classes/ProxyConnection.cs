@@ -35,6 +35,7 @@ namespace Apollo.RPortFwdProxy.Classes
 
 
         //public Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>> messages_back = new Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>();
+        public Dictionary<string, Thread> operatorReadQueue = new Dictionary<string, Thread>();
         public Dictionary<string, Queue> operatorMapQueue = new Dictionary<string, Queue>();
         public Dictionary<string, Socket> operatorMapConn = new Dictionary<string, Socket>();
         public Dictionary<String, List<String>> messages_back = new Dictionary<String, List<String>>();
@@ -100,6 +101,10 @@ namespace Apollo.RPortFwdProxy.Classes
                 {
                     operatorMapQueue[entry.Key].Clear();
                 }
+                lock (operatorReadQueue)
+                {
+                    operatorReadQueue[entry.Key].Clear();
+                }
             }
         }
 
@@ -112,6 +117,8 @@ namespace Apollo.RPortFwdProxy.Classes
                 {
                     Socket new_operatorconn = initConn();
                     operatorMapConn[entry.Key] = new_operatorconn;
+                    Thread thread = new Thread(() => ReadFromTarget(entry.Key));
+                    operatorReadQueue[entry.Key] = thread;
                 }
 
                 if (entry.Value.Count > 0)
@@ -175,28 +182,19 @@ namespace Apollo.RPortFwdProxy.Classes
             return temp_dict1;
         }
 
-        public void ReadFromTarget()
-        {
-
-            while (locker == 1)
+        public void ReadFromTarget(string oper)
+        { 
+            byte[] data = new byte[8192];
+            int size_data = operatorMapConn[oper].Receive(data);
+            byte[] trimmed_data = data.Take(size_data).ToArray();
+            string data_Base64 = Convert.ToBase64String(trimmed_data);
+            if (messages_back.ContainsKey(oper) == false)
             {
-                System.Threading.Thread.Sleep(1);
-            }
-            locker = 1;
-            foreach (KeyValuePair<string, Socket> entry in operatorMapConn)
-            {
-                byte[] data = new byte[8192];
-                int size_data = entry.Value.Receive(data);
-                byte[] trimmed_data = data.Take(size_data).ToArray();
-                string data_Base64 = Convert.ToBase64String(trimmed_data);
-                if (messages_back.ContainsKey(entry.Key) == false)
-                {
                     List<String> message_list = new List<String>();
-                    messages_back[entry.Key] = message_list;
-                }
-                messages_back[entry.Key].Add(data_Base64);
+                    messages_back[oper] = message_list;
             }
-            locker = 0;
+            messages_back[oper].Add(data_Base64);
+
         }
 
         public Socket initConn()
