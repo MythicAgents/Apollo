@@ -87,7 +87,7 @@ namespace Apollo.RPortFwdProxy
         public static Queue messageQueue = new Queue();
         public static Queue messageQueueSendBack = new Queue();
 
-        private static bool exited = true;
+        private static bool exited = false;
 
         private static Queue sendToMythicQueue = new Queue();
         private static Queue syncSendToMythicQueue = Queue.Synchronized(sendToMythicQueue);
