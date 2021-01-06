@@ -284,17 +284,6 @@ namespace Apollo.RPortFwdProxy
         //}
 
 
-        private static void RetrieveDatagram()
-        {
-            while (!exited)
-            {
-                foreach (KeyValuePair<string, ProxyConnection> entry in proxyConnectionMap)
-                {
-                    entry.Value.ReadFromTarget();
-                }
-            }
-        }
-
         //this function will dispatch each data to each connection in the ProxyConnection Object
         private static void DispatchDatagram()
         {
