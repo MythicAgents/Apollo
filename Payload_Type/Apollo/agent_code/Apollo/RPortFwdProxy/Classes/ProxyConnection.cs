@@ -116,7 +116,7 @@ namespace Apollo.RPortFwdProxy.Classes
 
                 if (entry.Value.Count > 0)
                 {
-                    lock (operatorMapQueue[entry.Key])
+                    lock (operatorMapQueue)
                     {
                         string base64data = (string)operatorMapQueue[entry.Key].Dequeue();
                         byte[] data = Convert.FromBase64String(base64data);
@@ -139,7 +139,7 @@ namespace Apollo.RPortFwdProxy.Classes
                     foreach(KeyValuePair<String, List<String>> entry in rip_dict.Value)
                     {
                         string operatorId = entry.Key;
-                        lock (operatorMapQueue[entry.Key])
+                        lock (operatorMapQueue)
                         {
                             foreach (string base64data in entry.Value)
                             {
