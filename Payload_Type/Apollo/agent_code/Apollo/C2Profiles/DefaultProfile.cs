@@ -477,7 +477,7 @@ namespace Mythic.C2Profiles
                 if (resp.rportfwds != null)
                 {
                     response.PortFwdDg = new PortFwdDatagram[1];
-                    response.PortFwdDg[0].data = resp.rportfwds;
+                    response.PortFwdDg[0].data = resp.rportfwds[0];
                 }
             }
             response.Delegates = finalDelegateMessageList.ToArray();
