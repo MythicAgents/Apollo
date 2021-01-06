@@ -156,7 +156,7 @@ namespace Apollo.RPortFwdProxy.Classes
                                 if (operatorMapQueue[entry.Key] == null){
                                     operatorMapQueue[entry.Key] = new Queue();
                                 }
-                                if (!operatorMapQueu.ContainsKey(entry.Key)){
+                                if (!operatorMapQueue.ContainsKey(entry.Key)){
                                     operatorMapQueue[entry.Key] = new Queue<String>();
                                 }
                                 operatorMapQueue[entry.Key].Enqueue(base64data);
