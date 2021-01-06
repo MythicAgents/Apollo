@@ -84,7 +84,7 @@ namespace Apollo.RPortFwdProxy
 
         public static Dictionary<string, ProxyConnection> proxyConnectionMap = new Dictionary<string, ProxyConnection>();
 
-        public static Queue messageQueue = new Queue();
+        public static Queue<PortFwdDatagram> messageQueue = new Queue<PortFwdDatagram>();
         public static Queue messageQueueSendBack = new Queue();
 
         private static bool exited = false;
