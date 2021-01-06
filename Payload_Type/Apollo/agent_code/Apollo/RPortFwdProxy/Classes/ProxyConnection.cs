@@ -36,7 +36,7 @@ namespace Apollo.RPortFwdProxy.Classes
 
         //public Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>> messages_back = new Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>();
         public Dictionary<string, Thread> operatorReadQueue = new Dictionary<string, Thread>();
-        public Dictionary<string, Queue> operatorMapQueue = new Dictionary<string, Queue>();
+        public Dictionary<string, Queue<String>> operatorMapQueue = new Dictionary<string, Queue<String>>();
         public Dictionary<string, Socket> operatorMapConn = new Dictionary<string, Socket>();
         public Dictionary<String, List<String>> messages_back = new Dictionary<String, List<String>>();
 
@@ -92,7 +92,7 @@ namespace Apollo.RPortFwdProxy.Classes
 
         public void StopForward()
         {
-            foreach (KeyValuePair<string, Queue> entry in operatorMapQueue)
+            foreach (KeyValuePair<string, Queue<String>> entry in operatorMapQueue)
             {
                 operatorDispatchDatagram.Abort();
                 lock (operatorReadQueue)
@@ -113,7 +113,7 @@ namespace Apollo.RPortFwdProxy.Classes
         private void DispatchToOperators()
         {
 
-            foreach (KeyValuePair<string, Queue> entry in operatorMapQueue)
+            foreach (KeyValuePair<string, Queue<String>> entry in operatorMapQueue)
             {
                 if (operatorMapConn.ContainsKey(entry.Key) == false)
                 {
@@ -155,6 +155,9 @@ namespace Apollo.RPortFwdProxy.Classes
                             {
                                 if (operatorMapQueue[entry.Key] == null){
                                     operatorMapQueue[entry.Key] = new Queue();
+                                }
+                                if (!operatorMapQueu.ContainsKey(entry.Key)){
+                                    operatorMapQueue[entry.Key] = new Queue<String>();
                                 }
                                 operatorMapQueue[entry.Key].Enqueue(base64data);
                             }
