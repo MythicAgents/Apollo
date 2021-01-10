@@ -111,8 +111,6 @@
 #define SLEEP
 #undef SOCKS
 #define SOCKS
-#undef RPORTFWD
-#define RPORTFWD
 #undef SPAWN
 #define SPAWN
 #undef STEAL_TOKEN
