@@ -8,6 +8,7 @@ class MythicPortFwdRPCResponse(RPCResponse):
 
 class MythicPortFwdRPC(MythicBaseRPC):
     async def start_rportfwd(self, port: int,rport: int,rip: str) -> MythicPortFwdRPCResponse:
+        print("starting rportfwd rpc")
         resp = await self.call(
             {
                 "action": "control_rportfwd",
@@ -21,6 +22,7 @@ class MythicPortFwdRPC(MythicBaseRPC):
         return MythicPortFwdRPCResponse(resp)
 
     async def stop_rportfwd(self, port: int) -> MythicPortFwdRPCResponse:
+        print("stopping rportfwd")
         resp = await self.call(
             {
                 "action": "control_rportfwd",
