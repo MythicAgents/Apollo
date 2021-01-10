@@ -63,7 +63,7 @@ class PortFwdCommand(CommandBase):
         if task.args.get_arg("action") == "stop":
             resp = await MythicPortFwdRPC(task).stop_rportfwd(task.args.get_arg("port"))
         if task.args.get_arg("action") == "list":
-            resp = await MythicPortFwdRPC(task).list_rportfwd()
+            return task
         if task.args.get_arg("action") == "flush":
             resp = await MythicPortFwdRPC(task).flush_rportfwd()
         if resp.status == MythicStatus.Success:
