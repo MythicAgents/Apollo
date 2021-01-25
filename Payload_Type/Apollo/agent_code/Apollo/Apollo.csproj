@@ -152,7 +152,6 @@
     <Compile Include="Native\Enums.cs" />
     <Compile Include="Native\Helpers.cs" />
     <Compile Include="Native\ManagedClasses.cs" />
-    <Compile Include="ReznokTestBed.cs" />
     <Compile Include="SacrificialProcesses\SacrificialProcess.cs" />
     <Compile Include="CommandModules\InjectionManager.cs" />
     <Compile Include="SocksProxy\Classes\ProxyConnection.cs" />
