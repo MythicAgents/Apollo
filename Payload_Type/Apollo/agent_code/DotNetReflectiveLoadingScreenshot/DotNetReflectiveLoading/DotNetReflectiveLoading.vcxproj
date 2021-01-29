@@ -126,6 +126,7 @@
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <CreateHotpatchableImage>false</CreateHotpatchableImage>
       <ErrorReporting>None</ErrorReporting>
+      <AdditionalIncludeDirectories>C:\Users\windev\Development\Apollo\Payload_Type\Apollo\agent_code\DotNetReflectiveLoadingScreenshot\DotNetReflectiveLoading;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <stdexcept>
 
 #ifdef _DEBUG
 #include <fstream>
