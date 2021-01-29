@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Management.Automation.Runspaces;
 using System.IO.Pipes;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.AccessControl;
@@ -42,7 +41,9 @@ namespace ScreenshotRunner
             }
             catch (Exception e)
             {
+#if DEBUG
                 Console.WriteLine("ERROR: Could not start named pipe server. " + e.Message);
+#endif
             }
 
             if (pipeServer == null)
@@ -52,11 +53,14 @@ namespace ScreenshotRunner
 
             try
             {
+#if DEBUG
                 Console.WriteLine("Pipe: " + pipeName + " Ready To Go!");
+#endif
                 // We shouldn't need to go async here since we'll only have one client, the agent core, and it'll maintain the connection to the named pipe until the job is done
                 pipeServer.WaitForConnection();
+#if DEBUG
                 Console.WriteLine("Connection received to pipe.");
-
+#endif
             }
             catch (Exception e)
             {
@@ -67,19 +71,6 @@ namespace ScreenshotRunner
             using (StreamWriter writer = new StreamWriter(pipeServer))
             {
                 writer.AutoFlush = true;
-                try
-                {
-
-                    InitialSessionState state = InitialSessionState.CreateDefault();
-                    state.AuthorizationManager = null;
-
-                }
-                catch (Exception e)
-                {
-#if DEBUG
-                    Console.WriteLine("ERROR: Unhandled exception in the ScreenshotRunner: {0}\n{1}", e.Message, e.StackTrace);
-#endif
-                }
 
                 BinaryFormatter bf = new BinaryFormatter();
                 bf.Binder = new ScreenshotMessageBinder();

@@ -7,6 +7,8 @@
 #include <vector>
 #include <memory>
 #include <array>
+#include <mscoree.h>
+#include "utils.hpp"
 
 #import <mscorlib.tlb> raw_interfaces_only				\
     high_property_prefixes("_get","_put","_putref")		\
@@ -52,8 +54,68 @@ namespace clr {
         SAFEARRAY* mod_;
     public:
         ClrAssembly(mscorlib::_AssemblyPtr p);
-        mscorlib::_TypePtr find_type(const std::wstring& clsname);
-        std::unique_ptr<ClrClass> construct(const std::wstring& classname);
+        mscorlib::_TypePtr find_type(const std::wstring& clsname)
+        {
+            mscorlib::_TypePtr   pClsType = nullptr;
+            mscorlib::_TypePtr* pTypes = nullptr;
+            BSTR                 pName = L"";
+            HRESULT              hr = S_OK;
+            bool                 found = false;
+            SAFEARRAY* pArray = nullptr;
+            long                 lower_bound = 0;
+            long                 upper_bound = 0;
+
+            if (FAILED((hr = p_->GetTypes(&pArray)))) {
+                LOG_ERROR("Failed to get types!", hr);
+                return false;
+            }
+            SafeArrayGetLBound(pArray, 1, &lower_bound);
+            SafeArrayGetUBound(pArray, 1, &upper_bound);
+            SafeArrayAccessData(pArray, (void**)&pTypes);
+            auto elem_count = upper_bound - lower_bound + 1;
+            for (auto i = 0; i < elem_count; ++i) {
+                pClsType = pTypes[i];
+                if (FAILED((hr = pClsType->get_FullName(&pName)))) {
+                    LOG_ERROR("Failed to query for name!", hr);
+                    break;
+                }
+
+                if (pName == clsname) {
+                    found = true;
+                    break;
+                }
+            }
+            SafeArrayUnaccessData(pArray);
+            if (!found)
+                return nullptr;
+
+            return pClsType;
+
+        }
+
+        std::unique_ptr<ClrClass> construct(const std::wstring& classname)
+        {
+            std::unique_ptr<ClrClass> cls;
+            HRESULT             hr = S_OK;
+            bool                found = false;
+            mscorlib::_TypePtr  pClsType = nullptr;
+            bstr_t              pName(classname.c_str());
+            variant_t           var;
+
+            if (FAILED((hr = p_->CreateInstance(pName, &var)))) {
+                LOG_ERROR("Failed to create class instance!", hr);
+                return nullptr;
+            }
+
+            pClsType = find_type(classname);
+            if (pClsType == nullptr) {
+                LOG("Failed to find class!");
+                return nullptr;
+            }
+
+            cls = std::make_unique<ClrClass>(pClsType, var);
+            return cls;
+        }
         
         template<typename... Args>
         variant_t invoke_static(const std::wstring& clsName, const std::wstring& methodName, Args&&... args) {
