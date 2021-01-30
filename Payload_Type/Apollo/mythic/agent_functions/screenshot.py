@@ -43,7 +43,7 @@ class ScreenshotCommand(CommandBase):
     needs_admin = False
     help_cmd = "screenshot [pid] [x86/x64]"
     description = "Take a screenshot of the current desktop."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
