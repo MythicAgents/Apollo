@@ -29,7 +29,7 @@ Apollo is a Windows-platform integration into the Mythic command-and-control fra
 
 - [@001SPARTaN](https://twitter.com/001spartan)
 - [@tifkin_](https://twitter.com/tifkin_)
-- [@reznok](https://twitter.com/reznok)
+- [@reznok](https://twitter.com/rezn0k)
 
 ## Table of Contents
 

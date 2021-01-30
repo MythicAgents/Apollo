@@ -174,5 +174,5 @@ A big thanks goes to those who have contributed to the project in both major and
 
 - @its-a-feature
 - @tifkin
-- @reznok
+- @rezn0k
 - @thiagomayllart
