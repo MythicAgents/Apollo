@@ -166,3 +166,13 @@ Commands that manipulate the disk, create new logons, or spawn new processes wil
 ### And more!
 
 There's a number of niceities that come with pairing an agent to Mythic - too many to list in one README. Install the agent and see for yourself!
+
+
+## Special Thanks
+
+A big thanks goes to those who have contributed to the project in both major and minor ways.
+
+- @its-a-feature
+- @tifkin
+- @reznok
+- @thiagomayllart
