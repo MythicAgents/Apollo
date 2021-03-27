@@ -75,8 +75,11 @@ namespace Apollo.CommandModules
         internal static string FormatPath(FileBrowserParameters parameters)
         {
             string path = "";
+            string computerName = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            if (string.IsNullOrEmpty(computerName))
+                computerName = "";
             if (!string.IsNullOrEmpty(parameters.host) &&
-                parameters.host != Environment.GetEnvironmentVariable("COMPUTERNAME") &&
+                parameters.host.ToLower() != computerName.ToLower() &&
                 parameters.host.ToLower() != "localhost" &&
                 parameters.host.ToLower() != "127.0.0.1" &&
                 !string.IsNullOrEmpty(parameters.path) &&
