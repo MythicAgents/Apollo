@@ -137,6 +137,7 @@ namespace Apollo.CommandModules
                         group = "",
                         hidden = ((finfo.Attributes & System.IO.FileAttributes.Hidden) == FileAttributes.Hidden)
                     };
+                    fileListResults.Add(mFileInfo);
                     resp = new FileBrowserResponse()
                     {
                         host = parameters.host,
@@ -148,7 +149,7 @@ namespace Apollo.CommandModules
                         access_time = finfo.LastAccessTimeUtc.ToString(),
                         modify_time = finfo.LastWriteTimeUtc.ToString(),
                         size = finfo.Length,
-                        files = new FileInformation[1] {mFileInfo}
+                        files = new FileInformation[0]
                     };
                 }
                 catch (Exception ex)
