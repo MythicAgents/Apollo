@@ -51,7 +51,7 @@ class UploadCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['File']
         sys.stdout.flush()
-        resp = await MythicFileRPC(task).register_file(task.args.get_arg("file"), saved_file_name=original_file_name)
+        resp = await MythicFileRPC(task).register_file(task.args.get_arg("file"), saved_file_name=original_file_name, delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
             task.args.add_arg("file", resp.agent_file_id)
             task.args.add_arg("file_name", original_file_name)

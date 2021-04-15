@@ -121,7 +121,23 @@ namespace Apollo.CommandModules
                 try
                 {
                     FileInfo finfo = new FileInfo(path);
-
+                    FileInformation mFileInfo = new FileInformation()
+                    {
+                        full_name = finfo.FullName,
+                        name = finfo.Name,
+                        directory = finfo.DirectoryName,
+                        creation_date = finfo.CreationTimeUtc.ToString(),
+                        modify_time = finfo.LastWriteTimeUtc.ToString(),
+                        access_time = finfo.LastAccessTimeUtc.ToString(),
+                        permissions = GetPermissions(finfo), // This isn't gonna be right.
+                        extended_attributes = finfo.Attributes.ToString(), // This isn't gonna be right.
+                        size = finfo.Length,
+                        is_file = true,
+                        owner = File.GetAccessControl(path).GetOwner(typeof(System.Security.Principal.NTAccount)).ToString(),
+                        group = "",
+                        hidden = ((finfo.Attributes & System.IO.FileAttributes.Hidden) == FileAttributes.Hidden)
+                    };
+                    fileListResults.Add(mFileInfo);
                     resp = new FileBrowserResponse()
                     {
                         host = parameters.host,
