@@ -33,7 +33,8 @@ namespace Apollo.RPortFwdProxy.Classes
         public string RemotePort;
         public string RemoteIp;
 
-        private object syncMapMsg = new Object();
+        private object syncMapQueue = new Object();
+	private object syncMapMsg = new Object();
 	private object syncMapConn = new Object();
         //public Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>> messages_back = new Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>();
         public Dictionary<string, Queue<String>> operatorMapQueue = new Dictionary<string, Queue<String>>();
@@ -119,8 +120,11 @@ namespace Apollo.RPortFwdProxy.Classes
                             if (operatorMapConn[entry] != null){
 				
 			        string base64data = "";
-			        base64data = (string)operatorMapQueue[entry].Dequeue();
-				
+			        
+				lock(syncMapQueue){
+				    base64data = (string)operatorMapQueue[entry].Dequeue();
+				}
+
 			        byte[] data = Convert.FromBase64String(base64data);
                                 try{
 			            operatorMapConn[entry].Send(data);
@@ -158,7 +162,9 @@ namespace Apollo.RPortFwdProxy.Classes
                             string operatorId = entry.Key;
                             foreach (string base64data in entry.Value)
 			    {
-			        operatorMapQueue[entry.Key].Enqueue(base64data);
+			        lock(syncMapQueue){
+				    operatorMapQueue[entry.Key].Enqueue(base64data);
+			        }
 			    } 
 			}
 		    }
@@ -184,8 +190,10 @@ namespace Apollo.RPortFwdProxy.Classes
 	            if (messages_back.ContainsKey(entry)){
                         while(messages_back[entry].Count > 0)
 		        {
-		            msgs.Add(messages_back[entry].Dequeue());
-		        }
+			    lock(syncMapMsg){
+				msgs.Add(messages_back[entry].Dequeue());
+		            }
+			}
 		        temp_dict2[operatorId] = msgs;
 		    }
                 }
