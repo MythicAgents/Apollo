@@ -20,6 +20,10 @@ download [path to file]
 Example
 ```
 download C:\Users\user\Downloads\test.txt
+
+download [modal popup]
+
+From the file browser, Actions -> Task a Download
 ```
 
 When a download is in progress, you'll see that the download has started but is incomplete.
