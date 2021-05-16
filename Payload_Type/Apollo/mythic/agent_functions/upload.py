@@ -21,6 +21,14 @@ class UploadArguments(TaskArguments):
         if self.command_line[0] != "{":
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
+        remote_path = self.get_arg("remote_path")
+        if remote_path != "" and remote_path != None:
+            remote_path = remote_path.strip()
+            if remote_path[0] == '"' and remote_path[-1] == '"':
+                remote_path = remote_path[1:-1]
+            elif remote_path[0] == "'" and remote_path[-1] == "'":
+                remote_path = remote_path[1:-1]
+            self.add_arg("remote_path", remote_path)
         pass
 
 
@@ -43,7 +51,7 @@ class UploadCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['File']
         sys.stdout.flush()
-        resp = await MythicFileRPC(task).register_file(task.args.get_arg("file"), saved_file_name=original_file_name)
+        resp = await MythicFileRPC(task).register_file(task.args.get_arg("file"), saved_file_name=original_file_name, delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
             task.args.add_arg("file", resp.agent_file_id)
             task.args.add_arg("file_name", original_file_name)
