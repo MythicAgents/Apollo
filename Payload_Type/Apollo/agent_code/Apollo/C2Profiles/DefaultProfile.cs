@@ -490,7 +490,7 @@ namespace Mythic.C2Profiles
                 if (resp.rportfwds != null)
                 {
                     response.PortFwdDg = new PortFwdDatagram[1];
-                    response.PortFwdDg[0].data = JsonConvert.DeserializeObject<Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>>>>(resp.rportfwds[0]);
+                    response.PortFwdDg[0].data = JsonConvert.DeserializeObject<Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>>>(resp.rportfwds[0]);
 
 		}
             }
