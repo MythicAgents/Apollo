@@ -131,13 +131,13 @@ namespace Apollo.RPortFwdProxy
                 if (exited == false)
                 {
 
-                    Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>>> message = new Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>>>();
+                    Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>> message = new Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>>();
                     List<string> forwards = null;
 		    forwards = new List<string>(proxyConnectionMap.Keys);
 		    
 		    foreach (string entry in forwards)
                     {
-                        Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>> specDatagram = proxyConnectionMap[entry].GetMessagesBack();
+                        Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> specDatagram = proxyConnectionMap[entry].GetMessagesBack();
                         message[entry] = specDatagram;
 			
                     }
@@ -170,7 +170,7 @@ namespace Apollo.RPortFwdProxy
 			//iterate over dictionary dg
                         //for each localport in dictionary, send the rest to the respective to proxyConnectionMap
                         //data will be processed inside ProxyConnection object
-                    foreach(KeyValuePair<string, Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>>> entry in curMsg.data)
+                    foreach(KeyValuePair<string, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>> entry in curMsg.data)
                     {
 	                if (proxyConnectionMap.ContainsKey(entry.Key))
 		        {
