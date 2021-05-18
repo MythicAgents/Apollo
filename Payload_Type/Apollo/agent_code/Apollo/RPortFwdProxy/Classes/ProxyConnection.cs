@@ -33,6 +33,7 @@ namespace Apollo.RPortFwdProxy.Classes
         public string RemotePort;
         public string RemoteIp;
 
+        public int last_msg = 0;
         private object syncMapQueue = new Object();
 	private object syncMapMsg = new Object();
 	private object syncMapConn = new Object();
@@ -145,14 +146,14 @@ namespace Apollo.RPortFwdProxy.Classes
             }catch{ }
         }
 
-        public void AddDatagramToQueueProx(Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>> msgs)
+        public void AddDatagramToQueueProx(Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> msgs)
         {
             try{//KeyValuePair<string, ProxyConnection> entry
-                foreach (KeyValuePair<String, Dictionary<String, Dictionary<String, List<String>>>> rport_dict in msgs)
+                foreach (KeyValuePair<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> rport_dict in msgs)
                 {
-                    foreach(KeyValuePair<String, Dictionary<String, List<String>>> rip_dict in rport_dict.Value)
+                    foreach(KeyValuePair<String, Dictionary<String, Dictionary<int,String>>> rip_dict in rport_dict.Value)
                     {
-                        foreach(KeyValuePair<String, List<String>> entry in rip_dict.Value)
+                        foreach(KeyValuePair<String, Dictionary<int,String>> entry in rip_dict.Value)
                         {
                             if (!operatorMapQueue.ContainsKey(entry.Key))
                             {
@@ -160,10 +161,10 @@ namespace Apollo.RPortFwdProxy.Classes
 	                    }
 			    
                             string operatorId = entry.Key;
-                            foreach (string base64data in entry.Value)
-			    {
+                            foreach(KeyValuePair<int, String> base64data in entry.Value)
+                            {
 			        lock(syncMapQueue){
-				    operatorMapQueue[entry.Key].Enqueue(base64data);
+				    operatorMapQueue[entry.Key].Enqueue(base64data.Value);
 			        }
 			    } 
 			}
@@ -174,24 +175,25 @@ namespace Apollo.RPortFwdProxy.Classes
     
 
         // TODO
-        public Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>> GetMessagesBack()
+        public Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> GetMessagesBack()
         {
-            Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>> temp_dict1 = new Dictionary<String, Dictionary<String, Dictionary<String, List<String>>>>();
+            Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> temp_dict1 = new Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>();
             try{
-	        Dictionary<String, Dictionary<String, List<String>>> temp_dict3 = new Dictionary<String, Dictionary<String, List<String>>>();
-                Dictionary<String, List<String>> temp_dict2 = new Dictionary<String, List<String>>();
+	        Dictionary<String, Dictionary<String, Dictionary<int,String>>> temp_dict3 = new Dictionary<String, Dictionary<String, Dictionary<int,String>>>();
+                Dictionary<String, Dictionary<int, String>> temp_dict2 = new Dictionary<String, Dictionary<int,String>>();
 
 	        List<string> operators = new List<string>(operatorMapConn.Keys);
                
 	        foreach (string entry in operators)
                 {
 	            string operatorId = entry;
-		    List<String> msgs = new List<String>();
+		    Dictionary<int,String> msgs = new Dictionary<int,String>();
 	            if (messages_back.ContainsKey(entry)){
-                        while(messages_back[entry].Count > 0)
-		        {
-			    lock(syncMapMsg){
-				msgs.Add(messages_back[entry].Dequeue());
+                        lock(syncMapMsg){
+                            while(messages_back[entry].Count > 0)
+		            {
+				msgs[last_msg] = messages_back[entry].Dequeue();
+                                last_msg = last_msg + 1;
 		            }
 			}
 		        temp_dict2[operatorId] = msgs;
@@ -222,8 +224,7 @@ namespace Apollo.RPortFwdProxy.Classes
 		    int size_data = 0;
                     
 		    size_data = operatorMapConn[oper].Receive(data);
-		    
-		    byte[] trimmed_data = data.Take(size_data).ToArray();
+                    byte[] trimmed_data = data.Take(size_data).ToArray();
                     string data_Base64 = Convert.ToBase64String(trimmed_data);
 		    if(data_Base64 != ""){
 			lock(syncMapMsg){
