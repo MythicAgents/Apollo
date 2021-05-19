@@ -33,6 +33,7 @@ namespace Apollo.RPortFwdProxy.Classes
         public string RemotePort;
         public string RemoteIp;
 
+        public bool reconSignal = false;
         public int last_msg = 0;
         private object syncMapQueue = new Object();
 	private object syncMapMsg = new Object();
@@ -165,6 +166,11 @@ namespace Apollo.RPortFwdProxy.Classes
                             {
 			        lock(syncMapQueue){
 				    operatorMapQueue[entry.Key].Enqueue(base64data.Value);
+                                    if(base64data.Key == -1)
+                                    {
+                                        reconSignal = true;
+                                        last_msg = 0;
+                                    }
 			        }
 			    } 
 			}
@@ -208,6 +214,7 @@ namespace Apollo.RPortFwdProxy.Classes
 
         public void ReadFromTarget(string oper)
         {
+            string oper_aux_str = oper;
 	    while(operatorState[oper] == 0){
                 Thread.Sleep(100);
 	    }
@@ -216,6 +223,7 @@ namespace Apollo.RPortFwdProxy.Classes
                 {
                     Queue<String> message_list = new Queue<String>();
                     messages_back[oper] = message_list;
+                    last_msg = 0;
                 }
 	    }
 	    while(exited == false){
@@ -228,7 +236,15 @@ namespace Apollo.RPortFwdProxy.Classes
                     string data_Base64 = Convert.ToBase64String(trimmed_data);
 		    if(data_Base64 != ""){
 			lock(syncMapMsg){
-		            messages_back[oper].Enqueue(data_Base64);
+                            if(reconSignal == true)
+                            {
+                                Queue<String> message_list_aux = new Queue<String>();
+                                messages_back[oper] = message_list_aux;
+                                int oper_aux = Int32.Parse(oper) + 1;
+                                oper_aux_str = oper_aux.ToString();
+                                reconSignal = false;
+                            }
+		            messages_back[oper_aux_str].Enqueue(data_Base64);
 			}
 		    }
 		}catch(Exception ex){
