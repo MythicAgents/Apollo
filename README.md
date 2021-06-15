@@ -28,6 +28,7 @@ bypassuac | `bypassuac (modal popup)` | Bypass UAC using the trusted mock direct
 cat | `cat [file]` | Retrieve the output of a file.
 cd | `cd [dir]` | Change working directory.
 cp | `cp [source] [destination]` | Copy a file from source to destination. Modal popup.
+dcsync | `dcsync` | Modal popup. Use Mimikatz to dump credentials from a DC via dcsync.
 download | `download [path]` | Download a file off the target system.
 execute_assembly | `execute_assembly [assembly.exe] [args]` | Execute a .NET assembly registered with `register_assembly`
 exit | `exit` | Exit a callback.
