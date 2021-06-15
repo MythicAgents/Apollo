@@ -186,6 +186,26 @@ namespace Apollo.Credentials
             return dwRet;
         }
 
+        internal static string GetIntegrityLevelAsString()
+        {
+            if (!initialized)
+                return "";
+            switch (IntegrityLevel)
+            {
+                case 0:
+                case 1:
+                    return "Low";
+                case 2:
+                    return "Medium";
+                case 3:
+                    return "High";
+                case 4:
+                    return "System";
+                default: // We should never hit this
+                    return "Unknown";
+            }
+        }
+
         private static IntPtr GetCurrentThread()
         {
             DebugWriteLine("Getting current thread...");
