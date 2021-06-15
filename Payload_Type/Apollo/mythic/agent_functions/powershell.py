@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class PowershellCommand(CommandBase):
     needs_admin = False
     help_cmd = "powershell [command]"
     description = "Run a PowerShell command in the currently executing process."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

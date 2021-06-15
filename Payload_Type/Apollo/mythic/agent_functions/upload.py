@@ -1,7 +1,8 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
-from MythicFileRPC import *
+from mythic_payloadtype_container.MythicRPC import *
 import sys
+import base64
 
 
 class UploadArguments(TaskArguments):
@@ -37,12 +38,12 @@ class UploadCommand(CommandBase):
     needs_admin = False
     help_cmd = "upload (modal popup)"
     description = "Upload a file from the Apfell server to the remote host."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
     is_download_file = False
-    is_upload_file = True
+    supported_ui_features = ["file_browser:upload"]
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = UploadArguments
@@ -51,15 +52,26 @@ class UploadCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['File']
         sys.stdout.flush()
-        resp = await MythicFileRPC(task).register_file(task.args.get_arg("file"), saved_file_name=original_file_name, delete_after_fetch=False)
+        resp = await MythicRPC().execute("create_file", task_id=task.id,
+                                         file=base64.b64encode(task.args.get_arg("file")).decode(),
+                                         saved_file_name=original_file_name, delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("file", resp.agent_file_id)
+            task.args.add_arg("file", resp.response['agent_file_id'])
             task.args.add_arg("file_name", original_file_name)
         else:
             raise Exception(f"Failed to host file: {resp.error_message}")
-        
+        host = task.args.get_arg("host")
+        path = task.args.get_arg("path")
+        disp_str = ""
+        if path is not None and path != "":
+            if host is not None and host != "":
+                disp_str = "{} to \\\\{}\\{}".format(original_file_name, host, path)
+            else:
+                disp_str = "{} to {}".format(original_file_name, path)
+        else:
+            disp_str = original_file_name
+        task.display_params = disp_str
         return task
 
     async def process_response(self, response: AgentResponse):
         pass
-

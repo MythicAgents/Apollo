@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -18,7 +18,7 @@ class GetPrivsCommand(CommandBase):
     needs_admin = False
     help_cmd = "getprivs"
     description = "Enable as many privileges as we can on our current thread token."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

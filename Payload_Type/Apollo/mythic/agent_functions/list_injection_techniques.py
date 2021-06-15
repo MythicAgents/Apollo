@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -18,7 +18,7 @@ class ListInjectionTechniquesCommand(CommandBase):
     needs_admin = False
     help_cmd = "list_injection_techniques"
     description = "List the currently available injection techniques the agent knows about."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

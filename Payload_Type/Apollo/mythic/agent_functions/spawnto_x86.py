@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -72,6 +72,10 @@ class Spawntox86Command(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        args = task.args.get_arg("arguments")
+        task.display_params = task.args.get_arg("application")
+        if args:
+            task.display_params += " {}".format(args)
         return task
 
     async def process_response(self, response: AgentResponse):

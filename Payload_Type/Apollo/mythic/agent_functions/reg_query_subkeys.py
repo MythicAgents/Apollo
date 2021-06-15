@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -63,6 +63,7 @@ class RegQuerySubkeysBase(CommandBase):
     browser_script = BrowserScript(script_name="reg_query_subkeys", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = task.args.get_arg("key")
         return task
 
     async def process_response(self, response: AgentResponse):

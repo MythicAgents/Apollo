@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -53,7 +53,7 @@ class NetLocalgroupMemberCommand(CommandBase):
     needs_admin = False
     help_cmd = "net_localgroup_member [computer] [group]"
     description = "Retrieve local group membership of the group specified by [group]. If [computer] is omitted, defaults to localhost."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -66,6 +66,12 @@ class NetLocalgroupMemberCommand(CommandBase):
     browser_script = BrowserScript(script_name="net_localgroup_member", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        computer = task.args.get_arg("computer")
+        group = task.args.get_arg("group")
+        if computer:
+            task.display_params = "{} {}".format(computer, group)
+        else:
+            task.display_params = group
         return task
 
     async def process_response(self, response: AgentResponse):

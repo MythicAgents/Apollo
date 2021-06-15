@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -55,7 +55,7 @@ class CpCommand(CommandBase):
     needs_admin = False
     help_cmd = "cp [source] [dest]"
     description = "Copy a file from one location to another."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -67,6 +67,7 @@ class CpCommand(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "{} {}".format(task.args.get_arg("source"), task.args.get_arg("destination"))
         return task
 
     async def process_response(self, response: AgentResponse):

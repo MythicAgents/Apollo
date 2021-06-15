@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class RunCommand(CommandBase):
     needs_admin = False
     help_cmd = "run [binary] [arguments]"
     description = "Execute a binary on the target system. This will properly use %PATH% without needing to specify full locations."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

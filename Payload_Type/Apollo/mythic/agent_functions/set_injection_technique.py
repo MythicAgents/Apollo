@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class SetInjectionTechniqueCommand(CommandBase):
     needs_admin = False
     help_cmd = "set_injection_technique [technique]"
     description = "Set the injection technique used in post-ex jobs that require injection. Must be a technique listed in the output of `list_injection_techniques`."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

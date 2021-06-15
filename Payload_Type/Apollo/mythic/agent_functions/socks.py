@@ -1,6 +1,6 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
-from MythicSocksRPC import *
+from mythic_payloadtype_container.MythicRPC import *
 
 class SocksArguments(TaskArguments):
 
@@ -41,7 +41,7 @@ class SocksCommand(CommandBase):
     needs_admin = False
     help_cmd = "socks [action] [port number]"
     description = "Enable SOCKS 5 compliant proxy on the agent such that you may proxy data in from an outside machine into the target network."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -54,13 +54,20 @@ class SocksCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("action") == "start":
-            resp = await MythicSocksRPC(task).start_socks(task.args.get_arg("port"))
+            resp = await MythicRPC().execute("control_socks",
+                                             task_id=task.id,
+                                             start=True,
+                                             port=task.args.get_arg("port"))
         else:
-            resp = await MythicSocksRPC(task).stop_socks()
+            resp = await MythicRPC().execute("control_socks",
+                                             task_id=task.id,
+                                             stop=True,
+                                             port=task.args.get_arg("port"))
         if resp.status == MythicStatus.Success:
             return task
         else:
             task.status = MythicStatus.Error
+        task.display_params = "{} {}".format(task.args.get_arg("action"), task.args.get_arg("port"))
         return task
 
     async def process_response(self, response: AgentResponse):
