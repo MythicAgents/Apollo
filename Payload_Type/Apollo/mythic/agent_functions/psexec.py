@@ -10,7 +10,7 @@ class PsExecArguments(TaskArguments):
         super().__init__(command_line)
         self.args = {
             "computer": CommandParameter(name="Computer", type=ParameterType.String, description="Computer to install the service on."),
-            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload),
+            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["service_wrapper"]),
             "remote_path": CommandParameter(name="Remote Path", required=False, type=ParameterType.String,
                               description="Remote path to place the service executable. Defaults to C:\\Users\\Public", default_value="C:\\Users\\Public"),
             "service_name": CommandParameter(name="Service Name", required=False, type=ParameterType.String,

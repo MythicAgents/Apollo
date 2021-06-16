@@ -9,7 +9,7 @@ class PivotWMIProcessCreaterguments(TaskArguments):
         super().__init__(command_line)
         self.args = {
             "computer": CommandParameter(name="Computer", type=ParameterType.String, description="Computer to pivot to."),
-            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload),
+            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["Apollo"], supported_agent_build_parameters={"Apollo": {"output_type": "WinExe"}}),
             "remote_path": CommandParameter(name="Remote Path of Executable", type=ParameterType.String, required=False,
                               description="Path to drop the executable (default: C:\\Users\\Public)", default_value="C:\\Users\\Public"),
             "credential": CommandParameter(name="Credential", type=ParameterType.Credential_JSON, required=False)
