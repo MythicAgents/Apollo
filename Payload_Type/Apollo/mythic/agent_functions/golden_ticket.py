@@ -8,6 +8,21 @@ from mythic_payloadtype_container.MythicRPC import *
 
 class GoldenTicketArguments(TaskArguments):
 
+    valid_args = ["domain",
+                    "sid",
+                    "user",
+                    "id",
+                    "groups",
+                    "key_type",
+                    "key",
+                    "target",
+                    "service",
+                    "startoffset",
+                    "endin",
+                    "renewmax",
+                    "sids",
+                    "sacrificial_logon"]
+
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
@@ -27,13 +42,38 @@ class GoldenTicketArguments(TaskArguments):
             "sacrificial_logon": CommandParameter(name="sacrificial_logon", type=ParameterType.Boolean, default_value=True, required=True, description="Specifies whether to create a sacrificial logon to avoid overwriting the ticket of the current user")
         }
 
+
+    async def parse_command_line_arguments(self):
+        cmdline_args = self.command_line.strip().split(" ")
+        if len(cmdline_args) > len(self.valid_args):
+            raise Exception("golden_ticket takes at most {} parameters, but got: {}".format(len(self.valid_args), len(cmdline_args)))
+        for golden_ticket_arg in cmdline_args:
+            parts = golden_ticket_arg.split(":")
+            if len(parts) > 2:
+                raise Exception("Invalid number of arguments or invalid separator in argument: {}".format(golden_ticket_arg))
+            param = parts[0]
+            val = parts[1]
+            # I actually don't think we ever hit this, but whatever.
+            if " " in val:
+                raise Exception("No spaces allowed in value: {}".format(val))
+            param = param[1:].lower()
+            if param in self.valid_args:
+                self.add_arg(param, val)
+            else:
+                raise Exception("Invalid argument given to golden_ticket: {}".format(param))
+
+
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("golden_ticket requires arguments.")
-        if self.command_line[0] != "{":
-            raise Exception("Require JSON blob, but got raw command line.")
-        self.load_args_from_json_string(self.command_line)
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            self.parse_command_line_arguments()
         self.add_arg("pipe_name", str(uuid4()))
+        for varg in self.valid_args:
+            if self.get_arg(varg) and " " in self.get_arg(varg):
+                raise Exception("No spaces allowed in parameter '{}', but got: {}".format(varg, self.get_arg(varg)))
 
 class GoldenTicketCommand(CommandBase):
     cmd = "golden_ticket"
@@ -47,7 +87,7 @@ class GoldenTicketCommand(CommandBase):
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
-    author = "@djhohnstein"
+    author = "@elad_shamir"
     argument_class = GoldenTicketArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
     attackmapping = []
@@ -65,6 +105,12 @@ class GoldenTicketCommand(CommandBase):
         else:
             raise Exception("Failed to register Mimikatz DLL: " + file_resp.error)
         # task.display_params = "/dc:{} /domain:{} /user:{}".format(self.args.get_arg)
+        display_str = ""
+        for arg in task.args.keys():
+            varg = task.args.get_arg(arg)
+            if varg:
+                display_str += "/{}:{} ".format(arg, varg)
+        task.display_params = display_str.strip()
         return task
 
     async def process_response(self, response: AgentResponse):
