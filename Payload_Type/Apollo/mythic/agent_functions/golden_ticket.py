@@ -69,7 +69,7 @@ class GoldenTicketArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            self.parse_command_line_arguments()
+            await self.parse_command_line_arguments()
         self.add_arg("pipe_name", str(uuid4()))
         for varg in self.valid_args:
             value = self.get_arg(varg)
@@ -107,9 +107,10 @@ class GoldenTicketCommand(CommandBase):
             raise Exception("Failed to register Mimikatz DLL: " + file_resp.error)
         # task.display_params = "/dc:{} /domain:{} /user:{}".format(self.args.get_arg)
         display_str = ""
-        for arg in task.args.keys():
+        no_display = ["loader_stub_id", "pipe_name", "sacrificial_logon"]
+        for arg, _ in task.args.args:
             varg = task.args.get_arg(arg)
-            if varg:
+            if varg and arg not in no_display:
                 display_str += "/{}:{} ".format(arg, varg)
         task.display_params = display_str.strip()
         return task

@@ -45,7 +45,7 @@ class DCSYNCArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            self.parse_command_line_args()
+            await self.parse_command_line_args()
         self.add_arg("pipe_name", str(uuid4()))
         dc = self.get_arg("dc")
         domain = self.get_arg("domain")
