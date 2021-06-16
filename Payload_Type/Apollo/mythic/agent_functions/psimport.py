@@ -48,7 +48,7 @@ class PsImportCommand(CommandBase):
             task.args.remove_arg("file")
             task.args.add_arg("file_name", original_file_name)
         else:
-            raise Exception(f"Failed to host file: {resp.error_message}")
+            raise Exception(f"Failed to host file: {resp.error}")
         task.display_params = original_file_name
         return task
 

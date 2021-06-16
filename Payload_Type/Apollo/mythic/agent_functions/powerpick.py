@@ -52,7 +52,7 @@ class PowerpickCommand(CommandBase):
         if resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
+            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
         task.display_params = task.args.get_arg("powershell_params")
         return task
 

@@ -67,7 +67,7 @@ class ScreenshotCommand(CommandBase):
         if resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
+            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
         task.display_params = "{} {}".format(task.args.get_arg("pid"), arch)
         task.args.remove_arg("arch")
         return task

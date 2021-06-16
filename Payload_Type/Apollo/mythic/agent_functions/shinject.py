@@ -47,7 +47,7 @@ class ShInjectCommand(CommandBase):
         if resp.status == MythicStatus.Success:
             task.args.add_arg("shellcode", resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
+            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
         task.display_params = "{} into PID {}".format(original_file_name, task.args.get_arg("pid"))
         return task
 

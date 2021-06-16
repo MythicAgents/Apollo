@@ -52,7 +52,7 @@ class PTHCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error_message)
+            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error)
         task.display_params = "Spawning {} with {}'s credentials".format(task.args.get_arg("program"), task.args.get_arg("credential")["account"])
         return task
 

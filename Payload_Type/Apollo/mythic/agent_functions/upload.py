@@ -59,7 +59,7 @@ class UploadCommand(CommandBase):
             task.args.add_arg("file", resp.response['agent_file_id'])
             task.args.add_arg("file_name", original_file_name)
         else:
-            raise Exception(f"Failed to host file: {resp.error_message}")
+            raise Exception(f"Failed to host file: {resp.error}")
         host = task.args.get_arg("host")
         path = task.args.get_arg("path")
         disp_str = ""

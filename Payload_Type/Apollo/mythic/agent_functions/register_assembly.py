@@ -48,7 +48,7 @@ class RegisterAssemblyCommand(CommandBase):
             task.args.add_arg("assembly_name", original_file_name)
             task.args.remove_arg("assembly")
         else:
-            raise Exception(f"Failed to host assembly: {resp.error_message}")
+            raise Exception(f"Failed to host assembly: {resp.error}")
         task.display_params = original_file_name
         return task
 

