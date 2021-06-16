@@ -25,6 +25,10 @@ Example
 shell ipconfig /all
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1059
+
 ## Detailed Summary
 The `shell` command spawns a `cmd.exe` process and executes the given command via the `/c` argument. Any standard output or standard errors are returned to Apollo over an anonymous named pipe to be returned to Mythic.
 

@@ -55,7 +55,7 @@ class AssemblyInjectCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = AssemblyInjectArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         arch = task.args.get_arg("arch")

@@ -27,7 +27,7 @@ class GetPrivsCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = GetPrivsArguments
-    attackmapping = []
+    attackmapping = ["T1078"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

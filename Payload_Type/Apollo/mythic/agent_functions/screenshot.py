@@ -53,7 +53,7 @@ class ScreenshotCommand(CommandBase):
     author = "@reznok"
     argument_class = ScreenshotArguments
     browser_script = BrowserScript(script_name="screenshot", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1113"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         arch = task.args.get_arg("arch")

@@ -28,7 +28,7 @@ class PsFullCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsFullArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
     browser_script = BrowserScript(script_name="ps_full", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

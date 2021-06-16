@@ -64,7 +64,7 @@ class DownloadCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = DownloadArguments
-    attackmapping = []
+    attackmapping = ["T1020", "T1030", "T1041"]
     browser_script = BrowserScript(script_name="download", author="@its_a_feature_")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

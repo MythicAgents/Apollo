@@ -69,7 +69,7 @@ class Spawntox86Command(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = Spawntox86Arguments
-    attackmapping = []
+    attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

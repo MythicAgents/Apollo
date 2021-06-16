@@ -50,7 +50,7 @@ class SocksCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = SocksArguments
-    attackmapping = []
+    attackmapping = ["T1090"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("action") == "start":

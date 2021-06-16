@@ -41,7 +41,7 @@ class RmdirCommand(CommandBase):
     is_remove_file = True
     author = "@djhohnstein"
     argument_class = RmdirArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

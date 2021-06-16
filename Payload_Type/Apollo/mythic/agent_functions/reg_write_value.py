@@ -66,7 +66,7 @@ class RegWriteValueBase(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = RegWriteValueArguments
-    attackmapping = []
+    attackmapping = ["T1547", "T1037", "T1546", "T1574", "T1112", "T1003"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

@@ -45,6 +45,10 @@ targetPath: C:\Windows \System32\cmd.exe
 
 ![bypassuac](../images/bypassuac02.png)
 
+## MITRE ATT&CK Mapping
+
+- T1548
+
 ## Detailed Summary
 The `bypassuac` command uses a "mock" directory method to bypass User Access Control and execute a payload in a high integirty context. This implementaion creates the directory `C:\Windows \System32` and copy the `winSAT.exe` utility to this directory. `winSAT.exe` will be exeucted and use Window's _Auto Elevate_ function to execute in a high integrity. To get code execution, a loader will be saved as `winmm.dll` in this directory and be loaded by `winSAT.exe` upon execution via a Dll hijack. This loader program will execute the specified agent payload using `cmd.exe` granting an agent callback in high integrity. 
 

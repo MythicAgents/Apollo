@@ -27,6 +27,10 @@ Example
 cp test1.txt "C:\Program Files\test2.txt"
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1570
+
 ## Detailed Summary
 The `cp` command uses the `System.IO.File.Copy` method to copy a file from a source path to a destination path. This command accepts UNC paths for file copies. 
 

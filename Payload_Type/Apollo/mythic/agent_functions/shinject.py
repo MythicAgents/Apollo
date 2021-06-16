@@ -35,7 +35,7 @@ class ShInjectCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = ShInjectArguments
-    attackmapping = []
+    attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         resp = await MythicFileRPC(task).register_file(task.args.get_arg("shellcode"))

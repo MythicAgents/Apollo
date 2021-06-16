@@ -36,7 +36,7 @@ class PrintSpooferCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PrintSpooferArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         dllFile = path.join(self.agent_code_path, f"PrintSpoofer_{task.callback.architecture}.dll")

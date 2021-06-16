@@ -28,5 +28,11 @@ This command is also integrated into the Mythic file browser.
 
 ![File browser](../images/filebrowser.png)
 
+
+## MITRE ATT&CK Mapping
+
+- T1106
+- T1083
+
 ## Detailed Summary
 The `ls` command retrieves information about files and folders within a specified directory. This information is collected with multiple methods from the `System.IO.File` and `System.IO.Directory` classes. Information gathered includes name, size, last accessed date, last modified date, object owner, an object's hidden status, and a parsed access control list for the object.

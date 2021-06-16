@@ -40,6 +40,12 @@ file: test.exe
 remote_path: C:\Windows\Temp\test.exe
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1132
+- T1030
+- T1105
+
 ## Detailed Summary
 The `upload` command recieves `512kb` chunks of a file from the Mythic server and saves those to the specified file path. If the file exist, the command will return an error.
 

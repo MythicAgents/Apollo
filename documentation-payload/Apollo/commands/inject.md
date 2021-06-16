@@ -43,7 +43,12 @@ pid: 1234
 template: Apollo.bin - Shellcode
 ```
 
-## Detailed Usage
+
+## MITRE ATT&CK Mapping
+
+- T1055
+
+## Detailed Summary
 The `inject` command uses TheWover's `donut` to turn an Apollo payload into shellcode. This shellcode is then injected using the agent's current process injection technique into the specified remote process.
 
 ### Resources

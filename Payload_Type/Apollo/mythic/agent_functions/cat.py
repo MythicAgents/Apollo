@@ -30,7 +30,7 @@ class CatCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = CatArguments
-    attackmapping = []
+    attackmapping = ["T1081", "T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

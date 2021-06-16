@@ -40,7 +40,7 @@ class BypassuacCommand(CommandBase):
     is_remove_file = False
     author = "@tifkin_"
     argument_class = BypassuacArguments
-    attackmapping = []
+    attackmapping = ["T1548"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         targetPath = task.args.get_arg("targetPath")

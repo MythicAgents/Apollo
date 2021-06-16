@@ -39,7 +39,7 @@ class PTHCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PTHArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1550"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         dllFile = path.join(self.agent_code_path, f"mimikatz_{task.callback.architecture}.dll")

@@ -38,7 +38,7 @@ class PivotWMIProcessCreateCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PivotWMIProcessCreaterguments
-    attackmapping = []
+    attackmapping = ["T1546", "T1047"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         gen_resp = await MythicPayloadRPC(task).build_payload_from_template(task.args.get_arg('template'))

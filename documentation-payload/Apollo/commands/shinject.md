@@ -35,5 +35,9 @@ pid: 1234
 File: apollo.bin
 ```
 
-## Detailed Usage
+## MITRE ATT&CK Mapping
+
+- T1055
+
+## Detailed Summary
 The `shinject` command will use the agent's current injection technique to inject the given shellcode into a remote process.

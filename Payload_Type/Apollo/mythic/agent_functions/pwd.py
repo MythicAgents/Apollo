@@ -28,7 +28,7 @@ class PwdCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PwdArguments
-    attackmapping = []
+    attackmapping = ["T1083"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

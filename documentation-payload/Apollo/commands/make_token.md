@@ -18,6 +18,11 @@ make_token
 ```
 Select credentials from drop down list.
 
+
+## MITRE ATT&CK Mapping
+
+- T1134
+
 ## Detailed Summary
 The `make_token` command uses `LogonUserA` Windows API to create a new logon session and apply it to the current thread. This logon session is created with a logon type `9` or new credentials. 
 

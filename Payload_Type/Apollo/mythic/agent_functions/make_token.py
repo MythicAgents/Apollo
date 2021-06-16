@@ -30,7 +30,7 @@ class MakeTokenCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = MakeTokenArguments
-    attackmapping = []
+    attackmapping = ["T1134"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

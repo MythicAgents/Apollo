@@ -20,6 +20,10 @@ Example
 ```
 rmdir C:\config
 ```
+## MITRE ATT&CK Mapping
+
+- T1106
+- T1107
 
 ## Detailed Summary
 The `rmdir` command uses the `System.IO.Directory.Delete` method to attempt to delete the specified directory.

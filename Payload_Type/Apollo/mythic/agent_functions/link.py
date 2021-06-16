@@ -31,7 +31,7 @@ class LinkCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = LinkArguments
-    attackmapping = []
+    attackmapping = ["T1570", "T1572", "T1021"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

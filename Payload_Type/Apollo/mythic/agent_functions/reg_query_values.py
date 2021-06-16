@@ -59,7 +59,7 @@ class RegQueryValues(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = RegQueryValuesArguments
-    attackmapping = []
+    attackmapping = ["T1012", "T1552"]
     browser_script = BrowserScript(script_name="reg_query_values", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

@@ -26,7 +26,7 @@ class NetLocalGroupCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = NetLocalGroupArguments
-    attackmapping = []
+    attackmapping = ["T1590", "T1069"]
     browser_script = BrowserScript(script_name="net_localgroup", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

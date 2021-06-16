@@ -49,7 +49,7 @@ class RmCommand(CommandBase):
     is_remove_file = True
     author = "@djhohnstein"
     argument_class = RmArguments
-    attackmapping = []
+    attackmapping = ["T1106", "T1107"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

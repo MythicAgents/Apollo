@@ -38,7 +38,7 @@ class SleepCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = SleepArguments
-    attackmapping = []
+    attackmapping = ["T1029"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

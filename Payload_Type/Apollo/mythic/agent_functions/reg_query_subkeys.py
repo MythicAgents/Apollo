@@ -59,7 +59,7 @@ class RegQuerySubkeysBase(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = RegQuerySubkeysArguments
-    attackmapping = []
+    attackmapping = ["T1012"]
     browser_script = BrowserScript(script_name="reg_query_subkeys", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
