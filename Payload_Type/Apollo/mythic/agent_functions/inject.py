@@ -48,17 +48,20 @@ class InjectCommand(CommandBase):
             # we know a payload is building, now we want it
             while True:
                 resp = await MythicRPC().execute("get_payload", 
-                                                 payload_uuid=gen_resp.response["uuid"])
+                                                 payload_uuid=gen_resp.response["uuid"],
+                                                 get_contents=True)
                 if resp.status == MythicStatus.Success:
-                    if resp.build_phase == 'success':
-                        if len(resp.contents) > 1 and resp.contents[:2] == b"\x4d\x5a":
+                    if resp.response["build_phase"] == 'success':
+                        b64contents = resp.response["contents"]
+                        pe = base64.b64decode(b64contents)
+                        if len(pe) > 1 and pe[:2] == b"\x4d\x5a":
                             raise Exception("Inject requires a payload of Raw output, but got an executable.")
                         # it's done, so we can register a file for it
                         task.args.add_arg("template", resp.response["file"]['agent_file_id'])
                         task.display_params = "{} into PID {} ({})".format(temp.response["tag"], task.args.get_arg("pid"), task.args.get_arg("arch"))
                         break
                     elif resp.build_phase == 'error':
-                        raise Exception("Failed to build new payload: " + resp.error_message)
+                        raise Exception("Failed to build new payload: " + resp.response["error_message"])
                     else:
                         await asyncio.sleep(1)
         else:

