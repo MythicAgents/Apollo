@@ -45,7 +45,7 @@ class SpawnCommand(CommandBase):
         if gen_resp.status == MythicStatus.Success:
             # we know a payload is building, now we want it
             while True:
-                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.uuid)
+                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"])
                 if resp.status == MythicStatus.Success:
                     if resp.response["build_phase"] == 'success':
                         base64contents = resp.response["contents"]
