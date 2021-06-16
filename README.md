@@ -28,13 +28,13 @@ bypassuac | `bypassuac (modal popup)` | Bypass UAC using the trusted mock direct
 cat | `cat [file]` | Retrieve the output of a file.
 cd | `cd [dir]` | Change working directory.
 cp | `cp [source] [destination]` | Copy a file from source to destination. Modal popup.
-dcsync | `dcsync` | Modal popup. Use Mimikatz to dump credentials from a DC via dcsync.
 download | `download [path]` | Download a file off the target system.
 execute_assembly | `execute_assembly [assembly.exe] [args]` | Execute a .NET assembly registered with `register_assembly`
 exit | `exit` | Exit a callback.
 get_current_injection_technique | `get_current_injection_technique` | Show the current injection technique used in postex jobs.
 getprivs | `getprivs` | Enable as many privileges as possible for the current access token.
 inject | `inject` | Inject a new payload into a remote process.
+golden_ticket | `golden_ticket` | Forge a golden/silver ticket using Mimikatz.
 jobkill | `jobkill [jid]` | Kill a running job in the agent.
 jobs | `jobs` | List all running jobs.
 keylog | `keylog [pid] [arch]` | Inject a keylogger into a remote process.
