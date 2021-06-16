@@ -1,6 +1,7 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
-from MythicFileRPC import *
+from mythic_payloadtype_container.MythicRPC import *
+import base64
 
 
 class ShInjectArguments(TaskArguments):
@@ -26,7 +27,7 @@ class ShInjectCommand(CommandBase):
     needs_admin = False
     help_cmd = "shinject (modal popup)"
     description = "Inject shellcode into a remote process."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -38,12 +39,16 @@ class ShInjectCommand(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        resp = await MythicFileRPC(task).register_file(task.args.get_arg("shellcode"))
+        original_file_name = json.loads(task.original_params)['Shellcode File']
+        resp = await MythicRPC().execute("create_file",
+                                         task_id=task.id,
+                                         file=base64.b64encode(task.args.get_arg("shellcode")).decode(),
+                                         delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("shellcode", resp.agent_file_id)
+            task.args.add_arg("shellcode", resp.response['agent_file_id'])
         else:
             raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
-        
+        task.display_params = "{} into PID {}".format(original_file_name, task.args.get_arg("pid"))
         return task
 
     async def process_response(self, response: AgentResponse):

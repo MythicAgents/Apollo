@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -21,7 +21,7 @@ class CatCommand(CommandBase):
     needs_admin = False
     help_cmd = "cat [file]"
     description = "Print the contents of a file specified by [file]"
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

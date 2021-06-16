@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class ListAssembliesCommand(CommandBase):
     needs_admin = False
     help_cmd = "list_assemblies"
     description = "List assemblies currently registered in the agent."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

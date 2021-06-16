@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -24,7 +24,7 @@ class UnlinkCommand(CommandBase):
     needs_admin = False
     help_cmd = "unlink (modal popup)"
     description = "Unlinks a callback from the agent."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -18,7 +18,7 @@ class GetCurrentInjectionTechniqueCommand(CommandBase):
     needs_admin = False
     help_cmd = "get_current_injection_technique"
     description = "List the current injection technique used in jobs requiring injection. Default is `CreateRemoteThreadInjection`"
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

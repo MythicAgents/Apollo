@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -22,7 +22,7 @@ class JobkillCommand(CommandBase):
     needs_admin = False
     help_cmd = "jobkill [jid]"
     description = "Kill a job specified by the job identifier (jid)."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

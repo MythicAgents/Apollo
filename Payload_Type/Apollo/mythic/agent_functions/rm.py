@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -46,12 +46,16 @@ class RmCommand(CommandBase):
     is_process_list = False
     is_download_file = False
     is_upload_file = False
-    is_remove_file = True
+    supported_ui_features = ["file_browser:remove"]
     author = "@djhohnstein"
     argument_class = RmArguments
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        host = task.args.get_arg("host")
+        task.display_params = task.args.get_arg("path")
+        if host:
+            task.display_params += " on host {}".format(host)
         return task
 
     async def process_response(self, response: AgentResponse):

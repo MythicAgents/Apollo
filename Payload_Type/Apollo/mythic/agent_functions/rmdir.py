@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -32,18 +32,22 @@ class RmdirCommand(CommandBase):
     needs_admin = False
     help_cmd = "rmdir [path]"
     description = "Remove a directory specified by [path]"
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
     is_download_file = False
     is_upload_file = False
-    is_remove_file = True
+    supported_ui_features = ["file_browser:remove"]
     author = "@djhohnstein"
     argument_class = RmdirArguments
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        host = task.args.get_arg("host")
+        task.display_params = task.args.get_arg("path")
+        if host:
+            task.display_params += " on host {}".format(host)
         return task
 
     async def process_response(self, response: AgentResponse):
