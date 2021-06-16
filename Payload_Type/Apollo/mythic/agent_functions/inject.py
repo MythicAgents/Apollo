@@ -8,7 +8,7 @@ class InjectArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents="Apollo", supported_agent_build_parameters={"output_type": "Shellcode"}),
+            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["Apollo"], supported_agent_build_parameters={"Apollo": {"output_type": "Shellcode"}}),
             "pid": CommandParameter(name="PID", type=ParameterType.Number),
             "arch": CommandParameter(name="Architecture", type=ParameterType.ChooseOne, choices=["x64", "x86"])
         }
@@ -58,7 +58,7 @@ class InjectCommand(CommandBase):
                             raise Exception("Inject requires a payload of Raw output, but got an executable.")
                         # it's done, so we can register a file for it
                         task.args.add_arg("template", resp.response["file"]['agent_file_id'])
-                        task.display_params = "{} into PID {} ({})".format(temp.response["tag"], task.args.get_arg("pid"), task.args.get_arg("arch"))
+                        task.display_params = "payload '{}' into PID {} ({})".format(temp.response["tag"], task.args.get_arg("pid"), task.args.get_arg("arch"))
                         break
                     elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])
