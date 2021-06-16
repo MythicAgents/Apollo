@@ -72,7 +72,8 @@ class GoldenTicketArguments(TaskArguments):
             self.parse_command_line_arguments()
         self.add_arg("pipe_name", str(uuid4()))
         for varg in self.valid_args:
-            if self.get_arg(varg) and " " in self.get_arg(varg):
+            value = self.get_arg(varg)
+            if value and isinstance(value, str) and " " in value:
                 raise Exception("No spaces allowed in parameter '{}', but got: {}".format(varg, self.get_arg(varg)))
 
 class GoldenTicketCommand(CommandBase):
