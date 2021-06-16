@@ -66,6 +66,7 @@ namespace Mythic
             public string realm; // the domain
             public string credential; // the password
             public string account; // the username
+            public string comment;
 
             public MythicCredential(bool tmp = false)
             {
@@ -73,6 +74,7 @@ namespace Mythic
                 realm = "";
                 credential = "";
                 account = "";
+                comment = "";
             }
         }
 
