@@ -74,8 +74,8 @@ namespace Apollo.CommandModules
 #endif
 #if WHOAMI
                 case "whoami":
-                    string message = "{0} for local operations, {1} for remote operations.";
-                    message = string.Format(message, CredentialManager.CurrentIdentity.Name, CredentialManager.GetCurrentUsername());
+                    string message = "{0} for local operations ({1} integrity), {2} for remote operations.";
+                    message = string.Format(message, CredentialManager.CurrentIdentity.Name, CredentialManager.GetIntegrityLevelAsString().ToLower(), CredentialManager.GetCurrentUsername());
                     job.SetComplete(message);
                     break;
 #endif
