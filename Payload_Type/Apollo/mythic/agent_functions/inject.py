@@ -8,7 +8,7 @@ class InjectArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload),
+            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents="Apollo", supported_agent_build_parameters={"output_type": "Shellcode"}),
             "pid": CommandParameter(name="PID", type=ParameterType.Number),
             "arch": CommandParameter(name="Architecture", type=ParameterType.ChooseOne, choices=["x64", "x86"])
         }
