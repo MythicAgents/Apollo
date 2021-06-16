@@ -84,12 +84,12 @@ class BypassuacCommand(CommandBase):
                         # it's done, so we can register a file for it
                         task.args.add_arg("payload", resp.response["file"]["agent_file_id"])
                         break
-                    elif resp.build_phase == 'error':
+                    elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])
-                    elif resp.build_phase == "building":
+                    elif resp.response["build_phase"] == "building":
                         await asyncio.sleep(2)
                     else:
-                        raise Exception(resp.build_phase)
+                        raise Exception(resp.response["build_phase"])
                 else:
                     raise Exception(resp.response["error_message"])
         else:

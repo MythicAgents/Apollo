@@ -60,7 +60,7 @@ class InjectCommand(CommandBase):
                         task.args.add_arg("template", resp.response["file"]['agent_file_id'])
                         task.display_params = "{} into PID {} ({})".format(temp.response["tag"], task.args.get_arg("pid"), task.args.get_arg("arch"))
                         break
-                    elif resp.build_phase == 'error':
+                    elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])
                     else:
                         await asyncio.sleep(1)
