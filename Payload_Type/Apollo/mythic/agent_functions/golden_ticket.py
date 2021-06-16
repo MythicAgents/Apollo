@@ -58,7 +58,10 @@ class GoldenTicketArguments(TaskArguments):
                 raise Exception("No spaces allowed in value: {}".format(val))
             param = param[1:].lower()
             if param in self.valid_args:
-                self.add_arg(param, val)
+                try:
+                    self.add_arg(param, int(val))
+                except:
+                    self.add_arg(param, val)
             else:
                 raise Exception("Invalid argument given to golden_ticket: {}".format(param))
 
@@ -75,6 +78,19 @@ class GoldenTicketArguments(TaskArguments):
             value = self.get_arg(varg)
             if value and isinstance(value, str) and " " in value:
                 raise Exception("No spaces allowed in parameter '{}', but got: {}".format(varg, self.get_arg(varg)))
+
+        required_args = ["domain",
+                        "sid",
+                        "user",
+                        "key_type",
+                        "key",
+                        "sacrificial_logon"]
+        for arg in required_args:
+            if not self.get_arg(arg):
+                if arg == "sacrificial_logon":
+                    self.add_arg(arg, True)
+                else:
+                    raise Exception("Missing mandatory parameter: {}".format(arg))
 
 class GoldenTicketCommand(CommandBase):
     cmd = "golden_ticket"
