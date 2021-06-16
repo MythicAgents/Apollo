@@ -124,7 +124,7 @@ class GoldenTicketCommand(CommandBase):
         # task.display_params = "/dc:{} /domain:{} /user:{}".format(self.args.get_arg)
         display_str = ""
         no_display = ["loader_stub_id", "pipe_name", "sacrificial_logon"]
-        for arg, _ in task.args.args:
+        for arg in task.args.args:
             varg = task.args.get_arg(arg)
             if varg and arg not in no_display:
                 display_str += "/{}:{} ".format(arg, varg)
