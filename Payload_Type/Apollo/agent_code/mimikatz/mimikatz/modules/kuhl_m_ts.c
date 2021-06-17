@@ -411,6 +411,9 @@ void kuhl_m_ts_mstsc_MemoryAnalysis_property(PKULL_M_MEMORY_HANDLE hMemory, PVOI
 
 							kprintf(L"%-40S  ", szPropertyName);
 
+#pragma warning(push)
+// Shimming this to allow us to build for x64 without the compiler freaking out
+#pragma warning(disable:4311)
 							switch(pProperties[i].dwType)
 							{
 							case 1:
@@ -470,6 +473,7 @@ void kuhl_m_ts_mstsc_MemoryAnalysis_property(PKULL_M_MEMORY_HANDLE hMemory, PVOI
 								kprintf(L"[unk - %u] 0x%p", pProperties[i].dwType, pProperties[i].pvData);
 								break;
 							}
+#pragma warning(pop)
 
 							//kprintf(L" (0x%08x)\n", pProperties[i].dwFlags);
 							kprintf(L"\n");
