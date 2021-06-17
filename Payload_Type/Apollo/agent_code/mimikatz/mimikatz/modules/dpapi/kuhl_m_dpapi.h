@@ -1,5 +1,5 @@
 /*	Benjamin DELPY `gentilkiwi`
-	http://blog.gentilkiwi.com
+	https://blog.gentilkiwi.com
 	benjamin@gentilkiwi.com
 	Licence : https://creativecommons.org/licenses/by/4.0/
 */
@@ -18,6 +18,8 @@
 #include "packages/kuhl_m_dpapi_rdg.h"
 #include "packages/kuhl_m_dpapi_powershell.h"
 #include "packages/kuhl_m_dpapi_lunahsm.h"
+#include "packages/kuhl_m_dpapi_cloudap.h"
+#include "packages/kuhl_m_dpapi_sccm.h"
 
 const KUHL_M kuhl_m_dpapi;
 
