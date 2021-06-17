@@ -17,5 +17,10 @@ Example
 kill 1234
 ```
 
+
+## MITRE ATT&CK Mapping
+
+- T1106
+
 ## Detailed Summary
 The `kill` command uses the `System.Diagnostics.Process.Kill` method to kill the specified process. The access token for the agent's process will need the correct permissions to the target process in order to successfully kill it.

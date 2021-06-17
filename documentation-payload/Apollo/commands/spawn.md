@@ -17,6 +17,11 @@ Template used to build and spawn a new agent from. This template must be of form
 spawn
 ```
 
+
+## MITRE ATT&CK Mapping
+
+- T1055
+
 {{% notice info %}}
 A Process Create artifact is generated for this command.
 {{% /notice %}}

@@ -50,7 +50,7 @@ class KeylogCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = KeylogArguments
-    attackmapping = []
+    attackmapping = ["T1056"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.args.add_arg("pipe_name", str(uuid4()))

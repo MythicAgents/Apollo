@@ -34,7 +34,7 @@ class SpawnCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = SpawnArguments
-    attackmapping = []
+    attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         temp = await MythicRPC().execute("get_payload", payload_uuid=task.args.get_arg("template"))

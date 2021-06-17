@@ -34,7 +34,7 @@ class PsImportCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsImportArguments
-    attackmapping = []
+    attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['PowerShell Script']

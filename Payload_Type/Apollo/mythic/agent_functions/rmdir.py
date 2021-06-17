@@ -41,7 +41,7 @@ class RmdirCommand(CommandBase):
     supported_ui_features = ["file_browser:remove"]
     author = "@djhohnstein"
     argument_class = RmdirArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         host = task.args.get_arg("host")

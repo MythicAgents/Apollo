@@ -27,7 +27,7 @@ class NetSharesCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = NetSharesArguments
-    attackmapping = []
+    attackmapping = ["T1590", "T1069"]
     browser_script = BrowserScript(script_name="net_shares", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

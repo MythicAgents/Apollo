@@ -44,5 +44,12 @@ Payload: Apollo
 C2 Profile: SMBServer
 ```
 
+
+## MITRE ATT&CK Mapping
+
+- T1570
+- T1572
+- T1021
+
 ## Detailed Summary
 The `link` command connects agents to other callbacks for peer to peer communication. This can be used to connect new agents or re-link to un-linked agents. 

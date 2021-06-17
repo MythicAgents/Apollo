@@ -28,7 +28,7 @@ class ShellCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = ShellArguments
-    attackmapping = []
+    attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

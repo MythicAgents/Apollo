@@ -28,7 +28,7 @@ class RunCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = RunArguments
-    attackmapping = []
+    attackmapping = ["T1106", "T1218", "T1553"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

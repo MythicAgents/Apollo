@@ -22,7 +22,20 @@ Example
 mimikatz sekurlsa::logonpasswords
 ```
 
-## Detailed Usage
+
+## MITRE ATT&CK Mapping
+
+- T1134
+- T1098
+- T1547
+- T1555
+- T1003
+- T1207
+- T1558
+- T1552
+- T1550
+
+## Detailed Summary
 The `mimikatz` command uses a modified version of Mimikatz which is compiled as a DLL. This DLL is compiled into shellcode using [sRDI](https://github.com/monoxgas/sRDI) executed using Apollo's post-exploitation job architecture. This command uses standard mimikatz arguments (parent::subcommand) and does not auto elevate for commands unless specified. 
 
 If you enter a command such as `sekurlsa::logonpasswords`, Apollo will attempt to parse the output and store the credentials in the Mythic server for later use.

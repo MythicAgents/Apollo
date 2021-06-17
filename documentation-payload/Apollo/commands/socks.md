@@ -26,5 +26,9 @@ Example
 socks start 1234
 ```
 
-## Detailed Usage
+## MITRE ATT&CK Mapping
+
+- T1090
+
+## Detailed Summary
 The `socks` command creates a SOCKS 5 compliant proxy on the agent so that network traffic can be proxied into the agent's network. The agent opens a bind connection on a random port between `65000` and `65535` and begins sending and receiving messages from the Mythic SOCKS server. Messages are exchanged at checkin so lower sleep times will increase SOCKS speed.

@@ -37,7 +37,7 @@ class CpArguments(TaskArguments):
                 cmds[x] = cmds[x][1:-1]
 
         return cmds
-
+    
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":
@@ -64,7 +64,7 @@ class CpCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = CpArguments
-    attackmapping = []
+    attackmapping = ["T1570"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = "{} {}".format(task.args.get_arg("source"), task.args.get_arg("destination"))

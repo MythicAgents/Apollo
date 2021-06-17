@@ -38,7 +38,7 @@ class PowerpickCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PowerpickArguments
-    attackmapping = []
+    attackmapping = ["T1059", "T1562"]
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

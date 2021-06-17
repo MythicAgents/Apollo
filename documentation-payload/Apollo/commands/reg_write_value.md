@@ -40,4 +40,13 @@ Value Name: [value name]
 New Value: [new value]
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1547
+- T1037
+- T1546
+- T1574
+- T1112
+- T1003
+
 >A Registry Write artifact is generated from this command.

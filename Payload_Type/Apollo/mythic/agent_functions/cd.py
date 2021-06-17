@@ -31,7 +31,7 @@ class CdCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = CdArguments
-    attackmapping = []
+    attackmapping = ["T1083"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

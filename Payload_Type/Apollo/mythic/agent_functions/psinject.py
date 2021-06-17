@@ -52,7 +52,7 @@ class PsInjectCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsInjectArguments
-    attackmapping = []
+    attackmapping = ["T1059", "T1055"]
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

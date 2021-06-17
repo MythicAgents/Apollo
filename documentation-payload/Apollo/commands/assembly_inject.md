@@ -34,6 +34,10 @@ Example
 
 ![ex](../images/assembly_inject02.png)
 
+## MITRE ATT&CK Mapping
+
+- T1055
+
 ## Detailed Summary
 
 The `assembly_inject` command uses the currently set process injection technique to inject into a remote process and execute a .NET assembly in the context of the target process. To see what injection technique is in use, you can use the `get_injection_technique` command.

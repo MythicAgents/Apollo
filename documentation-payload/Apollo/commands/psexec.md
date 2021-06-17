@@ -53,6 +53,12 @@ service_name: updateChecker
 template: Apollo - HTTP,SMBServer
 ```
 
+
+## MITRE ATT&CK Mapping
+
+- T1588
+- T1570
+
 ## Detailed Summary
 The `psexec` command uses a payload and service on a remote host for lateral movement. This payload is created by using `donut` to turn a C# agent into shellcode, then embedded this as a resource in a C# service excutable. This executable will simply load the shellcode and execute it in the current process. The agent will copy this payload to the specified path (`C:\Users\Public` by default) on the target host over SMB. Using the Windows Service Control Manager, the agent will then create a new service on the remote host with the payload as the service binary. The display name and service name can be customized or left as default (`ApolloService-[GUID]`). The agent will then attempt to start this service remotely to execute the payload. 
 

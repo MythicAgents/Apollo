@@ -23,6 +23,12 @@ net_shares client01.lab.local
 
 ![net_shares](../images/net_shares.png)
 
+
+## MITRE ATT&CK Mapping
+
+- T1590
+- T1069
+
 ## Detailed Summary
 The `net_shares` command uses `NetShareEnum` Windows API to collect information about network shares on a specified host. This information includes the share's name, comments, type of share and what computer it was collected from.
 

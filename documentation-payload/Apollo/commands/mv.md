@@ -34,6 +34,10 @@ destination: C:\config.txt
 source: C:\Windows\Temp\config.txt
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1106
+
 ## Detailed Summary
 The `mv` command uses the `System.IO.File.Move` method to movey a file from a source path to a destination path. This command accepts UNC paths for file moves.
 

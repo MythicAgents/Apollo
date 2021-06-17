@@ -15,6 +15,10 @@ screenshot [pid] [x86|x64]
 screenshot (modal popup)
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1113
+
 ## Detailed Summary
 The `screenshot` command injects an unmanaged DLL, converted via sRDI, into the remote process specified in the arguments using the current injection technique. If you have requisite privileges to inject into other desktop sessions, this allows for taking screenshots in desktop sessions you are not currently running in.
 
