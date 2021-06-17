@@ -20,13 +20,14 @@ __declspec(dllexport) int smb_server_wmain(LPVOID lpUserdata, DWORD nUserdataLen
 {
 	if (nUserdataLen) {
 		DWORD length = 14 + nUserdataLen;
-		LPSTR namedPipeName = (LPSTR)malloc(length);
+		DWORD dwErr = 0;
+		LPCSTR namedPipeName = (LPCSTR)malloc(length);
 		//wsprintf(namedPipeName, L"\\\\.\\pipe\\%s", (LPCWSTR)lpUserdata);
 		sprintf_s(namedPipeName, length, "\\\\.\\pipe\\%s", (LPCSTR)lpUserdata);
 		HANDLE hPipe = NULL;
 		BOOL fSuccess;
 		char buffer[1024];
-		char* pt = NULL;
+		char* pt;
 		wchar_t wBuffer[1024];
 		DWORD dwRead;
 		ZeroMemory(&buffer, sizeof(buffer));
@@ -63,8 +64,7 @@ __declspec(dllexport) int smb_server_wmain(LPVOID lpUserdata, DWORD nUserdataLen
 			}
 			mbtowc(NULL, NULL, 0);  /* reset mbtowc */
 			max = strlen(buffer);
-			memcpy(pt, &buffer, sizeof(buffer));
-			//pt = &buffer;
+			pt = &buffer;
 			while (max > 0) {
 				bytesCopied = mbtowc(&wBuffer[i], pt, max);
 				if (bytesCopied < 1) break;
