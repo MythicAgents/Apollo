@@ -169,7 +169,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                 t.Join();
             }
 
-            job.SetComplete(procList);
+            job.SetComplete(procList.ToArray());
         }
 
         /// <summary>
@@ -214,6 +214,14 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                 else arch = "x64";
             }
             catch { arch = ""; }
+            try
+            {
+                filePath = proc.MainModule.FileVersionInfo.FileName;
+            }
+            catch
+            {
+                filePath = "";
+            }
 #if PS_FULL
             if (fullDetails)
             {
@@ -259,14 +267,6 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                 }
                 try
                 {
-                    filePath = proc.MainModule.FileVersionInfo.FileName;
-                }
-                catch
-                {
-                    filePath = "";
-                }
-                try
-                {
                     windowTitle = proc.MainWindowTitle;
                 }
                 catch
@@ -278,16 +278,17 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
             Mythic.Structs.ProcessEntry procEntry = new Mythic.Structs.ProcessEntry()
             {
                 process_id = proc.Id,
-                process_name = proc.ProcessName,
+                name = proc.ProcessName,
                 parent_process_id = parentProcessId,
                 user = processUser,
-                arch = arch,
-                integrity_level = integrityLevel,
+                architecture = arch,
+                integrity_level = GetIntegerIntegrityLevel(integrityLevel),
+                integrity_level_string = integrityLevel,
                 description = desc,
-                company_name = companyName,
+                signer = companyName,
                 session = sessionId,
                 command_line = commandLine,
-                file_path = filePath,
+                bin_path = filePath,
                 window_title = windowTitle
             };
             try
@@ -303,6 +304,38 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
             {
                 mtx.ReleaseMutex();
             }
+        }
+
+        private static int GetIntegerIntegrityLevel(string il)
+        {
+            int result = 0;
+            switch(il)
+            {
+                case "S-1-16-0":
+                    result = 0;
+                    break;
+                case "S-1-16-4096":
+                    result = 1;
+                    break;
+                case "S-1-16-8192":
+                    result = 2;
+                    break;
+                case "S-1-16-12288":
+                    result = 3;
+                    break;
+                case "S-1-16-16384":
+                    result = 3;
+                    break;
+                case "S-1-16-20480":
+                    result = 3;
+                    break;
+                case "S-1-16-28672":
+                    result = 3;
+                    break;
+                default:
+                    break;
+            }
+            return result;
         }
 
         // No way of getting parent process from C#, but we can use NtQueryInformationProcess to get this info.

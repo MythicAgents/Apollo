@@ -37,15 +37,16 @@ function(task, response){
             }
             rows.push({"pid": data[j]['process_id'],
                        "ppid": ppid,            
-                       "name": data[j]["process_name"],
-                       "arch": data[j]["arch"],
+                       "name": data[j]["name"],
+                       "arch": data[j]["architecture"],
                        "user": data[j]["user"],
+                       "path": data[j]["bin_path"],
                         //    "type": data['type'],
                             "row-style": row_style,
                             "cell-style": cell_style
                         });
       }
     }
-    var output = support_scripts['apollo_create_table']([{"name":"pid", "size":"30px"},{"name":"ppid", "size":"30px"},{"name":"arch", "size":"60px"},{"name":"name", "size":"30em"},{"name": "user", "size": "15em"}], rows);
+    var output = support_scripts['apollo_create_table']([{"name":"pid", "size":"30px"},{"name":"ppid", "size":"30px"},{"name":"arch", "size":"60px"},{"name":"name", "size":"30em"},{"name": "user", "size": "15em"}, {"name":"path", "size":"15em"}], rows);
     return output;
   }

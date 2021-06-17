@@ -173,6 +173,7 @@ namespace Apollo
             public MythicCredential[] credentials;
             public RemovedFileInformation[] removed_files;
             public Artifact[] artifacts;
+            public ProcessEntry[] processes;
 
             public ApolloTaskResponse(Task t, object userOutput = null, Mythic.Structs.EdgeNode[] nodes = null)
             {
@@ -193,12 +194,15 @@ namespace Apollo
                 removed_files = null;
                 artifacts = null;
                 host = null;
+                processes = null;
 
                 if (userOutput != null && userOutput.GetType() != typeof(string))
                 {
                     user_output = JsonConvert.SerializeObject(userOutput);
                     if (userOutput.GetType() == typeof(Mythic.Structs.FileBrowserResponse))
                         file_browser = userOutput;
+                    else if (userOutput.GetType() == typeof(Mythic.Structs.ProcessEntry[]))
+                        processes = (Mythic.Structs.ProcessEntry[])userOutput;
                 }
                 edges = nodes;
                 if (nodes == null)
