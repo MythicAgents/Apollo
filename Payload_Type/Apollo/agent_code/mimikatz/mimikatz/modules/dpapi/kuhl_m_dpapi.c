@@ -1,5 +1,5 @@
 /*	Benjamin DELPY `gentilkiwi`
-	http://blog.gentilkiwi.com
+	https://blog.gentilkiwi.com
 	benjamin@gentilkiwi.com
 	Licence : https://creativecommons.org/licenses/by/4.0/
 */
@@ -14,6 +14,7 @@ const KUHL_M_C kuhl_m_c_dpapi[] = {
 	
 	{kuhl_m_dpapi_keys_capi,	L"capi",		L"CAPI key test"},
 	{kuhl_m_dpapi_keys_cng,		L"cng",			L"CNG key test"},
+	{kuhl_m_dpapi_keys_tpm,		L"tpm",			L"TPM key test"},
 	{kuhl_m_dpapi_cred,			L"cred",		L"CRED test"},
 	{kuhl_m_dpapi_vault,		L"vault",		L"VAULT test"},
 	{kuhl_m_dpapi_wifi,			L"wifi",		L"WiFi test"},
@@ -23,6 +24,9 @@ const KUHL_M_C kuhl_m_c_dpapi[] = {
 	{kuhl_m_dpapi_rdg,			L"rdg",			L"RDG saved passwords"},
 	{kuhl_m_dpapi_powershell,	L"ps",			L"PowerShell credentials (PSCredentials or SecureString)"},
 	{kuhl_m_dpapi_lunahsm,		L"luna",		L"Safenet LunaHSM KSP"},
+	{kuhl_m_dpapi_cloudap_keyvalue_derived,	L"cloudapkd",	L""},
+	{kuhl_m_dpapi_cloudap_fromreg, L"cloudapreg",	L""},
+	{kuhl_m_dpapi_sccm_networkaccessaccount, L"sccm",	L""},
 	{kuhl_m_dpapi_oe_cache,		L"cache", NULL},
 };
 const KUHL_M kuhl_m_dpapi = {
@@ -287,20 +291,20 @@ NTSTATUS kuhl_m_dpapi_masterkey(int argc, wchar_t * argv[])
 					}
 				}
 				
-				//if(masterkeys->BackupKey && masterkeys->dwBackupKeyLen && convertedSid && (!(masterkeys->dwFlags & 1) || (pSystem && cbSystem)))
-				//{
-				//	kprintf(L"\n[backupkey] %s DPAPI_SYSTEM: ", pSystem ? L"with" : L"without");
-				//	if(pSystem)
-				//	{
-				//		kull_m_string_wprintf_hex(pSystem, cbSystem, 0);
-				//		if(!(masterkeys->dwFlags & 1))
-				//			kprintf(L" (but is not needed)");
-				//	}
-				//	kprintf(L"\n");
-				//	if(kull_m_dpapi_unprotect_backupkey_with_secret(masterkeys->dwFlags, masterkeys->BackupKey, convertedSid, pSystem, cbSystem, &output, &cbOutput))
-				//		kuhl_m_dpapi_display_MasterkeyInfosAndFree(NULL, output, cbOutput, NULL);
-				//	else PRINT_ERROR(L"kull_m_dpapi_unprotect_backupkey_with_secret\n");
-				//}
+				if(masterkeys->BackupKey && masterkeys->dwBackupKeyLen && convertedSid && (!(masterkeys->dwFlags & 1) || (pSystem && cbSystem)))
+				{
+					kprintf(L"\n[backupkey] %s DPAPI_SYSTEM: ", pSystem ? L"with" : L"without");
+					if(pSystem)
+					{
+						kull_m_string_wprintf_hex(pSystem, cbSystem, 0);
+						if(!(masterkeys->dwFlags & 1))
+							kprintf(L" (but is not needed)");
+					}
+					kprintf(L"\n");
+					if(kull_m_dpapi_unprotect_backupkey_with_secret(masterkeys->dwFlags, masterkeys->BackupKey, convertedSid, pSystem, cbSystem, &output, &cbOutput))
+						kuhl_m_dpapi_display_MasterkeyInfosAndFree(NULL, output, cbOutput, NULL);
+					else PRINT_ERROR(L"kull_m_dpapi_unprotect_backupkey_with_secret\n");
+				}
 
 				if(masterkeys->DomainKey && masterkeys->dwDomainKeyLen)
 				{

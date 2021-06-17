@@ -1,5 +1,5 @@
 /*	Benjamin DELPY `gentilkiwi`
-	http://blog.gentilkiwi.com
+	https://blog.gentilkiwi.com
 	benjamin@gentilkiwi.com
 	Licence : https://creativecommons.org/licenses/by/4.0/
 */
@@ -79,6 +79,10 @@ typedef struct _DSS_GENERICKEY3_BLOB {
 
 #if !defined(BCRYPT_ECDSA_PRIVATE_GENERIC_MAGIC)
 #define BCRYPT_ECDSA_PRIVATE_GENERIC_MAGIC  0x56444345  // ECDV
+#endif
+
+#if !defined(BCRYPT_HMAC_SHA256_ALG_HANDLE)
+#define BCRYPT_HMAC_SHA256_ALG_HANDLE	((BCRYPT_ALG_HANDLE) 0x000000b1)
 #endif
 
 #ifndef CRYPT_ECC_PRIVATE_KEY_INFO_v1
@@ -195,6 +199,9 @@ PKIWI_DH kull_m_crypto_dh_Create(ALG_ID targetSessionKeyType);
 BOOL kull_m_crypto_dh_CreateSessionKey(PKIWI_DH dh, PMIMI_PUBLICKEY publicKey);
 BOOL kull_m_crypto_dh_simpleEncrypt(HCRYPTKEY key, LPVOID data, DWORD dataLen, LPVOID *out, DWORD *outLen);
 BOOL kull_m_crypto_dh_simpleDecrypt(HCRYPTKEY key, LPVOID data, DWORD dataLen, LPVOID *out, DWORD *outLen);
+
+BOOL kull_m_crypto_StringToBinaryA(LPCSTR pszString, DWORD cchString, DWORD dwFlags, PBYTE* ppbBinary, PDWORD pcbBinary);
+BOOL kull_m_crypto_StringToBinaryW(LPCWSTR pszString, DWORD cchString, DWORD dwFlags, PBYTE* ppbBinary, PDWORD pcbBinary);
 
 #define IOCTL_GET_FEATURE_REQUEST			SCARD_CTL_CODE(3400)
 #define IOCTL_CCID_ESCAPE					SCARD_CTL_CODE(3500)
