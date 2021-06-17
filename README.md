@@ -173,7 +173,12 @@ There's a number of niceities that come with pairing an agent to Mythic - too ma
 
 A big thanks goes to those who have contributed to the project in both major and minor ways.
 
-- @its-a-feature
-- @tifkin
-- @rezn0k
-- @thiagomayllart
+- Cody Thomas, [@its_a_feature_](https://twitter.com/its_a_feature_)
+- Calvin Hedler, [@001SPARTaN](https://twitter.com/001spartan)
+- Lee Christensen, [@tifkin_](https://twitter.com/tifkin_)
+- Brandon Forbes, [@reznok](https://twitter.com/rezn0k)
+- Thiago Mayllart, [@thiagomayllart](https://twitter.com/thiagomayllart)
+- Matt Hand, [@matterpreter](https://twitter.com/matterpreter)
+- Hope Walker, [@IceMoonHSV](https://twitter.com/IceMoonHSV)
+- Jack Ullrich, [@winternl_t](https://twitter.com/winternl_t)
+- Elad Shamir, [@elad_shamir](https://twitter.com/elad_shamir)

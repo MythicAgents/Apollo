@@ -27,9 +27,15 @@ Apollo is a Windows-platform integration into the Mythic command-and-control fra
 
 ### Special Thanks to These Contributors
 
-- [@001SPARTaN](https://twitter.com/001spartan)
-- [@tifkin_](https://twitter.com/tifkin_)
-- [@reznok](https://twitter.com/rezn0k)
+- Cody Thomas, [@its_a_feature_](https://twitter.com/its_a_feature_)
+- Calvin Hedler, [@001SPARTaN](https://twitter.com/001spartan)
+- Lee Christensen, [@tifkin_](https://twitter.com/tifkin_)
+- Brandon Forbes, [@reznok](https://twitter.com/rezn0k)
+- Thiago Mayllart, [@thiagomayllart](https://twitter.com/thiagomayllart)
+- Matt Hand, [@matterpreter](https://twitter.com/matterpreter)
+- Hope Walker, [@IceMoonHSV](https://twitter.com/IceMoonHSV)
+- Jack Ullrich, [@winternl_t](https://twitter.com/winternl_t)
+- Elad Shamir, [@elad_shamir](https://twitter.com/elad_shamir)
 
 ## Table of Contents
 
