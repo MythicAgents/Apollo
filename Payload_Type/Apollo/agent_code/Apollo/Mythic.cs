@@ -308,12 +308,12 @@ namespace Mythic
 
         public struct PortFwdDatagram
         {
-            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>> data;
+            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<int,String>>>>> data;
         }
 
         public struct PortSpecificDatagram
         {
-            public Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>> data;
+            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<int,String>>>> data;
         }
 
         internal struct FileBrowserParameters
@@ -341,7 +341,7 @@ namespace Mythic
             public Dictionary<string, string>[] delegates;
             public string message_id;
             public SocksDatagram[] socks;
-            public PortFwdDatagram[] rportfwds;
+            public String[] rportfwds;
             // public DelegateMessages[] delegateMessages;
         }
 
