@@ -367,6 +367,7 @@ namespace Mythic
             public Task[] Tasks;
             public DelegateMessage[] Delegates;
             public SocksDatagram[] SocksDatagrams;
+            public PortFwdDatagram[] PortFwdDg;
         }
     }
 
