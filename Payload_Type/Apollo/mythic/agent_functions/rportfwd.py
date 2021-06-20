@@ -60,13 +60,13 @@ class PortFwdCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         resp = ""
         if task.args.get_arg("action") == "start":
-            resp = await MythicRPC().execute("control_rportfwd",start=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,start=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
         if task.args.get_arg("action") == "stop":
-            resp = await MythicRPC().execute("control_rportfwd",stop=True,port=task.args.get_arg("port"))
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,stop=True,port=task.args.get_arg("port"))
         if task.args.get_arg("action") == "list":
             return task
         if task.args.get_arg("action") == "flush":
-            resp = await MythicRPC().execute("control_rportfwd",flush=True)
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,flush=True)
         if resp.status == MythicStatus.Success:
             return task
         else:
