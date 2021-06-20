@@ -488,7 +488,6 @@ namespace Mythic.C2Profiles
         }
 
 
-
         override public byte[] GetFile(UploadFileRegistrationMessage fileReg, int chunk_size)
         {
             string response;
