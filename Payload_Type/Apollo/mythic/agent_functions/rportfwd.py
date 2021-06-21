@@ -66,7 +66,7 @@ class PortFwdCommand(CommandBase):
         if task.args.get_arg("action") == "list":
             return task
         if task.args.get_arg("action") == "flush":
-            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,flush=True,rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,flush=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
         if resp.status == MythicStatus.Success:
             return task
         else:
