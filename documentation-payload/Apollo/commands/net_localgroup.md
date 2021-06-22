@@ -25,5 +25,11 @@ net_localgroup client01.lab.local
 
 ![net_localgroup](../images/net_localgroup.png)
 
+
+## MITRE ATT&CK Mapping
+
+- T1590
+- T1069
+
 ## Detailed Summary
 The `net_localgroup` command uses `NetLocalGroupEnum` Windows API to collect information about local groups on a specified host. This information includes the group's name, SID, comments and computer it was collected from.

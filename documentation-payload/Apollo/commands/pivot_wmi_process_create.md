@@ -51,5 +51,11 @@ remote_path: C:\Windows\Temp\
 template: Apollo - HTTP,SMBServer
 ```
 
+
+## MITRE ATT&CK Mapping
+
+- T1546
+- T1047
+
 ## Detailed Summary
 The `pivot_wmi_process_create` uses SMB and WMI for remote file copy and process execution to perform lateral movement. The payload selected is written to the target host with a random GUID filename over SMB using the `System.IO.File.WriteAllBytes` method. Execution of the payload is then achieved through the use of the `Win32_process` method of the `System.Management` class.

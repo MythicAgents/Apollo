@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -55,19 +55,23 @@ class DownloadCommand(CommandBase):
     needs_admin = False
     help_cmd = "download [path/to/file]"
     description = "Download a file off the target system."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
-    is_download_file = True
+    supported_ui_features = ["file_browser:download"]
     is_upload_file = False
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = DownloadArguments
-    attackmapping = []
+    attackmapping = ["T1020", "T1030", "T1041"]
     browser_script = BrowserScript(script_name="download", author="@its_a_feature_")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        if task.args.get_arg("host"):
+            task.display_params = "\\\\{}\\{}".format(task.args.get_arg("host"), task.args.get_arg("file"))
+        else:
+            task.display_params = task.args.get_arg("file")
         return task
 
     async def process_response(self, response: AgentResponse):

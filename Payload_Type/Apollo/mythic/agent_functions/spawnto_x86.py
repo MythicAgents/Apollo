@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -69,9 +69,13 @@ class Spawntox86Command(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = Spawntox86Arguments
-    attackmapping = []
+    attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        args = task.args.get_arg("arguments")
+        task.display_params = task.args.get_arg("application")
+        if args:
+            task.display_params += " {}".format(args)
         return task
 
     async def process_response(self, response: AgentResponse):

@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class PsClearCommand(CommandBase):
     needs_admin = False
     help_cmd = "psclear"
     description = "Clears all PowerShell scripts known to the agent that were imported by `psimport`."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -28,7 +28,7 @@ class PsClearCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsClearArguments
-    attackmapping = []
+    attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -46,19 +46,25 @@ class LsCommand(CommandBase):
     needs_admin = False
     help_cmd = "ls [path]"
     description = "List files and folders in a specified directory (defaults to your current working directory.)"
-    version = 1
+    version = 2
     is_exit = False
-    is_file_browse = True
+    supported_ui_features = ["file_browser:list"]
     is_process_list = False
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = LsArguments
-    attackmapping = []
+    attackmapping = ["T1106", "T1083"]
     browser_script = BrowserScript(script_name="ls", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        host = task.args.get_arg("host")
+        path = task.args.get_arg("path")
+        if host:
+            task.display_params = "{} on {}".format(path, host)
+        else:
+            task.display_params = path
         return task
 
     async def process_response(self, response: AgentResponse):

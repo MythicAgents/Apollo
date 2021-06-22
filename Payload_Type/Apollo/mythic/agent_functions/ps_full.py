@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,16 +19,16 @@ class PsFullCommand(CommandBase):
     needs_admin = False
     help_cmd = "ps_full"
     description = "Get a process listing with verbose details."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
-    is_process_list = True
+    supported_ui_features = ["process_browser:list"]
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsFullArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
     browser_script = BrowserScript(script_name="ps_full", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

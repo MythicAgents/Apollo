@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -57,7 +57,7 @@ class RegWriteValueBase(CommandBase):
     needs_admin = False
     help_cmd = "reg_write_value [key] [value_name] [new_value]"
     description = "Write a new value to the [value_name] value under the specified registry key [key].\n\nEx: reg_write_value HKLM:\\ '' 1234"
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -66,7 +66,7 @@ class RegWriteValueBase(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = RegWriteValueArguments
-    attackmapping = []
+    attackmapping = ["T1547", "T1037", "T1546", "T1574", "T1112", "T1003"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

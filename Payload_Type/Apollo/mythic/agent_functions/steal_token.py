@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -25,7 +25,7 @@ class StealTokenCommand(CommandBase):
     needs_admin = False
     help_cmd = "steal_token [pid]"
     description = "Steal a primary token from another process. If no arguments are provided, this will default to winlogon.exe."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -34,7 +34,7 @@ class StealTokenCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = StealTokenArguments
-    attackmapping = []
+    attackmapping = ["T1134", "T1528"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

@@ -38,14 +38,14 @@ function(task, response){
                     .replace(/'/g, "&#039;");
             }
             var additionalInfo = {
-                "integrity_level": support_scripts['apollo_integrity_level_to_string'](data[j]["integrity_level"]),
-                "file_path": data[j]["file_path"],
+                "integrity_level": support_scripts['apollo_integrity_level_to_string'](data[j]["integrity_level_string"]),
+                "file_path": data[j]["bin_path"],
                 "command_line": data[j]["command_line"],
                 "session": session,
-                "name": data[j]["process_name"],
+                "name": data[j]["name"],
                 "pid": data[j]['process_id']
             };
-            var integrityLevel = escapeHTML(support_scripts['apollo_integrity_level_to_string'](data[j]["integrity_level"]));
+            var integrityLevel = escapeHTML(support_scripts['apollo_integrity_level_to_string'](data[j]["integrity_level_string"]));
             var icon = '';
             if (integrityLevel.includes("HIGH") || integrityLevel.includes("SYSTEM")) {
                 icon = '<i style="color: red; cursor: pointer;" class="fas fa-info-circle" modal-name="' + uniqueName + '" additional-info="' + btoa(JSON.stringify(additionalInfo)) + '" onclick=support_scripts[\"apollo_show_process_additional_info_modal\"](this)></i> ';
@@ -54,11 +54,11 @@ function(task, response){
             }
             rows.push({"pid": data[j]['process_id'],
                        "ppid": ppid,            
-                       "name": icon + data[j]["process_name"],
-                       "arch": data[j]["arch"],
+                       "name": icon + data[j]["name"],
+                       "arch": data[j]["architecture"],
                        "user": data[j]["user"],
                        "description": data[j]["description"],
-                       "company name": data[j]["company_name"],
+                       "company name": data[j]["signer"],
                         //    "type": data['type'],
                             "row-style": row_style,
                             "cell-style": cell_style

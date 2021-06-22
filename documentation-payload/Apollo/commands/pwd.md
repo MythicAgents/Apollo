@@ -16,6 +16,9 @@ Example
 ```
 pwd
 ```
+## MITRE ATT&CK Mapping
+
+- T1083
 
 ## Detailed Summary
 The `pwd` command uses the `System.IO.Directory.GetCurrentDirectory` method to get the current working directory of the agent's process.

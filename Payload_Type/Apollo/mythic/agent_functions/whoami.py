@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class WhoamiCommand(CommandBase):
     needs_admin = False
     help_cmd = "whoami"
     description = "Get the username associated with your current thread token."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -28,7 +28,7 @@ class WhoamiCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = WhoamiArguments
-    attackmapping = []
+    attackmapping = ["T1033"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

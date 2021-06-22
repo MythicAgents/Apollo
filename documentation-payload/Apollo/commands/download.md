@@ -34,6 +34,13 @@ When the download completes, clicking the link will automatically download the f
 
 ![download2](../images/download02.png)
 
+
+## MITRE ATT&CK Mapping
+
+- T1020
+- T1030
+- T1041
+
 ## Detailed Summary
 The `download` command uses a `FileStream` to collect `512KB` chunks of a file  as `Base64` strings and send each chunk back to the Mythic server to download a specified file. Files downloaded from agents are available for download from the Mythic server by navigating to `Operational Views` -> `Files`. Specifying a file name without a full path will search for the file in the current working directory. UNC paths are also acceptable for downloads.
 

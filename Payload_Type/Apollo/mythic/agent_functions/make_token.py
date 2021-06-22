@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -21,7 +21,7 @@ class MakeTokenCommand(CommandBase):
     needs_admin = False
     help_cmd = "make_token (modal popup)"
     description = "Creates a new logon session and applies it to the agent. Modal popup for options. Credentials must be populated in the credential store."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -30,9 +30,11 @@ class MakeTokenCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = MakeTokenArguments
-    attackmapping = []
+    attackmapping = ["T1134"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        cred = task.args.get_arg("credential")
+        task.display_params = "{}\\{} {}".format(cred['realm'], cred['account'], cred['credential'])
         return task
 
     async def process_response(self, response: AgentResponse):

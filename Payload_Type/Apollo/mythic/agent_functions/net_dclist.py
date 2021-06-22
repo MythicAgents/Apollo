@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -26,7 +26,7 @@ class NetDCListCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = NetDCListArguments
-    attackmapping = []
+    attackmapping = ["T1590"]
     browser_script = BrowserScript(script_name="net_dclist", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

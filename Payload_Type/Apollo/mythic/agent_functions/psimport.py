@@ -1,7 +1,7 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
-from MythicFileRPC import *
-
+from mythic_payloadtype_container.MythicRPC import *
+import base64
 
 class PsImportArguments(TaskArguments):
 
@@ -25,7 +25,7 @@ class PsImportCommand(CommandBase):
     needs_admin = False
     help_cmd = "psimport (modal popup)"
     description = """Register a PowerShell script to import on subsequent execution in `powerpick`/`psinject`/`powershell` commands. Can import more than one script (e.g., PowerView and PowerUp can both be loaded simultaneously.) To clear the script imports, use `psclear`."""
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -34,17 +34,22 @@ class PsImportCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsImportArguments
-    attackmapping = []
+    attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['PowerShell Script']
-        resp = await MythicFileRPC(task).register_file(task.args.get_arg("file"), saved_file_name=original_file_name)
+        resp = await MythicRPC().execute("create_file",
+                                         task_id=task.id,
+                                         file=base64.b64encode(task.args.get_arg("file")).decode(),
+                                         saved_file_name=original_file_name,
+                                         delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("file_id", resp.agent_file_id)
+            task.args.add_arg("file_id", resp.response['agent_file_id'])
             task.args.remove_arg("file")
             task.args.add_arg("file_name", original_file_name)
         else:
-            raise Exception(f"Failed to host file: {resp.error_message}")
+            raise Exception(f"Failed to host file: {resp.error}")
+        task.display_params = original_file_name
         return task
 
     async def process_response(self, response: AgentResponse):

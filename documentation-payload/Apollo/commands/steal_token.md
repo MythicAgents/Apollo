@@ -21,5 +21,11 @@ Example
 steal_token 1234
 ```
 
+
+## MITRE ATT&CK Mapping
+
+- T1134
+- T1528
+
 ## Detailed Summary
 The `steal_token` command uses the `DuplicateTokenEx` Windows API to attempt to clone a process's primary access token and use this handle as the current thread's access token.

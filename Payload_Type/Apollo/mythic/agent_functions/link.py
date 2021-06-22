@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -22,7 +22,7 @@ class LinkCommand(CommandBase):
     needs_admin = False
     help_cmd = "link"
     description = "Link to a new agent on a remote host or re-link back to a specified callback that's been unlinked via the `unlink` commmand."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -31,7 +31,7 @@ class LinkCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = LinkArguments
-    attackmapping = []
+    attackmapping = ["T1570", "T1572", "T1021"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

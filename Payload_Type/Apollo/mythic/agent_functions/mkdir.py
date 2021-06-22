@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -23,7 +23,7 @@ class MkdirCommand(CommandBase):
     needs_admin = False
     help_cmd = "mkdir [path]"
     description = "Make a directory specified by [path]"
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -32,7 +32,7 @@ class MkdirCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = MkdirArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

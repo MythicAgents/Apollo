@@ -23,5 +23,9 @@ This process listing also integrates with Mythic's process explorer as seen belo
 
 ![process explorer](../images/ps_full03.png)
 
+## MITRE ATT&CK Mapping
+
+- T1106
+
 ## Detailed Summary
 The `ps_full` command uses the `System.Diagnostics.Process.GetProcesses` method to collect information about running processes including process id, parent process id, process name, user running the process, architecture, integrity level, description, developer name, session id, command line arguments, file path, and the process window tile.

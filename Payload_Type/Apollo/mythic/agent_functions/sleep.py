@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -29,7 +29,7 @@ class SleepCommand(CommandBase):
     needs_admin = False
     help_cmd = "sleep [seconds] [jitter]"
     description = "Change the implant's sleep interval."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -38,7 +38,7 @@ class SleepCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = SleepArguments
-    attackmapping = []
+    attackmapping = ["T1029"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

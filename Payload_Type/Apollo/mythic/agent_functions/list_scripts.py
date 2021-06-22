@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -18,7 +18,7 @@ class ListScriptsCommand(CommandBase):
     needs_admin = False
     help_cmd = "list_scripts"
     description = "List all registered PowerShell scripts that are imported into any task that executes PowerShell."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

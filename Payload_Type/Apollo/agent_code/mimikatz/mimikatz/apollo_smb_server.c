@@ -20,7 +20,7 @@ __declspec(dllexport) int smb_server_wmain(LPVOID lpUserdata, DWORD nUserdataLen
 {
 	if (nUserdataLen) {
 		DWORD length = 14 + nUserdataLen;
-		DWORD dwErr;
+		DWORD dwErr = 0;
 		LPCSTR namedPipeName = (LPCSTR)malloc(length);
 		//wsprintf(namedPipeName, L"\\\\.\\pipe\\%s", (LPCWSTR)lpUserdata);
 		sprintf_s(namedPipeName, length, "\\\\.\\pipe\\%s", (LPCSTR)lpUserdata);

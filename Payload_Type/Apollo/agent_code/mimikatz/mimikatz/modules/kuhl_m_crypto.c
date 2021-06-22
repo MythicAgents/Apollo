@@ -1,5 +1,5 @@
 /*	Benjamin DELPY `gentilkiwi`
-	http://blog.gentilkiwi.com
+	https://blog.gentilkiwi.com
 	benjamin@gentilkiwi.com
 	Licence : https://creativecommons.org/licenses/by/4.0/
 */
@@ -23,6 +23,7 @@ const KUHL_M_C kuhl_m_c_crypto[] = {
 
 	{kuhl_m_crypto_extract,			L"extract",			L"[experimental] Extract keys from CAPI RSA/AES provider"},
 	{kuhl_m_crypto_keyutil,			L"kutil",			NULL},
+	{kuhl_m_crypto_platforminfo,	L"tpminfo",			NULL},
 };
 
 const KUHL_M kuhl_m_crypto = {
@@ -106,7 +107,6 @@ NTSTATUS kuhl_m_crypto_l_providers(int argc, wchar_t * argv[])
 	kprintf(L"\nCNG providers :\n");
 	__try 
 	{
-
 		if(NT_SUCCESS(BCryptEnumRegisteredProviders(&tailleRequise, &pBuffer)))
 		{
 			for(index = 0; index < pBuffer->cProviders; index++)
@@ -790,7 +790,7 @@ NTSTATUS kuhl_m_crypto_hash(int argc, wchar_t * argv[])
 
 	RtlInitUnicodeString(&uPassword, szPassword);
 	RtlInitUnicodeString(&uUsername, szUsername);
-	if(NT_SUCCESS(RtlDigestNTLM(&uPassword, hash)))
+	if(NT_SUCCESS(RtlCalculateNtOwfPassword(&uPassword, hash)))
 	{
 		kprintf(L"NTLM: "); kull_m_string_wprintf_hex(hash, LM_NTLM_HASH_LENGTH, 0); kprintf(L"\n");
 		if(szUsername)
@@ -821,7 +821,7 @@ NTSTATUS kuhl_m_crypto_hash(int argc, wchar_t * argv[])
 
 	if(NT_SUCCESS(RtlUpcaseUnicodeStringToOemString(&oTmp, &uPassword, TRUE)))
 	{
-		if(NT_SUCCESS(RtlDigestLM(oTmp.Buffer, hash)))
+		if(NT_SUCCESS(RtlCalculateLmOwfPassword(oTmp.Buffer, hash)))
 		{
 			kprintf(L"LM  : "); kull_m_string_wprintf_hex(hash, LM_NTLM_HASH_LENGTH, 0); kprintf(L"\n");
 		}
@@ -928,7 +928,7 @@ NTSTATUS kuhl_m_crypto_system(int argc, wchar_t * argv[])
 		if(PathIsDirectory(infile))
 		{
 			kprintf(L"* Directory: \'%s\'\n", infile);
-			kull_m_file_Find(infile, NULL, FALSE, 0, FALSE, kuhl_m_crypto_system_directory, &isExport);
+			kull_m_file_Find(infile, NULL, FALSE, 0, FALSE, FALSE, kuhl_m_crypto_system_directory, &isExport);
 		}
 		else kuhl_m_crypto_system_directory(0, infile, PathFindFileName(infile), &isExport);
 	}
@@ -1430,6 +1430,42 @@ NTSTATUS kuhl_m_crypto_keyutil(int argc, wchar_t * argv[])
 			LocalFree(pbKey);
 		}
 		else PRINT_ERROR_AUTO(L"kull_m_file_readData(key)");
+	}
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS kuhl_m_crypto_platforminfo(int argc, wchar_t * argv[])
+{
+	SECURITY_STATUS status;
+	NCRYPT_PROV_HANDLE hProvider;
+	DWORD cbPlatformType;
+	LPWSTR PlatformType;
+
+	__try
+	{
+		status = NCryptOpenStorageProvider(&hProvider, MS_PLATFORM_CRYPTO_PROVIDER, 0);
+		if(status == ERROR_SUCCESS)
+		{
+			status = NCryptGetProperty(hProvider, NCRYPT_PCP_PLATFORM_TYPE_PROPERTY, NULL, 0, &cbPlatformType, 0);
+			if(status == ERROR_SUCCESS)
+			{
+				if(PlatformType = (LPWSTR) LocalAlloc(LPTR, cbPlatformType))
+				{
+					status = NCryptGetProperty(hProvider, NCRYPT_PCP_PLATFORM_TYPE_PROPERTY, (PBYTE) PlatformType, cbPlatformType, &cbPlatformType, 0);
+					if(status == ERROR_SUCCESS)
+						kprintf(L"%.*s\n", cbPlatformType / sizeof(wchar_t), PlatformType);
+					else PRINT_ERROR(L"NCryptGetProperty(data): 0x%08x\n", status);
+					LocalFree(PlatformType);
+				}
+			}
+			else PRINT_ERROR(L"NCryptGetProperty(init): 0x%08x\n", status);
+			NCryptFreeObject(hProvider);
+		}
+		else PRINT_ERROR(L"NCryptOpenStorageProvider: 0x%08x\n", status);
+	}
+	__except(GetExceptionCode() == ERROR_DLL_NOT_FOUND)
+	{
+		PRINT_ERROR(L"No CNG?\n");
 	}
 	return STATUS_SUCCESS;
 }

@@ -1,4 +1,5 @@
-from PayloadBuilder import *
+from mythic_payloadtype_container.PayloadBuilder import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import os, fnmatch, tempfile, sys, asyncio
 from distutils.dir_util import copy_tree
 import traceback
@@ -8,6 +9,7 @@ class Apollo(PayloadType):
     name = "Apollo"
     file_extension = "exe"
     author = "@djhohnstein"
+    mythic_encrypts = True
     supported_os = [
         SupportedOS.Windows
     ]
@@ -23,7 +25,7 @@ A fully featured .NET 4.0 compatible training agent.
         "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
         "configuration": BuildParameter(name="configuration", parameter_type=BuildParameterType.ChooseOne, choices=["Release"], default_value="Release", description="Build a payload with or without debugging symbols.")
     }
-    c2_profiles = ["HTTP", "SMBServer"]
+    c2_profiles = ["http", "SMBServer"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
         BrowserScript(script_name="create_table", author="@djhohnstein"),
@@ -66,9 +68,14 @@ A fully featured .NET 4.0 compatible training agent.
         for c2 in self.c2info:
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
-            if profile["name"] == "HTTP":
+            if profile["name"] == "http":
                 for key, val in c2.get_parameters_dict().items():
-                    special_files_map["DefaultProfile.cs"][key] = val
+                    if isinstance(val, dict):
+                        special_files_map["DefaultProfile.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
+                    elif not isinstance(val, str):
+                        special_files_map["DefaultProfile.cs"][key] = json.dumps(val)
+                    else:
+                        special_files_map["DefaultProfile.cs"][key] = val
             elif profile["name"] == "SMBServer":
                 for key, val in c2.get_parameters_dict().items():
                     special_files_map["SMBServerProfile.cs"][key] = val
@@ -131,7 +138,7 @@ A fully featured .NET 4.0 compatible training agent.
                     stdout_err += stdout.decode()
                     stdout_err += stderr.decode()
                     stdout_err += "Done."
-                
+
                     # need to go through one more step to turn our exe into shellcode
                     if self.get_parameter('arch') == "x64" or self.get_parameter('arch') == "Any CPU":
                         command = "{}/donut -f 1 -a 2 {}".format(agent_build_path.name, output_path)
@@ -147,20 +154,23 @@ A fully featured .NET 4.0 compatible training agent.
                     if os.path.exists("{}/loader.bin".format(agent_build_path.name)):
                         resp.payload = open("{}/loader.bin".format(agent_build_path.name), 'rb').read()
                         resp.status = BuildStatus.Success
-                        resp.message = success_message
+                        resp.build_message = success_message
+                        resp.build_stdout = stdout_err
                     else:
                         resp.status = BuildStatus.Error
-                        resp.message = stdout_err
+                        resp.build_message = stdout_err
+                        resp.build_stdout = stdout_err
                         resp.payload = b""
             else:
                 # something went wrong, return our errors
                 resp.status = BuildStatus.Error
                 resp.payload = b""
-                resp.message = stdout_err
+                resp.build_message = stdout_err
+                resp.build_stderr = stdout_err
         except Exception as e:
             resp.payload = b""
             resp.status = BuildStatus.Error
-            resp.message = "Error building payload: " + str(traceback.format_exc())
+            resp.build_message = "Error building payload: " + str(traceback.format_exc())
         return resp
 
 

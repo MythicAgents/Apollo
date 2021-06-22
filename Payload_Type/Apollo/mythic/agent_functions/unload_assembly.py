@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class UnloadAssemblyCommand(CommandBase):
     needs_admin = False
     help_cmd = "unload_assembly [Assembly.exe]"
     description = "Remove an assembly from the list of loaded assemblies."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

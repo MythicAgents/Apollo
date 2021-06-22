@@ -30,4 +30,9 @@ Then enter the key to interrogate.
 Registry Key: [key name]
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1012
+
+
 ![query](../images/reg_query_values.png)

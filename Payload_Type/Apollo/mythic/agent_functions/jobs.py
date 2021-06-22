@@ -1,4 +1,4 @@
-from CommandBase import *
+from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
@@ -19,7 +19,7 @@ class JobsCommand(CommandBase):
     needs_admin = False
     help_cmd = "jobs"
     description = 'List currently executing jobs, excluding the "jobs" and "jobkill" commands.'
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
