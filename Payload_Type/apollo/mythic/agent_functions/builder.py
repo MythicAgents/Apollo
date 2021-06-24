@@ -6,7 +6,7 @@ import traceback
 
 
 class Apollo(PayloadType):
-    name = "Apollo"
+    name = "apollo"
     file_extension = "exe"
     author = "@djhohnstein"
     mythic_encrypts = True
