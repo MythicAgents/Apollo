@@ -24,6 +24,7 @@ pre = "<b>2. </b>"
     * [pth](/agents/apollo/commands/pth/)
     * [dcsync](/agents/apollo/commands/dcsync/)
     * [mimikatz](/agents/apollo/commands/mimikatz/)
+    * [golden_ticket](/agents/apollo/commands/golden_ticket/)
 - User Exploitation
     * [keylog](/agents/apollo/commands/keylog/)
     * [screenshot](/agents/apollo/commands/screenshot/)

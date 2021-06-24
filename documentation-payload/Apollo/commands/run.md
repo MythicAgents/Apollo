@@ -25,6 +25,12 @@ Example
 run ipconfig /all
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1106
+- T1218
+- T1553
+
 ## Detailed Summary
 The `run` command executes the specified binary with any supplied arguments. Any standard output or standard errors are returned to Apollo over an anonymous named pipe to be returned to Mythic.
 

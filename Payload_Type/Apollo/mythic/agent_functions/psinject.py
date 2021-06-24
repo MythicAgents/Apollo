@@ -52,7 +52,7 @@ class PsInjectCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsInjectArguments
-    attackmapping = []
+    attackmapping = ["T1059", "T1055"]
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
@@ -67,7 +67,7 @@ class PsInjectCommand(CommandBase):
         if resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error_message}")
+            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
         task.display_params = "{} {} {}".format(task.args.get_arg("pid"), arch, task.args.get_arg("powershell_params"))
         task.args.remove_arg("arch")
         return task

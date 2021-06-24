@@ -47,7 +47,7 @@ class PsExecCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = PsExecArguments
-    attackmapping = []
+    attackmapping = ["T1588", "T1570"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         temp = await MythicRPC().execute("get_payload", payload_uuid=task.args.get_arg("template"))

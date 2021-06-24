@@ -28,7 +28,7 @@ class WhoamiCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = WhoamiArguments
-    attackmapping = []
+    attackmapping = ["T1033"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

@@ -22,5 +22,10 @@ Example
 cat C:\config.txt
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1081
+- T1106
+
 ## Detailed Summary
 The `cat` command uses the `System.IO.File.ReadAllText` method to create a handle to a specified file and read all the file's contents as a string. After reading, the handle to the file is closed and the gathered file contents are sent back to Mythic.

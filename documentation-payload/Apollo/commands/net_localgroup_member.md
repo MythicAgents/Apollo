@@ -22,5 +22,11 @@ net_localgroup_member [computer] [group]
 
 ![net_localgroup_member command](../images/net_localgroup_member.png)
 
+
+## MITRE ATT&CK Mapping
+
+- T1590
+- T1069
+
 ## Detailed Summary
 The `net_localgroup_member` command uses `NetLocalGroupGetMembers` Windows API to collect information about local group membership on a specified host. This information includes the member's name, group name, SID, if the member is a group and what computer it was collected from.

@@ -20,6 +20,11 @@ printspoofer -c apollo.exe
 A Process Create artifact is generated for this command.
 {{% /notice %}}
 
+
+## MITRE ATT&CK Mapping
+
+- T1547
+
 ## References
 
 - https://github.com/itm4n/PrintSpoofer

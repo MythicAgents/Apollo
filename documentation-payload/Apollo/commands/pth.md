@@ -37,6 +37,10 @@ credential: user - hash
 program: cmd.exe
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1550
+
 ## Detailed Summary
 The `pth` command is a wrapper around the `sekurlsa::pth` mimikatz command and therefore is using the same method and modified mimikatz dll used with the [`mimikatz`](/agents/apollo/commands/mimikatz/) command. This performs a pass-the-hash attack by starting a program as another user with bogus credentials, then patching `lsass.exe` with the provided hash to authenticate as that user on the network. This is similiar in functionality to using the `runas.exe` command with the `/netonly` argument, ultimately creating a `Logon Type 9` logon event on the system.
 

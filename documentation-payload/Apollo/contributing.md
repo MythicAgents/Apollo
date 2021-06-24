@@ -92,3 +92,47 @@ public static Dictionary<string, string> TaskMap = new Dictionary<string, string
     { "newcommand", "NewCommand" },
 #endif
 ```
+
+## Updating Mimikatz
+
+1. Begin by downloading the Mimikatz source for for the version you'd like to target. It is recommended to pull the source code from a [release](https://github.com/gentilkiwi/mimikatz/releases) rather than cloning the repository.
+
+2. Next, back up the following items as they are components which facilitate Apollo's use of Mimikatz.
+    * `Apollo\Payload_Type\Apollo\agent_code\mimikatz\MimikatzInteraction\*`
+    * `Apollo\Payload_Type\Apollo\agent_code\mimikatz\mimikatz\apollo_smb_server.c`
+
+3. After backing up those items, delete the Mimikatz directory, `Apollo\Payload_Type\Apollo\agent_code\mimikatz`, to remove the old version
+
+4. Next, place the updated version of Mimikatz in the location you just deleted, making sure that the name of the directory is `mimikatz` and does not contain any version numbers
+
+5. Replace Apollo's components that were backed up in step 2
+
+6. Open Mimikatz in Visual Studio by double clicking `Apollo\Payload_Type\Apollo\agent_code\mimikatz\mimikatz.sln`
+	* If you do not have the required MFCs, install them via the Visual Studio Installed by selecting `C++ Windows XP Support for VS 2017 (v141) tools [Deprecated]` from the Individual Components menu 
+
+7. In Visual Studio, right click on the `mimikatz` project, choose "Add", click "Existing Item", and select `apollo_smb_server.c` in the file explorer window
+
+8. Right click on the `mimikatz` project again and choose "Properties", expand "C\C++" under "Configuration Properties", and change "Treat Warnings As Errors" to "No"
+
+9. In the Visual Studio menu bar, change the Solution Configuration to "Simple_DLL" and the Architecture to "x64"
+
+10. Compile the `mimikatz` project
+    * This will create `Apollo\Payload_Type\Apollo\agent_code\mimikatz\x64\mimikatz.dll`
+
+11. In the Visual Studio menu bar, change the Architecture to "Win32"
+
+10. Compile the `mimikatz` project again
+    * This will create `Apollo\Payload_Type\Apollo\agent_code\mimikatz\Win32\mimikatz.dll`
+
+11. Replace the existing Mimikatz DLLs with the newly created ones, making sure to update the names to match their architecture
+	* `mimikatz\x64\mimikatz.dll` -> `Apollo\agent_code\mimikatz_x64.dll`
+	* `mimikatz\Win32\mimikatz.dll` -> `Apollo\agent_code\mimikatz_x86.dll`
+
+12. Commit your changes to your development branch/fork
+
+13. Reinstall Apollo using your development branch with `mythic-cli`
+	* `sudo ./mythic-cli install github <url> <branch>`
+
+14. After reinstalling Apollo, create a new payload through the Mythic web UI with at least the `exit` and `mimikatz` modules loaded and deploy it on a testing host
+
+15. Run the `mimikatz` command with any module and validate that the compile time was updated in the banner

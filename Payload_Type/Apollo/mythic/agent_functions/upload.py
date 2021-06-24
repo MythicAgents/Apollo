@@ -47,7 +47,7 @@ class UploadCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = UploadArguments
-    attackmapping = []
+    attackmapping = ["T1132", "T1030", "T1105"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['File']
@@ -59,7 +59,7 @@ class UploadCommand(CommandBase):
             task.args.add_arg("file", resp.response['agent_file_id'])
             task.args.add_arg("file_name", original_file_name)
         else:
-            raise Exception(f"Failed to host file: {resp.error_message}")
+            raise Exception(f"Failed to host file: {resp.error}")
         host = task.args.get_arg("host")
         path = task.args.get_arg("path")
         disp_str = ""

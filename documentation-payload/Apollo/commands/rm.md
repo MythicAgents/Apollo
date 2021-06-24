@@ -21,6 +21,11 @@ Example
 rm C:\config.txt
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1106
+- T1107
+
 ## Detailed Summary
 The `rm` command uses the `System.IO.File.Delete` method to attempt to delete a specified file.
 

@@ -63,7 +63,7 @@ class MvCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = MvArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = "{} {}".format(task.args.get_arg("source"), task.args.get_arg("destination"))

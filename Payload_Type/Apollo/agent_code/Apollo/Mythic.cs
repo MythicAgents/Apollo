@@ -66,6 +66,7 @@ namespace Mythic
             public string realm; // the domain
             public string credential; // the password
             public string account; // the username
+            public string comment;
 
             public MythicCredential(bool tmp = false)
             {
@@ -73,6 +74,7 @@ namespace Mythic
                 realm = "";
                 credential = "";
                 account = "";
+                comment = "";
             }
         }
 
@@ -128,17 +130,19 @@ namespace Mythic
         public struct ProcessEntry
         {
             public int process_id;
-            public string process_name;
+            public string name;
             public int parent_process_id;
             public string user;
-            public string arch;
-            public string integrity_level;
+            public string architecture;
+            public int integrity_level;
+            public string integrity_level_string;
             public string description;
-            public string company_name;
+            public string signer;
             public int session;
             public string command_line;
-            public string file_path;
+            public string bin_path;
             public string window_title;
+            public string start_time;
         }
 
         public struct FileBrowserResponse

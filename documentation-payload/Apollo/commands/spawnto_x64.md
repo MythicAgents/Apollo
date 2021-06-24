@@ -20,6 +20,10 @@ Optional arguments to pass to the spawned binary.
 spawnto_x64 [path] [args]
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1055
+
 ## Detailed Summary
 The `spawnto_x64` command allows specifying what binary to spawn for taskings that use Apollo's fork and run post exploitation architecture.
 

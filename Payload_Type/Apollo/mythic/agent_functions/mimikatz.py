@@ -41,7 +41,7 @@ class MimikatzCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = MimikatzArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1134", "T1098", "T1547", "T1555", "T1003", "T1207", "T1558", "T1552", "T1550"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         dllFile = path.join(self.agent_code_path, f"mimikatz_{task.callback.architecture}.dll")
@@ -54,7 +54,7 @@ class MimikatzCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error_message)
+            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error)
         task.display_params = task.args.get_arg("command")
         return task
 

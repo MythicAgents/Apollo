@@ -21,6 +21,10 @@ Example
 mkdir C:\config
 ```
 
+## MITRE ATT&CK Mapping
+
+- T1106
+
 ## Detailed Summary
 The `mkdir` command uses the `System.IO.Directory.CreateDirectory` method to attempt to create a directory if the it does not already exist.
 

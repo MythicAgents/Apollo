@@ -37,7 +37,7 @@ class killCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = KillArguments
-    attackmapping = []
+    attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = task.args.get_arg("pid")

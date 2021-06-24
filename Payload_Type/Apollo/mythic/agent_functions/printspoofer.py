@@ -37,7 +37,7 @@ class PrintSpooferCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PrintSpooferArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-    attackmapping = []
+    attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         dllFile = path.join(self.agent_code_path, f"PrintSpoofer_{task.callback.architecture}.dll")
@@ -50,7 +50,7 @@ class PrintSpooferCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register PrintSpoofer DLL: " + file_resp.error_message)
+            raise Exception("Failed to register PrintSpoofer DLL: " + file_resp.error)
         task.display_params = task.args.get_arg("command")
         return task
 
