@@ -7,7 +7,7 @@ To install Apollo, you'll need Mythic installed on a remote computer. You can fi
 
 From the Mythic install root, run the command:
 
-`./install_agent_from_github.sh https://github.com/MythicAgents/Apollo`
+`./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git`
 
 Once installed, restart Mythic to build a new agent.
 
@@ -87,7 +87,7 @@ whoami | `whoami` | Report access token for local and remote operations.
 
 ## Supported C2 Profiles
 
-Currently, only two C2 profiles are available to use when creating a new Apollo agent: HTTP and SMB.
+Currently, only two C2 profiles are available to use when creating a new Apollo agent: http and SMB.
 
 ### HTTP Profile
 
