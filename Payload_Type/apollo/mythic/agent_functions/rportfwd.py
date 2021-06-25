@@ -1,10 +1,11 @@
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from mythic_payloadtype_container.MythicRPC import *
+from time import sleep
 
 class PortFwdArguments(TaskArguments):
 
-    valid_actions = ["start", "stop","list"]
+    valid_actions = ["start", "stop","list", "flush"]
 
     def __init__(self, command_line):
         super().__init__(command_line)
@@ -16,31 +17,39 @@ class PortFwdArguments(TaskArguments):
         }
 
     async def parse_arguments(self):
-        if self.command_line[0] != "{":
-            raise Exception("Require JSON blob, but got raw command line.")
-        if len(self.command_line) == 0:
-            raise Exception("Must be passed \"start\",\"stop\",\"list\" or \"flush\" commands on the command line.")
         try:
             self.load_args_from_json_string(self.command_line)
         except:
             parts = self.command_line.lower().split()
             action = parts[0]
-            port = parts[1]
-            rport = parts[2]
-            rip = parts[3]
+            if action not in self.valid_actions:
+                raise Exception("Invalid action specfiied. Got {}, but must be one of {}".format(action, ", ".join(self.valid_actions)))
             if action not in self.valid_actions:
                 raise Exception("Invalid action \"{}\" given. Require one of: {}".format(action, ", ".join(self.valid_actions)))
             self.add_arg("action", action)
             if action == "start":
-                if port == "":
-                    raise Exception("Invalid Port number given: {}. Must be int.".format(parts[1]))
-                if rport == "":
-                    raise Exception("Invalid Remot Port number given: {}. Must be int.".format(parts[1]))
-                if rip == "":
-                    raise Exception("Invalid Remot IP given: {}. Must be int.".format(parts[1]))
+                if len(parts) != 4:
+                    raise Exception("Invalid command line given for 'rportfwd start'. Must be of the form 'start [local_port] [remote_port] [remote_ip]")
+                port = parts[1]
+                rport = parts[2]
+                rip = parts[3]
+                try:
+                    self.add_arg("port", int(port))
+                except:
+                    raise Exception("Invalid port number specified. Expected int, but got: {}".format(port))
+                try:
+                    self.add_arg("rport", int(rport))
+                except:
+                    raise Exception("Invalid remote port number specified. Expected int, but got: {}".format(rport))
+                
+                self.add_arg("rip", rip)
             if action == "stop":
-                if port == "":
-                    raise Exception("Invalid Port number given: {}. Must be int.".format(parts[1]))
+                if len(parts) != 2:
+                    raise Exception("Invalid command line for 'rportfwd stop'. Must be of the form 'stop [local_port]'")
+                try:
+                    self.add_arg("port", int(parts[1]))
+                except:
+                    raise Exception("Invalid port number specified. Expected int, but got: {}".format(parts[1]))
 
 
 class PortFwdCommand(CommandBase):
@@ -61,29 +70,37 @@ class PortFwdCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         resp = ""
-        if task.args.get_arg("action") == "start":
-            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,start=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
-        if task.args.get_arg("action") == "stop":
-            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,stop=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
+        action = task.args.get_arg("action")
+        local_port = task.args.get_arg("port")
+        remote_port = task.args.get_arg("rport")
+        remote_ip = task.args.get_arg("rip")
+        display_str = ""
+        if action == "start":
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,start=True,port=local_port,rport=remote_port,rip=remote_ip)
+            display_str = "{} {} {} {}".format(action, local_port, remote_port, remote_ip)
+        elif action == "stop":
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,stop=True,port=local_port,rport=remote_port,rip=remote_ip)
             if resp.status != MythicStatus.Success:
                 #try again
-                resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, stop=True, port=task.args.get_arg("port"),rport=task.args.get_arg("rport"), rip=task.args.get_arg("rip"))
-        if task.args.get_arg("action") == "list":
-            task.display_params = "{}".format(task.args.get_arg("action"))
-            return task
-        if task.args.get_arg("action") == "flush":
-            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,flush=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
+                sleep(1)
+                resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, stop=True, port=local_port,rport=remote_port, rip=remote_ip)
+                if resp.status != MythicStatus.Success:
+                    raise Exception("Failed to stop port forwarding service on port {}".format(local_port))
+            display_str = "{} {}".format(action, local_port)
+        elif action == "list":
+            display_str = "{}".format(action)
+        elif action == "flush":
+            resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,flush=True,port=local_port,rport=remote_port,rip=remote_ip)
             if resp.status != MythicStatus.Success:
                 #try again
-                resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, flush=True,port=task.args.get_arg("port"), rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
-        if resp.status == MythicStatus.Success:
-            if task.args.get_arg("action") == "start" or task.args.get_arg("action") == "stop":
-                task.display_params = "{}, local port: {}, remote port: {}, remote ip: {}".format(task.args.get_arg("action"),task.args.get_arg("port"), task.args.get_arg("rport"),task.args.get_arg("rip"))
-            if task.args.get_arg("action") == "flush":
-                task.display_params = "{}".format(task.args.get_arg("action"))
-            return task
+                sleep(1)
+                resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, flush=True,port=local_port, rport=remote_port,rip=remote_ip)
+                if resp.status != MythicStatus.Success:
+                    raise Exception("Failed to flush port forwarding service on port {}".format(local_port))
+            display_str = "{}".format(action)
         else:
-            task.status = MythicStatus.Error
+            raise Exception("Unexpected code path. Action must be one of start, stop, list, or flush, but got: {}".format(action))
+        task.display_params = display_str
         return task
 
     async def process_response(self, response: AgentResponse):
