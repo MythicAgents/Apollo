@@ -77,6 +77,8 @@ class PortFwdCommand(CommandBase):
         display_str = ""
         if action == "start":
             resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,start=True,port=local_port,rport=remote_port,rip=remote_ip)
+            if resp.status != MythicStatus.Success:
+                raise Exception("Failed to start rportfwd server on {}: {}".format(local_port, resp.error))
             display_str = "{} {} {} {}".format(action, local_port, remote_port, remote_ip)
         elif action == "stop":
             resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,stop=True,port=local_port,rport=remote_port,rip=remote_ip)
@@ -85,7 +87,7 @@ class PortFwdCommand(CommandBase):
                 sleep(1)
                 resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, stop=True, port=local_port,rport=remote_port, rip=remote_ip)
                 if resp.status != MythicStatus.Success:
-                    raise Exception("Failed to stop port forwarding service on port {}".format(local_port))
+                    raise Exception("Failed to stop port forwarding service on port {}: {}".format(local_port, resp.error))
             display_str = "{} {}".format(action, local_port)
         elif action == "list":
             display_str = "{}".format(action)
@@ -96,7 +98,7 @@ class PortFwdCommand(CommandBase):
                 sleep(1)
                 resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, flush=True,port=local_port, rport=remote_port,rip=remote_ip)
                 if resp.status != MythicStatus.Success:
-                    raise Exception("Failed to flush port forwarding service on port {}".format(local_port))
+                    raise Exception("Failed to flush port forwarding service on port {}: {}".format(local_port, resp.error))
             display_str = "{}".format(action)
         else:
             raise Exception("Unexpected code path. Action must be one of start, stop, list, or flush, but got: {}".format(action))
