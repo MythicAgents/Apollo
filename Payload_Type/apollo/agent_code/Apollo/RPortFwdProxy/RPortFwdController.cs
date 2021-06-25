@@ -126,24 +126,27 @@ namespace Apollo.RPortFwdProxy
         public static PortFwdDatagram[] GetMythicMessagesFromQueue()
         {
             PortFwdDatagram[] default_struct = null;
-	    try{
+	        try{
             //PortFwdDatagram message = new PortFwdDatagram() { s = value, length = value.Length };
                 if (exited == false)
                 {
 
-                    Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>> message = new Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>>();
-                    List<string> forwards = null;
-		    forwards = new List<string>(proxyConnectionMap.Keys);
+                    PortFwdDatagram message = new PortFwdDatagram();
+                    Dictionary<string, PortIpRelationDatagram> dict_messages = new Dictionary<string, PortIpRelationDatagram>();
 
-		    foreach (string entry in forwards)
+                    List<string> forwards = null;
+		            forwards = new List<string>(proxyConnectionMap.Keys);
+
+		            foreach (string entry in forwards)
                     {
-                        Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> specDatagram = proxyConnectionMap[entry].GetMessagesBack();
-                        message[entry] = specDatagram;
+                        PortIpRelationDatagram specDatagram = proxyConnectionMap[entry].GetMessagesBack();
+                        dict_messages[entry] = specDatagram;
 
                     }
+                    message.data = dict_messages;
                     default_struct = new PortFwdDatagram[1];
-                    default_struct[0] = new PortFwdDatagram() { data = message };
-		    return default_struct;
+                    default_struct[0] = message;
+		            return default_struct;
                 }
                 default_struct = new PortFwdDatagram[1];
                 default_struct[0] = new PortFwdDatagram();
@@ -170,7 +173,7 @@ namespace Apollo.RPortFwdProxy
 			//iterate over dictionary dg
                         //for each localport in dictionary, send the rest to the respective to proxyConnectionMap
                         //data will be processed inside ProxyConnection object
-                    foreach(KeyValuePair<string, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>> entry in curMsg.data)
+                    foreach(KeyValuePair<String, PortIpRelationDatagram> entry in curMsg.data)
                     {
 	                if (proxyConnectionMap.ContainsKey(entry.Key))
 		        {

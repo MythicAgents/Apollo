@@ -490,8 +490,15 @@ namespace Mythic.C2Profiles
                 if (resp.rportfwds != null)
                 {
                     response.PortFwdDg = new PortFwdDatagram[1];
-                    response.PortFwdDg[0].data = JsonConvert.DeserializeObject<Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>>>(resp.rportfwds[0]);
 
+                    try{
+                        response.PortFwdDg[0] = JsonConvert.DeserializeObject<PortFwdDatagram>(resp.rportfwds[0]);
+                    }catch(Exception ex){
+                        using (StreamWriter writetext = new StreamWriter("C:\\Temp\\logEx.txt", true))
+                        {
+                            writetext.WriteLine(ex.ToString());
+                        }
+                    }
 		}
             }
 	    response.Delegates = finalDelegateMessageList.ToArray();
