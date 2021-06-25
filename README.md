@@ -7,7 +7,7 @@ To install Apollo, you'll need Mythic installed on a remote computer. You can fi
 
 From the Mythic install root, run the command:
 
-`./install_agent_from_github.sh https://github.com/MythicAgents/Apollo`
+`./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git`
 
 Once installed, restart Mythic to build a new agent.
 
@@ -34,6 +34,7 @@ exit | `exit` | Exit a callback.
 get_current_injection_technique | `get_current_injection_technique` | Show the current injection technique used in postex jobs.
 getprivs | `getprivs` | Enable as many privileges as possible for the current access token.
 inject | `inject` | Inject a new payload into a remote process.
+golden_ticket | `golden_ticket` | Forge a golden/silver ticket using Mimikatz.
 jobkill | `jobkill [jid]` | Kill a running job in the agent.
 jobs | `jobs` | List all running jobs.
 keylog | `keylog [pid] [arch]` | Inject a keylogger into a remote process.
@@ -86,7 +87,7 @@ whoami | `whoami` | Report access token for local and remote operations.
 
 ## Supported C2 Profiles
 
-Currently, only two C2 profiles are available to use when creating a new Apollo agent: HTTP and SMB.
+Currently, only two C2 profiles are available to use when creating a new Apollo agent: http and SMB.
 
 ### HTTP Profile
 
@@ -172,7 +173,12 @@ There's a number of niceities that come with pairing an agent to Mythic - too ma
 
 A big thanks goes to those who have contributed to the project in both major and minor ways.
 
-- @its-a-feature
-- @tifkin
-- @rezn0k
-- @thiagomayllart
+- Cody Thomas, [@its_a_feature_](https://twitter.com/its_a_feature_)
+- Calvin Hedler, [@001SPARTaN](https://twitter.com/001spartan)
+- Lee Christensen, [@tifkin_](https://twitter.com/tifkin_)
+- Brandon Forbes, [@reznok](https://twitter.com/rezn0k)
+- Thiago Mayllart, [@thiagomayllart](https://twitter.com/thiagomayllart)
+- Matt Hand, [@matterpreter](https://twitter.com/matterpreter)
+- Hope Walker, [@IceMoonHSV](https://twitter.com/IceMoonHSV)
+- Jack Ullrich, [@winternl_t](https://twitter.com/winternl_t)
+- Elad Shamir, [@elad_shamir](https://twitter.com/elad_shamir)
