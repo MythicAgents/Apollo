@@ -306,15 +306,28 @@ namespace Mythic
             public string data;
         }
 
+
         public struct PortFwdDatagram
         {
-            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<int,String>>>>> data;
+            public Dictionary<string, PortIpRelationDatagram> data {get;set;}
         }
 
-        public struct PortSpecificDatagram
+
+        public struct PortIpRelationDatagram
         {
-            public Dictionary<String,Dictionary<String,Dictionary<String,Dictionary<int,String>>>> data;
+            public Tuple<String,String,ConnectionPacketsRelationDatagram> connection_packet_relation_dtg {get;set;}
         }
+
+        public struct ConnectionPacketsRelationDatagram
+        {
+            public Dictionary<String, ConnectionPacketNumRelationDatagram> conn_packets_relation {get;set;}
+        }
+
+        public struct ConnectionPacketNumRelationDatagram
+        {
+            public Dictionary<int, String> packetid_value_relation {get;set;}
+        }
+
 
         internal struct FileBrowserParameters
         {

@@ -16,6 +16,8 @@ class PortFwdArguments(TaskArguments):
         }
 
     async def parse_arguments(self):
+        if self.command_line[0] != "{":
+            raise Exception("Require JSON blob, but got raw command line.")
         if len(self.command_line) == 0:
             raise Exception("Must be passed \"start\",\"stop\",\"list\" or \"flush\" commands on the command line.")
         try:
@@ -67,6 +69,7 @@ class PortFwdCommand(CommandBase):
                 #try again
                 resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, stop=True, port=task.args.get_arg("port"),rport=task.args.get_arg("rport"), rip=task.args.get_arg("rip"))
         if task.args.get_arg("action") == "list":
+            task.display_params = "{}".format(task.args.get_arg("action"))
             return task
         if task.args.get_arg("action") == "flush":
             resp = await MythicRPC().execute("control_rportfwd",task_id=task.id,flush=True,port=task.args.get_arg("port"),rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
@@ -74,6 +77,10 @@ class PortFwdCommand(CommandBase):
                 #try again
                 resp = await MythicRPC().execute("control_rportfwd", task_id=task.id, flush=True,port=task.args.get_arg("port"), rport=task.args.get_arg("rport"),rip=task.args.get_arg("rip"))
         if resp.status == MythicStatus.Success:
+            if task.args.get_arg("action") == "start" or task.args.get_arg("action") == "stop":
+                task.display_params = "{}, local port: {}, remote port: {}, remote ip: {}".format(task.args.get_arg("action"),task.args.get_arg("port"), task.args.get_arg("rport"),task.args.get_arg("rip"))
+            if task.args.get_arg("action") == "flush":
+                task.display_params = "{}".format(task.args.get_arg("action"))
             return task
         else:
             task.status = MythicStatus.Error

@@ -147,69 +147,68 @@ namespace Apollo.RPortFwdProxy.Classes
             }catch{ }
         }
 
-        public void AddDatagramToQueueProx(Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> msgs)
+        public void AddDatagramToQueueProx(PortIpRelationDatagram msgs)
         {
             try{//KeyValuePair<string, ProxyConnection> entry
-                foreach (KeyValuePair<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> rport_dict in msgs)
+                Dictionary<String, ConnectionPacketNumRelationDatagram> dict_conn = msgs.connection_packet_relation_dtg.Item3.conn_packets_relation;
+                foreach(KeyValuePair<String, ConnectionPacketNumRelationDatagram> entry_conn in dict_conn)
                 {
-                    foreach(KeyValuePair<String, Dictionary<String, Dictionary<int,String>>> rip_dict in rport_dict.Value)
+                    if (!operatorMapQueue.ContainsKey(entry_conn.Key))
                     {
-                        foreach(KeyValuePair<String, Dictionary<int,String>> entry in rip_dict.Value)
-                        {
-                            if (!operatorMapQueue.ContainsKey(entry.Key))
-                            {
-                                operatorMapQueue[entry.Key] = new Queue<String>();
-	                    }
+                        operatorMapQueue[entry_conn.Key] = new Queue<String>();
+	                }
+	                string operatorId = entry_conn.Key;
+                    Dictionary<int,String> dict_conn2 = entry_conn.Value.packetid_value_relation;
+                    foreach(KeyValuePair<int, String> entry_packet in dict_conn2)
+                    {
 
-                            string operatorId = entry.Key;
-                            foreach(KeyValuePair<int, String> base64data in entry.Value)
+			            lock(syncMapQueue){
+				            operatorMapQueue[entry_conn.Key].Enqueue(entry_packet.Value);
+                            if(entry_packet.Key == -1)
                             {
-			        lock(syncMapQueue){
-				    operatorMapQueue[entry.Key].Enqueue(base64data.Value);
-                                    if(base64data.Key == -1)
-                                    {
-                                        reconSignal = true;
-                                        last_msg = 0;
-                                    }
+                                reconSignal = true;
+                                last_msg = 0;
+                            }
+                        }
+
 			        }
 			    }
-			}
-		    }
-		}
-	    }catch{}
+	        }catch{}
         }
 
 
         // TODO
-        public Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> GetMessagesBack()
+        public PortIpRelationDatagram GetMessagesBack()
         {
-            Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>> temp_dict1 = new Dictionary<String, Dictionary<String, Dictionary<String, Dictionary<int,String>>>>();
+            PortIpRelationDatagram tuple_rport_ip = new PortIpRelationDatagram();
             try{
-	        Dictionary<String, Dictionary<String, Dictionary<int,String>>> temp_dict3 = new Dictionary<String, Dictionary<String, Dictionary<int,String>>>();
-                Dictionary<String, Dictionary<int, String>> temp_dict2 = new Dictionary<String, Dictionary<int,String>>();
 
-	        List<string> operators = new List<string>(operatorMapConn.Keys);
+	            List<string> operators = new List<string>(operatorMapConn.Keys);
+                ConnectionPacketsRelationDatagram conn_operators = new ConnectionPacketsRelationDatagram();
+                conn_operators.conn_packets_relation = new Dictionary<String, ConnectionPacketNumRelationDatagram>();
 
-	        foreach (string entry in operators)
+
+	            foreach (string entry in operators)
                 {
-	            string operatorId = entry;
-		    Dictionary<int,String> msgs = new Dictionary<int,String>();
-	            if (messages_back.ContainsKey(entry)){
+	                string operatorId = entry;
+	                ConnectionPacketNumRelationDatagram msgs = new ConnectionPacketNumRelationDatagram();
+                    msgs.packetid_value_relation = new Dictionary<int, String>();
+	                if (messages_back.ContainsKey(entry)){
                         lock(syncMapMsg){
                             while(messages_back[entry].Count > 0)
-		            {
-				msgs[last_msg] = messages_back[entry].Dequeue();
+		                    {
+				                msgs.packetid_value_relation[last_msg] = messages_back[entry].Dequeue();
                                 last_msg = last_msg + 1;
+		                   }
+			            }
+		                conn_operators.conn_packets_relation[operatorId] = msgs;
 		            }
-			}
-		        temp_dict2[operatorId] = msgs;
-		    }
                 }
+                tuple_rport_ip.connection_packet_relation_dtg = new Tuple<string, string, ConnectionPacketsRelationDatagram>(RemotePort, RemoteIp, conn_operators);
 
-                temp_dict3[RemoteIp] = temp_dict2;
-                temp_dict1[RemotePort] = temp_dict3;
-	    }catch {}
-            return temp_dict1;
+
+	        }catch {}
+            return tuple_rport_ip;
         }
 
         public void ReadFromTarget(string oper)
