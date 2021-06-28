@@ -11,7 +11,7 @@ class BypassuacArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "payload": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["Apollo"], supported_agent_build_parameters={"Apollo": {"output_type": "WinExe"}}),
+            "payload": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["apollo"], supported_agent_build_parameters={"apollo": {"output_type": "WinExe"}}),
             "targetPath": CommandParameter(name="Upload Path", type=ParameterType.String, required=False,
                               description="Where to save the payload on the target machine. Default: %temp%\<uuid>.exe"),
             "targetArgs": CommandParameter(name="Arguments", type=ParameterType.String, required=False,
