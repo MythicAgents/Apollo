@@ -1,8 +1,8 @@
 {
   "username": "mythic_user",
-  "password": "vt8oIwonR95Dc0DBrOK0KXrMTltZmS",
+  "password": "mythic_password",
   "virtual_host": "mythic_vhost",
-  "host": "mythic",
-  "name": "apollo",
-  "container_files_path": "C:\\Development\\Apollo\\Payload_Type\\Apollo\\mythic"
+  "host": "127.0.0.1",
+  "name": "hostname",
+  "container_files_path": "/Mythic/"
 }
