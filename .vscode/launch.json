@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "cwd": "C:/Development/Apollo/Payload_Type/Apollo/mythic"
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
