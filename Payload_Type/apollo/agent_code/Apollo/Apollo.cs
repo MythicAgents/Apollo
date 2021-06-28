@@ -22,7 +22,7 @@ namespace Apollo
     {
 
 #if DEBUG
-        public static string AgentUUID = "7ba536e6-9bd1-48b6-a355-db6e216e05f4";
+        public static string AgentUUID = "b4609e96-7994-42bd-9c5b-32b0782fc613";
 #endif
 
         [STAThread]
@@ -38,7 +38,7 @@ namespace Apollo
             }
             else
             {
-                profile = new DefaultProfile(AgentUUID, "1ZfX2OZu3BK477Shn3XpzD/fRZg3H1k95i4UM9U8CKw=");
+                profile = new DefaultProfile(AgentUUID, "ohlhmQqP1u0pwke9JHDHzheYooqRPbNTDJjZIdQawi8=");
             }
 #else
             DefaultProfile profile = new DefaultProfile();

@@ -9,7 +9,7 @@ class SpawnArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "template": CommandParameter(name="Payload Template (Shellcode)", type=ParameterType.Payload, supported_agents=["Apollo"], supported_agent_build_parameters={"Apollo": {"output_type": "Shellcode"}}),
+            "template": CommandParameter(name="Payload Template (Shellcode)", type=ParameterType.Payload, supported_agents=["apollo"], supported_agent_build_parameters={"apollo": {"output_type": "Shellcode"}}),
         }
 
     async def parse_arguments(self):
