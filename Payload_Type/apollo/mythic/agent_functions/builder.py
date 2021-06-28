@@ -17,9 +17,7 @@ class Apollo(PayloadType):
     wrapper = False
     wrapped_payloads = ["service_wrapper"]
     note = """
-A fully featured .NET 4.0 compatible training agent.
-
-Version: {}
+A fully featured .NET 4.0 compatible training agent. Version: {}
     """.format(version)
     supports_dynamic_loading = True
     build_parameters = {
