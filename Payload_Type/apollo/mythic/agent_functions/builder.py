@@ -73,10 +73,20 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 for key, val in c2.get_parameters_dict().items():
                     if isinstance(val, dict):
                         special_files_map["DefaultProfile.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
-                    elif not isinstance(val, str):
-                        special_files_map["DefaultProfile.cs"][key] = json.dumps(val)
-                    else:
+                    elif isinstance(val, list):
+                        for item in val:
+                            if not isinstance(item, dict):
+                                raise Exception("Expected a list of dictionaries, but got {}".format(type(item)))
+                            if item["key"] == "Host":
+                                special_files_map["DefaultProfile.cs"]["domain_front"] = item["value"]
+                            elif item["key"] == "User-Agent":
+                                special_files_map["DefaultProfile.cs"]["USER_AGENT"] = item["value"]
+                            else:
+                                special_files_map["DefaultProfile.cs"][item["key"]] = item["value"]
+                    elif isinstance(val, str):
                         special_files_map["DefaultProfile.cs"][key] = val
+                    else:
+                        special_files_map["DefaultProfile.cs"][key] = json.dumps(val)
             elif profile["name"] == "SMBServer":
                 for key, val in c2.get_parameters_dict().items():
                     special_files_map["SMBServerProfile.cs"][key] = val
