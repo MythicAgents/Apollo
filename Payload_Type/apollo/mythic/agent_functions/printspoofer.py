@@ -18,7 +18,10 @@ class PrintSpooferArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("No command line given.\n\tUsage: {}".format(PrintSpooferCommand.help_cmd))
-        self.add_arg("command", self.command_line)
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            self.add_arg("command", self.command_line)
         self.add_arg("pipe_name", str(uuid4()))
 
 
