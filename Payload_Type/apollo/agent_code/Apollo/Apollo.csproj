@@ -207,6 +207,9 @@
     <Compile Include="Native\Structures.cs" />
     <Compile Include="Native\Win32Error.cs" />
     <Compile Include="Utils\WMIUtils.cs" />
+    <Compile Include="RPortFwdProxy\RPortFwdController.cs" />
+    <Compile Include="RPortFwdProxy\Classes\ProxyConnection.cs" />
+    <Compile Include="CommandModules\RPortFwd.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
@@ -227,6 +230,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ApolloIcoJPEG.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="RPortFwdProxy\" />
+    <Folder Include="RPortFwdProxy\Classes\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions />

