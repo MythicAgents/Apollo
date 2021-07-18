@@ -5,9 +5,17 @@ Apollo is a Windows agent written in C# using the 4.0 .NET Framework designed to
 ## Installation
 To install Apollo, you'll need Mythic installed on a remote computer. You can find installation instructions for Mythic at the [Mythic project page](https://github.com/its-a-feature/Mythic/).
 
-From the Mythic install root, run the command:
+From the Mythic install directory, use the following command to install Apollo as the **root** user:
 
-`./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git`
+```
+./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git
+```
+
+From the Mythic install directory, use the following command to install Apollo as a **non-root** user:
+
+```
+sudo -E ./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git
+```
 
 Once installed, restart Mythic to build a new agent.
 
