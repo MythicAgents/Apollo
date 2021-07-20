@@ -43,6 +43,9 @@ namespace Apollo
 #else
             DefaultProfile profile = new DefaultProfile();
 #endif
+#elif DNS
+
+            DNSProfile profile = new DNSProfile();
 #elif SMBSERVER
 #if DEBUG
             SMBServerProfile profile = new SMBServerProfile("q5bptea4-2t2v-0e6g-qogh-rmoce5fr6gzq", AgentUUID, "65U+1Y1RXuE2AC7oOyYC7PnWtDdraaECgG6u1wvMpSI=");

