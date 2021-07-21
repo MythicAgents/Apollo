@@ -103,14 +103,19 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     special_files_map["SMBServerProfile.cs"][key] = val
             elif profile["name"] == "SMBClient":
                 pass
-            elif profile["name"] == "dns":
+            if profile["name"] == "dns":
                 for key, val in c2.get_parameters_dict().items():
                     if isinstance(val, dict):
                         special_files_map["DNSProfile.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
-                    elif not isinstance(val, str):
-                        special_files_map["DNSProfile.cs"][key] = json.dumps(val)
+                    elif isinstance(val, list):
+                        for item in val:
+                            if not isinstance(item, dict):
+                                raise Exception("Expected a list of dictionaries, but got {}".format(type(item)))
+                            special_files_map["DNSProfile.cs"][item["key"]] = item["value"]
+                    elif isinstance(val, str):
+                        special_files_map["DNSProfile.cs"][key] = val
                     else:
-                        special_files_map["DNSProfile.cs"][key] = val            
+                        special_files_map["DNSProfile.cs"][key] = json.dumps(val)
             else:
                 raise Exception("Unsupported C2 profile type for Apollo: {}".format(profile["name"]))
         # create the payload
