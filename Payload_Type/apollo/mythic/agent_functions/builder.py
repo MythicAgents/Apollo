@@ -103,7 +103,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     special_files_map["SMBServerProfile.cs"][key] = val
             elif profile["name"] == "SMBClient":
                 pass
-            if profile["name"] == "dns":
+            elif profile["name"] == "dns":
                 for key, val in c2.get_parameters_dict().items():
                     if isinstance(val, dict):
                         special_files_map["DNSProfile.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
