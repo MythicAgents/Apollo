@@ -55,7 +55,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 "encrypted_exchange_check": "",
                 "UUID_HERE": self.uuid,
                 "AESPSK": "",
-            }
+            },
             "DefaultProfile.cs": {
                 "callback_interval": "",
                 "callback_jitter": "",
