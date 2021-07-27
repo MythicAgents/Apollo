@@ -35,11 +35,12 @@ namespace Apollo.RPortFwdProxy.Classes
 
         public bool reconSignal = false;
         public int last_msg = 0;
+        public Dictionary <string,int> next_msg = new Dictionary<string, int>();
         private object syncMapQueue = new Object();
 	private object syncMapMsg = new Object();
 	private object syncMapConn = new Object();
         //public Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>> messages_back = new Dictionary<String,Dictionary<String,Dictionary<String,List<String>>>>();
-        public Dictionary<string, Queue<String>> operatorMapQueue = new Dictionary<string, Queue<String>>();
+        public Dictionary<string, List<Tuple<int, String>>> operatorMapQueue = new Dictionary<string, List<Tuple<int,String>>>();
         public Dictionary<string, Thread> operatorReadQueue = new Dictionary<string, Thread>();
 
         //public Dictionary<string, Object> queueLockerMsgBack = new Dictionary<string, Object>();
@@ -95,56 +96,78 @@ namespace Apollo.RPortFwdProxy.Classes
             try{
                 while (!exited)
                 {
-		    List<string> operators = new List<string>(operatorMapQueue.Keys);
+		            List<string> operators = new List<string>(operatorMapQueue.Keys);
 
-		    while(operators.Count == 0){
+		            while(operators.Count == 0){
                         operators = new List<string>(operatorMapQueue.Keys);
 
-		    }
-		    foreach (string entry in operators)
+		            }
+		            foreach (string entry in operators)
                     {
                         if (operatorMapConn.ContainsKey(entry) == false)
                         {
-			    lock(syncMapConn){
-		                operatorMapConn[entry] = null;
-			        Socket new_operatorconn = null;
-			        operatorMapConn[entry] = initConn();
-			    }
-			    if (operatorMapConn[entry] != null){
+			                lock(syncMapConn){
+		                        operatorMapConn[entry] = null;
+			                    Socket new_operatorconn = null;
+			                    operatorMapConn[entry] = initConn();
+                                next_msg[entry] = 0;
+
+                            }
+			                if (operatorMapConn[entry] != null){
                                 operatorState[entry] = 0;
-      			        Thread thread = new Thread(() => ReadFromTarget(entry));
+      			                Thread thread = new Thread(() => ReadFromTarget(entry));
                                 operatorReadQueue[entry] = thread;
-		                operatorReadQueue[entry].Start();
-			    }
-			}
-			while (operatorMapQueue[entry].Count > 0)
+		                        operatorReadQueue[entry].Start();
+			                }
+			            }
+                        while (operatorMapQueue[entry].Count > 0 && operatorMapQueue[entry].First().Item1 == next_msg[entry])
                         {
                             if (operatorMapConn[entry] != null){
 
-			        string base64data = "";
+			                    string base64data = "";
 
-				lock(syncMapQueue){
-				    base64data = (string)operatorMapQueue[entry].Dequeue();
-				}
+				                lock(syncMapQueue){
+				                    base64data = (string)operatorMapQueue[entry].First().Item2;
+                                    operatorMapQueue[entry].RemoveAt(0);
+                                    next_msg[entry] = next_msg[entry] + 1;
+                                }
 
-			        byte[] data = Convert.FromBase64String(base64data);
+			                    byte[] data = Convert.FromBase64String(base64data);
                                 try{
-			            operatorMapConn[entry].Send(data);
-				    operatorState[entry] = 1;
-				}catch{
+			                        operatorMapConn[entry].Send(data);
+				                    operatorState[entry] = 1;
+				                }catch{
 
-                                        //operatorMapConn[entry].Shutdown(SocketShutdown.Both);
-				        //operatorMapConn[entry].Close();
-				    lock(syncMapConn){
-				        operatorMapConn[entry] = null;
-				    }
-				}
+                                    //operatorMapConn[entry].Shutdown(SocketShutdown.Both);
+				                    //operatorMapConn[entry].Close();
+				                    lock(syncMapConn){
+				                        operatorMapConn[entry] = null;
+				                    }
+				                }
                             }
-			}
+			            }
                     }
                 }
 	    // keep reading from operatorMapQueue and send to operatorMapConn
             }catch{ }
+        }
+
+        public void AddToListInOrder(int key, string packet, string entry_conn_key)
+        {
+            int i = 0;
+            foreach (Tuple<int,String> tp in operatorMapQueue[entry_conn_key])
+            {
+                if (tp.Item1 > key)
+                {
+                    Tuple<int, String> new_tp = new Tuple<int, String>(key, packet);
+                    operatorMapQueue[entry_conn_key].Insert(i,new_tp);
+                    return;
+                }
+                i = i + 1;
+            }
+            Tuple<int, String> new_tp_2 = new Tuple<int, String>(key, packet);
+            operatorMapQueue[entry_conn_key].Insert(i,new_tp_2);
+            return;
         }
 
         public void AddDatagramToQueueProx(PortIpRelationDatagram msgs)
@@ -155,7 +178,7 @@ namespace Apollo.RPortFwdProxy.Classes
                 {
                     if (!operatorMapQueue.ContainsKey(entry_conn.Key))
                     {
-                        operatorMapQueue[entry_conn.Key] = new Queue<String>();
+                        operatorMapQueue[entry_conn.Key] = new List<Tuple<int, String>>();
 	                }
 	                string operatorId = entry_conn.Key;
                     Dictionary<int,String> dict_conn2 = entry_conn.Value.packetid_value_relation;
@@ -163,11 +186,15 @@ namespace Apollo.RPortFwdProxy.Classes
                     {
 
 			            lock(syncMapQueue){
-				            operatorMapQueue[entry_conn.Key].Enqueue(entry_packet.Value);
+                            AddToListInOrder(entry_packet.Key, entry_packet.Value, entry_conn.Key);
+                            //operatorMapQueue[entry_conn.Key].Add(entry_packet.Key,entry_packet.Value);
                             if(entry_packet.Key == -1)
                             {
                                 reconSignal = true;
                                 last_msg = 0;
+                                next_msg[entry_conn.Key] = -1;
+                                operatorMapQueue[entry_conn.Key].Clear();
+                                AddToListInOrder(entry_packet.Key, entry_packet.Value, entry_conn.Key);
                             }
                         }
 
