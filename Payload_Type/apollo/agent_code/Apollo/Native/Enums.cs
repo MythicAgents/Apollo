@@ -26,6 +26,13 @@ namespace Native
         }
 
         [Flags]
+        public enum DuplicateOptions : uint
+        {
+            DuplicateCloseSource = 0x00000001,
+            DuplicateSameAccess = 0x00000002
+        }
+
+        [Flags]
         public enum CreateProcessFlags
         {
             CREATE_BREAKAWAY_FROM_JOB = 0x01000000,
@@ -88,7 +95,8 @@ namespace Native
             PROCESS_VM_READ = 0x0010,
             PROCESS_VM_WRITE = 0x0020,
             SYNCHRONIZE = 0x00100000,
-            PROCESS_ALL_ACCESS = 0x000F0000 | 0x00100000 | 0xFFFF
+            PROCESS_ALL_ACCESS = 0x000F0000 | 0x00100000 | 0xFFFF,
+            MAXIMUM_ALLOWED = 0x02000000
         }
 
         public enum NET_API_STATUS : int

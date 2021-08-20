@@ -131,6 +131,7 @@
     <Compile Include="CommandModules\NetLocalGroup.cs" />
     <Compile Include="CommandModules\NetLocalGroupMember.cs" />
     <Compile Include="CommandModules\NetShares.cs" />
+    <Compile Include="CommandModules\Ppid.cs" />
     <Compile Include="CommandModules\PrintSpoofer.cs" />
     <Compile Include="CommandModules\RegistryManager.cs" />
     <Compile Include="CommandModules\Socks.cs" />
