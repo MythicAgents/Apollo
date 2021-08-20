@@ -340,6 +340,7 @@ namespace Apollo.CommandModules
                 if (!sacrificialProcess.HasExited)
                 {
                     sacrificialProcess.Kill();
+                    job.SetComplete("");
                 }
             }
         }

