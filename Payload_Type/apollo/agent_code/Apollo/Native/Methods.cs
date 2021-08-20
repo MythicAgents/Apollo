@@ -90,7 +90,7 @@ namespace Native
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             String lpCurrentDirectory,
-            ref STARTUPINFOEX lpStartupInfo,
+            ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation
         );
 
@@ -129,7 +129,7 @@ namespace Native
             ProcessCreationFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            STARTUPINFOEX lpStartupInfo,
+            StartupInfoEx lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -157,7 +157,7 @@ namespace Native
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            [In] ref STARTUPINFOEX lpStartupInfo,
+            [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -185,7 +185,7 @@ namespace Native
             ProcessCreationFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            STARTUPINFOEX lpStartupInfo,
+            StartupInfoEx lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
 
@@ -237,7 +237,7 @@ namespace Native
             ProcessCreationFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            [In] ref STARTUPINFOEX lpStartupInfo,
+            [In] ref StartupInfoEx lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -261,7 +261,7 @@ namespace Native
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            [In] ref STARTUPINFOEX lpStartupInfo,
+            [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
 
@@ -290,7 +290,7 @@ namespace Native
             ProcessCreationFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            STARTUPINFOEX lpStartupInfo,
+            StartupInfoEx lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
 
@@ -568,7 +568,7 @@ namespace Native
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            ref STARTUPINFOEX lpStartupInfo,
+            ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
         [DllImport("kernel32.dll", SetLastError = true)]

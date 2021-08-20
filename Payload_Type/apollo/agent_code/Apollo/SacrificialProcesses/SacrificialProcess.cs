@@ -53,7 +53,7 @@ namespace Apollo.SacrificialProcesses
         internal string command { get; private set; }
         private ProcessInformation processInfo = new ProcessInformation();
         private StartupInfo startupInfo = new StartupInfo();
-        private STARTUPINFOEX startupInfoEx = new STARTUPINFOEX();
+        private StartupInfoEx startupInfoEx = new StartupInfoEx();
         private CreateProcessFlags processFlags = CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
         private SecurityAttributes securityAttributes = new SecurityAttributes();
         private readonly ManualResetEvent exited = new ManualResetEvent(false);
@@ -273,7 +273,8 @@ namespace Apollo.SacrificialProcesses
                 StandardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
                 StandardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
 
-                WaitForExitAsync();
+                if (PID != 0)
+                    WaitForExitAsync();
 
                 return bRet;
             }
@@ -401,8 +402,8 @@ namespace Apollo.SacrificialProcesses
             StandardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
             StandardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
             StandardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
-
-            WaitForExitAsync();
+            if (PID != 0)
+                WaitForExitAsync();
 
             return success;
         }

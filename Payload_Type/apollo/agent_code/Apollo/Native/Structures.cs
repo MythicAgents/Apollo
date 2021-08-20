@@ -373,7 +373,7 @@ namespace Native
 
         // This also works with CharSet.Ansi as long as the calling function uses the same character set.
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        public struct STARTUPINFOEX
+        public struct StartupInfoEx
         {
             public StartupInfo StartupInfo;
             public IntPtr lpAttributeList;
