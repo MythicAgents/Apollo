@@ -1,6 +1,10 @@
 #define COMMAND_NAME_UPPER
 
 #if DEBUG
+#undef BLOCKDLLS
+#define BLOCKDLLS
+#undef PPID
+#define PPID
 #undef BYPASSUAC
 #define BYPASSUAC
 #undef CAT
@@ -483,6 +487,12 @@ namespace Apollo
 #endif
 #if PSEXEC
                 { "psexec", "LateralMovement.PSExec" },
+#endif
+#if PPID
+                { "ppid", "Ppid" },
+#endif
+#if BLOCKDLLS
+                { "blockdlls", "BlockDlls" },
 #endif
 
             };

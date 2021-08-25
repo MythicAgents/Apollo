@@ -18,7 +18,11 @@ namespace Native
     {
         #region ADVAPI32
 
+        [DllImport("advapi32.dll", SetLastError = true)]
+        public static extern bool SetSecurityDescriptorDacl(ref SECURITY_DESCRIPTOR sd, bool daclPresent, IntPtr dacl, bool daclDefaulted);
 
+        [DllImport("advapi32.dll", SetLastError = true)]
+        public static extern bool InitializeSecurityDescriptor(out SECURITY_DESCRIPTOR SecurityDescriptor, uint dwRevision);
 
         [DllImport("advapi32.dll")]
         public static extern ManagedClasses.ServiceControlHandle OpenSCManager(string lpMachineName, string lpSCDB, SCM_ACCESS scParameter);
@@ -74,6 +78,22 @@ namespace Native
             out ProcessInformation lpProcessInformation
         );
 
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern Boolean CreateProcessAsUser
+        (
+            SafeFileHandle hToken,
+            String lpApplicationName,
+            String lpCommandLine,
+            IntPtr lpProcessAttributes,
+            IntPtr lpThreadAttributes,
+            Boolean bInheritHandles,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            String lpCurrentDirectory,
+            ref StartupInfoEx lpStartupInfo,
+            out ProcessInformation lpProcessInformation
+        );
+
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern Boolean LogonUser(
             String lpszUserName,
@@ -98,6 +118,20 @@ namespace Native
             STARTUPINFO lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
+        [DllImport("advapi32.dll", SetLastError = true)]
+        internal static extern bool CreateProcessAsUserA(
+            IntPtr hToken,
+            string lpApplicationName,
+            string lpCommandLine,
+            SECURITY_ATTRIBUTES lpProcessAttributes,
+            SECURITY_ATTRIBUTES lpThreadAttributes,
+            bool bInheritHandles,
+            ProcessCreationFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            StartupInfoEx lpStartupInfo,
+            out PROCESS_INFORMATION lpProcessInformation);
+
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern bool CreateProcessWithLogonW(
             string lpUsername,
@@ -116,6 +150,20 @@ namespace Native
         internal static extern bool CreateProcessWithLogonW(
             string lpUsername,
             string lpDomain,
+            string lpPassword,
+            LogonFlags dwLogonFlags,
+            string lpApplicationName,
+            string lpCommandLine,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref StartupInfoEx lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool CreateProcessWithLogonW(
+            string lpUsername,
+            string lpDomain,
             IntPtr lpPassword,
             LogonFlags dwLogonFlags,
             string lpApplicationName,
@@ -124,6 +172,20 @@ namespace Native
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
             STARTUPINFO lpStartupInfo,
+            out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool CreateProcessWithLogonW(
+            string lpUsername,
+            string lpDomain,
+            IntPtr lpPassword,
+            LogonFlags dwLogonFlags,
+            string lpApplicationName,
+            StringBuilder lpCommandLine,
+            ProcessCreationFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            StartupInfoEx lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
 
@@ -169,6 +231,18 @@ namespace Native
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern bool CreateProcessWithTokenW(
             IntPtr hToken,
+            IntPtr dwLogonFlags,
+            string lpApplicationName,
+            string lpCommandLine,
+            ProcessCreationFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref StartupInfoEx lpStartupInfo,
+            out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool CreateProcessWithTokenW(
+            IntPtr hToken,
             LogonFlags dwLogonFlags,
             string lpApplicationName,
             string lpCommandLine,
@@ -176,6 +250,18 @@ namespace Native
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
             [In] ref StartupInfo lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool CreateProcessWithTokenW(
+            IntPtr hToken,
+            LogonFlags dwLogonFlags,
+            string lpApplicationName,
+            string lpCommandLine,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
 
@@ -191,6 +277,20 @@ namespace Native
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
             STARTUPINFO lpStartupInfo,
+            out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        internal static extern bool CreateProcessAsUserA(
+            IntPtr hToken,
+            string lpApplicationName,
+            StringBuilder lpCommandLine,
+            SECURITY_ATTRIBUTES lpProcessAttributes,
+            SECURITY_ATTRIBUTES lpThreadAttributes,
+            bool bInheritHandles,
+            ProcessCreationFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            StartupInfoEx lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
 
@@ -397,6 +497,27 @@ namespace Native
 );*/
 
 
+        [DllImport("kernel32.dll")]
+        public static extern bool DuplicateHandle(
+            IntPtr hSourceProcessHandle,
+            IntPtr hSourceHandle,
+            IntPtr hTargetProcessHandle,
+            ref IntPtr lpTargetHandle,
+            uint dwDesiredAccess,
+            bool bInheritHandle,
+            DuplicateOptions dwOptions
+            );
+
+        [DllImport("kernel32.dll")]
+        public static extern bool DuplicateHandle(
+            IntPtr hSourceProcessHandle,
+            SafeFileHandle hSourceHandle,
+            IntPtr hTargetProcessHandle,
+            ref SafeFileHandle lpTargetHandle,
+            uint dwDesiredAccess,
+            bool bInheritHandle,
+            DuplicateOptions dwOptions
+            );
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenThread(ThreadAccessRights dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
@@ -435,6 +556,19 @@ namespace Native
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
             ref StartupInfo lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool CreateProcessA(
+            string lpApplicationName,
+            string lpCommandLine,
+            IntPtr lpProcessAttributes,
+            IntPtr lpThreadAttributes,
+            bool bInheritHandles,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -512,6 +646,30 @@ namespace Native
             ProcessAccessFlags dwDesiredAccess,
             bool bInheritHandle,
             int dwProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool InitializeProcThreadAttributeList(
+         IntPtr lpAttributeList,
+         int dwAttributeCount,
+         int dwFlags,
+         ref IntPtr lpSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool UpdateProcThreadAttribute(
+         IntPtr lpAttributeList,
+         uint dwFlags,
+         IntPtr Attribute,
+         IntPtr lpValue,
+         IntPtr cbSize,
+         IntPtr lpPreviousValue,
+         IntPtr lpReturnSize);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool DeleteProcThreadAttributeList(
+            IntPtr lpAttributeList
+        );
 
         [DllImport("kernel32.dll")]
         internal static extern int GetExitCodeThread(

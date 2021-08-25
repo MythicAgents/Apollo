@@ -12,6 +12,18 @@ namespace Native
     {
 
 
+        [StructLayoutAttribute(LayoutKind.Sequential)]
+        public struct SECURITY_DESCRIPTOR
+        {
+            public byte revision;
+            public byte size;
+            public short control;
+            public IntPtr owner;
+            public IntPtr group;
+            public IntPtr sacl;
+            public IntPtr dacl;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         public struct StartupInfo
         {
@@ -39,13 +51,13 @@ namespace Native
         [StructLayout(LayoutKind.Sequential)]
         public class SecurityAttributes
         {
-            public Int32 Length;
+            public Int32 nLength;
             public IntPtr lpSecurityDescriptor;
             public bool bInheritHandle;
 
             public SecurityAttributes()
             {
-                this.Length = Marshal.SizeOf(this);
+                this.nLength = Marshal.SizeOf(this);
             }
         }
 
@@ -361,9 +373,9 @@ namespace Native
 
         // This also works with CharSet.Ansi as long as the calling function uses the same character set.
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        public struct STARTUPINFOEX
+        public struct StartupInfoEx
         {
-            public STARTUPINFO StartupInfo;
+            public StartupInfo StartupInfo;
             public IntPtr lpAttributeList;
         }
 

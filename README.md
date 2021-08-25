@@ -32,6 +32,7 @@ Once installed, restart Mythic to build a new agent.
 Command | Syntax | Description
 ------- | ------ | -----------
 assembly_inject | `assembly_inject [pid] [arch] [assembly] [args]` | Execute .NET assembly in remote process.
+blockdlls | `blockdlls [on|off]` | Block non-Microsoft signed DLLs from loading into post-ex jobs.
 bypassuac | `bypassuac (modal popup)` | Bypass UAC using the trusted mock directory technique.
 cat | `cat [file]` | Retrieve the output of a file.
 cd | `cd [dir]` | Change working directory.
@@ -70,6 +71,7 @@ psexec | `psexec` | Pivot to a remote computer by creating a new service. Modal 
 psimport | `psimport` | Reigster a powershell script to import on subsequent execution in `powerpick`/`psinject`/`powershell` commands. Can import more than one script (e.g., PowerView and PowerUp can both be loaded simultaneously.) To clear the script imports, use `psclear`.
 psinject | `psinject [pid] [x86/x64] [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
 pth | `pth` | Modal popup. Use Mimikatz to patch LSASS and import credentials into memory.
+ppid | `ppid [pid]` | Set the parent process ID of post-ex jobs to the specified PID.
 pwd | `pwd` | Print working directory.
 reg_query_subkeys | `reg_query_subkeys` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
 reg_query_values | `reg_query_values` | Query all values of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.

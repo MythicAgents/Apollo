@@ -56,6 +56,8 @@ The following commands interact with the Service Control Manager of the current 
 
 ## Evasion
 
+Apollo implements a handful of evasion commands to help an operator execute post-exploitation jobs on target. You can change parent-child process relationships by spoofing parent process id via [`ppid`](/agents/apollo/commands/spawnto_x86), block non-Microsoft signed DLLs from loading into your sacrificial processes via [`blockdlls`](/agents/apollo/commands/blockdlls/), and changing what applications you can spawn and inject into via [`spawnto_x64`](/agents/apollo/commands/spawnto_x64/) and [`spawnto_x86`](/agents/apollo/commands/spawnto_x86/)
+
 ### Spawnto
 
 For commands listed under `Post-Exploitation Jobs`, there will be a sacrificial process spawned as part of Apollo's fork and run architecture. This process is set to `C:\Windows\System32\rundll32.exe` by default, but can be changed with the following commands:
