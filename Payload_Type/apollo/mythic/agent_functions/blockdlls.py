@@ -43,7 +43,10 @@ class BlockDllsCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         block = task.args.get_arg("block")
-        task.display_params = "{}".format(block)
+        if block:
+            task.display_params = "on"
+        else:
+            task.display_params = "off"
         return task
 
     async def process_response(self, response: AgentResponse):
