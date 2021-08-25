@@ -32,7 +32,7 @@ Once installed, restart Mythic to build a new agent.
 Command | Syntax | Description
 ------- | ------ | -----------
 assembly_inject | `assembly_inject [pid] [arch] [assembly] [args]` | Execute .NET assembly in remote process.
-blockdlls | `blockdlls [on|off]` | Block non-Microsoft signed DLLs from loading into post-ex jobs.
+blockdlls | `blockdlls [toggle]` | Block non-Microsoft signed DLLs from loading into post-ex jobs.
 bypassuac | `bypassuac (modal popup)` | Bypass UAC using the trusted mock directory technique.
 cat | `cat [file]` | Retrieve the output of a file.
 cd | `cd [dir]` | Change working directory.
