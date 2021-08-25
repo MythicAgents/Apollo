@@ -25,9 +25,9 @@ class PpidArguments(TaskArguments):
 class PpidCommand(CommandBase):
     cmd = "ppid"
     needs_admin = False
-    help_cmd = "ppid [path] [args]"
-    description = "Change the default binary used in post exploitation jobs to [path]. If [args] provided, the process is launched with those arguments."
-    version = 2
+    help_cmd = "ppid [pid]"
+    description = "Change the parent process for post-ex jobs by the specified pid."
+    version = 1
     is_exit = False
     is_file_browse = False
     is_process_list = False
