@@ -28,7 +28,7 @@ class BlockDllsArguments(TaskArguments):
 class BlockDllsCommand(CommandBase):
     cmd = "blockdlls"
     needs_admin = False
-    help_cmd = "blockdlls"
+    help_cmd = "blockdlls [on|off]"
     description = "Block non-Microsoft DLLs from loading into sacrificial processes."
     version = 1
     is_exit = False
