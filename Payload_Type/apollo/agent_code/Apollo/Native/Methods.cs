@@ -667,6 +667,11 @@ namespace Native
          IntPtr lpReturnSize);
 
         [DllImport("kernel32.dll")]
+        public static extern bool DeleteProcThreadAttributeList(
+            IntPtr lpAttributeList
+        );
+
+        [DllImport("kernel32.dll")]
         internal static extern int GetExitCodeThread(
             IntPtr hThread,
             out int lpExitCode);

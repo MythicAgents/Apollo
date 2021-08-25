@@ -71,6 +71,8 @@ pre = "<b>2. </b>"
     * [reg_query_values](/agents/apollo/commands/reg_query_values/)
     * [reg_write_value](/agents/apollo/commands/reg_write_value/)
 - Evasion Management
+    * [blockdlls](/agents/apollo/commands/blockdlls)
+    * [ppid](/agents/apollo/commands/ppid)
     * [spawnto_x64](/agents/apollo/commands/spawnto_x64/)
     * [spawnto_x86](/agents/apollo/commands/spawnto_x86/)
     * [get_current_injection_technique](/agents/apollo/commands/get_current_injection_technique/)
