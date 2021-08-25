@@ -1,6 +1,8 @@
 #define COMMAND_NAME_UPPER
 
 #if DEBUG
+#undef BLOCKDLLS
+#define BLOCKDLLS
 #undef PPID
 #define PPID
 #undef BYPASSUAC
@@ -488,6 +490,9 @@ namespace Apollo
 #endif
 #if PPID
                 { "ppid", "Ppid" },
+#endif
+#if BLOCKDLLS
+                { "blockdlls", "BlockDlls" },
 #endif
 
             };
