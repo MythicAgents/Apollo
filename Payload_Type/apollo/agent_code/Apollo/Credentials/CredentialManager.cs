@@ -23,8 +23,6 @@
 #define SPAWN
 #endif
 
-#define POWERPICK
-
 #if MAKE_TOKEN || PRINTSPOOFER||SPAWN||STEAL_TOKEN || REV2SELF || GETPRIVS || WHOAMI || POWERPICK || MIMIKATZ || EXECUTE_ASSEMBLY
 
 
@@ -69,7 +67,8 @@ namespace Apollo.Credentials
 
         private static IntPtr phImpersonatedImpersonationToken = IntPtr.Zero;
         private static IntPtr phImpersonatedPrimaryToken = IntPtr.Zero;
-        internal static WindowsIdentity CurrentIdentity { get; private set; } = WindowsIdentity.GetCurrent();
+        internal static WindowsIdentity OriginalIdentity { get; private set; } = WindowsIdentity.GetCurrent();
+        internal static WindowsIdentity CurrentIdentity { get; private set; } = OriginalIdentity;
 
         // I think there might be a race condition with pth and this
         private static IntPtr executingThread = IntPtr.Zero;
@@ -125,19 +124,21 @@ namespace Apollo.Credentials
             }
             else
             {
-                phImpersonatedPrimaryToken = hToken;
-                bRet = DuplicateTokenEx(
-                    phImpersonatedPrimaryToken,
-                    TokenAccessLevels.MaximumAllowed,
-                    IntPtr.Zero,
-                    TokenImpersonationLevel.Impersonation,
-                    TOKEN_TYPE.TokenImpersonation,
-                    out IntPtr dupToken);
-                if (bRet)
-                    SetImpersonatedImpersonationToken(dupToken);
-                else
+                if (SetImpersonatedPrimaryToken(hToken))
                 {
-                    RevertToSelf();
+                    bRet = DuplicateTokenEx(
+                        phImpersonatedPrimaryToken,
+                        TokenAccessLevels.MaximumAllowed,
+                        IntPtr.Zero,
+                        TokenImpersonationLevel.Impersonation,
+                        TOKEN_TYPE.TokenImpersonation,
+                        out IntPtr dupToken);
+                    if (bRet)
+                        SetImpersonatedImpersonationToken(dupToken);
+                    else
+                    {
+                        RevertToSelf();
+                    }
                 }
 
             }
@@ -324,11 +325,12 @@ namespace Apollo.Credentials
             phImpersonatedPrimaryToken = IntPtr.Zero;
             phImpersonatedImpersonationToken = IntPtr.Zero;
             userCredential = new Credential();
-            CurrentIdentity = new WindowsIdentity(originalImpersonationToken);
+            CurrentIdentity = OriginalIdentity;
         }
 
         internal static bool SetImpersonatedPrimaryToken(IntPtr hToken)
         {
+            // add the requisite privs for createprocessasuser call when necessary
             if (!initialized)
                 return false;
             bool bRet = true;
