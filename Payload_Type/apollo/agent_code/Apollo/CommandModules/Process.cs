@@ -138,7 +138,7 @@ namespace Apollo.CommandModules
             {
                 if (sacrificialProcess.ExitCode == 0 && sacrificialProcess.PID != 0)
                 {
-                    job.SetComplete(String.Format("\nProcess executed '{0}' with PID {1} and returned exit code {2}", cmdString, sacrificialProcess.PID, sacrificialProcess.ExitCode));
+                    job.SetComplete("");
                 } else
                 {
                     job.SetError($"Unknown error. Exit code: {sacrificialProcess.ExitCode} from PID: {sacrificialProcess.PID}");
