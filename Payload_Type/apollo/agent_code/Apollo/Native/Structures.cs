@@ -24,7 +24,7 @@ namespace Native
             public IntPtr dacl;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         public struct StartupInfo
         {
             public Int32 cb;

@@ -218,11 +218,23 @@ namespace Native
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern bool CreateProcessWithTokenW(
-            IntPtr hToken,
-            IntPtr dwLogonFlags,
+            SafeFileHandle hToken,
+            LogonFlags dwLogonFlags,
             string lpApplicationName,
             string lpCommandLine,
-            ProcessCreationFlags dwCreationFlags,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref StartupInfo lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool CreateProcessWithTokenW(
+            IntPtr hToken,
+            LogonFlags dwLogonFlags,
+            string lpApplicationName,
+            string lpCommandLine,
+            CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
             [In] ref STARTUPINFO lpStartupInfo,
@@ -264,34 +276,17 @@ namespace Native
             [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        internal static extern bool CreateProcessAsUserA(
-            IntPtr hToken,
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern bool CreateProcessWithTokenW(
+            SafeFileHandle hToken,
+            LogonFlags dwLogonFlags,
             string lpApplicationName,
-            StringBuilder lpCommandLine,
-            SECURITY_ATTRIBUTES lpProcessAttributes,
-            SECURITY_ATTRIBUTES lpThreadAttributes,
-            bool bInheritHandles,
-            ProcessCreationFlags dwCreationFlags,
+            string lpCommandLine,
+            CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            STARTUPINFO lpStartupInfo,
-            out PROCESS_INFORMATION lpProcessInformation);
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        internal static extern bool CreateProcessAsUserA(
-            IntPtr hToken,
-            string lpApplicationName,
-            StringBuilder lpCommandLine,
-            SECURITY_ATTRIBUTES lpProcessAttributes,
-            SECURITY_ATTRIBUTES lpThreadAttributes,
-            bool bInheritHandles,
-            ProcessCreationFlags dwCreationFlags,
-            IntPtr lpEnvironment,
-            string lpCurrentDirectory,
-            StartupInfoEx lpStartupInfo,
-            out PROCESS_INFORMATION lpProcessInformation);
+            [In] ref StartupInfoEx lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
 
 
         [DllImport("kernel32.dll")]
@@ -497,7 +492,7 @@ namespace Native
 );*/
 
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool DuplicateHandle(
             IntPtr hSourceProcessHandle,
             IntPtr hSourceHandle,
@@ -508,13 +503,24 @@ namespace Native
             DuplicateOptions dwOptions
             );
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool DuplicateHandle(
             IntPtr hSourceProcessHandle,
             SafeFileHandle hSourceHandle,
-            IntPtr hTargetProcessHandle,
+            SafeFileHandle hTargetProcessHandle,
             ref SafeFileHandle lpTargetHandle,
             uint dwDesiredAccess,
+            bool bInheritHandle,
+            DuplicateOptions dwOptions
+            );
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool DuplicateHandle(
+            IntPtr hSourceProcessHandle,
+            SafeFileHandle hSourceHandle,
+            SafeFileHandle hTargetProcessHandle,
+            ref SafeFileHandle lpTargetHandle,
+            System.Enum dwDesiredAccess,
             bool bInheritHandle,
             DuplicateOptions dwOptions
             );
@@ -992,8 +998,11 @@ namespace Native
 
         #region USERENV
 
-        [DllImport("userenv.dll", SetLastError = true)]
+        [DllImport("userenv.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
+
+        [DllImport("userenv.dll", SetLastError = true)]
+        public static extern bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
 
         #endregion
     }

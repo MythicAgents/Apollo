@@ -90,9 +90,15 @@ namespace Apollo.Evasion
             bool bRet = false;
             try
             {
-                System.Diagnostics.Process.GetProcessById(processId);
-                bRet = true;
-                _parentProcessId = processId;
+                var curProc = System.Diagnostics.Process.GetCurrentProcess();
+                var proc = System.Diagnostics.Process.GetProcessById(processId);
+                if (proc.SessionId != curProc.SessionId)
+                    bRet = false;
+                else
+                {
+                    bRet = true;
+                    _parentProcessId = processId;
+                }
             } catch { }
             return bRet;
         }
