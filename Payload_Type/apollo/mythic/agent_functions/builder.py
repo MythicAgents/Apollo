@@ -13,7 +13,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "1.2.0"
+    version = "1.2.1"
     wrapper = False
     wrapped_payloads = ["service_wrapper"]
     note = """
