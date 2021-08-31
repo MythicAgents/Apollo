@@ -9,5 +9,7 @@ namespace ApolloInterop.Interfaces
     {
         string Encrypt(string plaintext);
         string Decrypt(string encrypted);
+        bool UpdateUUID(string uuid);
+        bool UpdateKey(string key);
     }
 }

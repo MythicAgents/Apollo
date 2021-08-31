@@ -2,18 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using ApolloInterop.Structs.MythicStructs;
 namespace ApolloInterop.Interfaces
 {
     public interface IC2Profile
     {
-        string RegisterCallback(string uuid);
+        bool RegisterCallback(CheckinMessage checkinMessage, out string newUUID);
         
-        // should be a mythic messages
-        object GetMessages();
-
-        void PostResponses();
-
-        void GetFiles();
+        bool GetMessages(TaskingMessage msg, out MessageResponse resp);
+    
     }
 }

@@ -1,22 +1,27 @@
 ﻿using System;
+using System.Runtime.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using sCredentialType = System.String;
 using sStatusMessage = System.String;
 using sMessageAction = System.String;
-using EdgeDirection = System.Int32;
 
 namespace ApolloInterop.Structs
 {
-    public class MythicStructs
+
+    namespace MythicStructs
     {
         // Profile data sent from the Mythic Server
+        [DataContract]
         public struct C2ProfileData
         {
-            public string name;
-            public string is_p2p;
-            public Dictionary<string, string> parameters;
+            [DataMember(Name = "name")]
+            public string Name;
+            [DataMember(Name = "is_p2p")]
+            public bool IsP2P;
+            [DataMember(Name = "parameters")]
+            public Dictionary<string, string> Parameters;
         }
 
         public class CredentialType
@@ -40,76 +45,125 @@ namespace ApolloInterop.Structs
             public static bool operator !=(string a, CredentialType b) { return a == b.Value; }
         }
 
-        struct Credential
+        [DataContract]
+        public struct Credential
         {
-            sCredentialType credential_type;
-            string realm;
-            string credential;
-            string account;
+            [DataMember(Name = "credential_type")]
+            public string CredentialType;
+            [DataMember(Name = "realm")]
+            public string Realm;
+            [DataMember(Name = "credential")]
+            public string CredentialMaterial;
+            [DataMember(Name = "account")]
+            public string Account;
         }
 
-        struct RemovedFileInformation
+        [DataContract]
+        public struct RemovedFileInformation
         {
-            string host;
-            string path;
+            [DataMember(Name = "host")]
+            public string Host;
+            [DataMember(Name = "path")]
+            public string Path;
         }
 
-        struct FileInformation
+        [DataContract]
+        public struct FileInformation
         {
-            string full_name;
-            string name;
-            string directory;
-            string creation_date;
-            string modify_time;
-            string access_time;
-            Dictionary<string, string> permissions;
-            string extended_attributes;
-            int size;
-            string owner;
-            string group;
-            bool hidden;
-            bool is_file;
+            [DataMember(Name = "full_name")]
+            public string FullName;
+            [DataMember(Name = "name")]
+            public string Name;
+            [DataMember(Name = "directory")]
+            public string Directory;
+            [DataMember(Name = "creation_date")]
+            public string CreationDate;
+            [DataMember(Name = "modify_time")]
+            public string ModifyTime;
+            [DataMember(Name = "access_time")]
+            public string AccessTime;
+            [DataMember(Name = "permissions")]
+            public Dictionary<string, string> Permissions;
+            [DataMember(Name = "extended_attributes")]
+            public string ExtendedAttributes;
+            [DataMember(Name = "size")]
+            public int Size;
+            [DataMember(Name = "owner")]
+            public string Owner;
+            [DataMember(Name = "group")]
+            public string Group;
+            [DataMember(Name = "hidden")]
+            public bool Hidden;
+            [DataMember(Name = "is_file")]
+            public bool IsFile;
         }
 
-        struct FileBrowser
+        [DataContract]
+        public struct FileBrowser
         {
-            string host;
-            bool is_file;
-            Dictionary<string, string> permissions;
-            string name;
-            string parent_path;
-            bool success;
-            string access_time;
-            string modify_time;
-            int size;
-            FileInformation[] files;
+            [DataMember(Name = "host")]
+            public string Host;
+            [DataMember(Name = "is_file")]
+            public bool IsFile;
+            [DataMember(Name = "permissions")]
+            public Dictionary<string, string> Permissions;
+            [DataMember(Name = "name")]
+            public string Name;
+            [DataMember(Name = "parent_path")]
+            public string ParentPath;
+            [DataMember(Name = "success")]
+            public bool Success;
+            [DataMember(Name = "access_time")]
+            public string AccessTime;
+            [DataMember(Name = "modify_time")]
+            public string ModifyTime;
+            [DataMember(Name = "size")]
+            public int Size;
+            [DataMember(Name = "files")]
+            public FileInformation[] Files;
+        }
+        public enum EdgeDirection
+        {
+            SourceToDestination = 1,
+            DestinationToSource,
+            BiDirectional
         }
 
-        const EdgeDirection SourceToDestination = 1;
-        const EdgeDirection DestinationToSource = 2;
-        const EdgeDirection BiDirectional = 3;
-
-        struct EdgeNode
+        [DataContract]
+        public struct EdgeNode
         {
-            string source;
-            string destination;
-            EdgeDirection direction;
-            string metadata;
-            string action;
-            string c2_profile;
+            [DataMember(Name = "source")]
+            public string Source;
+            [DataMember(Name = "destination")]
+            public string Destination;
+            [DataMember(Name = "direction")]
+            public EdgeDirection Direction;
+            [DataMember(Name = "metadata")]
+            public string MetaData;
+            [DataMember(Name = "action")]
+            public string Action;
+            [DataMember(Name = "c2_profile")]
+            public string C2Profile;
         }
 
-        struct SocksDatagram
+        [DataContract]
+        public struct SocksDatagram
         {
-            int server_id;
-            string data;
+            [DataMember(Name = "server_id")]
+            public int ServerID;
+            [DataMember(Name = "data")]
+            public string Data;
         }
 
-        struct Artifact
+        [DataContract]
+        public struct Artifact
         {
-            string base_artifact;
-            string artifact;
+            [DataMember(Name = "base_artifact")]
+            public string BaseArtifact;
+            [DataMember(Name = "artifact")]
+            public string ArtifactDetails;
         }
+
         public class StatusMessage
         {
             private StatusMessage(string value) { Value = value; }
@@ -128,54 +182,90 @@ namespace ApolloInterop.Structs
 
             public static bool operator !=(string a, StatusMessage b) { return a == b.ToString(); }
         }
-        
-        struct TaskStatus
+
+        [DataContract]
+        public struct TaskStatus
         {
-            string task_id;
-            sStatusMessage status_message;
-            string error;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
+            [DataMember(Name = "status_message")]
+            public sStatusMessage StatusMessage;
+            [DataMember(Name = "error")]
+            public string Error;
         }
 
-        struct TaskResponse
+        [DataContract]
+        public struct TaskResponse
         {
-            object user_output;
-            bool? completed;
-            string user;
-            string window_title;
-            string keystrokes;
-            string task_id;
-            StatusMessage status;
-            EdgeNode[] edges;
-            FileBrowser? file_browser;
-            string message_id;
-            Credential[] credentials;
-            RemovedFileInformation[] removed_files;
-            Artifact[] artifacts;
+            [DataMember(Name = "user_output")]
+            public object UserOutput;
+            [DataMember(Name = "completed")]
+            public bool? Completed;
+            [DataMember(Name = "user")]
+            public string User;
+            [DataMember(Name = "window_title")]
+            public string WindowTitle;
+            [DataMember(Name = "keystrokes")]
+            public string Keystrokes;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
+            [DataMember(Name = "status")]
+            public sStatusMessage Status;
+            [DataMember(Name = "edges")]
+            public EdgeNode[] Edges;
+            [DataMember(Name = "file_browser")]
+            public FileBrowser? FileBrowser;
+            [DataMember(Name = "upload")]
+            public UploadMessage Upload;
+            [DataMember(Name = "message_id")]
+            public string MessageID;
+            [DataMember(Name = "credentials")]
+            public Credential[] Credentials;
+            [DataMember(Name = "removed_files")]
+            public RemovedFileInformation[] RemovedFiles;
+            [DataMember(Name = "artifacts")]
+            public Artifact[] Artifacts;
         }
 
-        struct DownloadRegistrationMessage
+        [DataContract]
+        public struct DownloadRegistrationMessage
         {
-            string task_id;
-            int total_chunks;
-            string full_path;
-            string host;
-            bool is_screenshot;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
+            [DataMember(Name = "total_chunks")]
+            public int TotalChunks;
+            [DataMember(Name = "full_path")]
+            public string FullPath;
+            [DataMember(Name = "host")]
+            public string Host;
+            [DataMember(Name = "is_screenshot")]
+            public bool IsScreenshot;
         }
 
-        struct DownloadProgressMessage
+        [DataContract]
+        public struct DownloadProgressMessage
         {
-            string task_id;
-            string file_id;
-            int chunk_num;
-            string chunk_data;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
+            [DataMember(Name = "file_id")]
+            public string FileID;
+            [DataMember(Name = "chunk_num")]
+            public int ChunkNumber;
+            [DataMember(Name = "chunk_data")]
+            public string ChunkData;
         }
 
-        struct Task
+        [DataContract]
+        public struct Task
         {
-            string command;
-            string parameters;
-            float timestamp;
-            string id;
+            [DataMember(Name = "command")]
+            public string Command;
+            [DataMember(Name = "parameters")]
+            public string Parameters;
+            [DataMember(Name = "timestamp")]
+            public float Timestamp;
+            [DataMember(Name = "id")]
+            public string ID;
         }
 
         public class MessageAction
@@ -199,7 +289,7 @@ namespace ApolloInterop.Structs
             public static bool operator !=(string a, MessageAction b) { return a == b.ToString(); }
         }
 
-        enum IntegrityLevel
+        public enum IntegrityLevel
         {
             UnknownIntegrity = 0,
             LowIntegrity,
@@ -208,59 +298,113 @@ namespace ApolloInterop.Structs
             SystemIntegrity
         }
 
-        struct TaskingMessage
+        [DataContract]
+        public struct DelegateMessage
         {
-            sMessageAction action;
-            int tasking_size;
-            Dictionary<string, string>[] delegates;
-            TaskResponse[] responses;
-            SocksDatagram[] socks;
+            [DataMember(Name = "uuid")]
+            public string UUID;
+            [DataMember(Name = "mythic_uuid")]
+            public string MythicUUID;
+            [DataMember(Name = "message")]
+            public string Message;
+            [DataMember(Name = "c2_profile")]
+            public string C2Profile;
         }
 
-        struct CheckinMessage
+        [DataContract]
+        public struct TaskingMessage
         {
-            static MessageAction action = MessageAction.CheckIn;
-            string os;
-            string user;
-            string host;
-            int pid;
-            string ip;
-            string uuid;
-            string architecture;
-            string domain;
-            IntegrityLevel integrity_level;
-            string external_ip;
-            string encryption_key;
-            string decryption_key;
-            string pub_key;
-            string session_id;
+            [DataMember(Name = "action")]
+            public string Action;
+            [DataMember(Name = "tasking_size")]
+            public int TaskingSize;
+            [DataMember(Name = "delegates")]
+            public Dictionary<string, string>[] Delegates;
+            [DataMember(Name = "responses")]
+            public TaskResponse[] Responses;
+            [DataMember(Name = "socks")]
+            public SocksDatagram[] Socks;
         }
 
-        struct UploadMessage
+        [DataContract]
+        public struct CheckinMessage
         {
-            static MessageAction action = MessageAction.Upload;
-            int chunk_size;
-            string file_id;
-            int chunk_num;
-            string full_path;
-            string task_id;
+            [DataMember(Name = "action")]
+            public string Action;
+            [DataMember(Name = "os")]
+            public string OS;
+            [DataMember(Name = "user")]
+            public string User;
+            [DataMember(Name = "host")]
+            public string Host;
+            [DataMember(Name = "pid")]
+            public int PID;
+            [DataMember(Name = "ip")]
+            public string IP;
+            [DataMember(Name = "uuid")]
+            public string UUID;
+            [DataMember(Name = "architecture")]
+            public string Architecture;
+            [DataMember(Name = "domain")]
+            public string Domain;
+            [DataMember(Name = "integrity_level")]
+            public IntegrityLevel IntegrityLevel;
+            [DataMember(Name = "external_ip")]
+            public string ExternalIP;
+            [DataMember(Name = "encryption_key")]
+            public string EncryptionKey;
+            [DataMember(Name = "decryption_key")]
+            public string DecryptionKey;
+            [DataMember(Name = "pub_key")]
+            public string PublicKey;
+            [DataMember(Name = "session_id")]
+            public string SessionID;
         }
 
-        struct MessageResponse
+        [DataContract]
+        public struct UploadMessage
         {
-            sMessageAction action;
-            string id;
-            sStatusMessage status;
-            Task[] tasks;
-            TaskStatus[] responses;
-            Dictionary<string, string>[] delegates;
-            string session_key;
-            string session_id;
-            int total_chunks;
-            int chunk_num;
-            string chunk_data;
-            string file_id;
-            string task_id;
+            [DataMember(Name = "chunk_size")]
+            public int ChunkSize;
+            [DataMember(Name = "file_id")]
+            public string FileID;
+            [DataMember(Name = "chunk_num")]
+            public int ChunkNumber;
+            [DataMember(Name = "full_path")]
+            public string FullPath;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
+        }
+
+        [DataContract]
+        public struct MessageResponse
+        {
+            [DataMember(Name = "action")]
+            public sMessageAction Action;
+            [DataMember(Name = "id")]
+            public string ID;
+            [DataMember(Name = "status")]
+            public sStatusMessage Status;
+            [DataMember(Name = "tasks")]
+            public Task[] Tasks;
+            [DataMember(Name = "responses")]
+            public TaskStatus[] Responses;
+            [DataMember(Name = "delegates")]
+            public Dictionary<string, string>[] Delegates;
+            [DataMember(Name = "session_key")]
+            public string SessionKey;
+            [DataMember(Name = "session_id")]
+            public string SessionID;
+            [DataMember(Name = "total_chunks")]
+            public int TotalChunks;
+            [DataMember(Name = "chunk_num")]
+            public int ChunkNumber;
+            [DataMember(Name = "chunk_data")]
+            public string ChunkData;
+            [DataMember(Name = "file_id")]
+            public string FileID;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
         }
     }
 }
