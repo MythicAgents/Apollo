@@ -49,8 +49,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EncryptedJsonSerializerTests.cs" />
     <Compile Include="JsonSerializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Structs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

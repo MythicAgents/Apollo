@@ -68,7 +68,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct FileInformation
+        public struct FileInformation : IEquatable<FileInformation>
         {
             [DataMember(Name = "full_name")]
             public string FullName;
@@ -96,10 +96,38 @@ namespace ApolloInterop.Structs
             public bool Hidden;
             [DataMember(Name = "is_file")]
             public bool IsFile;
+
+            public override bool Equals(object obj)
+            {
+                return obj is FileInformation && this.Equals(obj);
+            }
+
+            public bool Equals(FileInformation obj)
+            {
+                if (this.Permissions.Keys.Count != obj.Permissions.Keys.Count)
+                    return false;
+                foreach(string k in this.Permissions.Keys)
+                {
+                    if (this.Permissions[k] != obj.Permissions[k])
+                        return false;
+                }
+                return this.FullName == obj.FullName &&
+                    this.Name == obj.Name &&
+                    this.Directory == obj.Directory &&
+                    this.CreationDate == obj.CreationDate &&
+                    this.ModifyTime == obj.ModifyTime &&
+                    this.AccessTime == obj.AccessTime &&
+                    this.ExtendedAttributes == obj.ExtendedAttributes &&
+                    this.Size == obj.Size &&
+                    this.Owner == obj.Owner &&
+                    this.Group == obj.Group &&
+                    this.Hidden == obj.Hidden &&
+                    this.IsFile == obj.IsFile;
+            }
         }
 
         [DataContract]
-        public struct FileBrowser
+        public struct FileBrowser : IEquatable<FileBrowser>
         {
             [DataMember(Name = "host")]
             public string Host;
@@ -121,6 +149,35 @@ namespace ApolloInterop.Structs
             public int Size;
             [DataMember(Name = "files")]
             public FileInformation[] Files;
+
+            public override bool Equals(object obj)
+            {
+                return obj is FileBrowser && Equals((FileBrowser)obj);
+            }
+
+            public bool Equals(FileBrowser obj)
+            {
+                for(int i = 0; i < this.Files.Length; i++)
+                {
+                    if (!this.Files[i].Equals(obj.Files[i]))
+                    {
+                        return false;
+                    }
+                }
+                foreach(string key in this.Permissions.Keys)
+                {
+                    if (this.Permissions[key] != obj.Permissions[key])
+                        return false;
+                }
+                return this.Host == obj.Host &&
+                    this.IsFile == obj.IsFile &&
+                    this.Name == obj.Name &&
+                    this.ParentPath == obj.ParentPath &&
+                    this.Success == obj.Success &&
+                    this.AccessTime == obj.AccessTime &&
+                    this.ModifyTime == obj.ModifyTime &&
+                    this.Size == obj.Size;
+            }
         }
         public enum EdgeDirection
         {
@@ -130,7 +187,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct EdgeNode
+        public struct EdgeNode : IEquatable<EdgeNode>
         {
             [DataMember(Name = "source")]
             public string Source;
@@ -144,6 +201,22 @@ namespace ApolloInterop.Structs
             public string Action;
             [DataMember(Name = "c2_profile")]
             public string C2Profile;
+
+
+            public override bool Equals(object obj)
+            {
+                return obj is EdgeNode && this.Equals(obj);
+            }
+
+            public bool Equals(EdgeNode node)
+            {
+                return this.Source == node.Source &&
+                    this.Destination == node.Destination &&
+                    this.Direction == node.Direction &&
+                    this.MetaData == node.MetaData &&
+                    this.Action == node.Action &&
+                    this.C2Profile == node.C2Profile;
+            }
         }
 
         [DataContract]
@@ -195,7 +268,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskResponse
+        public struct TaskResponse : IEquatable<TaskResponse>
         {
             [DataMember(Name = "user_output")]
             public object UserOutput;
@@ -225,6 +298,46 @@ namespace ApolloInterop.Structs
             public RemovedFileInformation[] RemovedFiles;
             [DataMember(Name = "artifacts")]
             public Artifact[] Artifacts;
+
+            public override bool Equals(object obj)
+            {
+                return obj is TaskingMessage && this.Equals((TaskResponse)obj);
+            }
+
+            public bool Equals(TaskResponse msg)
+            {
+                for(int i = 0; i < this.Edges.Length; i++)
+                {
+                    if (!this.Edges[i].Equals(msg.Edges[i]))
+                        return false;
+                }
+                for(int i = 0; i < this.Credentials.Length; i++)
+                {
+                    if (!this.Credentials[i].Equals(msg.Credentials[i]))
+                        return false;
+                }
+                for(int i = 0; i < this.RemovedFiles.Length; i++)
+                {
+                    if (!this.RemovedFiles[i].Equals(msg.RemovedFiles[i]))
+                        return false;
+                }
+                for(int i = 0; i < this.Artifacts.Length; i++)
+                {
+                    if (!this.Artifacts[i].Equals(msg.Artifacts[i]))
+                        return false;
+                }
+                return this.FileBrowser.Equals(msg.FileBrowser) &&
+                    this.UserOutput.Equals(msg.UserOutput) &&
+                    this.Completed == msg.Completed &&
+                    this.User == msg.User &&
+                    this.WindowTitle == msg.WindowTitle &&
+                    this.TaskID == msg.TaskID &&
+                    this.Keystrokes == msg.Keystrokes &&
+                    this.Status == msg.Status &&
+                    this.Upload.Equals(msg.Upload) &&
+                    this.MessageID == msg.MessageID;
+
+            }
         }
 
         [DataContract]
@@ -312,7 +425,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskingMessage
+        public struct TaskingMessage : IEquatable<TaskingMessage>
         {
             [DataMember(Name = "action")]
             public string Action;
@@ -324,6 +437,37 @@ namespace ApolloInterop.Structs
             public TaskResponse[] Responses;
             [DataMember(Name = "socks")]
             public SocksDatagram[] Socks;
+
+            public override bool Equals(object obj)
+            {
+                return obj is TaskingMessage && this.Equals(obj);
+            }
+
+            public bool Equals(TaskingMessage obj)
+            {
+                if (this.Delegates.Length != obj.Delegates.Length)
+                    return false;
+                if (this.Socks.Length != obj.Socks.Length)
+                    return false;
+                for(int i = 0; i < this.Delegates.Length; i++)
+                {
+                    var d1 = this.Delegates[i];
+                    var d2 = obj.Delegates[i];
+                    foreach(var k in d1.Keys)
+                    {
+                        if (d1[k] != d2[k])
+                            return false;
+                    }
+                }
+                for(int i = 0; i < this.Socks.Length; i++)
+                {
+                    if (!this.Socks[i].Equals(obj.Socks[i]))
+                    {
+                        return false;
+                    }
+                }
+                return this.Action == obj.Action && this.TaskingSize == obj.TaskingSize;
+            }
         }
 
         [DataContract]
@@ -362,7 +506,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct UploadMessage
+        public struct UploadMessage : IEquatable<UploadMessage>
         {
             [DataMember(Name = "chunk_size")]
             public int ChunkSize;
@@ -374,6 +518,20 @@ namespace ApolloInterop.Structs
             public string FullPath;
             [DataMember(Name = "task_id")]
             public string TaskID;
+
+            public override bool Equals(object obj)
+            {
+                return obj is UploadMessage && this.Equals((UploadMessage)obj);
+            }
+
+            public bool Equals(UploadMessage obj)
+            {
+                return this.ChunkNumber == obj.ChunkNumber &&
+                    this.ChunkSize == obj.ChunkSize &&
+                    this.FileID == obj.FileID &&
+                    this.FullPath == obj.FullPath &&
+                    this.TaskID == obj.TaskID;
+            }
         }
 
         [DataContract]

@@ -1,19 +1,20 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using ApolloInterop.Serializers;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Interfaces;
 using PSKCryptography;
 using static ApolloInteropTests.Structs;
-
 namespace ApolloInteropTests
 {
     [TestClass]
-    public class JsonSerializerTests
+    public class EncryptedJsonSerializerTests
     {
-        static JsonSerializer marshaller = new JsonSerializer();
         static string UUID = "1432d007-b468-4ead-a4ed-2e97ac6fa304";
+        protected static string AesKey = "XmXjZVfbbKmNMGf65QJx9Vjv4teM/vHz2IOvYJNfIrI=";
+        protected static PSKCryptography.PSKCryptographyProvider Crypto = new PSKCryptographyProvider(UUID, AesKey);
+        static EncryptedJsonSerializer marshaller = new EncryptedJsonSerializer(Crypto);
         
         [TestMethod]
         public void TestUploadMessage()
@@ -100,5 +101,4 @@ namespace ApolloInteropTests
             Assert.IsTrue(Datagram1.Equals(marshaller.Deserialize<SocksDatagram>(j)));
         }
     }
-
 }

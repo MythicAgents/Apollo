@@ -114,6 +114,10 @@ namespace HttpProfile
 
         public bool RegisterCallback(CheckinMessage checkinMsg, out string newUUID)
         {
+            if (EncryptedExchangeCheck)
+            {
+                // This is where EKE code must live.
+            }
             string msg = Serializer.Serialize(checkinMsg);
             if (PostResponse(msg, out MessageResponse resp))
             {
