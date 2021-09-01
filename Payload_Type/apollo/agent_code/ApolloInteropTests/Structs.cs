@@ -145,13 +145,57 @@ namespace ApolloInteropTests
             ID = "some-random-guid2"
         };
 
+        internal static ApolloInterop.Structs.MythicStructs.TaskStatus Status1 = new ApolloInterop.Structs.MythicStructs.TaskStatus()
+        {
+            TaskID = "status-id1",
+            StatusMessage = StatusMessage.Complete.ToString(),
+            Error = ""
+        };
+
+        internal static ApolloInterop.Structs.MythicStructs.TaskStatus Status2 = new ApolloInterop.Structs.MythicStructs.TaskStatus()
+        {
+            TaskID = "status-id2",
+            StatusMessage = StatusMessage.Error.ToString(),
+            Error = "Invalid type."
+        };
+
+        internal static Dictionary<string, string> Delegate1 = new Dictionary<string, string>()
+        {
+            { "delegate1_key", "delegate1_val" }
+        };
+        internal static Dictionary<string, string> Delegate2 = new Dictionary<string, string>()
+        {
+            { "delegat2_key", "delegate2_val" }
+        };
+
         internal static MessageResponse Message = new MessageResponse()
         {
             Action = MessageAction.CheckIn.ToString(),
             ID = "test-id",
             Status = StatusMessage.Success.ToString(),
-
-        }
+            Tasks = new ApolloInterop.Structs.MythicStructs.Task[]
+            {
+                Task1,
+                Task2
+            },
+            Responses = new ApolloInterop.Structs.MythicStructs.TaskStatus[]
+            {
+                Status1,
+                Status2,
+            },
+            Delegates = new Dictionary<string, string>[]
+            {
+                Delegate1,
+                Delegate2
+            },
+            SessionKey = "hue_key",
+            SessionID = "hue_id",
+            TotalChunks = 10,
+            ChunkNumber = 0,
+            ChunkData = "data",
+            FileID = "file-id",
+            TaskID = "taskid"
+        };
 
         internal static TaskResponse Response = new TaskResponse()
         {
@@ -223,15 +267,6 @@ namespace ApolloInteropTests
         {
             ServerID = 2,
             Data = "data2",
-        };
-
-        internal static Dictionary<string, string> Delegate1 = new Dictionary<string, string>()
-        {
-            { "delegate1_key", "delegate1_val" }
-        };
-        internal static Dictionary<string, string> Delegate2 = new Dictionary<string, string>()
-        {
-            { "delegat2_key", "delegate2_val" }
         };
 
         internal static Dictionary<string, string>[] Delegates = new Dictionary<string, string>[2]

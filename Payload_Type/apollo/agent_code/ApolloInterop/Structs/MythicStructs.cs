@@ -535,7 +535,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct MessageResponse
+        public struct MessageResponse : IEquatable<MessageResponse>
         {
             [DataMember(Name = "action")]
             public sMessageAction Action;
@@ -563,6 +563,53 @@ namespace ApolloInterop.Structs
             public string FileID;
             [DataMember(Name = "task_id")]
             public string TaskID;
+
+            public override bool Equals(object obj)
+            {
+                return obj is MessageResponse && this.Equals((MessageResponse)obj);
+            }
+
+            public bool Equals(MessageResponse obj)
+            {
+                if (this.Tasks.Length != obj.Tasks.Length)
+                    return false;
+                if (this.Responses.Length != obj.Responses.Length)
+                    return false;
+                if (this.Delegates.Length != obj.Delegates.Length)
+                    return false;
+
+                for(int i = 0; i < this.Tasks.Length; i++)
+                {
+                    if (!this.Tasks[i].Equals(obj.Tasks[i]))
+                        return false;
+                }
+                for(int i = 0; i < this.Responses.Length; i++)
+                {
+                    if (!this.Responses[i].Equals(obj.Responses[i]))
+                        return false;
+                }
+                for(int i = 0; i < this.Delegates.Length; i++)
+                {
+                    if (this.Delegates[i].Keys.Count != obj.Delegates[i].Keys.Count)
+                        return false;
+                    foreach(string k in this.Delegates[i].Keys)
+                    {
+                        if (this.Delegates[i][k] != obj.Delegates[i][k])
+                            return false;
+                    }
+                }
+                return this.Action == obj.Action &&
+                    this.ID == obj.ID &&
+                    this.Status == obj.Status &&
+                    this.SessionID == obj.SessionID &&
+                    this.SessionKey == obj.SessionKey &&
+                    this.TotalChunks == obj.TotalChunks &&
+                    this.ChunkData == obj.ChunkData &&
+                    this.ChunkNumber == obj.ChunkNumber &&
+                    this.FileID == obj.FileID &&
+                    this.TaskID == obj.TaskID;
+                
+            }
         }
     }
 }

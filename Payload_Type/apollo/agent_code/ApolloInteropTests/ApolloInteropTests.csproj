@@ -52,6 +52,7 @@
     <Compile Include="EncryptedJsonSerializerTests.cs" />
     <Compile Include="JsonSerializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SerializerTestClass.cs" />
     <Compile Include="Structs.cs" />
   </ItemGroup>
   <ItemGroup>
