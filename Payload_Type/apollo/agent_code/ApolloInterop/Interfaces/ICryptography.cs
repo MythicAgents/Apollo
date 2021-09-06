@@ -11,5 +11,7 @@ namespace ApolloInterop.Interfaces
         string Decrypt(string encrypted);
         bool UpdateUUID(string uuid);
         bool UpdateKey(string key);
+
+        string GetUUID();
     }
 }

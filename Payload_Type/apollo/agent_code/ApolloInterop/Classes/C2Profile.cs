@@ -13,8 +13,11 @@ namespace ApolloInterop.Classes
     {
         protected const int MAX_RETRIES = 10;
         protected ISerializer Serializer;
-        public C2Profile(Dictionary<string, string> parameters, ISerializer serializer)
+        protected IAgent Agent;
+        protected bool Connected = false;
+        public C2Profile(Dictionary<string, string> parameters, ISerializer serializer, IAgent agent)
         {
+            Agent = agent;
             Serializer = serializer;
         }
     }

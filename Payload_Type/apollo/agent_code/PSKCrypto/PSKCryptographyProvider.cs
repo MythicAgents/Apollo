@@ -10,32 +10,13 @@ namespace PSKCryptography
 {
     public class PSKCryptographyProvider : CryptographyProvider, ICryptography
     {
-        private byte[] PSK;
-        private byte[] UUID;
-        private bool UUIDUpdated = false;
         public PSKCryptographyProvider(string uuid, string key) : base(uuid, key)
         {
-            PSK = Convert.FromBase64String(key);
-            UUID = ASCIIEncoding.ASCII.GetBytes(uuid);
+            
         }
 
-        // UUID should only be updated once after agent registration.
-        public bool UpdateUUID(string uuid)
-        {
-            if (!UUIDUpdated)
-            {
-                UUID = ASCIIEncoding.ASCII.GetBytes(uuid);
-                return true;
-            }
-            return false;
-        }
 
-        public bool UpdateKey(string key)
-        {
-            throw new Exception("PSKCrypto does not support the UpdateKey operation.");
-        }
-
-        public string Encrypt(string plaintext)
+        public override string Encrypt(string plaintext)
         {
             using (Aes scAes = Aes.Create())
             {
@@ -64,7 +45,7 @@ namespace PSKCryptography
             }
         }
 
-        public string Decrypt(string encrypted)
+        public override string Decrypt(string encrypted)
         {
             byte[] input = Convert.FromBase64String(encrypted); // FAILURE
 

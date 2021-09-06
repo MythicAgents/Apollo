@@ -13,7 +13,7 @@ namespace ApolloInteropTests
     {
         static string UUID = "1432d007-b468-4ead-a4ed-2e97ac6fa304";
         protected static string AesKey = "XmXjZVfbbKmNMGf65QJx9Vjv4teM/vHz2IOvYJNfIrI=";
-        protected static PSKCryptography.PSKCryptographyProvider Crypto = new PSKCryptographyProvider(UUID, AesKey);
+        protected static PSKCryptographyProvider Crypto = new PSKCryptographyProvider(UUID, AesKey);
         static EncryptedJsonSerializer marshaller = new EncryptedJsonSerializer(Crypto);
         
         public EncryptedJsonSerializerTests() : base(marshaller)

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Apollo")]
+[assembly: AssemblyTitle("EKECryptography")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Apollo")]
+[assembly: AssemblyProduct("EKECryptography")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("f606a86c-39af-4b5a-b146-f14edc1d762c")]
+[assembly: Guid("f9b7c531-b6b0-4eeb-84ea-b650a38a325e")]
 
 // Version information for an assembly consists of the following four values:
 //

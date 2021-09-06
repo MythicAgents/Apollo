@@ -9,5 +9,7 @@ namespace ApolloInterop.Interfaces
     {
         bool UpdateUUID(string uuid);
         bool UpdateKey(string key);
+
+        string GetUUID();
     }
 }

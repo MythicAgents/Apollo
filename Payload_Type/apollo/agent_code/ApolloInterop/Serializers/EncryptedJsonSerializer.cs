@@ -24,6 +24,10 @@ namespace ApolloInterop.Serializers
             return Cryptor.UpdateKey(key);
         }
 
+        public string GetUUID()
+        {
+            return Cryptor.GetUUID();
+        }
         public override string Serialize(object msg)
         {
             string jsonMsg = base.Serialize(msg);

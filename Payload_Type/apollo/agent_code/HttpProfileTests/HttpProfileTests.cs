@@ -33,7 +33,7 @@ namespace HttpProfileTests
 
         protected static EncryptedJsonSerializer Serializer = new EncryptedJsonSerializer(Cryptor);
 
-        protected static HttpProfile.HttpProfile profile = new HttpProfile.HttpProfile(parameters, Serializer);
+        //protected static HttpTransport.HttpProfile profile = new HttpTransport.HttpProfile(parameters, Serializer);
         
         
     }

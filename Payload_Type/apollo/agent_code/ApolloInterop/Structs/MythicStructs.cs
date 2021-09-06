@@ -261,10 +261,18 @@ namespace ApolloInterop.Structs
         {
             [DataMember(Name = "task_id")]
             public string TaskID;
-            [DataMember(Name = "status_message")]
+            [DataMember(Name = "status")]
             public sStatusMessage StatusMessage;
             [DataMember(Name = "error")]
             public string Error;
+            [DataMember(Name = "total_chunks")]
+            public int TotalChunks;
+            [DataMember(Name = "chunk_num")]
+            public int ChunkNumber;
+            [DataMember(Name = "chunk_data")]
+            public string ChunkData;
+            [DataMember(Name = "file_id")]
+            public string FileID;
         }
 
         [DataContract]
@@ -432,7 +440,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "tasking_size")]
             public int TaskingSize;
             [DataMember(Name = "delegates")]
-            public Dictionary<string, string>[] Delegates;
+            public DelegateMessage[] Delegates;
             [DataMember(Name = "responses")]
             public TaskResponse[] Responses;
             [DataMember(Name = "socks")]
@@ -453,11 +461,8 @@ namespace ApolloInterop.Structs
                 {
                     var d1 = this.Delegates[i];
                     var d2 = obj.Delegates[i];
-                    foreach(var k in d1.Keys)
-                    {
-                        if (d1[k] != d2[k])
-                            return false;
-                    }
+                    if (!d1.Equals(d2))
+                        return false;
                 }
                 for(int i = 0; i < this.Socks.Length; i++)
                 {
@@ -468,6 +473,38 @@ namespace ApolloInterop.Structs
                 }
                 return this.Action == obj.Action && this.TaskingSize == obj.TaskingSize;
             }
+        }
+
+        [DataContract]
+        public struct EKEHandshakeMessage
+        {
+            [DataMember(Name = "action")]
+            public string Action;
+            [DataMember(Name = "pub_key")]
+            public string PublicKey;
+            [DataMember(Name = "session_id")]
+            public string SessionID;
+        }
+
+
+        /*
+         * "action": "staging_rsa",
+        "uuid": "UUID", // new UUID for the next message
+        "session_key": Base64( RSAPub( new aes session key ) ),
+        "session_id": "same 20 char string back"
+        })
+         */
+        [DataContract]
+        public struct EKEHandshakeResponse
+        {
+            [DataMember(Name = "action")]
+            public string Action;
+            [DataMember(Name = "uuid")]
+            public string UUID;
+            [DataMember(Name = "session_key")]
+            public string SessionKey;
+            [DataMember(Name = "session_id")]
+            public string SessionID;
         }
 
         [DataContract]
@@ -541,6 +578,8 @@ namespace ApolloInterop.Structs
             public sMessageAction Action;
             [DataMember(Name = "id")]
             public string ID;
+            [DataMember(Name = "uuid")]
+            public string UUID;
             [DataMember(Name = "status")]
             public sStatusMessage Status;
             [DataMember(Name = "tasks")]
@@ -548,7 +587,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "responses")]
             public TaskStatus[] Responses;
             [DataMember(Name = "delegates")]
-            public Dictionary<string, string>[] Delegates;
+            public DelegateMessage[] Delegates;
             [DataMember(Name = "session_key")]
             public string SessionKey;
             [DataMember(Name = "session_id")]
@@ -590,12 +629,9 @@ namespace ApolloInterop.Structs
                 }
                 for(int i = 0; i < this.Delegates.Length; i++)
                 {
-                    if (this.Delegates[i].Keys.Count != obj.Delegates[i].Keys.Count)
-                        return false;
-                    foreach(string k in this.Delegates[i].Keys)
+                    if (!this.Delegates[i].Equals(obj.Delegates[i]))
                     {
-                        if (this.Delegates[i][k] != obj.Delegates[i][k])
-                            return false;
+                        return false;
                     }
                 }
                 return this.Action == obj.Action &&
