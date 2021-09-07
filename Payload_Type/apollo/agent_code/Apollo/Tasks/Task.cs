@@ -25,6 +25,8 @@
 #define ASSEMBLY_INJECT
 #undef EXECUTE_ASSEMBLY
 #define EXECUTE_ASSEMBLY
+#undef INLINE_ASSEMBLY
+#define INLINE_ASSEMBLY
 #undef GOLDEN_TICKET
 #define GOLDEN_TICKET
 #undef KEYLOG
@@ -287,6 +289,10 @@ namespace Apollo
                 #if EXECUTE_ASSEMBLY
 
                 { "execute_assembly", "AssemblyManager" },
+                #endif
+                #if INLINE_ASSEMBLY
+
+                { "inline_assembly", "AssemblyManager" },
                 #endif
                 #if LIST_ASSEMBLIES
 

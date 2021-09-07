@@ -119,7 +119,7 @@ namespace Apollo
                 return _JobThread.IsAlive;
             }
 
-            internal void AddOutput(object output, bool completed=false, string status="")
+            internal void AddOutput(object output, bool completed = false, string status = "")
             {
                 Task.status = status;
                 Task.completed = completed;
@@ -140,7 +140,8 @@ namespace Apollo
                                 new Artifact(){ artifact=msg, base_artifact="Process Create"}
                             }
                         };
-                    } else
+                    }
+                    else
                     {
                         ApolloTaskResponse temp = (ApolloTaskResponse)output;
                         if (temp.artifacts == null)
@@ -194,7 +195,8 @@ namespace Apollo
                     if (unmanagedCommands.Contains(Task.command) && msg.GetType() == typeof(string))
                     {
                         output.Add((string)msg);
-                    } else
+                    }
+                    else
                     {
 #endif
                         if (msg.GetType() != typeof(ApolloTaskResponse))
@@ -232,7 +234,8 @@ namespace Apollo
 #endif
                     SetError("Job aborted via jobkill.");
                     return true;
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     return false;
                 }

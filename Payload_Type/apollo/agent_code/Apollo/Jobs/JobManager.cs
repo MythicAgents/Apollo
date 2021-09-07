@@ -19,6 +19,7 @@
 #undef POWERPICK
 #undef PSINJECT
 #undef EXECUTE_ASSEMBLY
+#undef INLINE_ASSEMBLY
 #undef ASSEMBLY_INJECT
 #undef SHINJECT
 #undef LIST_INJECTION_TECHNIQUES
@@ -32,6 +33,7 @@
 #define POWERPICK
 #define PSINJECT
 #define EXECUTE_ASSEMBLY
+#define INLINE_ASSEMBLY
 #define ASSEMBLY_INJECT
 #define SHINJECT
 #define LIST_INJECTION_TECHNIQUES
@@ -75,11 +77,11 @@ namespace Apollo.Jobs
         {
             Job[] tempJobs = null;
             List<JobInformationLite> results = new List<JobInformationLite>();
-            lock(executingJobs)
+            lock (executingJobs)
             {
                 tempJobs = executingJobs.ToArray();
             }
-            
+
             foreach (Job j in tempJobs)
             {
                 if (j.Task.command != "jobs" && j.Task.command != "jobkill")
@@ -99,23 +101,24 @@ namespace Apollo.Jobs
         {
             List<Tasks.ApolloTaskResponse> results = new List<Tasks.ApolloTaskResponse>();
             List<int> popIndexes = new List<int>();
-            lock(executingJobs)
+            lock (executingJobs)
             {
-                foreach(Job j in executingJobs)
+                foreach (Job j in executingJobs)
                 {
-                    foreach(Tasks.ApolloTaskResponse res in j.GetOutput())
+                    foreach (Tasks.ApolloTaskResponse res in j.GetOutput())
                     {
                         results.Add(res);
                     }
                     if (j.Task.completed)
                         popIndexes.Add(executingJobs.IndexOf(j));
                 }
-                foreach(int i in popIndexes)
+                foreach (int i in popIndexes)
                 {
                     if (i < executingJobs.Count)
                     {
                         executingJobs.RemoveAt(i);
-                    } else
+                    }
+                    else
                     {
                         break;
                     }
@@ -169,7 +172,7 @@ namespace Apollo.Jobs
             Thread jobThread = new Thread(() => DispatchJob(j));
             j._JobThread = jobThread;
             jobThread.SetApartmentState(ApartmentState.STA);
-            lock(executingJobs)
+            lock (executingJobs)
             {
                 try
                 {
@@ -207,7 +210,8 @@ namespace Apollo.Jobs
                 {
                     job.SetError(String.Format("Unhandled Exception: {0}\n{1}", ex.Message, ex.StackTrace));
                 }
-            } else
+            }
+            else
             {
                 job.SetError(string.Format("Command \"{0}\" is not loaded.", job.Task.command));
             }
