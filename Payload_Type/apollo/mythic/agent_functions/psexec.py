@@ -71,7 +71,7 @@ class PsExecCommand(CommandBase):
                             raise Exception("psexec requires a payload executable, but got unknown type.")
                         # it's done, so we can register a file for it
                         task.args.add_arg("template", resp.response["file"]["agent_file_id"])
-                        task.display_params = "Uploading payload '{}' to {} on {} and creating service '{}'".format(temp.response['tag'], task.args.get_arg("remote_path"), task.args.get_arg("computer"), task.args.get_arg("service_name"))
+                        task.display_params = "Uploading payload '{}' to {} on {} and creating service...".format(temp.response['tag'], task.args.get_arg("remote_path"), task.args.get_arg("computer"))
                         break
                     elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: {}".format(resp.response["error_message"]))
