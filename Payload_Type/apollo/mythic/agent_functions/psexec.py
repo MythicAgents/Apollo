@@ -16,7 +16,9 @@ class PsExecArguments(TaskArguments):
             "service_name": CommandParameter(name="Service Name", required=False, type=ParameterType.String,
                               description='The name of the service to install as. Defaults to "ApolloService-GUID"'),
             "display_name": CommandParameter(name="Service Display Name", required=False, type=ParameterType.String,
-                              description='The display name of the service. Defaults to "Apollo Service: \{GUID\}"')
+                              description='The display name of the service. Defaults to "Apollo Service: \{GUID\}"'),
+            "file_name": CommandParameter(name="Name of the executable file", required=True, type=ParameterType.String,
+                              description='The display name of the service. Defaults to a random UUID.',            
         }
 
     async def parse_arguments(self):
@@ -30,6 +32,8 @@ class PsExecArguments(TaskArguments):
             self.args["service_name"] = f"ApolloService-{_uuid}"
         if self.args["display_name"] == None or self.args["display_name"] == "":
             self.args["display_name"] = f"Apollo Service: {_uuid}"
+        if self.args["file_name"] == None or self.args["file_name"] == "":
+            self.args["file_name"] = _uuid
         pass
 
 
