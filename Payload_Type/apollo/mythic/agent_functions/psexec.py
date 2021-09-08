@@ -18,7 +18,7 @@ class PsExecArguments(TaskArguments):
             "display_name": CommandParameter(name="Service Display Name", required=False, type=ParameterType.String,
                               description='The display name of the service. Defaults to "Apollo Service: \{GUID\}"'),
             "file_name": CommandParameter(name="Name of the executable file", required=True, type=ParameterType.String,
-                              description='The display name of the service. Defaults to a random UUID.',            
+                              description='The display name of the service. Defaults to a random UUID.'),            
         }
 
     async def parse_arguments(self):
