@@ -46,7 +46,7 @@ namespace Apollo.CommandModules
         private static Dictionary<string, DPAPI_MODULE> loadedAssemblies = new Dictionary<string, DPAPI_MODULE>();
         private static byte[] loaderStub;
         private static Mutex assemblyMutex = new Mutex();
-        private static object inline_assembly_Locker;
+        private static object inline_assembly_Locker = new object();
         /// <summary>
         /// Execute an arbitrary C# assembly in a sacrificial process
         /// that respects the current caller's token.
