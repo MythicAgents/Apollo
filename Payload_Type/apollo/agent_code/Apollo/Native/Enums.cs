@@ -53,6 +53,20 @@ namespace Native
             INHERIT_PARENT_AFFINITY = 0x00010000
         }
 
+        [Flags]
+        public enum AllocationType : uint
+        {
+            Commit = 0x1000,
+            Reserve = 0x2000,
+            Decommit = 0x4000,
+            Release = 0x8000,
+            Reset = 0x80000,
+            Physical = 0x400000,
+            TopDown = 0x100000,
+            WriteWatch = 0x200000,
+            ResetUndo = 0x1000000,
+            LargePages = 0x20000000
+        }
 
         [Flags]
         internal enum LogonFlags : uint

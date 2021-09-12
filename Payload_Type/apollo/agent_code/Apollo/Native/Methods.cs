@@ -491,6 +491,8 @@ namespace Native
   DWORD dwThreadId
 );*/
 
+        [DllImport("kernel32")]
+        public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool DuplicateHandle(
@@ -806,6 +808,11 @@ namespace Native
         #region NTDLL
 
         [DllImport("ntdll.dll")]
+        public static extern void RtlZeroMemory(
+            IntPtr Destination,
+            int length);
+
+        [DllImport("ntdll.dll")]
         internal static extern int NtQueryInformationProcess(
             IntPtr processHandle,
             int processInformationClass,
@@ -1005,5 +1012,30 @@ namespace Native
         public static extern bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
 
         #endregion
+
+        #region CRYPT32
+
+        [DllImport("crypt32.dll", CharSet = CharSet.Auto)]
+        public static extern bool CryptProtectData(
+            ref DATA_BLOB pPlainText,
+            string szDescription,
+            ref DATA_BLOB pEntropy,
+            IntPtr pReserved,
+            IntPtr pPrompt,
+            int dwFlags,
+            ref DATA_BLOB pCipherText);
+
+        [DllImport("crypt32.dll", CharSet = CharSet.Auto)]
+        public static extern bool CryptUnprotectData(
+            ref DATA_BLOB pCipherText,
+            ref string pszDescription,
+            ref DATA_BLOB pEntropy,
+            IntPtr pReserved,
+            IntPtr pPrompt,
+            int dwFlags,
+            ref DATA_BLOB pPlainText);
+
+        #endregion
+
     }
 }

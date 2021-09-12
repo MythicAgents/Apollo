@@ -11,7 +11,6 @@ namespace Native
     internal static class Structures
     {
 
-
         [StructLayoutAttribute(LayoutKind.Sequential)]
         public struct SECURITY_DESCRIPTOR
         {
@@ -609,5 +608,31 @@ namespace Native
             public IntPtr hIcon;
             public IntPtr hProcess;
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct DATA_BLOB
+    {
+        public int cbData;
+        public IntPtr pbData;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct CRYPTPROTECT_PROMPTSTRUCT
+    {
+        public int cbSize;
+        public int dwPromptFlags;
+        public IntPtr hwndApp;
+        public string szPrompt;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct DPAPI_MODULE
+    {
+        public String sModName;
+        public int iModVersion;
+        public int iModSize;
+        public IntPtr pMod;
+        public Byte[] bMod;
     }
 }

