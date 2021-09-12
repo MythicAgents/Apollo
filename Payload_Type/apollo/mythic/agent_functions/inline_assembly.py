@@ -47,7 +47,7 @@ class InlineAssemblyCommand(CommandBase):
                                               file=base64.b64encode(dllBytes).decode(),
                                               delete_after_fetch=True)
         if file_resp.status == MythicStatus.Success:
-            task.display_params = ("Running inline_assembly")
+            task.display_params = ("Running inline_assembly: {} {}".format(task.args.get_arg('assembly_name'),task.args.get_arg('assembly_arguments')))
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
             raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
