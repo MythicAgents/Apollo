@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Interfaces;
+using ApolloInterop.Structs.ApolloStructs;
+using ApolloInterop.Types;
 
 namespace ApolloInterop.Serializers
 {
@@ -34,10 +37,38 @@ namespace ApolloInterop.Serializers
             return Cryptor.Encrypt(jsonMsg);
         }
 
-        public override T Deserialize<T>(string msg)
+        public override T Deserialize<T>(string msg) 
         {
             string decrypted = Cryptor.Decrypt(msg);
             return base.Deserialize<T>(decrypted);
+        }
+
+        public override object Deserialize(string msg, Type t)
+        {
+            string decrypted = Cryptor.Decrypt(msg);
+            return base.Deserialize(decrypted, t);
+        }
+
+        public override IPCData[] SerializeIPCMessage(IMythicMessage message, int blockSize = 4096)
+        {
+            string msg = Serialize(message);
+            byte[] bMsg = Encoding.UTF8.GetBytes(msg);
+            int numMessages = bMsg.Length / blockSize + 1;
+            IPCData[] ret = new IPCData[numMessages];
+            var t = message.GetTypeCode();
+            for (int i = 0; i < numMessages; i ++)
+            {
+                byte[] part = bMsg.Skip(i*blockSize).Take(blockSize).ToArray();
+                ret[i] = new IPCData(part, t, i, numMessages);
+            }
+            return ret;
+        }
+
+        public override IMythicMessage DeserializeIPCMessage(byte[] data, MessageType mt)
+        {
+            string enc = Encoding.UTF8.GetString(data);
+            Type t = MythicTypes.GetMessageType(mt);
+            return (IMythicMessage)Deserialize(enc, t);
         }
     }
 }

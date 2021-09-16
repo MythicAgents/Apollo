@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo1.0", "Apollo1.0\Apol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Apollo", "Apollo\Apollo.csproj", "{F606A86C-39AF-4B5A-B146-F14EDC1D762C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamedPipeProfile", "NamedPipeProfile\NamedPipeProfile.csproj", "{3AF39094-7F42-4444-A278-FA656EB4678F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,18 @@ Global
 		{F606A86C-39AF-4B5A-B146-F14EDC1D762C}.Release|x64.Build.0 = Release|Any CPU
 		{F606A86C-39AF-4B5A-B146-F14EDC1D762C}.Release|x86.ActiveCfg = Release|Any CPU
 		{F606A86C-39AF-4B5A-B146-F14EDC1D762C}.Release|x86.Build.0 = Release|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Debug|x64.Build.0 = Debug|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Debug|x86.Build.0 = Debug|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Release|x64.ActiveCfg = Release|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Release|x64.Build.0 = Release|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Release|x86.ActiveCfg = Release|Any CPU
+		{3AF39094-7F42-4444-A278-FA656EB4678F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -43,6 +43,8 @@
   <ItemGroup>
     <Compile Include="Agent\Apollo.cs" />
     <Compile Include="Api\Api.cs" />
+    <Compile Include="Api\Cryptography\RSA.cs" />
+    <Compile Include="Api\IO\Pipes.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Management\C2\C2ProfileManager.cs" />
     <Compile Include="Management\Peer\PeerManager.cs" />

@@ -11,6 +11,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using ApolloInterop.Enums.ApolloEnums;
 
 namespace HttpTransport
 {
@@ -119,6 +120,11 @@ namespace HttpTransport
         public bool Recv<T>(OnResponse<T> onResponse)
         {
             throw new Exception("HttpProfile does not support Recv only.");
+        }
+
+        public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp)
+        {
+            throw new NotImplementedException("HttpProfile does not support Recv only.");
         }
 
         public bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse)

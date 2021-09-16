@@ -6,6 +6,8 @@ using System.Text;
 using sCredentialType = System.String;
 using sStatusMessage = System.String;
 using sMessageAction = System.String;
+using ApolloInterop.Interfaces;
+using ApolloInterop.Enums.ApolloEnums;
 
 namespace ApolloInterop.Structs
 {
@@ -14,8 +16,12 @@ namespace ApolloInterop.Structs
     {
         // Profile data sent from the Mythic Server
         [DataContract]
-        public struct C2ProfileData
+        public struct C2ProfileData : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.C2ProfileData;
+            }
             [DataMember(Name = "name")]
             public string Name;
             [DataMember(Name = "is_p2p")]
@@ -46,8 +52,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct Credential
+        public struct Credential : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.Credential;
+            }
             [DataMember(Name = "credential_type")]
             public string CredentialType;
             [DataMember(Name = "realm")]
@@ -59,8 +69,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct RemovedFileInformation
+        public struct RemovedFileInformation : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.RemovedFileInformation;
+            }
             [DataMember(Name = "host")]
             public string Host;
             [DataMember(Name = "path")]
@@ -68,8 +82,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct FileInformation : IEquatable<FileInformation>
+        public struct FileInformation : IEquatable<FileInformation>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.FileInformation;
+            }
             [DataMember(Name = "full_name")]
             public string FullName;
             [DataMember(Name = "name")]
@@ -106,7 +124,7 @@ namespace ApolloInterop.Structs
             {
                 if (this.Permissions.Keys.Count != obj.Permissions.Keys.Count)
                     return false;
-                foreach(string k in this.Permissions.Keys)
+                foreach (string k in this.Permissions.Keys)
                 {
                     if (this.Permissions[k] != obj.Permissions[k])
                         return false;
@@ -127,8 +145,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct FileBrowser : IEquatable<FileBrowser>
+        public struct FileBrowser : IEquatable<FileBrowser>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.FileBrowser;
+            }
             [DataMember(Name = "host")]
             public string Host;
             [DataMember(Name = "is_file")]
@@ -157,14 +179,14 @@ namespace ApolloInterop.Structs
 
             public bool Equals(FileBrowser obj)
             {
-                for(int i = 0; i < this.Files.Length; i++)
+                for (int i = 0; i < this.Files.Length; i++)
                 {
                     if (!this.Files[i].Equals(obj.Files[i]))
                     {
                         return false;
                     }
                 }
-                foreach(string key in this.Permissions.Keys)
+                foreach (string key in this.Permissions.Keys)
                 {
                     if (this.Permissions[key] != obj.Permissions[key])
                         return false;
@@ -187,8 +209,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct EdgeNode : IEquatable<EdgeNode>
+        public struct EdgeNode : IEquatable<EdgeNode>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.EdgeNode;
+            }
             [DataMember(Name = "source")]
             public string Source;
             [DataMember(Name = "destination")]
@@ -220,8 +246,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct SocksDatagram
+        public struct SocksDatagram : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.SocksDatagram;
+            }
             [DataMember(Name = "server_id")]
             public int ServerID;
             [DataMember(Name = "data")]
@@ -229,8 +259,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct Artifact
+        public struct Artifact : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.Artifact;
+            }
             [DataMember(Name = "base_artifact")]
             public string BaseArtifact;
             [DataMember(Name = "artifact")]
@@ -246,10 +280,10 @@ namespace ApolloInterop.Structs
             public static StatusMessage Error { get { return new StatusMessage("error"); } }
             public static StatusMessage Processing { get { return new StatusMessage("processing"); } }
             public static StatusMessage Complete { get { return new StatusMessage("complete"); } }
-        
+
             public static bool operator ==(StatusMessage a, StatusMessage b) { return a.ToString() == b.ToString(); }
 
-            public static bool operator !=(StatusMessage a, StatusMessage b) { return a.ToString() != b.ToString();}
+            public static bool operator !=(StatusMessage a, StatusMessage b) { return a.ToString() != b.ToString(); }
 
             public static bool operator ==(string a, StatusMessage b) { return a == b.ToString(); }
 
@@ -257,8 +291,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskStatus
+        public struct TaskStatus : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.TaskStatus;
+            }
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "status")]
@@ -276,8 +314,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskResponse : IEquatable<TaskResponse>
+        public struct TaskResponse : IEquatable<TaskResponse>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.TaskResponse;
+            }
             [DataMember(Name = "user_output")]
             public object UserOutput;
             [DataMember(Name = "completed")]
@@ -314,22 +356,22 @@ namespace ApolloInterop.Structs
 
             public bool Equals(TaskResponse msg)
             {
-                for(int i = 0; i < this.Edges.Length; i++)
+                for (int i = 0; i < this.Edges.Length; i++)
                 {
                     if (!this.Edges[i].Equals(msg.Edges[i]))
                         return false;
                 }
-                for(int i = 0; i < this.Credentials.Length; i++)
+                for (int i = 0; i < this.Credentials.Length; i++)
                 {
                     if (!this.Credentials[i].Equals(msg.Credentials[i]))
                         return false;
                 }
-                for(int i = 0; i < this.RemovedFiles.Length; i++)
+                for (int i = 0; i < this.RemovedFiles.Length; i++)
                 {
                     if (!this.RemovedFiles[i].Equals(msg.RemovedFiles[i]))
                         return false;
                 }
-                for(int i = 0; i < this.Artifacts.Length; i++)
+                for (int i = 0; i < this.Artifacts.Length; i++)
                 {
                     if (!this.Artifacts[i].Equals(msg.Artifacts[i]))
                         return false;
@@ -349,8 +391,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct DownloadRegistrationMessage
+        public struct DownloadRegistrationMessage : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.DownloadRegistrationMessage;
+            }
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "total_chunks")]
@@ -364,8 +410,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct DownloadProgressMessage
+        public struct DownloadProgressMessage : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.DownloadProgressMessage;
+            }
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "file_id")]
@@ -377,8 +427,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct Task
+        public struct Task : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.Task;
+            }
             [DataMember(Name = "command")]
             public string Command;
             [DataMember(Name = "parameters")]
@@ -420,8 +474,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct DelegateMessage
+        public struct DelegateMessage : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.DelegateMessage;
+            }
             [DataMember(Name = "uuid")]
             public string UUID;
             [DataMember(Name = "mythic_uuid")]
@@ -433,8 +491,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskingMessage : IEquatable<TaskingMessage>
+        public struct TaskingMessage : IEquatable<TaskingMessage>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.TaskingMessage;
+            }
             [DataMember(Name = "action")]
             public string Action;
             [DataMember(Name = "tasking_size")]
@@ -457,14 +519,14 @@ namespace ApolloInterop.Structs
                     return false;
                 if (this.Socks.Length != obj.Socks.Length)
                     return false;
-                for(int i = 0; i < this.Delegates.Length; i++)
+                for (int i = 0; i < this.Delegates.Length; i++)
                 {
                     var d1 = this.Delegates[i];
                     var d2 = obj.Delegates[i];
                     if (!d1.Equals(d2))
                         return false;
                 }
-                for(int i = 0; i < this.Socks.Length; i++)
+                for (int i = 0; i < this.Socks.Length; i++)
                 {
                     if (!this.Socks[i].Equals(obj.Socks[i]))
                     {
@@ -476,8 +538,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct EKEHandshakeMessage
+        public struct EKEHandshakeMessage : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.EKEHandshakeMessage;
+            }
             [DataMember(Name = "action")]
             public string Action;
             [DataMember(Name = "pub_key")]
@@ -495,8 +561,12 @@ namespace ApolloInterop.Structs
         })
          */
         [DataContract]
-        public struct EKEHandshakeResponse
+        public struct EKEHandshakeResponse : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.EKEHandshakeResponse;
+            }
             [DataMember(Name = "action")]
             public string Action;
             [DataMember(Name = "uuid")]
@@ -508,8 +578,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct CheckinMessage
+        public struct CheckinMessage : IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.CheckinMessage;
+            }
             [DataMember(Name = "action")]
             public string Action;
             [DataMember(Name = "os")]
@@ -543,8 +617,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct UploadMessage : IEquatable<UploadMessage>
+        public struct UploadMessage : IEquatable<UploadMessage>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.UploadMessage;
+            }
             [DataMember(Name = "chunk_size")]
             public int ChunkSize;
             [DataMember(Name = "file_id")]
@@ -572,8 +650,12 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct MessageResponse : IEquatable<MessageResponse>
+        public struct MessageResponse : IEquatable<MessageResponse>, IMythicMessage
         {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.MessageResponse;
+            }
             [DataMember(Name = "action")]
             public sMessageAction Action;
             [DataMember(Name = "id")]
@@ -617,17 +699,17 @@ namespace ApolloInterop.Structs
                 if (this.Delegates.Length != obj.Delegates.Length)
                     return false;
 
-                for(int i = 0; i < this.Tasks.Length; i++)
+                for (int i = 0; i < this.Tasks.Length; i++)
                 {
                     if (!this.Tasks[i].Equals(obj.Tasks[i]))
                         return false;
                 }
-                for(int i = 0; i < this.Responses.Length; i++)
+                for (int i = 0; i < this.Responses.Length; i++)
                 {
                     if (!this.Responses[i].Equals(obj.Responses[i]))
                         return false;
                 }
-                for(int i = 0; i < this.Delegates.Length; i++)
+                for (int i = 0; i < this.Delegates.Length; i++)
                 {
                     if (!this.Delegates[i].Equals(obj.Delegates[i]))
                     {
@@ -644,7 +726,7 @@ namespace ApolloInterop.Structs
                     this.ChunkNumber == obj.ChunkNumber &&
                     this.FileID == obj.FileID &&
                     this.TaskID == obj.TaskID;
-                
+
             }
         }
     }

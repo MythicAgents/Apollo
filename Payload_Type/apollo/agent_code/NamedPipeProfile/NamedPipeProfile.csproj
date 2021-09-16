@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5B5BD587-7DCA-4306-B1C3-83A70D755F37}</ProjectGuid>
+    <ProjectGuid>{3AF39094-7F42-4444-A278-FA656EB4678F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ApolloInterop</RootNamespace>
-    <AssemblyName>ApolloInterop</AssemblyName>
+    <RootNamespace>NamedPipeProfile</RootNamespace>
+    <AssemblyName>NamedPipeProfile</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -33,7 +33,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -41,38 +40,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Agent.cs" />
-    <Compile Include="Classes\AsyncNamedPipeClient.cs" />
-    <Compile Include="Classes\AsyncNamedPipeServer.cs" />
-    <Compile Include="Classes\C2Profile.cs" />
-    <Compile Include="Classes\C2ProfileManager.cs" />
-    <Compile Include="Classes\CryptographyProvider.cs" />
-    <Compile Include="Classes\IPCMessageStore.cs" />
-    <Compile Include="Classes\Peer.cs" />
-    <Compile Include="Classes\PeerManager.cs" />
-    <Compile Include="Classes\RSAKeyGenerator.cs" />
-    <Compile Include="Classes\SocksManager.cs" />
-    <Compile Include="Enums\ApolloEnums.cs" />
-    <Compile Include="Interfaces\IAgent.cs" />
-    <Compile Include="Interfaces\IApi.cs" />
-    <Compile Include="Interfaces\IC2Profile.cs" />
-    <Compile Include="Interfaces\IC2ProfileManager.cs" />
-    <Compile Include="Interfaces\ICryptography.cs" />
-    <Compile Include="Interfaces\ICryptographySerializer.cs" />
-    <Compile Include="Interfaces\IMythicMessage.cs" />
-    <Compile Include="Interfaces\INamedPipeCallback.cs" />
-    <Compile Include="Interfaces\IPeer.cs" />
-    <Compile Include="Interfaces\IPeerManager.cs" />
-    <Compile Include="Interfaces\ISerializer.cs" />
-    <Compile Include="Interfaces\ISocksManager.cs" />
-    <Compile Include="Interfaces\ITaskManager.cs" />
+    <Compile Include="NamedPipeProfile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Serializers\EncryptedJsonSerializer.cs" />
-    <Compile Include="Serializers\JsonSerializer.cs" />
-    <Compile Include="Structs\ApolloStructs.cs" />
-    <Compile Include="Structs\MythicStructs.cs" />
-    <Compile Include="Types\Delegates.cs" />
-    <Compile Include="Types\MythicTypes.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
+      <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
+      <Name>ApolloInterop</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
