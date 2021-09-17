@@ -24,15 +24,5 @@ namespace ApolloInterop.Classes
             Agent = agent;
             Serializer = serializer;
         }
-
-
-        public void CorrelateMessage(IPCData pd, OnResponse<IPCData[]> onFullPacket)
-        {
-            if (!MessageStore.ContainsKey(pd.ID))
-            {
-                MessageStore[pd.ID] = new IPCMessageStore();
-            }
-            MessageStore[pd.ID].AddMessage(pd, onFullPacket);
-        }
     }
 }

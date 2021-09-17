@@ -95,19 +95,16 @@ namespace Apollo.Agent
             };
             IC2Profile connectProfile = null;
             bool bRet = false;
-            bool messageSent = false;
-            bool messageRecv = false;
             foreach(var profile in C2ProfileManager.GetEgressCollection())
             {
                 try
                 {
-                    profile.Connect();
                     if (profile.Connect(msg, delegate (MessageResponse r)
                     {
                         connectProfile = profile;
                         UUID = r.UUID;
-                        messageSent = true;
-                        return true;
+                        bRet = true;
+                        return bRet;
                     }))
                     {
                         break;
@@ -116,14 +113,6 @@ namespace Apollo.Agent
                 {
                     Console.WriteLine(ex);
                 }
-            }
-            if (messageSent && connectProfile.IsOneWay())
-            {
-                // do some other stuff to recv
-                bRet = messageSent && messageRecv;
-            } else
-            {
-                bRet = messageSent;
             }
             return bRet;
 

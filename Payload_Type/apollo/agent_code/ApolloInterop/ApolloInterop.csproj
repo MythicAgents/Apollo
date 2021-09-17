@@ -47,6 +47,7 @@
     <Compile Include="Classes\C2Profile.cs" />
     <Compile Include="Classes\C2ProfileManager.cs" />
     <Compile Include="Classes\CryptographyProvider.cs" />
+    <Compile Include="Classes\IPCMessageBinder.cs" />
     <Compile Include="Classes\IPCMessageStore.cs" />
     <Compile Include="Classes\Peer.cs" />
     <Compile Include="Classes\PeerManager.cs" />

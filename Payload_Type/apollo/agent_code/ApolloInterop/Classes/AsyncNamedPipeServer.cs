@@ -81,8 +81,8 @@ namespace ApolloInterop.Classes
                 PipeTransmissionMode.Message,
                 PipeOptions.Asynchronous | PipeOptions.WriteThrough,
                 _BUF_IN,
-                _BUF_OUT
-                //_pipeSecurity
+                _BUF_OUT,
+                _pipeSecurity
             );
             //NamedPipeServerStream pipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, -1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
             // wait for client to connect async
@@ -104,7 +104,7 @@ namespace ApolloInterop.Classes
             };
             
             // Add to connection list
-            if (_running && _connections.TryAdd(pd.Pipe, pd))
+            if (_running && _connections.TryAdd(pipe, pd))
             {
                 // Prep the next connection
                 CreateServerPipe();

@@ -49,17 +49,18 @@ namespace ApolloInterop.Serializers
             return base.Deserialize(decrypted, t);
         }
 
-        public override IPCData[] SerializeIPCMessage(IMythicMessage message, int blockSize = 4096)
+        public override IPCChunkedData[] SerializeIPCMessage(IMythicMessage message, int blockSize = 4096)
         {
             string msg = Serialize(message);
             byte[] bMsg = Encoding.UTF8.GetBytes(msg);
             int numMessages = bMsg.Length / blockSize + 1;
-            IPCData[] ret = new IPCData[numMessages];
+            IPCChunkedData[] ret = new IPCChunkedData[numMessages];
             var t = message.GetTypeCode();
+            string id = Guid.NewGuid().ToString();
             for (int i = 0; i < numMessages; i ++)
             {
                 byte[] part = bMsg.Skip(i*blockSize).Take(blockSize).ToArray();
-                ret[i] = new IPCData(part, t, i, numMessages);
+                ret[i] = new IPCChunkedData(id, message.GetTypeCode(), i, numMessages, part);
             }
             return ret;
         }

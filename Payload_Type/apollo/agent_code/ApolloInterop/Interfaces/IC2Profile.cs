@@ -13,15 +13,11 @@ namespace ApolloInterop.Interfaces
     {
         bool Connect(CheckinMessage checkinMessage, OnResponse<MessageResponse> onResp);
 
-        bool Connect();
-
         void Start();
 
-        bool Send<T>(T message);
+        bool Send<IMythicMessage>(IMythicMessage message);
 
         bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse);
-
-        bool Recv<T>(OnResponse<T> onResponse);
 
         bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp);
 

@@ -13,7 +13,7 @@ namespace ApolloInterop.Interfaces
         T Deserialize<T>(string msg);
 
         // This is so we can serialize/deserialize things across named pipes, but technically
-        IPCData[] SerializeIPCMessage(IMythicMessage message, int block_size = 4096);
+        IPCChunkedData[] SerializeIPCMessage(IMythicMessage message, int block_size = 4096);
         IMythicMessage DeserializeIPCMessage(byte[] data, MessageType mt);
     }
 }

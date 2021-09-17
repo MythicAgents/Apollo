@@ -27,14 +27,8 @@ namespace ApolloInterop.Structs.ApolloStructs
     }
 
     [DataContract]
-    public struct IPCData
+    public struct IPCChunkedData
     {
-        public PipeStream Pipe;
-        public Object State;
-        [DataMember(Name = "data")]
-        public Byte[] Data;
-        [DataMember(Name = "data_len")]
-        public int DataLength;
         [DataMember(Name = "message_type")]
         public MessageType Message;
         [DataMember(Name = "chunk_number")]
@@ -43,22 +37,31 @@ namespace ApolloInterop.Structs.ApolloStructs
         public int TotalChunks;
         [DataMember(Name = "id")]
         public string ID;
+        [DataMember(Name = "data")]
+        public string Data;
 
-        public IPCData(byte[] data, MessageType type, int chunkNum=0, int totalChunks=1, PipeStream p = null, Object s = null, string id = null, int dataLen = -1)
+        public IPCChunkedData(string id="", MessageType mt = 0, int chunkNum = 0, int totalChunks = 1, byte[] data = null)
         {
-            if (id == null)
+            if (string.IsNullOrEmpty(id))
+            {
                 ID = Guid.NewGuid().ToString();
-            Data = data;
-            Message = type;
+            }
+            else
+            {
+                ID = id;
+            }
+            Message = mt;
             ChunkNumber = chunkNum;
             TotalChunks = totalChunks;
-            Pipe = p;
-            State = s;
-            DataLength = dataLen;
-            if (string.IsNullOrEmpty(id))
-                ID = Guid.NewGuid().ToString();
-            else
-                ID = id;
+            Data = Convert.ToBase64String(data);
         }
+    }
+
+    public struct IPCData
+    {
+        public PipeStream Pipe;
+        public Object State;
+        public Byte[] Data;
+        public int DataLength;
     }
 }
