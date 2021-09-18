@@ -63,6 +63,10 @@
       <Project>{74b393f3-4000-49ac-8116-dccdb5f52344}</Project>
       <Name>HttpProfile</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NamedPipeProfile\NamedPipeProfile.csproj">
+      <Project>{3af39094-7f42-4444-a278-fa656eb4678f}</Project>
+      <Name>NamedPipeProfile</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PlaintextCrypto\PlaintextCryptography.csproj">
       <Project>{ed320ce0-c28f-4b07-a353-9b14c261e8a3}</Project>
       <Name>PlaintextCryptography</Name>

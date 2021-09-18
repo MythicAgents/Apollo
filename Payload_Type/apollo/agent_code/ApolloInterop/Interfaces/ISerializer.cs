@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ApolloInterop.Constants;
 
 namespace ApolloInterop.Interfaces
 {
@@ -12,8 +13,10 @@ namespace ApolloInterop.Interfaces
         string Serialize(object obj);
         T Deserialize<T>(string msg);
 
+        IPCChunkedData[] SerializeDelegateMessage(string message, MessageType mt, int block_size = IPC.SEND_SIZE);
+
         // This is so we can serialize/deserialize things across named pipes, but technically
-        IPCChunkedData[] SerializeIPCMessage(IMythicMessage message, int block_size = 4096);
+        IPCChunkedData[] SerializeIPCMessage(IMythicMessage message, int block_size = IPC.SEND_SIZE);
         IMythicMessage DeserializeIPCMessage(byte[] data, MessageType mt);
     }
 }

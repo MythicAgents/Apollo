@@ -1,4 +1,5 @@
 ﻿using ApolloInterop.Interfaces;
+using ApolloInterop.Serializers;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
@@ -9,22 +10,31 @@ namespace ApolloInterop.Classes
 {
     public abstract class Peer : IPeer
     {
-        protected IAgent Agent;
-        protected IC2Profile Profile;
-        protected string UUID;
+        protected IAgent _agent;
+        protected ISerializer _serializer;
+        protected C2ProfileData _c2ProfileData;
+        protected string _uuid;
+        protected string _mythicUUID;
+        protected bool _previouslyConnected;
 
-        public Peer(IAgent agent, IC2Profile profile)
+        public Peer(IAgent agent, C2ProfileData data, ISerializer serializer = null)
         {
-            Agent = agent;
-            Profile = profile;
-            UUID = agent.GetApi().NewUUID();
+            _agent = agent;
+            _c2ProfileData = data;
+            _uuid = agent.GetApi().NewUUID();
+            _previouslyConnected = false;
+            if (serializer == null)
+            {
+                _serializer = new JsonSerializer();
+            }
         }
 
-        public abstract void Start();
+        public abstract bool Start();
         public abstract void Stop();
-        public abstract string Connected();
-        public abstract string ProcessMessage(DelegateMessage message);
-        public virtual string GetUUID() { return UUID; }
+        public abstract bool Connected();
+        public abstract void ProcessMessage(DelegateMessage message);
+        public virtual string GetUUID() { return _uuid; }
+        public virtual string GetMythicUUID() { return _mythicUUID; }
         public abstract bool Finished();
 
 

@@ -53,6 +53,7 @@
     <Compile Include="Classes\PeerManager.cs" />
     <Compile Include="Classes\RSAKeyGenerator.cs" />
     <Compile Include="Classes\SocksManager.cs" />
+    <Compile Include="Constants\IPC.cs" />
     <Compile Include="Enums\ApolloEnums.cs" />
     <Compile Include="Interfaces\IAgent.cs" />
     <Compile Include="Interfaces\IApi.cs" />

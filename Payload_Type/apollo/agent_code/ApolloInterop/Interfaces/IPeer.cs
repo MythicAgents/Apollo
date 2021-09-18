@@ -8,11 +8,12 @@ namespace ApolloInterop.Interfaces
 {
     public interface IPeer
     {
-        void Start();
+        bool Start();
         void Stop();
         string GetUUID();
-        string Connected();
-        string ProcessMessage(DelegateMessage message);
+        string GetMythicUUID();
+        bool Connected();
+        void ProcessMessage(DelegateMessage message);
         bool Finished();
     }
 }

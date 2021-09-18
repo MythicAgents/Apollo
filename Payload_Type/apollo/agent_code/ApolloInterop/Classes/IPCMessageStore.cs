@@ -37,7 +37,7 @@ namespace ApolloInterop.Classes
                 List<byte> data = new List<byte>();
                 for(int i = 0; i < _data.Length; i++)
                 {
-                    data.Concat(Convert.FromBase64String(_data[i].Data));
+                    data.AddRange(Convert.FromBase64String(_data[i].Data));
                 }
                 _dispatcher(data.ToArray(), _data[0].Message);
             }
