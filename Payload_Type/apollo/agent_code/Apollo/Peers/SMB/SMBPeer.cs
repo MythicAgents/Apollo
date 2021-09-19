@@ -27,10 +27,10 @@ namespace Apollo.Peers.SMB
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
         private MessageType _serverResponseType;
-        public SMBPeer(IAgent agent, C2ProfileData c2) : base(agent, c2)
+        public SMBPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
-            _pipeClient = new AsyncNamedPipeClient(c2.Parameters["hostname"], c2.Parameters["pipename"], this);
-            _expectEKE = c2.Parameters["encrypted_exchange_check"] == "T";
+            _pipeClient = new AsyncNamedPipeClient(info.Hostname, info.C2Profile.Parameters["pipename"], this);
+            _expectEKE = info.C2Profile.Parameters["encrypted_exchange_check"] == "T";
 
             _sendAction = (object p) =>
             {

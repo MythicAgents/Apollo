@@ -12,15 +12,15 @@ namespace ApolloInterop.Classes
     {
         protected IAgent _agent;
         protected ISerializer _serializer;
-        protected C2ProfileData _c2ProfileData;
+        protected PeerInformation _peerInfo;
         protected string _uuid;
         protected string _mythicUUID;
         protected bool _previouslyConnected;
 
-        public Peer(IAgent agent, C2ProfileData data, ISerializer serializer = null)
+        public Peer(IAgent agent, PeerInformation data, ISerializer serializer = null)
         {
             _agent = agent;
-            _c2ProfileData = data;
+            _peerInfo = data;
             _uuid = agent.GetApi().NewUUID();
             _previouslyConnected = false;
             if (serializer == null)

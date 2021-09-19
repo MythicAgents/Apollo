@@ -43,6 +43,9 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     async def build(self) -> BuildResponse:
         # this function gets called to create an instance of your payload
         resp = BuildResponse(status=BuildStatus.Error)
+        # debugging
+        resp.status = BuildStatus.Success
+        #end debugging
         defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {
             "DefaultProfile.cs": {

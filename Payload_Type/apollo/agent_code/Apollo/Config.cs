@@ -1,6 +1,5 @@
-﻿#if DEBUG
-#define HTTP
-#endif
+﻿#define HTTP
+
 
 using HttpTransport;
 using System;
@@ -51,7 +50,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
-                        { "pipename", "apollo" },
+                        { "pipename", "6e7tvpfc-ggqp-yjsg-i4gf-1cfwoas5kyxr" },
                         { "encrypted_exchange_check", "T" },
                     }
                 }
@@ -61,8 +60,15 @@ namespace Apollo
 
 
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
+#if HTTP
         public static string StagingRSAPrivateKey = "ACstCeIXHEqdn/QM3YsAX24yfRUX6JBtOdhkAwnfQrw=";
-
+#elif SMB
+        public static string StagingRSAPrivateKey = "VP/v4tUOxp2q/SK7Xsw5NRiblpHkfO0fMQ8nM02F+AY=";
+#endif
+#if HTTP
         public static string PayloadUUID = "9f006dd8-7036-455b-99ed-d0b5f19ba921";
+#elif SMB
+        public static string PayloadUUID = "3c3c7598-1a3a-45e3-8af3-416410f93848";
+#endif
     }
 }
