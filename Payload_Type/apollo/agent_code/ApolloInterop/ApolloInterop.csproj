@@ -53,6 +53,7 @@
     <Compile Include="Classes\PeerManager.cs" />
     <Compile Include="Classes\RSAKeyGenerator.cs" />
     <Compile Include="Classes\SocksManager.cs" />
+    <Compile Include="Classes\Tasking.cs" />
     <Compile Include="Constants\IPC.cs" />
     <Compile Include="Enums\ApolloEnums.cs" />
     <Compile Include="Interfaces\IAgent.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="Interfaces\IPeerManager.cs" />
     <Compile Include="Interfaces\ISerializer.cs" />
     <Compile Include="Interfaces\ISocksManager.cs" />
+    <Compile Include="Interfaces\ITask.cs" />
     <Compile Include="Interfaces\ITaskManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializers\EncryptedJsonSerializer.cs" />

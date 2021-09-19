@@ -30,6 +30,8 @@ namespace ApolloInterop.Interfaces
 
         bool IsAlive();
 
+        string GetUUID();
+
         ITaskManager GetTaskManager();
         IPeerManager GetPeerManager();
 

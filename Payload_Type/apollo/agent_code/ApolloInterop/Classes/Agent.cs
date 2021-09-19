@@ -10,7 +10,7 @@ namespace ApolloInterop.Classes
 {
     public abstract class Agent : IAgent
     {
-        public int SleepInterval { get; protected set; } = 5;
+        public int SleepInterval { get; protected set; } = 5000;
         public double Jitter { get; protected set; } = 0;
         public bool Alive { get; protected set; } = true;
 
@@ -33,7 +33,7 @@ namespace ApolloInterop.Classes
         public virtual void Exit() { Alive = false; }
         public virtual void SetSleep(int seconds, double jitter=0)
         {
-            SleepInterval = seconds;
+            SleepInterval = seconds * 1000;
             Jitter = jitter;
             if (Jitter != 0)
             {
@@ -66,5 +66,9 @@ namespace ApolloInterop.Classes
         public virtual IC2ProfileManager GetC2ProfileManager() { return C2ProfileManager; }
         public virtual ICryptographySerializer GetCryptographySerializer() { return Serializer; }
 
+        public string GetUUID()
+        {
+            return UUID;
+        }
     }
 }

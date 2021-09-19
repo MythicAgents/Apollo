@@ -7,7 +7,7 @@ namespace ApolloInterop.Interfaces
 {
     public interface IPeerManager
     {
-        IPeer AddSMBPeer(string pipeName, IC2ProfileManager manager);
+        IPeer AddPeer(PeerInformation info);
         bool Remove(string uuid);
         bool Remove(IPeer peer);
         bool Route(DelegateMessage msg);

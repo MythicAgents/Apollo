@@ -10,6 +10,9 @@ namespace ApolloInterop.Interfaces
 {
     public interface ITaskManager
     {
+
+        bool CancelTask(string taskId);
+
         bool CreateTaskingMessage(OnResponse<TaskingMessage> onResponse);
 
         bool ProcessMessageResponse(MessageResponse resp);

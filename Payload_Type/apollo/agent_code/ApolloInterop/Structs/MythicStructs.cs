@@ -14,6 +14,17 @@ namespace ApolloInterop.Structs
 
     namespace MythicStructs
     {
+        [DataContract]
+        public struct PeerInformation
+        {
+            [DataMember(Name = "host")]
+            public string Hostname;
+            [DataMember(Name = "c2_profile")]
+            public C2ProfileData C2Profile;
+            [DataMember(Name = "agent_uuid")]
+            public string AgentUUID;
+        }
+
         // Profile data sent from the Mythic Server
         [DataContract]
         public struct C2ProfileData : IMythicMessage

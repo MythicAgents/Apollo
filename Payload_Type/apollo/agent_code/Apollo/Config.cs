@@ -1,5 +1,5 @@
 ﻿#if DEBUG
-#define SMB
+#define HTTP
 #endif
 
 using HttpTransport;

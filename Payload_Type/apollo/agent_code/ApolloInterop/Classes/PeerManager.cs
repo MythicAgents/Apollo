@@ -10,22 +10,22 @@ namespace ApolloInterop.Classes
 {
     public abstract class PeerManager : IPeerManager
     {
-        protected ConcurrentDictionary<string, IPeer> Peers = new ConcurrentDictionary<string, IPeer>();
-        protected IAgent Agent;
+        protected ConcurrentDictionary<string, IPeer> _peers = new ConcurrentDictionary<string, IPeer>();
+        protected IAgent _agent;
         public PeerManager(IAgent agent)
         {
-            Agent = agent;
+            _agent = agent;
         }
 
-        public abstract IPeer AddSMBPeer(string pipename, IC2ProfileManager manager);
+        public abstract IPeer AddPeer(PeerInformation info);
         public virtual bool Remove(string uuid)
         {
-            return Peers.TryRemove(uuid, out var p);
+            return _peers.TryRemove(uuid, out var p);
         }
 
         public virtual bool Remove(IPeer peer)
         {
-            return Peers.TryRemove(peer.GetUUID(), out var p);
+            return _peers.TryRemove(peer.GetUUID(), out var p);
         }
 
         public abstract bool Route(DelegateMessage msg);
