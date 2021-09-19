@@ -29,8 +29,8 @@ namespace Apollo.Peers.SMB
         private MessageType _serverResponseType;
         public SMBPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
-            _pipeClient = new AsyncNamedPipeClient(info.Hostname, info.C2Profile.Parameters["pipename"], this);
-            _expectEKE = info.C2Profile.Parameters["encrypted_exchange_check"] == "T";
+            _pipeClient = new AsyncNamedPipeClient(info.Hostname, info.C2Profile.Parameters.PipeName, this);
+            _expectEKE = info.C2Profile.Parameters.EncryptedExchangeCheck == "T";
 
             _sendAction = (object p) =>
             {
@@ -118,6 +118,7 @@ namespace Apollo.Peers.SMB
             _agent.GetTaskManager().AddDelegateMessageToQueue(new DelegateMessage()
             {
                 UUID = _uuid,
+                C2Profile = "smb",
                 Message = Encoding.UTF8.GetString(data)
             });
             return true;

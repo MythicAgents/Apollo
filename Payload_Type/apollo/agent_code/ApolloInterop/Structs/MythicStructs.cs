@@ -38,7 +38,20 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "is_p2p")]
             public bool IsP2P;
             [DataMember(Name = "parameters")]
-            public Dictionary<string, string> Parameters;
+            public C2ProfileInstanceParameters Parameters;
+        }
+
+        [DataContract]
+        public struct C2ProfileInstanceParameters
+        {
+            [DataMember(Name = "encrypted_exchange_check")]
+            public string EncryptedExchangeCheck;
+            [DataMember(Name = "pipename")]
+            public string PipeName;
+            [DataMember(Name = "AESPSK")]
+            public string AESPSK;
+            [DataMember(Name = "killdate")]
+            public string KillDate;
         }
 
         public class CredentialType

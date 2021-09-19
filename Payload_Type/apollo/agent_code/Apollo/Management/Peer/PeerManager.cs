@@ -34,9 +34,18 @@ namespace Apollo.Management.Peer
 
         public override bool Route(DelegateMessage msg)
         {
+            if (msg.MythicUUID != null &&
+                msg.UUID != msg.MythicUUID)
+            {
+                lock(_peers)
+                {
+                    _peers.TryRemove(msg.UUID, out IPeer p);
+                    _peers[msg.MythicUUID] = p;
+                }
+                msg.UUID = msg.MythicUUID;
+            }
             if (_peers.ContainsKey(msg.UUID))
             {
-                // ???
                 _peers[msg.UUID].ProcessMessage(msg);
                 return true;
             }

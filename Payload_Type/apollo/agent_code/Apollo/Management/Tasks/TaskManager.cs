@@ -143,19 +143,26 @@ namespace Apollo.Management.Tasks
 
         public bool ProcessMessageResponse(MessageResponse resp)
         {
-            foreach(Task t in resp.Tasks)
+            if (resp.Tasks != null)
             {
-                TaskQueue.Enqueue(t);
+                foreach(Task t in resp.Tasks)
+                {
+                    TaskQueue.Enqueue(t);
+                }
             }
-
-            foreach(TaskStatus t in resp.Responses)
+            if (resp.Responses != null)
             {
-                TaskStatusQueue.Enqueue(t);
+                foreach(TaskStatus t in resp.Responses)
+                {
+                    TaskStatusQueue.Enqueue(t);
+                }
             }
-
-            foreach(DelegateMessage d in resp.Delegates)
+            if (resp.Delegates != null)
             {
-                _agent.GetPeerManager().Route(d);
+                foreach(DelegateMessage d in resp.Delegates)
+                {
+                    _agent.GetPeerManager().Route(d);
+                }
             }
             return true;
         }
