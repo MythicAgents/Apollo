@@ -2,8 +2,8 @@ from mythic_c2_container.C2ProfileBase import *
 
 
 class SMB(C2Profile):
-    name = "SMB"
-    description = "SMB Server profile to launch a new agent on a named pipe."
+    name = "smb"
+    description = "SMB profile to launch a new agent on a named pipe."
     author = "@djhohnstein"
     is_p2p = True
     is_server_routed = True
