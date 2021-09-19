@@ -45,6 +45,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         resp = BuildResponse(status=BuildStatus.Error)
         # debugging
         resp.status = BuildStatus.Success
+        return resp
         #end debugging
         defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {

@@ -1,6 +1,7 @@
 **/rabbitmq_config.json
 __pycache__/
 *.py[cod]
+**/*.dll
 # Sphinx documentation
 docs/_build/
 # Environments
