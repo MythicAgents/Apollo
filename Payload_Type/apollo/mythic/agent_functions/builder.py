@@ -26,7 +26,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
         "configuration": BuildParameter(name="configuration", parameter_type=BuildParameterType.ChooseOne, choices=["Release"], default_value="Release", description="Build a payload with or without debugging symbols.")
     }
-    c2_profiles = ["http", "SMBServer"]
+    c2_profiles = ["http", "smb"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
         BrowserScript(script_name="create_table", author="@djhohnstein"),
