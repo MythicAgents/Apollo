@@ -39,6 +39,7 @@ namespace ApolloInterop.Classes
             _BUF_OUT = BUF_OUT;
             _port = port;
             _server = new TcpListener(IPAddress.Any, port);
+            _server.Start();
             _server.BeginAcceptTcpClient(OnClientConnected, _server);
         }
 

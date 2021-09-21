@@ -16,6 +16,8 @@ namespace ApolloInterop.Classes
         {
             _client = new TcpClient();
             _callback = callback;
+            _host = host;
+            _port = port;
         }
 
         public bool Connect()

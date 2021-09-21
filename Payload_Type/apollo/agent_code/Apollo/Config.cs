@@ -1,4 +1,4 @@
-﻿#define TCP
+﻿#define HTTP
 
 
 using HttpTransport;
@@ -56,8 +56,7 @@ namespace Apollo
                     }
                 }
             },
-#endif
-#if TCP
+#elif TCP
             { "tcp", new C2ProfileData()
                 {
                     TC2Profile = typeof(TcpProfile),
@@ -79,11 +78,15 @@ namespace Apollo
         public static string StagingRSAPrivateKey = "ACstCeIXHEqdn/QM3YsAX24yfRUX6JBtOdhkAwnfQrw=";
 #elif SMB
         public static string StagingRSAPrivateKey = "2EyBlgkPYL4Ez1+haxSaPQpCb5IwQsjt4V1TL1+jsXw=";
+#elif TCP
+        public static string StagingRSAPrivateKey = "OeQ4qFs0m5ANM0HfMn0Bsxb229XcRurbFxF3VsxfoRE=";
 #endif
 #if HTTP
         public static string PayloadUUID = "9f006dd8-7036-455b-99ed-d0b5f19ba921";
 #elif SMB
         public static string PayloadUUID = "8cb8d2d3-a36a-4cb3-b217-f07e0d39b6c9";
+#elif TCP
+        public static string PayloadUUID = "f6049b32-0de6-461e-887e-2961f744411b";
 #endif
     }
 }
