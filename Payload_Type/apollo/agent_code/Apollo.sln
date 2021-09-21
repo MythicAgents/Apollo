@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamedPipeProfile", "NamedPi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasks", "Tasks\Tasks.csproj", "{B9BDA393-C258-44D3-8266-D62265008BD4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpProfile", "TcpProfile\TcpProfile.csproj", "{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{B9BDA393-C258-44D3-8266-D62265008BD4}.Release|x64.Build.0 = Release|Any CPU
 		{B9BDA393-C258-44D3-8266-D62265008BD4}.Release|x86.ActiveCfg = Release|Any CPU
 		{B9BDA393-C258-44D3-8266-D62265008BD4}.Release|x86.Build.0 = Release|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Debug|x64.Build.0 = Debug|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Debug|x86.Build.0 = Debug|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Release|x64.ActiveCfg = Release|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Release|x64.Build.0 = Release|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Release|x86.ActiveCfg = Release|Any CPU
+		{ADD40B1E-3C2E-4046-B574-FA0ED70FC64D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -48,6 +48,8 @@ namespace ApolloInterop.Structs
             public string EncryptedExchangeCheck;
             [DataMember(Name = "pipename")]
             public string PipeName;
+            [DataMember(Name = "port")]
+            public int Port;
             [DataMember(Name = "AESPSK")]
             public string AESPSK;
             [DataMember(Name = "killdate")]

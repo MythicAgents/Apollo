@@ -44,6 +44,8 @@
     <Compile Include="Classes\Agent.cs" />
     <Compile Include="Classes\AsyncNamedPipeClient.cs" />
     <Compile Include="Classes\AsyncNamedPipeServer.cs" />
+    <Compile Include="Classes\AsyncTcpClient.cs" />
+    <Compile Include="Classes\AsyncTcpServer.cs" />
     <Compile Include="Classes\C2Profile.cs" />
     <Compile Include="Classes\C2ProfileManager.cs" />
     <Compile Include="Classes\CryptographyProvider.cs" />
@@ -70,6 +72,7 @@
     <Compile Include="Interfaces\ISocksManager.cs" />
     <Compile Include="Interfaces\ITask.cs" />
     <Compile Include="Interfaces\ITaskManager.cs" />
+    <Compile Include="Interfaces\ITcpClientCallback.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializers\EncryptedJsonSerializer.cs" />
     <Compile Include="Serializers\JsonSerializer.cs" />

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -59,6 +60,7 @@ namespace ApolloInterop.Structs.ApolloStructs
 
     public struct IPCData
     {
+        public TcpClient Client;
         public PipeStream Pipe;
         public Object State;
         public Byte[] Data;

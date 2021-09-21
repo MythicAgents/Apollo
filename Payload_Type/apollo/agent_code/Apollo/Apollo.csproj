@@ -53,6 +53,7 @@
     <Compile Include="Management\Peer\PeerManager.cs" />
     <Compile Include="Management\Socks\SocksManager.cs" />
     <Compile Include="Peers\SMB\SMBPeer.cs" />
+    <Compile Include="Peers\TCP\TCPPeer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Management\Tasks\TaskManager.cs" />
@@ -82,6 +83,10 @@
       <Project>{b9bda393-c258-44d3-8266-d62265008bd4}</Project>
       <Name>Tasks</Name>
       <EmbedInteropTypes>False</EmbedInteropTypes>
+    </ProjectReference>
+    <ProjectReference Include="..\TcpProfile\TcpProfile.csproj">
+      <Project>{add40b1e-3c2e-4046-b574-fa0ed70fc64d}</Project>
+      <Name>TcpProfile</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
