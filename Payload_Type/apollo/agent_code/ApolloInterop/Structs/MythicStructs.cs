@@ -8,6 +8,7 @@ using sStatusMessage = System.String;
 using sMessageAction = System.String;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Enums.ApolloEnums;
+using System.Net;
 
 namespace ApolloInterop.Structs
 {
@@ -754,6 +755,13 @@ namespace ApolloInterop.Structs
                     this.TaskID == obj.TaskID;
 
             }
+        }
+        public struct HostEndpoint
+        {
+            public Socks5AddressType AddrType;
+            public string FQDN;
+            public IPAddress Ip;
+            public int Port;
         }
     }
 }
