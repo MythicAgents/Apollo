@@ -1,4 +1,4 @@
-﻿#define HTTP
+﻿#define TCP
 
 
 using HttpTransport;

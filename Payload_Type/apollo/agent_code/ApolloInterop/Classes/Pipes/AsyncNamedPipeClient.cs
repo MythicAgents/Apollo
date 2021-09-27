@@ -12,9 +12,10 @@ namespace ApolloInterop.Classes
     public class AsyncNamedPipeClient
     {
         private readonly NamedPipeClientStream _pipe;
-        private readonly INamedPipeCallback _callback;
-
-        public AsyncNamedPipeClient(string host, string pipename, INamedPipeCallback callback)
+        public event EventHandler<NamedPipeMessageArgs> MessageReceived;
+        public event EventHandler<NamedPipeMessageArgs> ConnectionEstablished;
+        public event EventHandler<NamedPipeMessageArgs> Disconnect;
+        public AsyncNamedPipeClient(string host, string pipename)
         {
             _pipe = new NamedPipeClientStream(
                 host,
@@ -22,7 +23,6 @@ namespace ApolloInterop.Classes
                 PipeDirection.InOut,
                 PipeOptions.Asynchronous | PipeOptions.WriteThrough
             );
-            _callback = callback;
         }
 
         public bool Connect(Int32 msTimeout)
@@ -36,11 +36,10 @@ namespace ApolloInterop.Classes
             IPCData pd = new IPCData()
             {
                 Pipe = _pipe,
-                State = null,
+                State = _pipe,
                 Data = new byte[IPC.RECV_SIZE],
             };
-
-            _callback.OnAsyncConnect(_pipe, out pd.State);
+            OnConnectionEstablished(new NamedPipeMessageArgs(_pipe, pd, pd.State));
             BeginRead(pd);
             return true;
         }
@@ -62,7 +61,7 @@ namespace ApolloInterop.Classes
             if (!isConnected)
             {
                 pd.Pipe.Close();
-                _callback.OnAsyncDisconnect(pd.Pipe, pd.State);
+                OnDisconnect(new NamedPipeMessageArgs(pd.Pipe, null, pd.State));
             }
         }
 
@@ -74,9 +73,34 @@ namespace ApolloInterop.Classes
             if (bytesRead > 0)
             {
                 pd.DataLength = bytesRead;
-                _callback.OnAsyncMessageReceived(pd.Pipe, pd, pd.State);
+                var msgRecv = MessageReceived as EventHandler<NamedPipeMessageArgs>;
+                OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
             }
             BeginRead(pd);
+        }
+
+        private void OnConnectionEstablished(NamedPipeMessageArgs args)
+        {
+            if (ConnectionEstablished != null)
+            {
+                ConnectionEstablished(this, args);
+            }
+        }
+
+        private void OnMessageReceived(NamedPipeMessageArgs args)
+        {
+            if (MessageReceived != null)
+            {
+                MessageReceived(this, args);
+            }
+        }
+
+        private void OnDisconnect(NamedPipeMessageArgs args)
+        {
+            if (Disconnect != null)
+            {
+                Disconnect(this, args);
+            }
         }
     }
 }

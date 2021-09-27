@@ -32,7 +32,7 @@ namespace ApolloInterop.Serializers
 
         public virtual T Deserialize<T>(string msg)
         {
-            Debug.WriteLine(msg);
+            Console.WriteLine(msg);
             using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(msg)))
             {
                 var deserializer = new DataContractJsonSerializer(typeof(T));

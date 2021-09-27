@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ApolloInterop.Classes
+namespace ApolloInterop.Classes.P2P
 {
     public abstract class PeerManager : IPeerManager
     {
@@ -17,7 +17,7 @@ namespace ApolloInterop.Classes
             _agent = agent;
         }
 
-        public abstract IPeer AddPeer(PeerInformation info);
+        public abstract Peer AddPeer(PeerInformation info);
         public virtual bool Remove(string uuid)
         {
             return _peers.TryRemove(uuid, out var p);

