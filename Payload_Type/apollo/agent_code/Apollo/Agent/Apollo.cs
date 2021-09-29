@@ -120,7 +120,7 @@ namespace Apollo.Agent
                     if (profile.Connect(msg, delegate (MessageResponse r)
                     {
                         connectProfile = profile;
-                        UUID = r.UUID;
+                        UUID = r.ID;
                         bRet = true;
                         return bRet;
                     }))

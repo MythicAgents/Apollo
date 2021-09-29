@@ -13,29 +13,23 @@ namespace ApolloInterop.Classes
 {
     public class AsyncNamedPipeServer
     {
+        private bool _running = true;
+
         private readonly string _pipeName;
-        private readonly INamedPipeCallback _callback;
         private readonly PipeSecurity _pipeSecurity;
         private readonly int _BUF_IN;
         private readonly int _BUF_OUT;
         private readonly int _maxInstances;
 
         private ConcurrentDictionary<PipeStream, IPCData> _connections = new ConcurrentDictionary<PipeStream, IPCData>();
-        
-        internal class ConcurrentIPCData
-        {
-            internal int CurrentCount;
-            internal IPCData[] Data;
-        }
-        private ConcurrentDictionary<string, ConcurrentIPCData> _messageBag = new ConcurrentDictionary<string, ConcurrentIPCData>();
 
+        public event EventHandler<NamedPipeMessageArgs> ConnectionEstablished;
+        public event EventHandler<NamedPipeMessageArgs> MessageReceived;
+        public event EventHandler<NamedPipeMessageArgs> Disconnect;
 
-        private bool _running = true;
-
-        public AsyncNamedPipeServer(string pipename, INamedPipeCallback callback, PipeSecurity ps = null, int instances=1, int BUF_IN=4096, int BUF_OUT=4096)
+        public AsyncNamedPipeServer(string pipename, PipeSecurity ps = null, int instances=1, int BUF_IN=4096, int BUF_OUT=4096)
         {
             _pipeName = pipename;
-            _callback = callback;
             _BUF_IN = BUF_IN;
             _BUF_OUT = BUF_OUT;
             _maxInstances = instances;
@@ -89,6 +83,22 @@ namespace ApolloInterop.Classes
             pipe.BeginWaitForConnection(OnClientConnected, pipe);
         }
 
+
+        private void OnConnect(NamedPipeMessageArgs args)
+        {
+            ConnectionEstablished?.Invoke(this, args);
+        }
+
+        private void OnMessageReceived(NamedPipeMessageArgs args)
+        {
+            MessageReceived?.Invoke(this, args);
+        }
+
+        private void OnDisconnect(NamedPipeMessageArgs args)
+        {
+            Disconnect?.Invoke(this, args);
+        }
+
         private void OnClientConnected(IAsyncResult result)
         {
             // complete connection
@@ -108,7 +118,7 @@ namespace ApolloInterop.Classes
             {
                 // Prep the next connection
                 CreateServerPipe();
-                _callback.OnAsyncConnect(pipe, out pd.State);
+                OnConnect(new NamedPipeMessageArgs(pipe, null, this));
                 BeginRead(pd);
             } else
             {
@@ -133,7 +143,7 @@ namespace ApolloInterop.Classes
             if (!isConnected)
             {
                 pd.Pipe.Close();
-                _callback.OnAsyncDisconnect(pd.Pipe, pd.State);
+                OnDisconnect(new NamedPipeMessageArgs(pd.Pipe, null, pd.State));
                 _connections.TryRemove(pd.Pipe, out IPCData nullobj);
             }
         }
@@ -146,7 +156,7 @@ namespace ApolloInterop.Classes
             if (bytesRead > 0)
             {
                 pd.DataLength = bytesRead;
-                _callback.OnAsyncMessageReceived(pd.Pipe, pd, pd.State);
+                OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
             }
             BeginRead(pd);
         }

