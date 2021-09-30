@@ -37,8 +37,11 @@ namespace NamedPipeTransport
         private Dictionary<PipeStream, AsyncPipeState> _writerTasks = new Dictionary<PipeStream, AsyncPipeState>();
         private Action<object> _sendAction;
         private IAgent _agent;
-
+        private CheckinMessage? _savedCheckin = null;
         private bool _uuidNegotiated = false;
+
+        private ST.Task _agentConsumerTask = null;
+        private ST.Task _agentProcessorTask = null;
 
         ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
         public NamedPipeProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
@@ -63,6 +66,12 @@ namespace NamedPipeTransport
 
         public void OnAsyncConnect(object sender, NamedPipeMessageArgs args)
         {
+            // We only accept one connection at a time, sorry.
+            if (_writerTasks.Count > 0)
+            {
+                args.Pipe.Close();
+                return;
+            }
             AsyncPipeState arg = new AsyncPipeState()
             {
                 Pipe = args.Pipe,
@@ -78,12 +87,18 @@ namespace NamedPipeTransport
         public void OnAsyncDisconnect(object sender, NamedPipeMessageArgs args)
         {
             args.Pipe.Close();
-            _writerTasks[args.Pipe].Cancellation.Cancel();
-            Connected = _writerTasks.Count - 1 > 0;
-            _senderEvent.Set();
-            _receiverEvent.Set();
-            _writerTasks[args.Pipe].Task.Wait();
-            _writerTasks.Remove(args.Pipe);
+            if (_writerTasks.ContainsKey(args.Pipe))
+            {
+                var tmp = _writerTasks[args.Pipe];
+                _writerTasks.Remove(args.Pipe);
+                Connected = _writerTasks.Count > 0;
+            
+                tmp.Cancellation.Cancel();
+                _senderEvent.Set();
+                _receiverEvent.Set();
+            
+                tmp.Task.Wait();
+            }
         }
 
         public void OnAsyncMessageReceived(object sender, NamedPipeMessageArgs args)
@@ -183,24 +198,32 @@ namespace NamedPipeTransport
                 }
             }
             AddToSenderQueue(checkinMsg);
-            return Recv(MessageType.MessageResponse, delegate (IMythicMessage resp)
+            if (_agentProcessorTask == null || _agentProcessorTask.IsCompleted)
             {
-                MessageResponse mResp = (MessageResponse)resp;
-                if (!_uuidNegotiated)
+                return Recv(MessageType.MessageResponse, delegate (IMythicMessage resp)
                 {
-                    _uuidNegotiated = true;
-                    ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
-                }
-                Connected = true;
-                return onResp(mResp);
-            });
+                    MessageResponse mResp = (MessageResponse)resp;
+                    if (!_uuidNegotiated)
+                    {
+                        _uuidNegotiated = true;
+                        ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                        checkinMsg.UUID = mResp.ID;
+                        _savedCheckin = checkinMsg;
+                    }
+                    Connected = true;
+                    return onResp(mResp);
+                });
+            } else
+            {
+                return true;
+            }
         }
 
         public void Start()
         {
-            Action<object> agentMessageConsumer = (object o) =>
+            _agentConsumerTask = new ST.Task(()=> 
             {
-                while(Agent.IsAlive() && _writerTasks.Count > 0)
+                while (Agent.IsAlive() && _writerTasks.Count > 0)
                 {
                     if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                     {
@@ -215,17 +238,21 @@ namespace NamedPipeTransport
                         Thread.Sleep(100);
                     }
                 }
-            };
-            ST.Task agentConsumerTask = new ST.Task(agentMessageConsumer, null);
-            agentConsumerTask.Start();
-            while(Agent.IsAlive() && _writerTasks.Count > 0)
+            });
+            _agentProcessorTask = new ST.Task(() =>
             {
-                Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
+                while(Agent.IsAlive() && _writerTasks.Count > 0)
                 {
-                    return Agent.GetTaskManager().ProcessMessageResponse((MessageResponse)msg);
-                });
-            }
-            agentConsumerTask.Wait();
+                    Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
+                    {
+                        return Agent.GetTaskManager().ProcessMessageResponse((MessageResponse)msg);
+                    });
+                }
+            });
+            _agentConsumerTask.Start();
+            _agentProcessorTask.Start();
+            _agentProcessorTask.Wait();
+            _agentConsumerTask.Wait();
         }
 
         public bool Send<IMythicMessage>(IMythicMessage message)

@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Core\Agent.cs" />
+    <Compile Include="Classes\Events\MythicMessageEventArgs.cs" />
     <Compile Include="Classes\Pipes\AsyncNamedPipeClient.cs" />
     <Compile Include="Classes\Pipes\AsyncNamedPipeServer.cs" />
     <Compile Include="Classes\Tcp\AsyncTcpClient.cs" />
