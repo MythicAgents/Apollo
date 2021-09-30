@@ -15,26 +15,25 @@ namespace ApolloInterop.Classes
 {
     public class AsyncTcpServer
     {
-        private readonly ITcpClientCallback _callback;
         private readonly int _BUF_IN;
         private readonly int _BUF_OUT;
         private readonly int _port;
         private readonly TcpListener _server;
+        
         private ConcurrentDictionary<TcpClient, IPCData> _connections = new ConcurrentDictionary<TcpClient, IPCData>();
 
-        internal class ConcurrentIPCData
-        {
-            internal int CurrentCount;
-            internal IPCData[] Data;
-        }
-        private ConcurrentDictionary<string, ConcurrentIPCData> _messageBag = new ConcurrentDictionary<string, ConcurrentIPCData>();
+        public event EventHandler<TcpMessageEventArgs> ConnectionEstablished;
+        public event EventHandler<TcpMessageEventArgs> MessageReceived;
+        public event EventHandler<TcpMessageEventArgs> Disconnect;
 
+        private void OnConnect(object sender, TcpMessageEventArgs args) => ConnectionEstablished?.Invoke(sender, args);
+        private void OnMessageReceived(object sender, TcpMessageEventArgs args) => MessageReceived?.Invoke(sender, args);
+        private void OnDisconnect(object sender, TcpMessageEventArgs args) => Disconnect?.Invoke(sender, args);
 
         private bool _running = true;
 
-        public AsyncTcpServer(int port, ITcpClientCallback callback, int BUF_IN = Constants.IPC.RECV_SIZE, int BUF_OUT = Constants.IPC.SEND_SIZE)
+        public AsyncTcpServer(int port, int BUF_IN = Constants.IPC.RECV_SIZE, int BUF_OUT = Constants.IPC.SEND_SIZE)
         {
-            _callback = callback;
             _BUF_IN = BUF_IN;
             _BUF_OUT = BUF_OUT;
             _port = port;
@@ -76,7 +75,8 @@ namespace ApolloInterop.Classes
             // Add to connection list
             if (_running && _connections.TryAdd(client, pd))
             {
-                _callback.OnAsyncConnect(client, out pd.State);
+                _server.BeginAcceptTcpClient(OnClientConnected, _server);
+                OnConnect(this, new TcpMessageEventArgs(client, null, this));
                 BeginRead(pd);
             }
             else
@@ -87,23 +87,27 @@ namespace ApolloInterop.Classes
 
         private void BeginRead(IPCData pd)
         {
-            bool isConnected = pd.Client.Connected;
-            if (isConnected)
+            bool isConnected;
+            try
             {
-                try
+                isConnected = pd.Client.Connected;
+                if (isConnected)
                 {
-                    pd.Client.GetStream().BeginRead(pd.Data, 0, pd.Data.Length, OnAsyncMessageReceived, pd);
+                    try
+                    {
+                        pd.Client.GetStream().BeginRead(pd.Data, 0, pd.Data.Length, OnAsyncMessageReceived, pd);
+                    }
+                    catch (Exception ex)
+                    {
+                        isConnected = false;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    isConnected = false;
-                }
-            }
+            } catch { isConnected = false; }
 
             if (!isConnected)
             {
-                pd.Client.Close();
-                _callback.OnAsyncDisconnect(pd.Client, pd.State);
+                pd.Client.Client?.Close();
+                OnDisconnect(this, new TcpMessageEventArgs(pd.Client, null, pd.State));
                 _connections.TryRemove(pd.Client, out IPCData _);
             }
         }
@@ -112,11 +116,17 @@ namespace ApolloInterop.Classes
         {
             // read from client until complete
             IPCData pd = (IPCData)result.AsyncState;
-            Int32 bytesRead = pd.Client.GetStream().EndRead(result);
-            if (bytesRead > 0)
+            try
             {
-                pd.DataLength = bytesRead;
-                _callback.OnAsyncMessageReceived(pd.Client, pd, pd.State);
+                Int32 bytesRead = pd.Client.GetStream().EndRead(result);
+                if (bytesRead > 0)
+                {
+                    pd.DataLength = bytesRead;
+                    OnMessageReceived(this, new TcpMessageEventArgs(pd.Client, pd, pd.State));
+                }
+            } catch (Exception ex)
+            {
+                pd.Client.Close();
             }
             BeginRead(pd);
         }
