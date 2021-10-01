@@ -10,7 +10,7 @@ namespace ApolloInterop.Classes
 {
     public abstract class Agent : IAgent
     {
-        public int SleepInterval { get; protected set; } = 5000;
+        public int SleepInterval { get; protected set; } = 0;
         public double Jitter { get; protected set; } = 0;
         public bool Alive { get; protected set; } = true;
 

@@ -283,6 +283,8 @@ namespace ApolloInterop.Structs
             public int ServerID;
             [DataMember(Name = "data")]
             public string Data;
+            [DataMember(Name = "exit")]
+            public bool Exit;
         }
 
         [DataContract]

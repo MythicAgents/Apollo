@@ -2,6 +2,7 @@
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
 using System;
+using System.Net;
 using System.Net.Sockets;
 
 namespace ApolloInterop.Classes
@@ -11,6 +12,7 @@ namespace ApolloInterop.Classes
         private readonly TcpClient _client;
         private readonly string _host;
         private readonly int _port;
+        private readonly IPAddress _addr = null;
 
         public event EventHandler<TcpMessageEventArgs> ConnectionEstablished;
         public event EventHandler<TcpMessageEventArgs> MessageReceived;
@@ -23,11 +25,24 @@ namespace ApolloInterop.Classes
             _port = port;
         }
 
+        public AsyncTcpClient(IPAddress host, int port)
+        {
+            _client = new TcpClient();
+            _addr = host;
+            _port = port;
+        }
+
         public bool Connect()
         {
             try
             {
-                _client.Connect(_host, _port);
+                if (_addr == null)
+                {
+                    _client.Connect(_host, _port);
+                } else
+                {
+                    _client.Connect(_addr, _port);
+                }
                 // Client times out, so fail.
             }
             catch { return false; }
