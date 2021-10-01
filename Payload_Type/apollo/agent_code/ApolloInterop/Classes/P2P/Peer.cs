@@ -27,6 +27,9 @@ namespace ApolloInterop.Classes.P2P
         protected AutoResetEvent _senderEvent = new AutoResetEvent(false);
         protected MessageType _serverResponseType;
 
+        public event EventHandler<EventArgs> ConnectionEstablished;
+        public event EventHandler<EventArgs> Disconnect;
+
         public Peer(IAgent agent, PeerInformation data, ISerializer serializer = null)
         {
             _agent = agent;
@@ -45,6 +48,17 @@ namespace ApolloInterop.Classes.P2P
                 UUIDNegotiated(sender, args);
             }
         }
+
+        public virtual void OnConnectionEstablished(object sender, EventArgs args)
+        {
+            ConnectionEstablished?.Invoke(sender, args);
+        }
+
+        public virtual void OnDisconnect(object sender, EventArgs args)
+        {
+            Disconnect?.Invoke(sender, args);
+        }
+
         public abstract bool Start();
         public abstract void Stop();
         public abstract bool Connected();

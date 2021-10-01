@@ -73,7 +73,6 @@ namespace ApolloInterop.Classes
             if (bytesRead > 0)
             {
                 pd.DataLength = bytesRead;
-                var msgRecv = MessageReceived as EventHandler<NamedPipeMessageArgs>;
                 OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
             }
             BeginRead(pd);
@@ -81,26 +80,17 @@ namespace ApolloInterop.Classes
 
         private void OnConnectionEstablished(NamedPipeMessageArgs args)
         {
-            if (ConnectionEstablished != null)
-            {
-                ConnectionEstablished(this, args);
-            }
+            ConnectionEstablished?.Invoke(this, args);
         }
 
         private void OnMessageReceived(NamedPipeMessageArgs args)
         {
-            if (MessageReceived != null)
-            {
-                MessageReceived(this, args);
-            }
+            MessageReceived?.Invoke(this, args);
         }
 
         private void OnDisconnect(NamedPipeMessageArgs args)
         {
-            if (Disconnect != null)
-            {
-                Disconnect(this, args);
-            }
+            Disconnect?.Invoke(this, args);
         }
     }
 }
