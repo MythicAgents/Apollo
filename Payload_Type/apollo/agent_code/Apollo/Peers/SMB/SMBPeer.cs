@@ -24,8 +24,6 @@ namespace Apollo.Peers.SMB
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
 
-        public event EventHandler ConnectionEstablished;
-        public event EventHandler Disconnect;
         public SMBPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
             C2ProfileName = "smb";
@@ -35,12 +33,13 @@ namespace Apollo.Peers.SMB
             _pipeClient.Disconnect += OnDisconnect;
             _sendAction = (object p) =>
             {
-                while (((PipeStream)p).IsConnected)
+                PipeStream ps = (PipeStream)p;
+                while (ps.IsConnected && !_cts.IsCancellationRequested)
                 {
                     _senderEvent.WaitOne();
-                    if (_senderQueue.TryDequeue(out byte[] result))
+                    if (!_cts.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        ((PipeStream)p).BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                     }
                 }
             };
@@ -50,10 +49,10 @@ namespace Apollo.Peers.SMB
         public void OnAsyncMessageSent(IAsyncResult result)
         {
             PipeStream pipe = (PipeStream)result.AsyncState;
-            pipe.EndWrite(result);
             // Potentially delete this since theoretically the sender Task does everything
-            if (_senderQueue.TryDequeue(out byte[] data))
+            if (pipe.IsConnected && !_cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] data))
             {
+                pipe.EndWrite(result);
                 pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
             }
         }
@@ -71,10 +70,7 @@ namespace Apollo.Peers.SMB
         public void OnConnect(object sender, NamedPipeMessageArgs args)
         {
             _pipe = args.Pipe;
-            if (ConnectionEstablished != null)
-            {
-                ConnectionEstablished(this, args);
-            }
+            OnConnectionEstablished(sender, args);
             _sendTask = new TTasks.Task(_sendAction, args.Pipe);
             _sendTask.Start();
             _previouslyConnected = true;
@@ -82,12 +78,11 @@ namespace Apollo.Peers.SMB
 
         public void OnDisconnect(object sender, NamedPipeMessageArgs args)
         {
+            _cts.Cancel();
             args.Pipe.Close();
+            _senderEvent.Set();
             _sendTask.Wait();
-            if (Disconnect != null)
-            {
-                Disconnect(this, args);
-            }
+            base.OnDisconnect(this, args);
         }
 
         public void OnMessageReceived(object sender, NamedPipeMessageArgs args)
@@ -109,7 +104,7 @@ namespace Apollo.Peers.SMB
 
         public override bool Start()
         {
-            return _pipeClient.Connect(10000);
+            return _pipeClient.Connect(5000);
         }
 
         public override void Stop()

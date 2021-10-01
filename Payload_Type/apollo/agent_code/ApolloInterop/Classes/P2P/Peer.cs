@@ -29,6 +29,7 @@ namespace ApolloInterop.Classes.P2P
 
         public event EventHandler<EventArgs> ConnectionEstablished;
         public event EventHandler<EventArgs> Disconnect;
+        protected CancellationTokenSource _cts = new CancellationTokenSource();
 
         public Peer(IAgent agent, PeerInformation data, ISerializer serializer = null)
         {

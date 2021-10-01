@@ -74,6 +74,9 @@ namespace ApolloInterop.Classes
             {
                 pd.DataLength = bytesRead;
                 OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
+            } else
+            {
+                pd.Pipe.Close();
             }
             BeginRead(pd);
         }

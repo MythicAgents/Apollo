@@ -24,7 +24,6 @@ namespace Apollo.Peers.TCP
         private TcpClient _client = null;
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
-        private CancellationTokenSource _cts = new CancellationTokenSource();
 
         public TCPPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
