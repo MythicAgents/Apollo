@@ -51,6 +51,7 @@
     <Compile Include="Config.cs" />
     <Compile Include="Management\C2\C2ProfileManager.cs" />
     <Compile Include="Management\Peer\PeerManager.cs" />
+    <Compile Include="Management\Socks\SocksClient.cs" />
     <Compile Include="Management\Socks\SocksManager.cs" />
     <Compile Include="Peers\SMB\SMBPeer.cs" />
     <Compile Include="Peers\TCP\TCPPeer.cs" />

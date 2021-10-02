@@ -60,6 +60,7 @@
     <Compile Include="Classes\Tcp\TcpMessageEventArgs.cs" />
     <Compile Include="Classes\Events\UUIDEventArgs.cs" />
     <Compile Include="Constants\IPC.cs" />
+    <Compile Include="Constants\SOCKS.cs" />
     <Compile Include="Enums\ApolloEnums.cs" />
     <Compile Include="Interfaces\IAgent.cs" />
     <Compile Include="Interfaces\IApi.cs" />
