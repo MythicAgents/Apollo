@@ -143,6 +143,14 @@ namespace Apollo.Management.Tasks
 
         public bool ProcessMessageResponse(MessageResponse resp)
         {
+            if (resp.SocksDatagrams != null)
+            {
+                System.Threading.Tasks.Parallel.ForEach(resp.SocksDatagrams, (SocksDatagram dg) =>
+                {
+                    _agent.GetSocksManager().Route(dg);
+                });
+            }
+
             if (resp.Tasks != null)
             {
                 foreach(Task t in resp.Tasks)
@@ -164,6 +172,7 @@ namespace Apollo.Management.Tasks
                     _agent.GetPeerManager().Route(d);
                 }
             }
+
             return true;
         }
 

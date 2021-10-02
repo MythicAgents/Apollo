@@ -689,6 +689,7 @@ namespace ApolloInterop.Structs
             public sMessageAction Action;
             [DataMember(Name = "id")]
             public string ID;
+            // add socks
             [DataMember(Name = "uuid")]
             public string UUID;
             [DataMember(Name = "status")]
@@ -699,6 +700,8 @@ namespace ApolloInterop.Structs
             public TaskStatus[] Responses;
             [DataMember(Name = "delegates")]
             public DelegateMessage[] Delegates;
+            [DataMember(Name = "socks")]
+            public SocksDatagram[] SocksDatagrams;
             [DataMember(Name = "session_key")]
             public string SessionKey;
             [DataMember(Name = "session_id")]

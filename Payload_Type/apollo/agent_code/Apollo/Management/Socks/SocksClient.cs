@@ -58,7 +58,8 @@ namespace Apollo.Management.Socks
         public void Exit()
         {
             _cts.Cancel();
-            _sendRequestsTask.Wait();
+            if (_sendRequestsTask != null)
+                _sendRequestsTask.Wait();
         }
 
         private void OnConnect(object sender, TcpMessageEventArgs args)
@@ -114,8 +115,8 @@ namespace Apollo.Management.Socks
             {
                 case Socks5AddressType.FQDN:
                     int domainLen = data[4];
-                    string domainName = Encoding.UTF8.GetString(data.Skip(4).Take(domainLen).ToArray());
-                    _port = data.Skip(4 + domainLen).First();
+                    string domainName = Encoding.UTF8.GetString(data.Skip(5).Take(domainLen).ToArray());
+                    _port = (int)BitConverter.ToUInt16(data.Skip(5 + domainLen).Take(2).Reverse().ToArray(), 0);
                     try
                     {
                         _addr = Dns.GetHostEntry(domainName).AddressList[0];
@@ -128,13 +129,13 @@ namespace Apollo.Management.Socks
                     break;
                 case Socks5AddressType.IPv4:
                     byte[] bIpv4 = data.Skip(4).Take(4).ToArray();
-                    _port = data.Skip(8).First();
+                    _port = (int)BitConverter.ToUInt16(data.Skip(8).Reverse().ToArray(), 0);
                     _addr = new IPAddress(bIpv4);
                     _client = new AsyncTcpClient(_addr, _port);
                     break;
                 case Socks5AddressType.IPv6:
                     byte[] bIpv6 = data.Skip(4).Take(16).ToArray();
-                    int port3 = data.Skip(20).First();
+                    int port3 = (int)BitConverter.ToUInt16(data.Skip(20).Reverse().ToArray(), 0);
                     _addr = new IPAddress(bIpv6);
                     _client = new AsyncTcpClient(_addr, _port);
                     break;
