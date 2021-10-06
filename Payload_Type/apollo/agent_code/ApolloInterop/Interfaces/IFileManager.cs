@@ -8,7 +8,7 @@ namespace ApolloInterop.Interfaces
 {
     public interface IFileManager
     {
-        void ProcessResponse(TaskResponse resp);
+        void ProcessResponse(UploadMessage resp);
 
         bool GetFile(string taskID, string fileID, out byte[] fileBytes);
     }

@@ -15,6 +15,7 @@ namespace ApolloInterop.Classes.Core
         private object _lock = new object();
         private int _currentCount = 0;
 
+        public event EventHandler<ChunkMessageEventArgs<T>> ChunkAdd;
         public event EventHandler<ChunkMessageEventArgs<T>> MessageComplete;
         public void OnMessageComplete() => MessageComplete?.Invoke(this, new ChunkMessageEventArgs<T>(_messages));
         public void AddMessage(T d)
@@ -31,6 +32,9 @@ namespace ApolloInterop.Classes.Core
             if (_currentCount == d.GetTotalChunks())
             {
                 OnMessageComplete();
+            } else
+            {
+                ChunkAdd?.Invoke(this, new ChunkMessageEventArgs<T>(new T[1] { d }));
             }
         }
     }
