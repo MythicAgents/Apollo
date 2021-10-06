@@ -10,6 +10,9 @@ using PlaintextCryptography;
 using PSKCryptography;
 using ApolloInterop.Serializers;
 using System.IO.Pipes;
+using ApolloInterop.Classes.Api;
+using Apollo.Api.DInvoke;
+using System.Runtime.InteropServices;
 
 namespace Apollo.Api
 {
@@ -17,7 +20,6 @@ namespace Apollo.Api
     {
         public Api()
         {
-
         }
 
         public NamedPipeServerStream CreateNamedPipeServer(
@@ -26,11 +28,6 @@ namespace Apollo.Api
             PipeTransmissionMode transmissionMode = PipeTransmissionMode.Byte)
         {
             return IO.Pipes.CreateAsyncNamedPipeServer(pipeName, allowNetworkLogon, transmissionMode);
-        }
-
-        public T GetFunction<T>(string library,  string functionName)
-        {
-            throw new NotImplementedException();
         }
 
         public string NewUUID()
@@ -70,6 +67,24 @@ namespace Apollo.Api
                 throw new ArgumentException($"Unsupported cryptography type: {cryptoType.Name}");
             }
             return result;
+        }
+
+        public Delegate GetLibraryFunction(Library library, string functionName, Type del, bool canLoadFromDisk = true)
+        {
+            IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionName, canLoadFromDisk);
+            return Marshal.GetDelegateForFunctionPointer(fn, del);
+        }
+
+        public Delegate GetLibraryFunction(Library library, short ordinal, Type del, bool canLoadFromDisk = true)
+        {
+            IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), ordinal, canLoadFromDisk);
+            return Marshal.GetDelegateForFunctionPointer(fn, del);
+        }
+
+        public Delegate GetLibraryFunction(Library library, string functionHash, long key, Type del, bool canLoadFromDisk = true)
+        {
+            IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionHash, key, canLoadFromDisk);
+            return Marshal.GetDelegateForFunctionPointer(fn, del);
         }
     }
 }

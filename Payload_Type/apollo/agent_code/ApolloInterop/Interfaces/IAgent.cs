@@ -39,6 +39,8 @@ namespace ApolloInterop.Interfaces
 
         IC2ProfileManager GetC2ProfileManager();
 
+        IFileManager GetFileManager();
+
         //ICryptographySerializer GetCryptographySerializer();
 
         IApi GetApi();

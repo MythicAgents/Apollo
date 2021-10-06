@@ -47,9 +47,23 @@
     <Compile Include="Agent\Apollo.cs" />
     <Compile Include="Api\Api.cs" />
     <Compile Include="Api\Cryptography\RSA.cs" />
+    <Compile Include="Api\DInvoke\DynamicInvoke\Generic.cs" />
+    <Compile Include="Api\DInvoke\DynamicInvoke\Native.cs" />
+    <Compile Include="Api\DInvoke\DynamicInvoke\Win32.cs" />
+    <Compile Include="Api\DInvoke\Injection\Allocation.cs" />
+    <Compile Include="Api\DInvoke\Injection\Execution.cs" />
+    <Compile Include="Api\DInvoke\Injection\Injector.cs" />
+    <Compile Include="Api\DInvoke\Injection\Payload.cs" />
+    <Compile Include="Api\DInvoke\ManualMap\Map.cs" />
+    <Compile Include="Api\DInvoke\ManualMap\Overload.cs" />
+    <Compile Include="Api\DInvoke\SharedData\Native.cs" />
+    <Compile Include="Api\DInvoke\SharedData\PE.cs" />
+    <Compile Include="Api\DInvoke\SharedData\Win32.cs" />
+    <Compile Include="Api\DInvoke\SharedUtilities\Utilities.cs" />
     <Compile Include="Api\IO\Pipes.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Management\C2\C2ProfileManager.cs" />
+    <Compile Include="Management\Files\FileManager.cs" />
     <Compile Include="Management\Peer\PeerManager.cs" />
     <Compile Include="Management\Socks\SocksClient.cs" />
     <Compile Include="Management\Socks\SocksManager.cs" />
@@ -96,6 +110,7 @@
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

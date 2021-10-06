@@ -128,7 +128,7 @@ namespace NamedPipeTransport
 
         private bool AddToSenderQueue(IMythicMessage msg)
         {
-            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, IPC.SEND_SIZE - 1000);
+            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, IPC.SEND_SIZE / 2);
             foreach(IPCChunkedData part in parts)
             {
                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(part)));

@@ -71,5 +71,9 @@ namespace ApolloInterop.Classes
             return UUID;
         }
 
+        public IFileManager GetFileManager()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

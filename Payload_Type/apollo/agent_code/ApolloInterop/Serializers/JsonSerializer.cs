@@ -25,7 +25,12 @@ namespace ApolloInterop.Serializers
                 ms.Position = 0;
                 using (var sr = new StreamReader(ms))
                 {
-                    return sr.ReadToEnd();
+                    string res = sr.ReadToEnd();
+                    if (res.Length > 20000)
+                    {
+                        Console.WriteLine();
+                    }
+                    return res;
                 }
             }
         }
@@ -75,6 +80,10 @@ namespace ApolloInterop.Serializers
             for (int i = 0; i < numMessages; i++)
             {
                 byte[] part = bMsg.Skip(i * blockSize).Take(blockSize).ToArray();
+                if (part.Length > 30000)
+                {
+                    Console.WriteLine();
+                }
                 ret[i] = new IPCChunkedData(id, message.GetTypeCode(), i, numMessages, part);
             }
             return ret;

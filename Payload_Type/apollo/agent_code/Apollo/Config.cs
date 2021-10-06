@@ -1,4 +1,4 @@
-﻿#define HTTP
+﻿#define SMB
 
 
 using HttpTransport;
@@ -51,7 +51,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
-                        { "pipename", "p39kmyt7-ro3l-c3id-vo2v-6efqxg1dxshh" },
+                        { "pipename", "wfah5hhe-4gqy-04ac-qbrg-d64jxa9fc6f1" },
                         { "encrypted_exchange_check", "T" },
                     }
                 }
@@ -77,14 +77,14 @@ namespace Apollo
 #if HTTP
         public static string StagingRSAPrivateKey = "8GnFo5hkJHnK2+ZXmLs+mg+NF67bOlRyWrfrXWZG3Vg=";
 #elif SMB
-        public static string StagingRSAPrivateKey = "2EyBlgkPYL4Ez1+haxSaPQpCb5IwQsjt4V1TL1+jsXw=";
+        public static string StagingRSAPrivateKey = "DSABvPysGIeBSSmz6y2FYrJGWb3kNLT0s2XSrTopA3Q=";
 #elif TCP
         public static string StagingRSAPrivateKey = "OeQ4qFs0m5ANM0HfMn0Bsxb229XcRurbFxF3VsxfoRE=";
 #endif
 #if HTTP
         public static string PayloadUUID = "11be0fb4-a6e7-4a11-ba38-fccadb28fd50";
 #elif SMB
-        public static string PayloadUUID = "8cb8d2d3-a36a-4cb3-b217-f07e0d39b6c9";
+        public static string PayloadUUID = "712b89a3-2f36-4909-af83-06bbffdb3e1e";
 #elif TCP
         public static string PayloadUUID = "f6049b32-0de6-461e-887e-2961f744411b";
 #endif

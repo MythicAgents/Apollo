@@ -151,21 +151,21 @@ namespace Apollo.Management.Tasks
                 });
             }
 
-            if (resp.Tasks != null)
+            if (resp.Tasks != null && resp.Tasks.Length > 0)
             {
                 foreach(Task t in resp.Tasks)
                 {
                     TaskQueue.Enqueue(t);
                 }
             }
-            if (resp.Responses != null)
+            if (resp.Responses != null && resp.Responses.Length > 0)
             {
                 foreach(TaskStatus t in resp.Responses)
                 {
                     TaskStatusQueue.Enqueue(t);
                 }
             }
-            if (resp.Delegates != null)
+            if (resp.Delegates != null && resp.Delegates.Length > 0)
             {
                 foreach(DelegateMessage d in resp.Delegates)
                 {

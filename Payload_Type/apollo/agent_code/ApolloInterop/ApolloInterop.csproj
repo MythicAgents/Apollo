@@ -42,6 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Core\Agent.cs" />
+    <Compile Include="Classes\Api\Library.cs" />
+    <Compile Include="Classes\Core\ChunkedMessageStore.cs" />
     <Compile Include="Classes\Events\MythicMessageEventArgs.cs" />
     <Compile Include="Classes\Pipes\AsyncNamedPipeClient.cs" />
     <Compile Include="Classes\Pipes\AsyncNamedPipeServer.cs" />
@@ -68,6 +70,7 @@
     <Compile Include="Interfaces\IC2ProfileManager.cs" />
     <Compile Include="Interfaces\ICryptography.cs" />
     <Compile Include="Interfaces\ICryptographySerializer.cs" />
+    <Compile Include="Interfaces\IFileManager.cs" />
     <Compile Include="Interfaces\IMythicMessage.cs" />
     <Compile Include="Interfaces\INamedPipeCallback.cs" />
     <Compile Include="Interfaces\IPeer.cs" />

@@ -368,7 +368,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "file_browser")]
             public FileBrowser? FileBrowser;
             [DataMember(Name = "upload")]
-            public UploadMessage Upload;
+            public UploadMessage? Upload;
             [DataMember(Name = "message_id")]
             public string MessageID;
             [DataMember(Name = "credentials")]
@@ -652,12 +652,16 @@ namespace ApolloInterop.Structs
             {
                 return MessageType.UploadMessage;
             }
+            [DataMember(Name = "total_chunks")]
+            public int TotalChunks;
             [DataMember(Name = "chunk_size")]
             public int ChunkSize;
             [DataMember(Name = "file_id")]
             public string FileID;
             [DataMember(Name = "chunk_num")]
             public int ChunkNumber;
+            [DataMember(Name = "chunk_data")]
+            public string ChunkData;
             [DataMember(Name = "full_path")]
             public string FullPath;
             [DataMember(Name = "task_id")]
