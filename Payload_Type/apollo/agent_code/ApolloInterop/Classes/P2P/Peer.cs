@@ -1,4 +1,6 @@
-﻿using ApolloInterop.Enums.ApolloEnums;
+﻿using ApolloInterop.Classes.Core;
+using ApolloInterop.Classes.Events;
+using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Serializers;
 using ApolloInterop.Structs.ApolloStructs;
@@ -22,7 +24,7 @@ namespace ApolloInterop.Classes.P2P
         protected string _mythicUUID;
         protected bool _previouslyConnected;
         public event EventHandler<UUIDEventArgs> UUIDNegotiated;
-        protected ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
+        protected ConcurrentDictionary<string, ChunkedMessageStore<IPCChunkedData>> _messageOrganizer = new ConcurrentDictionary<string, ChunkedMessageStore<IPCChunkedData>>();
         protected ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         protected AutoResetEvent _senderEvent = new AutoResetEvent(false);
         protected MessageType _serverResponseType;
@@ -81,8 +83,15 @@ namespace ApolloInterop.Classes.P2P
             _senderEvent.Set();
         }
 
-        public bool DeserializeToReceiver(byte[] data, MessageType mt)
+        public void DeserializeToReceiver(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
         {
+            MessageType mt = args.Chunks[0].Message;
+            List<byte> data = new List<byte>();
+
+            for(int i = 0; i < args.Chunks.Length; i++)
+            {
+                data.AddRange(Convert.FromBase64String(args.Chunks[i].Data));
+            }
             // Probably where we do sorting based on EKE,
             // checkin, and get_tasking
             switch (mt)
@@ -99,9 +108,8 @@ namespace ApolloInterop.Classes.P2P
             {
                 UUID = _uuid,
                 C2Profile = C2ProfileName,
-                Message = Encoding.UTF8.GetString(data)
+                Message = Encoding.UTF8.GetString(data.ToArray())
             });
-            return true;
         }
 
         public virtual string GetUUID() { return _uuid; }

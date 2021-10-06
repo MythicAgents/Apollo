@@ -646,7 +646,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct UploadMessage : IEquatable<UploadMessage>, IMythicMessage
+        public struct UploadMessage : IEquatable<UploadMessage>, IChunkMessage, IMythicMessage
         {
             public MessageType GetTypeCode()
             {
@@ -679,6 +679,21 @@ namespace ApolloInterop.Structs
                     this.FileID == obj.FileID &&
                     this.FullPath == obj.FullPath &&
                     this.TaskID == obj.TaskID;
+            }
+
+            public int GetChunkNumber()
+            {
+                return this.ChunkNumber;
+            }
+
+            public int GetTotalChunks()
+            {
+                return this.TotalChunks;
+            }
+
+            public int GetChunkSize()
+            {
+                return this.ChunkSize;
             }
         }
 

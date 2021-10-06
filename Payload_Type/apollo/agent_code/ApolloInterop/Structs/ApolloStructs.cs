@@ -1,4 +1,5 @@
 ﻿using ApolloInterop.Enums.ApolloEnums;
+using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ namespace ApolloInterop.Structs.ApolloStructs
     }
 
     [DataContract]
-    public struct IPCChunkedData
+    public struct IPCChunkedData : IChunkMessage
     {
         [DataMember(Name = "message_type")]
         public MessageType Message;
@@ -55,6 +56,21 @@ namespace ApolloInterop.Structs.ApolloStructs
             ChunkNumber = chunkNum;
             TotalChunks = totalChunks;
             Data = Convert.ToBase64String(data);
+        }
+
+        public int GetChunkNumber()
+        {
+            return this.ChunkNumber;
+        }
+
+        public int GetChunkSize()
+        {
+            return this.Data.Length;
+        }
+
+        public int GetTotalChunks()
+        {
+            return this.TotalChunks;
         }
     }
 

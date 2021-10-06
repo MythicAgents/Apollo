@@ -15,6 +15,7 @@ using System.Threading;
 using TTasks = System.Threading.Tasks;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Net.Sockets;
+using ApolloInterop.Classes.Core;
 
 namespace Apollo.Peers.TCP
 {
@@ -99,7 +100,8 @@ namespace Apollo.Peers.TCP
             {
                 if (!_messageOrganizer.ContainsKey(chunkedData.ID))
                 {
-                    _messageOrganizer[chunkedData.ID] = new IPCMessageStore(DeserializeToReceiver);
+                    _messageOrganizer[chunkedData.ID] = new ChunkedMessageStore<AS.IPCChunkedData>();
+                    _messageOrganizer[chunkedData.ID].MessageComplete += DeserializeToReceiver;
                 }
             }
             _messageOrganizer[chunkedData.ID].AddMessage(chunkedData);

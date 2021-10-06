@@ -15,6 +15,8 @@ using System.Threading;
 using ST = System.Threading.Tasks;
 using ApolloInterop.Serializers;
 using ApolloInterop.Constants;
+using ApolloInterop.Classes.Core;
+using ApolloInterop.Classes.Events;
 
 namespace NamedPipeTransport
 {
@@ -43,7 +45,6 @@ namespace NamedPipeTransport
         private ST.Task _agentConsumerTask = null;
         private ST.Task _agentProcessorTask = null;
 
-        ConcurrentDictionary<string, IPCMessageStore> _messageOrganizer = new ConcurrentDictionary<string, IPCMessageStore>();
         public NamedPipeProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             _namedPipeName = data["pipename"];
@@ -105,14 +106,15 @@ namespace NamedPipeTransport
         {
             IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(
                 Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray()));
-            lock(_messageOrganizer)
+            lock(MessageStore)
             {
-                if (!_messageOrganizer.ContainsKey(chunkedData.ID))
+                if (!MessageStore.ContainsKey(chunkedData.ID))
                 {
-                    _messageOrganizer[chunkedData.ID] = new IPCMessageStore(DeserializeToReceiverQueue);
+                    MessageStore[chunkedData.ID] = new ChunkedMessageStore<IPCChunkedData>();
+                    MessageStore[chunkedData.ID].MessageComplete += DeserializeToReceiverQueue;
                 }
             }
-            _messageOrganizer[chunkedData.ID].AddMessage(chunkedData);
+            MessageStore[chunkedData.ID].AddMessage(chunkedData);
         }
 
         private void OnAsyncMessageSent(IAsyncResult result)
@@ -137,13 +139,20 @@ namespace NamedPipeTransport
             return true;
         }
 
-        public bool DeserializeToReceiverQueue(byte[] data, MessageType mt)
+        public void DeserializeToReceiverQueue(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
         {
-            IMythicMessage msg = Serializer.DeserializeIPCMessage(data, mt);
+            MessageType mt = args.Chunks[0].Message;
+            List<byte> data = new List<byte>();
+
+            for(int i = 0; i < args.Chunks.Length; i++)
+            {
+                data.AddRange(Convert.FromBase64String(args.Chunks[i].Data));
+            }
+
+            IMythicMessage msg = Serializer.DeserializeIPCMessage(data.ToArray(), mt);
             Console.WriteLine("We got a message: {0}", mt.ToString());
             _recieverQueue.Enqueue(msg);
             _receiverEvent.Set();
-            return true;
         }
 
 

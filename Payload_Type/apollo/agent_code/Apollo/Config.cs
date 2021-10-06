@@ -1,4 +1,4 @@
-﻿#define SMB
+﻿#define HTTP
 
 
 using HttpTransport;
@@ -79,14 +79,14 @@ namespace Apollo
 #elif SMB
         public static string StagingRSAPrivateKey = "DSABvPysGIeBSSmz6y2FYrJGWb3kNLT0s2XSrTopA3Q=";
 #elif TCP
-        public static string StagingRSAPrivateKey = "OeQ4qFs0m5ANM0HfMn0Bsxb229XcRurbFxF3VsxfoRE=";
+        public static string StagingRSAPrivateKey = "ea7PWJKuszQ5CtdnNnYc1cCimbV0ue8X9bPB88kIHX4=";
 #endif
 #if HTTP
         public static string PayloadUUID = "11be0fb4-a6e7-4a11-ba38-fccadb28fd50";
 #elif SMB
         public static string PayloadUUID = "712b89a3-2f36-4909-af83-06bbffdb3e1e";
 #elif TCP
-        public static string PayloadUUID = "f6049b32-0de6-461e-887e-2961f744411b";
+        public static string PayloadUUID = "1b899f62-6f58-4367-87f4-f92ae97db803";
 #endif
     }
 }
