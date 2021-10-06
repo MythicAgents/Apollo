@@ -166,7 +166,7 @@ namespace Apollo.Management.Tasks
                     {
                         _agent.GetFileManager().ProcessResponse(t);
                     }
-                    TaskStatusQueue.Enqueue(t);
+                    //TaskStatusQueue.Enqueue(t);
                 }
             }
             if (resp.Delegates != null && resp.Delegates.Length > 0)

