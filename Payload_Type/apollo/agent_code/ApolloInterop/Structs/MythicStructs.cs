@@ -320,12 +320,28 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskStatus : IMythicMessage
+        public struct TaskStatus : IMythicMessage, IChunkMessage
         {
             public MessageType GetTypeCode()
             {
                 return MessageType.TaskStatus;
             }
+
+            public int GetChunkNumber()
+            {
+                return this.ChunkNumber;
+            }
+
+            public int GetTotalChunks()
+            {
+                return this.TotalChunks;
+            }
+
+            public int GetChunkSize()
+            {
+                return this.ChunkData.Length;
+            }
+
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "status")]

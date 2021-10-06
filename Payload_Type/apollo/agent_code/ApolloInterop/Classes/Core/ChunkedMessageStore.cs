@@ -26,7 +26,7 @@ namespace ApolloInterop.Classes.Core
                 {
                     _messages = new T[d.GetTotalChunks()];
                 }
-                _messages[d.GetChunkNumber()] = d;
+                _messages[d.GetChunkNumber()-1] = d;
                 _currentCount += 1;
             }
             if (_currentCount == d.GetTotalChunks())

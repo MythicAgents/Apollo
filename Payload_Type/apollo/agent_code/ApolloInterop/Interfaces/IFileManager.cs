@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace ApolloInterop.Interfaces
 {
     public interface IFileManager
     {
-        void ProcessResponse(UploadMessage resp);
+        void ProcessResponse(TaskStatus resp);
 
-        bool GetFile(string taskID, string fileID, out byte[] fileBytes);
+        bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes);
     }
 }

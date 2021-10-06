@@ -64,7 +64,7 @@ namespace ApolloInterop.Serializers
             for (int i = 0; i < numMessages; i++)
             {
                 byte[] part = bMsg.Skip(i * blockSize).Take(blockSize).ToArray();
-                ret[i] = new IPCChunkedData(id, mt, i, numMessages, part);
+                ret[i] = new IPCChunkedData(id, mt, i+1, numMessages, part);
             }
             return ret;
         }
@@ -84,7 +84,7 @@ namespace ApolloInterop.Serializers
                 {
                     Console.WriteLine();
                 }
-                ret[i] = new IPCChunkedData(id, message.GetTypeCode(), i, numMessages, part);
+                ret[i] = new IPCChunkedData(id, message.GetTypeCode(), i+1, numMessages, part);
             }
             return ret;
         }

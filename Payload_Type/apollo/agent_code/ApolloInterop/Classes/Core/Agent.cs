@@ -22,6 +22,7 @@ namespace ApolloInterop.Classes
         public IApi Api { get; protected set; }
         public IC2ProfileManager C2ProfileManager { get; protected set; }
         public ICryptographySerializer Serializer { get; protected set; }
+        public IFileManager FileManager { get; protected set; }
         public string UUID { get; protected set; }
 
         public Agent(string uuid)
@@ -65,15 +66,11 @@ namespace ApolloInterop.Classes
         public virtual ISocksManager GetSocksManager() { return SocksManager; }
         public virtual IC2ProfileManager GetC2ProfileManager() { return C2ProfileManager; }
         public virtual ICryptographySerializer GetCryptographySerializer() { return Serializer; }
+        public virtual IFileManager GetFileManager() { return FileManager; }
 
         public string GetUUID()
         {
             return UUID;
-        }
-
-        public IFileManager GetFileManager()
-        {
-            throw new NotImplementedException();
         }
     }
 }

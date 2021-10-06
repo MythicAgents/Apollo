@@ -162,6 +162,10 @@ namespace Apollo.Management.Tasks
             {
                 foreach(TaskStatus t in resp.Responses)
                 {
+                    if (!string.IsNullOrEmpty(t.ChunkData))
+                    {
+                        _agent.GetFileManager().ProcessResponse(t);
+                    }
                     TaskStatusQueue.Enqueue(t);
                 }
             }

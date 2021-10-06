@@ -27,6 +27,7 @@ namespace Apollo.Agent
             PeerManager = new AM.Peer.PeerManager(this);
             SocksManager = new AM.Socks.SocksManager(this);
             TaskManager = new AM.Tasks.TaskManager(this);
+            FileManager = new AM.Files.FileManager(this);
 
             foreach (string profileName in Config.EgressProfiles.Keys)
             {
