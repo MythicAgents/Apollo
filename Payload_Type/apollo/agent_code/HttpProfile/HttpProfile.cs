@@ -143,12 +143,18 @@ namespace HttpTransport
             Stream reqStream = request.GetRequestStream();
             reqStream.Write(requestPayload, 0, requestPayload.Length);
             reqStream.Close();
-            WebResponse response = request.GetResponse();
-            using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+            try
             {
-                onResponse(Serializer.Deserialize<TResult>(reader.ReadToEnd()));
+                WebResponse response = request.GetResponse();
+                using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                {
+                    onResponse(Serializer.Deserialize<TResult>(reader.ReadToEnd()));
+                }
+                return true;
+            } catch
+            {
+                return false;
             }
-            return true;
         }
 
         // Only really used for bind servers so this returns empty
