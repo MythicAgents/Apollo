@@ -51,7 +51,6 @@ namespace ApolloInterop.Classes
                 List<Credential> creds = new List<Credential>();
                 List<RemovedFileInformation> removed = new List<RemovedFileInformation>();
                 List<Artifact> artifacts = new List<Artifact>();
-                List<UploadMessage> uploads = new List<UploadMessage>();
                 foreach (IMythicMessage msg in messages)
                 {
                     switch (msg.GetTypeCode())
@@ -72,11 +71,7 @@ namespace ApolloInterop.Classes
                             artifacts.Add((Artifact)msg);
                             break;
                         case MessageType.UploadMessage:
-                            if (uploads.Count > 1)
-                            {
-                                throw new Exception("Too many upload messages specified in task response.");
-                            }
-                            uploads.Add((UploadMessage)msg);
+                            resp.Upload = (UploadMessage)msg;
                             break;
                         default:
                             throw new Exception($"Unhandled message type while generating response: {msg.GetTypeCode()}");
@@ -86,7 +81,6 @@ namespace ApolloInterop.Classes
                 resp.Credentials = creds.ToArray();
                 resp.RemovedFiles = removed.ToArray();
                 resp.Artifacts = artifacts.ToArray();
-                resp.Upload = uploads.ToArray()[0];
             }
             return resp;
         }
