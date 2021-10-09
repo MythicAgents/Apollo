@@ -5,14 +5,15 @@ using System.Linq;
 using System.Text;
 using System.IO.Pipes;
 using ApolloInterop.Classes.Api;
+using ApolloInterop.Classes.Core;
 
 namespace ApolloInterop.Interfaces
 {
     public interface IApi
     {
-        Delegate GetLibraryFunction(Library library, string functionName, Type del, bool canLoadFromDisk = true);
-        Delegate GetLibraryFunction(Library library, short ordinal, Type del, bool canLoadFromDisk = true);
-        Delegate GetLibraryFunction(Library library, string functionHash, long key, Type del, bool canLoadFromDisk=true);
+        T GetLibraryFunction<T>(Library library, string functionName, bool canLoadFromDisk = true) where T : Delegate;
+        T GetLibraryFunction<T>(Library library, short ordinal, bool canLoadFromDisk = true) where T : Delegate;
+        T GetLibraryFunction<T>(Library library, string functionHash, long key, bool canLoadFromDisk=true) where T : Delegate;
 
         string NewUUID();
 
@@ -22,6 +23,7 @@ namespace ApolloInterop.Interfaces
         ICryptographySerializer NewEncryptedJsonSerializer(string uuid, Type cryptoType, string key = "");
 
         NamedPipeServerStream CreateNamedPipeServer(string pipeName, bool allowNetworkLogon = false, PipeTransmissionMode transmissionMode = PipeTransmissionMode.Byte);
-    
+
+        Process CreateProcess(string lpApplication, string lpArguments = null, bool startSuspended = false);
     }
 }

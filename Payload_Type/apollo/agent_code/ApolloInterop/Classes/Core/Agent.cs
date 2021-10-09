@@ -23,6 +23,7 @@ namespace ApolloInterop.Classes
         public IC2ProfileManager C2ProfileManager { get; protected set; }
         public ICryptographySerializer Serializer { get; protected set; }
         public IFileManager FileManager { get; protected set; }
+        public IIdentityManager IdentityManager { get; protected set; }
         public string UUID { get; protected set; }
 
         public Agent(string uuid)

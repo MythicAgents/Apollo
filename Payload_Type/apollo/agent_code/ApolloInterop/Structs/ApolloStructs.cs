@@ -7,10 +7,43 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
+using System.Security;
 using System.Text;
 
 namespace ApolloInterop.Structs.ApolloStructs
 {
+    public struct ApolloTokenInformation
+    {
+        public IntPtr Token;
+        public bool IsPrimary;
+        public bool IsImpersonatedImpersonation;
+    }
+
+    public struct ApolloLogonInformation
+    {
+        public readonly string Username;
+        public readonly string Password;
+        public readonly SecureString SecurePassword;
+        public readonly string Domain;
+        public readonly bool NetOnly;
+
+        public ApolloLogonInformation(string username, string password, string domain = ".", bool netOnly=false)
+        {
+            if (string.IsNullOrEmpty(username))
+                throw new Exception("Username cannot be null or empty.");
+            if (string.IsNullOrEmpty(password))
+                throw new Exception("Password cannot be null or empty.");
+            SecurePassword = new SecureString();
+            foreach (char c in password)
+                SecurePassword.AppendChar(c);
+            SecurePassword.MakeReadOnly();
+            Username = username;
+            Password = password;
+            Domain = domain;
+            NetOnly = netOnly;
+        }
+    }
+
     public struct C2ProfileData
     {
         public Type TC2Profile;

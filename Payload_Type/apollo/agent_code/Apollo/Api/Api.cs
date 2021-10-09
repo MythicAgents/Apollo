@@ -69,22 +69,22 @@ namespace Apollo.Api
             return result;
         }
 
-        public Delegate GetLibraryFunction(Library library, string functionName, Type del, bool canLoadFromDisk = true)
+        public T GetLibraryFunction<T>(Library library, string functionName, bool canLoadFromDisk = true) where T : Delegate
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionName, canLoadFromDisk);
-            return Marshal.GetDelegateForFunctionPointer(fn, del);
+            return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
 
-        public Delegate GetLibraryFunction(Library library, short ordinal, Type del, bool canLoadFromDisk = true)
+        public T GetLibraryFunction<T>(Library library, short ordinal, bool canLoadFromDisk = true) where T : Delegate
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), ordinal, canLoadFromDisk);
-            return Marshal.GetDelegateForFunctionPointer(fn, del);
+            return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
 
-        public Delegate GetLibraryFunction(Library library, string functionHash, long key, Type del, bool canLoadFromDisk = true)
+        public T GetLibraryFunction<T>(Library library, string functionHash, long key, bool canLoadFromDisk = true) where T : Delegate
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionHash, key, canLoadFromDisk);
-            return Marshal.GetDelegateForFunctionPointer(fn, del);
+            return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
     }
 }

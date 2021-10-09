@@ -63,7 +63,9 @@
     <Compile Include="Classes\Events\UUIDEventArgs.cs" />
     <Compile Include="Constants\IPC.cs" />
     <Compile Include="Constants\SOCKS.cs" />
+    <Compile Include="Constants\Win32.cs" />
     <Compile Include="Enums\ApolloEnums.cs" />
+    <Compile Include="Enums\Win32.cs" />
     <Compile Include="Interfaces\IAgent.cs" />
     <Compile Include="Interfaces\IApi.cs" />
     <Compile Include="Interfaces\IC2Profile.cs" />
@@ -72,6 +74,7 @@
     <Compile Include="Interfaces\ICryptographySerializer.cs" />
     <Compile Include="Interfaces\IFileManager.cs" />
     <Compile Include="Interfaces\IChunkMessage.cs" />
+    <Compile Include="Interfaces\IIdentityManager.cs" />
     <Compile Include="Interfaces\IMythicMessage.cs" />
     <Compile Include="Interfaces\INamedPipeCallback.cs" />
     <Compile Include="Interfaces\IPeer.cs" />
@@ -86,6 +89,7 @@
     <Compile Include="Serializers\JsonSerializer.cs" />
     <Compile Include="Structs\ApolloStructs.cs" />
     <Compile Include="Structs\MythicStructs.cs" />
+    <Compile Include="Structs\Win32.cs" />
     <Compile Include="Types\Delegates.cs" />
     <Compile Include="Types\MythicTypes.cs" />
   </ItemGroup>
