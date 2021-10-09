@@ -10,12 +10,20 @@ namespace ApolloInterop.Interfaces
 {
     public interface IIdentityManager
     {
-        WindowsIdentity GetCurrent();
+        WindowsIdentity GetCurrentPrimaryIdentity();
+        WindowsIdentity GetCurrentImpersonationIdentity();
         WindowsIdentity GetOriginal();
+
+        bool GetCurrentLogonInformation(out ApolloLogonInformation logonInfo);
 
         void Revert();
 
-        bool SetIdentity(WindowsIdentity identity);
+        void SetPrimaryIdentity(WindowsIdentity identity);
+
+        void SetPrimaryIdentity(IntPtr hToken);
+
+        void SetImpersonationIdentity(WindowsIdentity identity);
+        void SetImpersonationIdentity(IntPtr hToken);
 
         bool SetIdentity(ApolloLogonInformation token);
 

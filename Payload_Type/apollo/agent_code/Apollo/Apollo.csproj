@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Agent\Apollo.cs" />
     <Compile Include="Api\Api.cs" />
+    <Compile Include="Api\ApolloProcess\SafeIntPtr.cs" />
     <Compile Include="Api\Cryptography\RSA.cs" />
     <Compile Include="Api\DInvoke\DynamicInvoke\Generic.cs" />
     <Compile Include="Api\DInvoke\DynamicInvoke\Native.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="Api\DInvoke\SharedData\Win32.cs" />
     <Compile Include="Api\DInvoke\SharedUtilities\Utilities.cs" />
     <Compile Include="Api\IO\Pipes.cs" />
+    <Compile Include="Api\ApolloProcess\SacrificialProcess.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Management\C2\C2ProfileManager.cs" />
     <Compile Include="Management\Files\FileManager.cs" />

@@ -21,14 +21,12 @@ namespace Apollo.Management.Identity
 
         private ApolloLogonInformation _userCredential;
         private WindowsIdentity _originalIdentity = WindowsIdentity.GetCurrent();
-        private WindowsIdentity _currentIdentity = WindowsIdentity.GetCurrent();
+        private WindowsIdentity _currentPrimaryIdentity = WindowsIdentity.GetCurrent();
+        private WindowsIdentity _currentImpersonationIdentity = WindowsIdentity.GetCurrent();
 
         private IntPtr _executingThread = IntPtr.Zero;
         private IntPtr _originalImpersonationToken = IntPtr.Zero;
         private IntPtr _originalPrimaryToken = IntPtr.Zero;
-
-        private IntPtr _impersonatedImpersonationToken = IntPtr.Zero;
-        private IntPtr _impersonatedPrimaryToken = IntPtr.Zero;
 
         #region Delegate Typedefs
         private delegate IntPtr GetCurrentThread();
@@ -130,7 +128,7 @@ namespace Apollo.Management.Identity
 
         public IntegrityLevel GetIntegrityLevel()
         {
-            IntPtr hToken = _currentIdentity.Token;
+            IntPtr hToken = _currentImpersonationIdentity.Token;
             int dwRet = 0;
             bool bRet = false;
             int dwTokenInfoLength = 0;
@@ -229,7 +227,7 @@ namespace Apollo.Management.Identity
 
         public WindowsIdentity GetCurrent()
         {
-            return _currentIdentity;
+            return _currentImpersonationIdentity;
         }
 
         public WindowsIdentity GetOriginal()
@@ -257,13 +255,10 @@ namespace Apollo.Management.Identity
 
             if (bRet)
             {
-                if (_impersonatedPrimaryToken != IntPtr.Zero)
-                {
-                    _CloseHandle(_impersonatedPrimaryToken);
-                }
-                _impersonatedPrimaryToken = hToken;
+                _currentPrimaryIdentity = new WindowsIdentity(hToken);
+                _CloseHandle(hToken);
                 bRet = _DuplicateTokenEx(
-                    _impersonatedPrimaryToken,
+                    _currentPrimaryIdentity.Token,
                     TokenAccessLevels.MaximumAllowed,
                     IntPtr.Zero,
                     TokenImpersonationLevel.Impersonation,
@@ -271,7 +266,8 @@ namespace Apollo.Management.Identity
                     out IntPtr dupToken);
                 if (bRet)
                 {
-                    bRet = SetIdentity(dupToken);
+                    _currentImpersonationIdentity = new WindowsIdentity(dupToken);
+                    _CloseHandle(dupToken);
                 }
                 else
                 {
@@ -281,51 +277,42 @@ namespace Apollo.Management.Identity
             return bRet;
         }
 
-        public bool SetIdentity(IntPtr hToken)
+        public void SetPrimaryIdentity(WindowsIdentity ident)
         {
-            bool bRet = false;
-            try
-            {
-                _currentIdentity = new WindowsIdentity(hToken);
-                bRet = true;
-            } catch (Exception ex)
-            {
-            }
-            if (bRet)
-            {
-                _CloseHandle(_impersonatedImpersonationToken);
-                _impersonatedImpersonationToken = hToken;
-            }
-            return bRet;
+            _currentPrimaryIdentity = ident;
+        }
 
+        public void SetPrimaryIdentity(IntPtr hToken)
+        {
+            _currentPrimaryIdentity = new WindowsIdentity(hToken);
+        }
+
+        public void SetImpersonationIdentity(WindowsIdentity ident)
+        {
+            _currentImpersonationIdentity = ident;
+        }
+
+        public void SetImpersonationIdentity(IntPtr hToken)
+        {
+            _currentImpersonationIdentity = new WindowsIdentity(hToken);
         }
 
         public void Revert()
         {
             _SetThreadToken(ref _executingThread, _originalImpersonationToken);
-            if (_impersonatedImpersonationToken != IntPtr.Zero)
-            {
-                _CloseHandle(_impersonatedImpersonationToken);
-            }
-            if (_impersonatedPrimaryToken != IntPtr.Zero)
-            {
-                _CloseHandle(_impersonatedPrimaryToken);
-            }
-            _impersonatedImpersonationToken = IntPtr.Zero;
-            _impersonatedPrimaryToken = IntPtr.Zero;
             _userCredential = new ApolloLogonInformation();
-            _currentIdentity = _originalIdentity;
+            _currentImpersonationIdentity = _originalIdentity;
+            _currentPrimaryIdentity = _originalIdentity;
         }
 
-        public bool SetIdentity(WindowsIdentity identity)
+        public WindowsIdentity GetCurrentPrimaryIdentity()
         {
-            _currentIdentity = identity;
-            if (_impersonatedImpersonationToken != IntPtr.Zero)
-            {
-                _CloseHandle(_impersonatedImpersonationToken);
-            }
-            _impersonatedImpersonationToken = _currentIdentity.Token;
-            return true;
+            return _currentPrimaryIdentity;
+        }
+
+        public WindowsIdentity GetCurrentImpersonationIdentity()
+        {
+            return _currentImpersonationIdentity;
         }
     }
 }

@@ -18,11 +18,28 @@ namespace ApolloInterop.Classes.Core
         public uint PID { get; protected set; }
         public string StdOut { get; protected set; } = "";
         public string StdErr { get; protected set; } = "";
-
+        public IntPtr Handle { get; protected set; }
         protected IAgent _agent;
         public event EventHandler<StringDataEventArgs> OutputDataReceived;
         public event EventHandler<StringDataEventArgs> ErrorDataReceieved;
         public event EventHandler Exit;
+        
+        public void OnOutputDataReceived(object sender, StringDataEventArgs args)
+        {
+            OutputDataReceived?.Invoke(sender, args);
+        }
+
+        public void OnErrorDataRecieved(object sender, StringDataEventArgs args)
+        {
+            ErrorDataReceieved?.Invoke(sender, args);
+        }
+
+        public abstract void Kill();
+
+        public void OnExit(object sender, EventArgs args)
+        {
+            Exit?.Invoke(sender, args);
+        }
         public Process(IAgent agent, string lpApplication, string lpArguments=null, bool startSuspended = false)
         {
             _agent = agent;
@@ -52,7 +69,7 @@ namespace ApolloInterop.Classes.Core
 
         public abstract bool StartWithCredentials(ApolloLogonInformation logonInfo);
 
-        public abstract bool StartWithCredentials(SafeHandle hToken);
+        public abstract bool StartWithCredentials(IntPtr hToken);
 
         public abstract void WaitForExit();
 

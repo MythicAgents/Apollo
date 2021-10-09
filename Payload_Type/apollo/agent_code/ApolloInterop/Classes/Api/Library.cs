@@ -21,5 +21,6 @@ namespace ApolloInterop.Classes.Api
         public static Library NTDLL { get { return new Library("ntdll.dll"); } }
         public static Library ADVAPI32 { get { return new Library("advapi32.dll"); } }
         public static Library KERNEL32 { get { return new Library("kernel32.dll"); } }
+        public static Library USER32 { get { return new Library("user32.dll"); } }
     }
 }

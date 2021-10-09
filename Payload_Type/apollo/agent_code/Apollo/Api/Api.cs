@@ -13,6 +13,7 @@ using System.IO.Pipes;
 using ApolloInterop.Classes.Api;
 using Apollo.Api.DInvoke;
 using System.Runtime.InteropServices;
+using ApolloInterop.Classes.Core;
 
 namespace Apollo.Api
 {
@@ -85,6 +86,11 @@ namespace Apollo.Api
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionHash, key, canLoadFromDisk);
             return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
+        }
+
+        public Process CreateProcess(string lpApplication, string lpArguments = null, bool startSuspended = false)
+        {
+            throw new NotImplementedException();
         }
     }
 }

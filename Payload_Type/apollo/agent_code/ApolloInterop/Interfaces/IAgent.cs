@@ -41,6 +41,8 @@ namespace ApolloInterop.Interfaces
 
         IFileManager GetFileManager();
 
+        IIdentityManager GetIdentityManager();
+
         //ICryptographySerializer GetCryptographySerializer();
 
         IApi GetApi();
