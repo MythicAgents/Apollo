@@ -314,5 +314,17 @@ namespace Apollo.Management.Identity
         {
             return _currentImpersonationIdentity;
         }
+
+        public bool GetCurrentLogonInformation(out ApolloLogonInformation logonInfo)
+        {
+            if (!string.IsNullOrEmpty(_userCredential.Username) &&
+                !string.IsNullOrEmpty(_userCredential.Password))
+            {
+                logonInfo = _userCredential;
+                return true;
+            }
+            logonInfo = new ApolloLogonInformation();
+            return false;
+        }
     }
 }

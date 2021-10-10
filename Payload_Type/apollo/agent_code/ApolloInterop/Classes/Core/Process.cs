@@ -60,9 +60,6 @@ namespace ApolloInterop.Classes.Core
             _startSuspended = startSuspended;
         }
 
-
-        public abstract IEnumerable<string> GetOutput();
-
         public abstract bool Inject(byte[] code, string arguments = "");
 
         public abstract bool Start();

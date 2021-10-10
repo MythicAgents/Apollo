@@ -161,7 +161,7 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
         /// <returns>IntPtr base address of the loaded module or IntPtr.Zero if the module is not found.</returns>
         public static IntPtr GetLoadedModuleAddress(string DLLName)
         {
-            ProcessModuleCollection ProcModules = Process.GetCurrentProcess().Modules;
+            ProcessModuleCollection ProcModules = System.Diagnostics.Process.GetCurrentProcess().Modules;
             foreach (ProcessModule Mod in ProcModules)
             {
                 if (Mod.FileName.ToLower().EndsWith(DLLName.ToLower()))
@@ -653,7 +653,7 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
 
             // Find the path for ntdll by looking at the currently loaded module
             string NtdllPath = string.Empty;
-            ProcessModuleCollection ProcModules = Process.GetCurrentProcess().Modules;
+            ProcessModuleCollection ProcModules = System.Diagnostics.Process.GetCurrentProcess().Modules;
             foreach (ProcessModule Mod in ProcModules)
             {
                 if (Mod.FileName.EndsWith("ntdll.dll", StringComparison.OrdinalIgnoreCase))

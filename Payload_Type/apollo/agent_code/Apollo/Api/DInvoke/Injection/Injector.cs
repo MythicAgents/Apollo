@@ -19,7 +19,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="ExecutionTechnique"></param>
         /// <param name="Process"></param>
         /// <returns></returns>
-        public static bool Inject(PayloadType Payload, AllocationTechnique AllocationTechnique, ExecutionTechnique ExecutionTechnique, Process Process)
+        public static bool Inject(PayloadType Payload, AllocationTechnique AllocationTechnique, ExecutionTechnique ExecutionTechnique, System.Diagnostics.Process Process)
         {
             return ExecutionTechnique.Inject(Payload, AllocationTechnique, Process);
         }

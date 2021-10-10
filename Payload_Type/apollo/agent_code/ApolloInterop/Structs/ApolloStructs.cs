@@ -19,6 +19,14 @@ namespace ApolloInterop.Structs.ApolloStructs
         public bool IsImpersonatedImpersonation;
     }
 
+    public struct ApplicationStartupInfo
+    {
+        public string Application;
+        public string Arguments;
+        public int ParentProcessId;
+        public bool BlockDLLs;
+    }
+
     public struct ApolloLogonInformation
     {
         public readonly string Username;

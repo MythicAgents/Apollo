@@ -43,6 +43,9 @@ namespace ApolloInterop.Interfaces
 
         IIdentityManager GetIdentityManager();
 
+        IProcessManager GetProcessManager();
+        IInjectionManager GetInjectionManager();
+
         //ICryptographySerializer GetCryptographySerializer();
 
         IApi GetApi();

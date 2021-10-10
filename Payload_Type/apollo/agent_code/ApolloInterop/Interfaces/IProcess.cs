@@ -16,8 +16,7 @@ namespace ApolloInterop.Interfaces
         bool Start();
         bool StartWithCredentials(ApolloLogonInformation logonInfo);
 
-        bool StartWithCredentials(SafeHandle hToken);
+        bool StartWithCredentials(IntPtr hToken);
 
-        IEnumerable<string> GetOutput();
     }
 }

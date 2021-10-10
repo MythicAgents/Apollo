@@ -87,10 +87,5 @@ namespace Apollo.Api
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionHash, key, canLoadFromDisk);
             return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
-
-        public Process CreateProcess(string lpApplication, string lpArguments = null, bool startSuspended = false)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

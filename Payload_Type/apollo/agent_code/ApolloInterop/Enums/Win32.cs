@@ -147,5 +147,12 @@ namespace ApolloInterop.Enums
             DuplicateCloseSource = 0x00000001,
             DuplicateSameAccess = 0x00000002
         }
+
+        [Flags]
+        internal enum LogonFlags : uint
+        {
+            LOGON_WITH_PROFILE = 0x00000001,
+            LOGON_NETCREDENTIALS_ONLY = 0x00000002
+        }
     }
 }

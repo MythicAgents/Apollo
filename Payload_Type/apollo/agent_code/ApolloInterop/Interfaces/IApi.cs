@@ -23,7 +23,5 @@ namespace ApolloInterop.Interfaces
         ICryptographySerializer NewEncryptedJsonSerializer(string uuid, Type cryptoType, string key = "");
 
         NamedPipeServerStream CreateNamedPipeServer(string pipeName, bool allowNetworkLogon = false, PipeTransmissionMode transmissionMode = PipeTransmissionMode.Byte);
-
-        Process CreateProcess(string lpApplication, string lpArguments = null, bool startSuspended = false);
     }
 }
