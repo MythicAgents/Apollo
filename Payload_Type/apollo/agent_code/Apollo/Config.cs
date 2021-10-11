@@ -1,4 +1,4 @@
-﻿#define HTTP
+﻿#define SMB
 
 
 using HttpTransport;
