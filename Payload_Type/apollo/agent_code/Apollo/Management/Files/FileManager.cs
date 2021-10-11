@@ -138,10 +138,14 @@ namespace Apollo.Management.Files
             _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
             {
                 TaskID = taskID,
-                TotalChunks = _downloadMessageStore[taskID].TotalChunks,
-                FullPath = originatingPath,
-                Hostname = originatingHost,
-                IsScreenshot = isScreenshot
+                Download = new DownloadMessage
+                {
+                    TotalChunks = _downloadMessageStore[taskID].TotalChunks,
+                    FullPath = originatingPath,
+                    Hostname = originatingHost,
+                    IsScreenshot = isScreenshot,
+                    TaskID = taskID
+                }
             });
             WaitHandle.WaitAny(new WaitHandle[]
             {
@@ -215,9 +219,13 @@ namespace Apollo.Management.Files
             _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
             {
                 TaskID = e.Chunks[0].TaskID,
-                ChunkNumber = tracker.ChunksSent + 1,
-                FileID = tracker.FileID,
-                ChunkData = Convert.ToBase64String(tracker.Chunks[tracker.ChunksSent]),
+                Download = new DownloadMessage
+                {
+                    ChunkNumber = tracker.ChunksSent + 1,
+                    FileID = tracker.FileID,
+                    ChunkData = Convert.ToBase64String(tracker.Chunks[tracker.ChunksSent]),
+                    TaskID = e.Chunks[0].TaskID
+                }
             });
         }
     }

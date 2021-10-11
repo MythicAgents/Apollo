@@ -377,20 +377,6 @@ namespace ApolloInterop.Structs
             public string Keystrokes;
             [DataMember(Name = "task_id")]
             public string TaskID;
-            [DataMember(Name = "file_id")]
-            public string FileID;
-            [DataMember(Name = "chunk_num")]
-            public int? ChunkNumber;
-            [DataMember(Name = "chunk_data")]
-            public String ChunkData;
-            [DataMember(Name = "total_chunks")]
-            public int? TotalChunks;
-            [DataMember(Name = "full_path")]
-            public string FullPath;
-            [DataMember(Name = "host")]
-            public string Hostname;
-            [DataMember(Name = "is_screenshot")]
-            public bool? IsScreenshot;
             [DataMember(Name = "status")]
             public sStatusMessage Status;
             [DataMember(Name = "edges")]
@@ -399,6 +385,8 @@ namespace ApolloInterop.Structs
             public FileBrowser? FileBrowser;
             [DataMember(Name = "upload")]
             public UploadMessage? Upload;
+            [DataMember(Name = "download")]
+            public DownloadMessage? Download;
             [DataMember(Name = "message_id")]
             public string MessageID;
             [DataMember(Name = "credentials")]
@@ -447,42 +435,6 @@ namespace ApolloInterop.Structs
                     this.MessageID == msg.MessageID;
 
             }
-        }
-
-        [DataContract]
-        public struct DownloadRegistrationMessage : IMythicMessage
-        {
-            public MessageType GetTypeCode()
-            {
-                return MessageType.DownloadRegistrationMessage;
-            }
-            [DataMember(Name = "task_id")]
-            public string TaskID;
-            [DataMember(Name = "total_chunks")]
-            public int TotalChunks;
-            [DataMember(Name = "full_path")]
-            public string FullPath;
-            [DataMember(Name = "host")]
-            public string Host;
-            [DataMember(Name = "is_screenshot")]
-            public bool IsScreenshot;
-        }
-
-        [DataContract]
-        public struct DownloadProgressMessage : IMythicMessage
-        {
-            public MessageType GetTypeCode()
-            {
-                return MessageType.DownloadProgressMessage;
-            }
-            [DataMember(Name = "task_id")]
-            public string TaskID;
-            [DataMember(Name = "file_id")]
-            public string FileID;
-            [DataMember(Name = "chunk_num")]
-            public int ChunkNumber;
-            [DataMember(Name = "chunk_data")]
-            public string ChunkData;
         }
 
         [DataContract]
@@ -673,6 +625,50 @@ namespace ApolloInterop.Structs
             public string PublicKey;
             [DataMember(Name = "session_id")]
             public string SessionID;
+        }
+
+        [DataContract]
+        public struct DownloadMessage : IEquatable<DownloadMessage>, IMythicMessage
+        {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.DownloadMessage;
+            }
+            [DataMember(Name = "total_chunks")]
+            public int? TotalChunks;
+            [DataMember(Name = "chunk_size")]
+            public int ChunkSize;
+            [DataMember(Name = "file_id")]
+            public string FileID;
+            [DataMember(Name = "chunk_num")]
+            public int ChunkNumber;
+            [DataMember(Name = "chunk_data")]
+            public string ChunkData;
+            [DataMember(Name = "full_path")]
+            public string FullPath;
+            [DataMember(Name = "host")]
+            public string Hostname;
+            [DataMember(Name = "task_id")]
+            public string TaskID;
+            [DataMember(Name = "is_screenshot")]
+            public bool IsScreenshot;
+
+            public override bool Equals(object obj)
+            {
+                return obj is UploadMessage && this.Equals((UploadMessage)obj);
+            }
+
+            public bool Equals(DownloadMessage obj)
+            {
+                return this.ChunkNumber == obj.ChunkNumber &&
+                    this.ChunkSize == obj.ChunkSize &&
+                    this.FileID == obj.FileID &&
+                    this.FullPath == obj.FullPath &&
+                    this.TaskID == obj.TaskID &&
+                    this.FullPath == obj.FullPath &&
+                    this.IsScreenshot == obj.IsScreenshot &&
+                    this.Hostname == obj.Hostname;
+            }
         }
 
         [DataContract]

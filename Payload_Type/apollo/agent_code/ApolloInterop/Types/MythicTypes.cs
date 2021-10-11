@@ -52,14 +52,6 @@ namespace ApolloInterop.Types
             {
                 return typeof(TaskResponse);
             }
-            else if (msg == MessageType.DownloadRegistrationMessage)
-            {
-                return typeof(DownloadRegistrationMessage);
-            }
-            else if (msg == MessageType.DownloadProgressMessage)
-            {
-                return typeof(DownloadProgressMessage);
-            }
             else if (msg == MessageType.Task)
             {
                 return typeof(Task);
@@ -91,10 +83,13 @@ namespace ApolloInterop.Types
             else if (msg == MessageType.MessageResponse)
             {
                 return typeof(MessageResponse);
+            } else if (msg == MessageType.DownloadMessage)
+            {
+                return typeof(DownloadMessage);
             }
             else
             {
-                throw new Exception("Invalid MessageType: {msg}");
+                throw new Exception($"Invalid MessageType: {msg}");
             }
         }
     }

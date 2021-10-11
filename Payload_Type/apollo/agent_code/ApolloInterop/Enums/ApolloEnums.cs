@@ -81,6 +81,7 @@ namespace ApolloInterop.Enums
             CheckinMessage,
             UploadMessage,
             MessageResponse,
+            DownloadMessage
         }
     }
 }

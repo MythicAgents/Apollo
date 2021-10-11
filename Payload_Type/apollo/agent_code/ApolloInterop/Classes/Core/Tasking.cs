@@ -73,6 +73,9 @@ namespace ApolloInterop.Classes
                         case MessageType.UploadMessage:
                             resp.Upload = (UploadMessage)msg;
                             break;
+                        case MessageType.DownloadMessage:
+                            resp.Download = (DownloadMessage)msg;
+                            break;
                         default:
                             throw new Exception($"Unhandled message type while generating response: {msg.GetTypeCode()}");
                     }
