@@ -17,7 +17,6 @@ venv.bak/
 # ssl certs
 ssl/
 # downloaded files
-files/
 mythic_access.*
 postgres-docker/database/
 rabbitmq-docker/storage/
