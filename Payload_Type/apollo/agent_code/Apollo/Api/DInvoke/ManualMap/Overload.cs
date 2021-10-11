@@ -25,7 +25,7 @@ namespace Apollo.Api.DInvoke.ManualMap
         {
             string SystemDirectoryPath = Environment.GetEnvironmentVariable("WINDIR") + Path.DirectorySeparatorChar + "System32";
             List<string> files = new List<string>(Directory.GetFiles(SystemDirectoryPath, "*.dll"));
-            foreach (ProcessModule Module in Process.GetCurrentProcess().Modules)
+            foreach (ProcessModule Module in System.Diagnostics.Process.GetCurrentProcess().Modules)
             {
                 if (files.Any(s => s.Equals(Module.FileName, StringComparison.OrdinalIgnoreCase)))
                 {

@@ -377,6 +377,20 @@ namespace ApolloInterop.Structs
             public string Keystrokes;
             [DataMember(Name = "task_id")]
             public string TaskID;
+            [DataMember(Name = "file_id")]
+            public string FileID;
+            [DataMember(Name = "chunk_num")]
+            public int? ChunkNumber;
+            [DataMember(Name = "chunk_data")]
+            public String ChunkData;
+            [DataMember(Name = "total_chunks")]
+            public int? TotalChunks;
+            [DataMember(Name = "full_path")]
+            public string FullPath;
+            [DataMember(Name = "host")]
+            public string Hostname;
+            [DataMember(Name = "is_screenshot")]
+            public bool? IsScreenshot;
             [DataMember(Name = "status")]
             public sStatusMessage Status;
             [DataMember(Name = "edges")]
@@ -669,7 +683,7 @@ namespace ApolloInterop.Structs
                 return MessageType.UploadMessage;
             }
             [DataMember(Name = "total_chunks")]
-            public int TotalChunks;
+            public int? TotalChunks;
             [DataMember(Name = "chunk_size")]
             public int ChunkSize;
             [DataMember(Name = "file_id")]
@@ -704,7 +718,7 @@ namespace ApolloInterop.Structs
 
             public int GetTotalChunks()
             {
-                return this.TotalChunks;
+                return this.TotalChunks == null ? (int)this.TotalChunks : -1;
             }
 
             public int GetChunkSize()

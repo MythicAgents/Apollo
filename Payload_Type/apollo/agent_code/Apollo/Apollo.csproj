@@ -49,7 +49,6 @@
   <ItemGroup>
     <Compile Include="Agent\Apollo.cs" />
     <Compile Include="Api\Api.cs" />
-    <Compile Include="Api\ApolloProcess\SafeIntPtr.cs" />
     <Compile Include="Api\Cryptography\RSA.cs" />
     <Compile Include="Api\DInvoke\DynamicInvoke\Generic.cs" />
     <Compile Include="Api\DInvoke\DynamicInvoke\Native.cs" />
@@ -65,7 +64,6 @@
     <Compile Include="Api\DInvoke\SharedData\Win32.cs" />
     <Compile Include="Api\DInvoke\SharedUtilities\Utilities.cs" />
     <Compile Include="Api\IO\Pipes.cs" />
-    <Compile Include="Api\ApolloProcess\SacrificialProcess.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Management\C2\C2ProfileManager.cs" />
     <Compile Include="Management\Files\FileManager.cs" />
@@ -88,6 +86,10 @@
       <Project>{74b393f3-4000-49ac-8116-dccdb5f52344}</Project>
       <Name>HttpProfile</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Injection\Injection.csproj">
+      <Project>{e4724425-fc2d-40ae-9506-553d5d9dd929}</Project>
+      <Name>Injection</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NamedPipeProfile\NamedPipeProfile.csproj">
       <Project>{3af39094-7f42-4444-a278-fa656eb4678f}</Project>
       <Name>NamedPipeProfile</Name>
@@ -95,6 +97,10 @@
     <ProjectReference Include="..\PlaintextCrypto\PlaintextCryptography.csproj">
       <Project>{ed320ce0-c28f-4b07-a353-9b14c261e8a3}</Project>
       <Name>PlaintextCryptography</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Process\Process.csproj">
+      <Project>{6008a59e-80a4-4790-8fe3-01de201d71b3}</Project>
+      <Name>Process</Name>
     </ProjectReference>
     <ProjectReference Include="..\PSKCrypto\PSKCryptography.csproj">
       <Project>{c8fc8d87-30db-4fc5-880a-9cd7d156127a}</Project>
@@ -114,6 +120,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Api\ApolloProcess\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets" Condition="Exists('..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" />
