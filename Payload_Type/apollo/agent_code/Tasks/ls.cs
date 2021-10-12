@@ -10,11 +10,15 @@ using ApolloInterop.Serializers;
 using System.Threading;
 using System.IO;
 using System.Security.AccessControl;
+using TT = System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace Tasks
 {
     public class ls : Tasking
     {
+
+        private static int _chunkSize = 20;
         private static ACE GetAceInformation(FileSystemAccessRule ace)
         {
             ACE result = new ACE
@@ -76,6 +80,28 @@ namespace Tasks
         }
 
 
+        private class FileDataStream
+        {
+            public ConcurrentQueue<FileInformation> FileQueue = new ConcurrentQueue<FileInformation>();
+
+            public event EventHandler FileChunkReached;
+
+            public void Add(FileInformation item)
+            {
+                FileQueue.Enqueue(item);
+                if (FileQueue.Count >= _chunkSize)
+                    FileChunkReached?.Invoke(this, null);
+            }
+
+            public IEnumerable<FileInformation> GetAll()
+            {
+                while(FileQueue.TryDequeue(out FileInformation t))
+                {
+                    yield return t;
+                }
+            }
+        }
+
         public ls(IAgent agent, Task task) : base(agent, task)
         {
 
@@ -104,7 +130,29 @@ namespace Tasks
                 };
                 string errorMessage = "";
                 bool bRet = true;
-                List<FileInformation> files = new List<FileInformation>();
+                FileDataStream ds = new FileDataStream();
+                ds.FileChunkReached += (object o, EventArgs _) =>
+                {
+                    FileDataStream tmp = (FileDataStream)o;
+                    List<FileInformation> tmpStore = new List<FileInformation>();
+                    int i = 0;
+                    while (i < 20 &&
+                    tmp.FileQueue.TryDequeue(out FileInformation res))
+                    {
+                        tmpStore.Add(res);
+                    }
+                    results.Success = true;
+                    results.Files = tmpStore.ToArray();
+                    var tmpResp = CreateTaskResponse(
+                        "",
+                        false,
+                        "",
+                        new IMythicMessage[]
+                        {
+                                    results
+                        });
+                    _agent.GetTaskManager().AddTaskResponseToQueue(tmpResp);
+                };
                 if (File.Exists(path))
                 {
                     try
@@ -121,7 +169,7 @@ namespace Tasks
                         {
                             results.Permissions = GetPermissions(tmp);
                         } catch { }
-                        files.Add(finfo);
+                        ds.Add(finfo);
                     } catch (Exception ex)
                     {
                         bRet = false;
@@ -144,34 +192,54 @@ namespace Tasks
                             results.Permissions = GetPermissions(dinfo);
                         } catch { }
                         string[] directories = Directory.GetDirectories(path);
-                        for(int i = 0; i < directories.Length && !_cancellationToken.IsCancellationRequested; i++)
+                        TT.ParallelOptions po = new TT.ParallelOptions();
+                        po.CancellationToken = _cancellationToken.Token;
+                        po.MaxDegreeOfParallelism = 2;
+                        try
                         {
-                            string dir = directories[i];
-                            try
+                            TT.Parallel.ForEach(directories, po, (dir) =>
                             {
-                                var tmp = new DirectoryInfo(dir);
-                                FileInformation dirInfo = new FileInformation(tmp, null);
+                                po.CancellationToken.ThrowIfCancellationRequested();
                                 try
                                 {
-                                    dirInfo.Permissions = GetPermissions(tmp);
-                                } catch { }
-                                files.Add(dirInfo);
-                            } catch { }
+                                    var tmp = new DirectoryInfo(dir);
+                                    FileInformation dirInfo = new FileInformation(tmp, null);
+                                    try
+                                    {
+                                        dirInfo.Permissions = GetPermissions(tmp);
+                                    }
+                                    catch { }
+                                    ds.Add(dirInfo);
+                                }
+                                catch { }
+                            });
+                        } catch (OperationCanceledException)
+                        {
+
                         }
                         string[] dirFiles = Directory.GetFiles(path);
-                        for(int i = 0; i < dirFiles.Length && !_cancellationToken.IsCancellationRequested; i++)
+                        try
                         {
-                            string f = dirFiles[i];
-                            try
+                            TT.Parallel.ForEach(dirFiles, po, (f) =>
                             {
-                                var tmp = new FileInfo(f);
-                                FileInformation newFinfo = new FileInformation(tmp, null);
+                                po.CancellationToken.ThrowIfCancellationRequested();
                                 try
                                 {
-                                    newFinfo.Permissions = GetPermissions(tmp);
-                                } catch { }
-                                files.Add(newFinfo);
-                            } catch { }
+                                    var tmp = new FileInfo(f);
+                                    FileInformation newFinfo = new FileInformation(tmp, null);
+                                    try
+                                    {
+                                        newFinfo.Permissions = GetPermissions(tmp);
+                                    }
+                                    catch { }
+                                    ds.Add(newFinfo);
+                                }
+                                catch { }
+                            });
+                        }
+                        catch (OperationCanceledException)
+                        {
+
                         }
                     } catch (Exception ex)
                     {
@@ -185,7 +253,7 @@ namespace Tasks
                 }
 
                 results.Success = bRet;
-                results.Files = files.ToArray();
+                results.Files = ds.GetAll().ToArray();
 
                 TaskResponse resp = CreateTaskResponse(
                         bRet ? "" : errorMessage,

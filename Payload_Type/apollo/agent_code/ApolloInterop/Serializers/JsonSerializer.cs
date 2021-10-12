@@ -26,10 +26,6 @@ namespace ApolloInterop.Serializers
                 using (var sr = new StreamReader(ms))
                 {
                     string res = sr.ReadToEnd();
-                    if (res.Length > 20000)
-                    {
-                        Console.WriteLine();
-                    }
                     return res;
                 }
             }
@@ -37,7 +33,6 @@ namespace ApolloInterop.Serializers
 
         public virtual T Deserialize<T>(string msg)
         {
-            Console.WriteLine(msg);
             using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(msg)))
             {
                 var deserializer = new DataContractJsonSerializer(typeof(T));
