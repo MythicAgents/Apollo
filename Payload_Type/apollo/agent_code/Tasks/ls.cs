@@ -18,7 +18,7 @@ namespace Tasks
     public class ls : Tasking
     {
 
-        private static int _chunkSize = 20;
+        private static int _chunkSize = 50;
         private static ACE GetAceInformation(FileSystemAccessRule ace)
         {
             ACE result = new ACE
@@ -144,12 +144,12 @@ namespace Tasks
                     results.Success = true;
                     results.Files = tmpStore.ToArray();
                     var tmpResp = CreateTaskResponse(
-                        "",
+                        _jsonSerializer.Serialize(results),
                         false,
                         "",
                         new IMythicMessage[]
                         {
-                                    results
+                            results
                         });
                     _agent.GetTaskManager().AddTaskResponseToQueue(tmpResp);
                 };
@@ -162,6 +162,7 @@ namespace Tasks
                         results.IsFile = true;
                         results.Name = finfo.Name;
                         results.ParentPath = finfo.Directory;
+                        results.CreationDate = finfo.CreationDate;
                         results.AccessTime = finfo.AccessTime;
                         results.ModifyTime = finfo.ModifyTime;
                         results.Size = finfo.Size;
@@ -185,6 +186,7 @@ namespace Tasks
                         results.Name = finfo.Name;
                         results.ParentPath = dinfo.Parent == null ? "" : dinfo.Parent.FullName;
                         results.AccessTime = finfo.AccessTime;
+                        results.CreationDate = finfo.CreationDate;
                         results.ModifyTime = finfo.ModifyTime;
                         results.Size = finfo.Size;
                         try
@@ -256,7 +258,7 @@ namespace Tasks
                 results.Files = ds.GetAll().ToArray();
 
                 TaskResponse resp = CreateTaskResponse(
-                        bRet ? "" : errorMessage,
+                        bRet ? _jsonSerializer.Serialize(results) : errorMessage,
                         true,
                         bRet ? "completed" : "error",
                         new IMythicMessage[]

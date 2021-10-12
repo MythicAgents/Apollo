@@ -253,6 +253,8 @@ namespace ApolloInterop.Structs
             public string ParentPath;
             [DataMember(Name = "success")]
             public bool Success;
+            [DataMember(Name = "creation_date")]
+            public string CreationDate;
             [DataMember(Name = "access_time")]
             public string AccessTime;
             [DataMember(Name = "modify_time")]

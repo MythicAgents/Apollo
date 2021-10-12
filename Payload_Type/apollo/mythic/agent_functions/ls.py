@@ -56,7 +56,7 @@ class LsCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = LsArguments
     attackmapping = ["T1106", "T1083"]
-    browser_script = BrowserScript(script_name="ls", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="ls_new", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         host = task.args.get_arg("host")
