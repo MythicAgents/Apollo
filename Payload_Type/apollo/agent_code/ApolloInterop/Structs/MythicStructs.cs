@@ -9,6 +9,7 @@ using sMessageAction = System.String;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Net;
+using System.IO;
 
 namespace ApolloInterop.Structs
 {
@@ -128,11 +129,11 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "access_time")]
             public string AccessTime;
             [DataMember(Name = "permissions")]
-            public Dictionary<string, string> Permissions;
+            public ACE[] Permissions; // People need to set their own ACEs
             [DataMember(Name = "extended_attributes")]
             public string ExtendedAttributes;
             [DataMember(Name = "size")]
-            public int Size;
+            public long Size;
             [DataMember(Name = "owner")]
             public string Owner;
             [DataMember(Name = "group")]
@@ -142,6 +143,42 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "is_file")]
             public bool IsFile;
 
+            public FileInformation(FileInfo finfo, ACE[] perms = null)
+            {
+                FullName = finfo.FullName;
+                Name = finfo.Name;
+                Directory = finfo.DirectoryName;
+                CreationDate = finfo.CreationTimeUtc.ToString();
+                ModifyTime = finfo.LastWriteTimeUtc.ToString();
+                AccessTime = finfo.LastAccessTimeUtc.ToString();
+                Permissions = perms;
+                ExtendedAttributes = finfo.Attributes.ToString();
+                Size = finfo.Length;
+                IsFile = true;
+                Owner = File.GetAccessControl(finfo.FullName).
+                    GetOwner(typeof(System.Security.Principal.NTAccount)).ToString();
+                Group = "";
+                Hidden = ((finfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden);
+            }
+
+            public FileInformation(DirectoryInfo finfo, ACE[] perms = null)
+            {
+                FullName = finfo.FullName;
+                Name = finfo.Name;
+                Directory = finfo.Parent == null ? "" : finfo.Parent.ToString();
+                CreationDate = finfo.CreationTimeUtc.ToString();
+                ModifyTime = finfo.LastWriteTimeUtc.ToString();
+                AccessTime = finfo.LastAccessTimeUtc.ToString();
+                Permissions = perms;
+                ExtendedAttributes = finfo.Attributes.ToString();
+                Size = 0;
+                IsFile = false;
+                Owner = File.GetAccessControl(finfo.FullName).
+                    GetOwner(typeof(System.Security.Principal.NTAccount)).ToString();
+                Group = "";
+                Hidden = ((finfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden);
+            }
+
             public override bool Equals(object obj)
             {
                 return obj is FileInformation && this.Equals(obj);
@@ -149,11 +186,11 @@ namespace ApolloInterop.Structs
 
             public bool Equals(FileInformation obj)
             {
-                if (this.Permissions.Keys.Count != obj.Permissions.Keys.Count)
+                if (this.Permissions.Length != obj.Permissions.Length)
                     return false;
-                foreach (string k in this.Permissions.Keys)
+                for(int i = 0; i < this.Permissions.Length; i++)
                 {
-                    if (this.Permissions[k] != obj.Permissions[k])
+                    if (!this.Permissions[i].Equals(obj.Permissions[i]))
                         return false;
                 }
                 return this.FullName == obj.FullName &&
@@ -172,6 +209,32 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
+        public struct ACE : IMythicMessage, IEquatable<ACE>
+        {
+            public bool Equals(ACE obj)
+            {
+                return this.Account == obj.Account &&
+                    this.Type == obj.Type &&
+                    this.Rights == obj.Rights &&
+                    this.IsInherited == obj.IsInherited;
+            }
+
+            [DataMember(Name = "account")]
+            public string Account;
+            [DataMember(Name = "type")]
+            public string Type;
+            [DataMember(Name = "rights")]
+            public string Rights;
+            [DataMember(Name = "is_inherited")]
+            public bool IsInherited;
+
+            public MessageType GetTypeCode()
+            {
+                return MessageType.FileBrowserACE;
+            }
+        }
+
+        [DataContract]
         public struct FileBrowser : IEquatable<FileBrowser>, IMythicMessage
         {
             public MessageType GetTypeCode()
@@ -183,7 +246,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "is_file")]
             public bool IsFile;
             [DataMember(Name = "permissions")]
-            public Dictionary<string, string> Permissions;
+            public ACE[] Permissions;
             [DataMember(Name = "name")]
             public string Name;
             [DataMember(Name = "parent_path")]
@@ -195,7 +258,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "modify_time")]
             public string ModifyTime;
             [DataMember(Name = "size")]
-            public int Size;
+            public long Size;
             [DataMember(Name = "files")]
             public FileInformation[] Files;
 
@@ -213,9 +276,9 @@ namespace ApolloInterop.Structs
                         return false;
                     }
                 }
-                foreach (string key in this.Permissions.Keys)
+                for(int i = 0; i <  this.Permissions.Length; i++)
                 {
-                    if (this.Permissions[key] != obj.Permissions[key])
+                    if (!this.Permissions[i].Equals(obj.Permissions[i]))
                         return false;
                 }
                 return this.Host == obj.Host &&
