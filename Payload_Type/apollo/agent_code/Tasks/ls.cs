@@ -18,7 +18,7 @@ namespace Tasks
     public class ls : Tasking
     {
 
-        private static int _chunkSize = 50;
+        private static int _chunkSize = 10;
         private static ACE GetAceInformation(FileSystemAccessRule ace)
         {
             ACE result = new ACE
