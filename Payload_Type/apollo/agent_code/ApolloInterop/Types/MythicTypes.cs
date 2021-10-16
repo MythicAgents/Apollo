@@ -86,6 +86,9 @@ namespace ApolloInterop.Types
             } else if (msg == MessageType.DownloadMessage)
             {
                 return typeof(DownloadMessage);
+            } else if (msg == MessageType.IPCCommandArguments)
+            {
+                return typeof(IPCCommandArguments);
             }
             else
             {

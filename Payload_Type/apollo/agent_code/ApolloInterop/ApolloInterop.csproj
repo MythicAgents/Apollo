@@ -50,6 +50,7 @@
     <Compile Include="Classes\Events\ChunkMessageEventArgs.cs" />
     <Compile Include="Classes\Events\MythicMessageEventArgs.cs" />
     <Compile Include="Classes\Events\StringDataEventArgs.cs" />
+    <Compile Include="Classes\IO\EventableStringWriter.cs" />
     <Compile Include="Classes\Pipes\AsyncNamedPipeClient.cs" />
     <Compile Include="Classes\Pipes\AsyncNamedPipeServer.cs" />
     <Compile Include="Classes\Tcp\AsyncTcpClient.cs" />

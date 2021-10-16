@@ -16,21 +16,6 @@ using TT = System.Threading.Tasks;
 
 namespace ApolloInterop.Structs.ApolloStructs
 {
-    public struct MultiThreadProducerConsumerQueue<T>
-    {
-        public TT.Task ProducerTask;
-        public TT.Task ConsumerTask;
-        public AutoResetEvent Synchronizer;
-        public ConcurrentQueue<T> Queue;
-    }
-
-    public struct MultiThreadProducerConsumerList<T>
-    {
-        public TT.Task ProducerTask;
-        public TT.Task ConsumerTask;
-        public AutoResetEvent Synchronizer;
-        public ThreadSafeList<T> List;
-    }
 
     public struct ApolloTokenInformation
     {
@@ -132,6 +117,20 @@ namespace ApolloInterop.Structs.ApolloStructs
         public int GetTotalChunks()
         {
             return this.TotalChunks;
+        }
+    }
+
+    [DataContract]
+    public struct IPCCommandArguments : IMythicMessage
+    {
+        [DataMember(Name = "byte_data")]
+        public byte[] ByteData;
+        [DataMember(Name = "string_data")]
+        public string StringData;
+
+        public MessageType GetTypeCode()
+        {
+            return MessageType.IPCCommandArguments;
         }
     }
 
