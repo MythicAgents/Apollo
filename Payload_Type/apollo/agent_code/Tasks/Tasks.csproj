@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="assembly_inject.cs" />
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
     <Compile Include="link.cs" />

