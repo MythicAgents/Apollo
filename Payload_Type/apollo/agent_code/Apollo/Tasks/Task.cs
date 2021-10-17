@@ -105,6 +105,8 @@
 #define RM
 #undef RMDIR
 #define RMDIR
+#undef RPORTFWD
+#define RPORTFWD
 #undef RUN
 #define RUN
 #undef SCREENSHOT
@@ -448,6 +450,9 @@ namespace Apollo
 #endif
 #if SOCKS
                 { "socks", "Socks" },
+#endif
+#if RPORTFWD
+                { "rportfwd", "RPortFwd" },
 #endif
 #if SPAWN
                 { "spawn", "Spawn" },
