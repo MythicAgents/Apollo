@@ -11,10 +11,10 @@ namespace Process
     {
         private bool _blockDlls = false;
         private int _ppid;
-        private string _applicationx64;
-        private string _applicationx86;
-        private string _argumentsx64;
-        private string _argumentsx86;
+        private string _applicationx64 = @"C:\Windows\System32\rundll32.exe";
+        private string _applicationx86 = @"C:\Windows\SysWOW64\rundll32.exe";
+        private string _argumentsx64 = null;
+        private string _argumentsx86 = null;
 
         private IAgent _agent;
 

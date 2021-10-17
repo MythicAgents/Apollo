@@ -48,12 +48,12 @@ namespace ExecuteAssembly
 
         public static void Main(string[] args)
         {
-            _namedPipeName = "executetest";
-            //if (args.Length != 1)
-            //{
-            //    throw new Exception("No named pipe name given.");
-            //}
-            //_namedPipeName = args[0];
+            //_namedPipeName = "executetest";
+            if (args.Length != 1)
+            {
+                throw new Exception("No named pipe name given.");
+            }
+            _namedPipeName = args[0];
 
             _sendAction = (object p) =>
             {

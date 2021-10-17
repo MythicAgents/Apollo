@@ -784,4 +784,5 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
                 Data.Win32.Kernel32.FileOpenFlags OpenOptions);
         }
     }
+
 }

