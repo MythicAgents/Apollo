@@ -12,38 +12,33 @@ class AssemblyInjectArguments(TaskArguments):
         super().__init__(command_line)
         self.args = {
             "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject into."),
-            "arch": CommandParameter(name="Process Architecture", type=ParameterType.String, choices=["x86", "x64"], description="Architecture of the remote process."),
             "assembly_name": CommandParameter(name="Assembly Name", type=ParameterType.String, description="Name of the assembly to execute."),
             "assembly_arguments": CommandParameter(name="Assembly Arguments", type=ParameterType.String, description="Arguments to pass to the assembly."),
         }
 
     async def parse_arguments(self):
-        if self.command_line == 0:
-            raise self.invalidNumberArgs
-        parts = self.command_line.split(" ", maxsplit=3)
-        if len(parts) < 3:
-            raise Exception("Invalid number of arguments.\n\tUsage: {}".format(AssemblyInjectCommand.help_cmd))
-        pid = parts[0]
-        arch = parts[1]
-        assembly_name = parts[2]
-        assembly_args = ""
-        valid_arch = ["x86", "x64"]
-        if len(parts) == 4:
-            assembly_args = parts[3]
-        if arch not in valid_arch:
-            arches = ", ".join(valid_arch)
-            raise Exception(f"Invalid arch of \"{arch}\" specified. Must be one of {arches}")
-        self.args["pid"].value = pid
-        self.args["arch"].value = arch
-        self.args["assembly_name"].value = assembly_name
-        self.args["assembly_arguments"].value = assembly_args
-        pass
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            parts = self.command_line.split(" ", maxsplit=2)
+            if len(parts) < 2:
+                raise Exception("Invalid number of arguments.\n\tUsage: {}".format(AssemblyInjectCommand.help_cmd))
+            pid = parts[0]
+            assembly_name = parts[1]
+            assembly_args = ""
+            assembly_args = ""
+            if len(parts) > 2:
+                assembly_args = parts[2]
+            self.args["pid"].value = pid
+            self.args["assembly_name"].value = assembly_name
+            self.args["assembly_arguments"].value = assembly_args
+        
 
 
 class AssemblyInjectCommand(CommandBase):
     cmd = "assembly_inject"
     needs_admin = False
-    help_cmd = "assembly_inject [pid] [x64|x86] [assembly] [args]"
+    help_cmd = "assembly_inject [pid] [assembly] [args]"
     description = "Inject the unmanaged assembly loader into a remote process. The loader will then execute the .NET binary in the context of the injected process."
     version = 2
     is_exit = False
