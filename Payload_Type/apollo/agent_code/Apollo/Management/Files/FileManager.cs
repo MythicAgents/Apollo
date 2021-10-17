@@ -2,6 +2,7 @@
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
+using EncryptedFileStore.Plaintext;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,9 +16,11 @@ namespace Apollo.Management.Files
     {
         private int _chunkSize = 512000;
         private IAgent _agent;
+        private IEncryptedFileStore _fileStore;
         public FileManager(IAgent agent)
         {
             _agent = agent;
+            _fileStore = new PlaintextFileStore(_agent);
         }
         internal struct UploadMessageTracker
         {
@@ -227,6 +230,31 @@ namespace Apollo.Management.Files
                     TaskID = e.Chunks[0].TaskID
                 }
             });
+        }
+
+        public string GetScript()
+        {
+            return _fileStore.GetScript();
+        }
+
+        public void SetScript(string script)
+        {
+            _fileStore.SetScript(script);
+        }
+
+        public bool AddFileToStore(string keyName, byte[] data)
+        {
+            return _fileStore.TryAddOrUpdate(keyName, data);
+        }
+
+        public bool GetFileFromStore(string keyName, out byte[] data)
+        {
+            return _fileStore.TryGetValue(keyName, out data);
+        }
+
+        public void SetScript(byte[] script)
+        {
+            _fileStore.SetScript(script);
         }
     }
 }

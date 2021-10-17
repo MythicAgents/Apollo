@@ -4,16 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B9BDA393-C258-44D3-8266-D62265008BD4}</ProjectGuid>
+    <ProjectGuid>{21B9B3FA-ACBF-4ED2-A0BB-2782E708F6F9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Tasks</RootNamespace>
-    <AssemblyName>Tasks</AssemblyName>
+    <RootNamespace>EncryptedFileStore</RootNamespace>
+    <AssemblyName>EncryptedFileStore</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,7 +33,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -43,14 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="download.cs" />
-    <Compile Include="execute_assembly.cs" />
-    <Compile Include="link.cs" />
-    <Compile Include="ls.cs" />
+    <Compile Include="EncryptedFileStore.cs" />
+    <Compile Include="Plaintext\PlaintextFileStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="pwd.cs" />
-    <Compile Include="register_assembly.cs" />
-    <Compile Include="upload.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
