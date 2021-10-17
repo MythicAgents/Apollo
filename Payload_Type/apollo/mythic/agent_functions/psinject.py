@@ -5,6 +5,7 @@ from uuid import uuid4
 from mythic_payloadtype_container.MythicRPC import *
 from os import path
 import base64
+import donut
 
 class PsInjectArguments(TaskArguments):
 
