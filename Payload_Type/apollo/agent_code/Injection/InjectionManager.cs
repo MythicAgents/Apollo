@@ -43,6 +43,11 @@ namespace Injection
                 new object[] { _agent, code, hProcess });
         }
 
+        public Type GetCurrentTechnique()
+        {
+            return _currentTechnique;
+        }
+
         public string[] GetTechniques()
         {
             return _loadedTechniques.Keys.ToArray();

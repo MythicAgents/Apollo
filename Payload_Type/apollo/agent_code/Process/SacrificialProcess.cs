@@ -205,6 +205,18 @@ namespace Process
             Exit += SacrificialProcess_Exit;
         }
 
+        ~SacrificialProcess()
+        {
+            if (_startupInfoEx.lpAttributeList != IntPtr.Zero)
+            {
+                _pDeleteProcThreadAttributeList(_startupInfoEx.lpAttributeList);
+                Marshal.FreeHGlobal(_startupInfoEx.lpAttributeList);
+            }
+            _pDestroyEnvironmentBlock(_unmanagedEnv);
+            _pCloseHandle(Handle);
+            _pCloseHandle(_hParentProc);
+        }
+
         private void SacrificialProcess_Exit(object sender, EventArgs e)
         {
             HasExited = true;
@@ -217,20 +229,10 @@ namespace Process
             {
                 ExitCode = dwExit;
             }
-            _startupInfo.hStdOutput.Close();
-            _startupInfo.hStdError.Close();
-            _startupInfo.hStdInput.Close();
-            if (_startupInfoEx.lpAttributeList != IntPtr.Zero)
+            try
             {
-                _pDeleteProcThreadAttributeList(_startupInfoEx.lpAttributeList);
-                Marshal.FreeHGlobal(_startupInfoEx.lpAttributeList);
-            }
-            _pDestroyEnvironmentBlock(_unmanagedEnv);
-            _pCloseHandle(Handle);
-            Handle = IntPtr.Zero;
-            _pCloseHandle(_hParentProc);
-            _hParentProc = IntPtr.Zero;
-
+                System.Diagnostics.Process.GetProcessById((int)PID).Kill();
+            } catch { }
             _exited.Set();
         }
 
@@ -503,12 +505,19 @@ namespace Process
                 var waitExitForever = new Task(() =>
                 {
                     _pWaitForSingleObject(Handle, 0xFFFFFFFF);
-                    OnExit(this, EventArgs.Empty);
                 });
                 stdOutTask.Start();
                 stdErrTask.Start();
                 waitExitForever.Start();
-                waitExitForever.Wait(_cts.Token);
+                try
+                {
+                    waitExitForever.Wait(_cts.Token);
+                } catch (OperationCanceledException) {
+                    
+                } finally
+                {
+                    OnExit(this, null);
+                }
                 Task.WaitAll(new Task[]
                 {
                     stdOutTask,
@@ -682,12 +691,6 @@ namespace Process
         {
             _cts.Cancel();
             _exited.WaitOne();
-            try
-            {
-                var proc = System.Diagnostics.Process.GetProcessById((int)PID);
-                proc.Kill();
-            }
-            catch { }
         }
 
         public override void WaitForExit()

