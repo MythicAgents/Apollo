@@ -39,8 +39,7 @@ class PowerpickCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PowerpickArguments
     attackmapping = ["T1059", "T1562"]
-    browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
-
+    
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         exePath = path.join(self.agent_code_path, "PowerShellHost/bin/Release/PowerShellHost.exe")
         donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))

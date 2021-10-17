@@ -37,7 +37,6 @@ class ExecuteAssemblyCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = ExecuteAssemblyArguments
-    browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
     attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
