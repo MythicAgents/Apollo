@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecuteAssembly", "ExecuteA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncryptedFileStore", "EncryptedFileStore\EncryptedFileStore.csproj", "{21B9B3FA-ACBF-4ED2-A0BB-2782E708F6F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellHost", "PowerShellHost\PowerShellHost.csproj", "{1D897A8A-1394-4561-B31C-D8312462500C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +183,18 @@ Global
 		{21B9B3FA-ACBF-4ED2-A0BB-2782E708F6F9}.Release|x64.Build.0 = Release|Any CPU
 		{21B9B3FA-ACBF-4ED2-A0BB-2782E708F6F9}.Release|x86.ActiveCfg = Release|Any CPU
 		{21B9B3FA-ACBF-4ED2-A0BB-2782E708F6F9}.Release|x86.Build.0 = Release|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Debug|x64.Build.0 = Debug|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Debug|x86.Build.0 = Debug|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Release|x64.ActiveCfg = Release|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Release|x64.Build.0 = Release|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Release|x86.ActiveCfg = Release|Any CPU
+		{1D897A8A-1394-4561-B31C-D8312462500C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

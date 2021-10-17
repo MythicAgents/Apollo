@@ -77,6 +77,7 @@
     <Compile Include="Interfaces\IC2ProfileManager.cs" />
     <Compile Include="Interfaces\ICryptography.cs" />
     <Compile Include="Interfaces\ICryptographySerializer.cs" />
+    <Compile Include="Interfaces\IEncryptedFileStore.cs" />
     <Compile Include="Interfaces\IFileManager.cs" />
     <Compile Include="Interfaces\IChunkMessage.cs" />
     <Compile Include="Interfaces\IIdentityManager.cs" />
