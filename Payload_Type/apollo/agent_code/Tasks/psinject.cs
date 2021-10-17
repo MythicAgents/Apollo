@@ -41,7 +41,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
-        public assembly_inject(IAgent agent, Task task) : base(agent, task)
+        public psinject(IAgent agent, Task task) : base(agent, task)
         {
             _sendAction = (object p) =>
             {

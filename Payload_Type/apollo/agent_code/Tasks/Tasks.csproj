@@ -50,6 +50,7 @@
     <Compile Include="ls.cs" />
     <Compile Include="powerpick.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="psinject.cs" />
     <Compile Include="pwd.cs" />
     <Compile Include="register_assembly.cs" />
     <Compile Include="upload.cs" />

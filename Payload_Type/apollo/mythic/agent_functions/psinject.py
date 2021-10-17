@@ -12,7 +12,6 @@ class PsInjectArguments(TaskArguments):
         super().__init__(command_line)
         self.args = {
             "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject into."),
-            "arch": CommandParameter(name="Architecture", type=ParameterType.String, choices=["x86", "x64"], description="Architecture of the remote process."),
             "powershell_params": CommandParameter(name="PowerShell Command", type=ParameterType.String, description="PowerShell command to execute."),
         }
 
@@ -36,7 +35,7 @@ class PsInjectArguments(TaskArguments):
 class PsInjectCommand(CommandBase):
     cmd = "psinject"
     needs_admin = False
-    help_cmd = "psinject [pid] [x86|x64] [command]"
+    help_cmd = "psinject [pid] [command]"
     description = "Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`)."
     version = 2
     is_exit = False
