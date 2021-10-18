@@ -39,9 +39,9 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "command_line")]
             public string CommandLine;
             [DataMember(Name = "integrity_level")]
-            public string IntegrityLevel;
+            public int IntegrityLevel;
             [DataMember(Name = "start_time")]
-            public long? StartTime;
+            public string StartTime;
             [DataMember(Name = "description")]
             public string Description;
             [DataMember(Name = "signer")]

