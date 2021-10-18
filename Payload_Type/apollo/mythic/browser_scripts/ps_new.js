@@ -11,7 +11,7 @@ function(task, responses){
         let headers = [
             {"plaintext": "ppid", "type": "number", "cellStyle": {}, "width": 6},
             {"plaintext": "pid", "type": "number", "cellStyle": {}, "width": 6},
-            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 3},
+            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 5},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
             {"plaintext": "user", "type": "string", "cellStyle": {}, "width": 15},
             {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 6},

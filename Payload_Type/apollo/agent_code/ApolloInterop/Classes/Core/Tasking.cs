@@ -88,7 +88,10 @@ namespace ApolloInterop.Classes
                 resp.Credentials = creds.ToArray();
                 resp.RemovedFiles = removed.ToArray();
                 resp.Artifacts = artifacts.ToArray();
-                resp.Processes = processes.ToArray();
+                if (processes.Count > 0)
+                {
+                    resp.Processes = processes.ToArray();
+                }
             }
             return resp;
         }
