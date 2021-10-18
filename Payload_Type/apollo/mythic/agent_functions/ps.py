@@ -29,7 +29,7 @@ class PsCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PsArguments
     attackmapping = ["T1106"]
-    browser_script = BrowserScript(script_name="ps", author="@djhohnstein")
+    # browser_script = BrowserScript(script_name="ps", author="@djhohnstein")
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

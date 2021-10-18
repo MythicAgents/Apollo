@@ -83,7 +83,8 @@ namespace ApolloInterop.Enums
             MessageResponse,
             DownloadMessage,
             FileBrowserACE,
-            IPCCommandArguments
+            IPCCommandArguments,
+            ProcessInformation
         }
     }
 }
