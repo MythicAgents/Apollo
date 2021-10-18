@@ -345,6 +345,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                         try
                         {
                             current.CompanyName = proc.MainModule.FileVersionInfo.CompanyName;
+                            current.Signer = current.CompanyName;
                         }
                         catch
                         {

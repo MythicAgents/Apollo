@@ -13,6 +13,7 @@ function(task, responses){
             {"plaintext": "pid", "type": "number", "cellStyle": {}},
             {"plaintext": "arch", "type": "string", "cellStyle": {}},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
+            {"plaintext": "user", "type": "string", "cellStyle": {}},
             {"plaintext": "session", "type": "number", "cellStyle": {}},
             {"plaintext": "signer", "type": "string", "cellStyle": {}},
             {"plaintext": "info", "type": "button", "cellStyle": {}, "width": 6},
@@ -47,7 +48,8 @@ function(task, responses){
                     "pid": {"plaintext": pinfo["process_id"], "cellStyle": {}},
                     "arch": {"plaintext": pinfo["architecture"], "cellStyle": {}},
                     "name": {"plaintext": pinfo["name"], "cellStyle": {}},
-                    "session": {"plaintext": pinfo["session"], "cellStyle": {}},
+                    "user": {"plaintext": pinfo["user"], "cellStyle": {}},
+                    "session": {"plaintext": pinfo["session_id"], "cellStyle": {}},
                     "signer": {"plaintext": pinfo["company_name"], "cellStyle": {}},
                     "info": {"button": {
                         "name": "info",
