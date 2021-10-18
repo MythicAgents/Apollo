@@ -9,12 +9,12 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "ppid", "type": "number", "cellStyle": {}},
-            {"plaintext": "pid", "type": "number", "cellStyle": {}},
-            {"plaintext": "arch", "type": "string", "cellStyle": {}},
+            {"plaintext": "ppid", "type": "number", "cellStyle": {}, "width": 6},
+            {"plaintext": "pid", "type": "number", "cellStyle": {}, "width": 6},
+            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 3},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
             {"plaintext": "user", "type": "string", "cellStyle": {}},
-            {"plaintext": "session", "type": "number", "cellStyle": {}},
+            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 2},
             {"plaintext": "signer", "type": "string", "cellStyle": {}},
             {"plaintext": "info", "type": "button", "cellStyle": {}, "width": 6},
         ];
