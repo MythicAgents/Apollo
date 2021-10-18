@@ -13,8 +13,8 @@ function(task, responses){
             {"plaintext": "pid", "type": "number", "cellStyle": {}, "width": 6},
             {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 3},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "user", "type": "string", "cellStyle": {}},
-            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 2},
+            {"plaintext": "user", "type": "string", "cellStyle": {}, "width": 15},
+            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 6},
             {"plaintext": "signer", "type": "string", "cellStyle": {}},
             {"plaintext": "info", "type": "button", "cellStyle": {}, "width": 6},
         ];
