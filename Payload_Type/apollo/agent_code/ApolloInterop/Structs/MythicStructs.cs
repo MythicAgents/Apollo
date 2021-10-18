@@ -16,6 +16,44 @@ namespace ApolloInterop.Structs
 
     namespace MythicStructs
     {
+        [Serializable]
+        [DataContract]
+        public struct ProcessInformation : IMythicMessage
+        {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.ProcessInformation;
+            }
+            [DataMember(Name = "process_id")]
+            public int PID;
+            [DataMember(Name = "architecture")]
+            public string Architecture;
+            [DataMember(Name = "name")]
+            public string Name;
+            [DataMember(Name = "user")]
+            public string Username;
+            [DataMember(Name = "bin_path")]
+            public string ProcessPath;
+            [DataMember(Name = "parent_process_id")]
+            public int ParentProcessId;
+            [DataMember(Name = "command_line")]
+            public string CommandLine;
+            [DataMember(Name = "integrity_level")]
+            public string IntegrityLevel;
+            [DataMember(Name = "start_time")]
+            public long? StartTime;
+            [DataMember(Name = "description")]
+            public string Description;
+            [DataMember(Name = "signer")]
+            public string Signer;
+            [DataMember(Name = "session_id")]
+            public int SessionId;
+            [DataMember(Name = "company_name")]
+            public string CompanyName;
+            [DataMember(Name = "window_title")]
+            public string WindowTitle;
+        }
+
         [DataContract]
         public struct PeerInformation
         {
@@ -443,7 +481,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "status")]
-            public sStatusMessage Status;
+            public string Status;
             [DataMember(Name = "edges")]
             public EdgeNode[] Edges;
             [DataMember(Name = "file_browser")]
@@ -653,43 +691,6 @@ namespace ApolloInterop.Structs
             public string SessionKey;
             [DataMember(Name = "session_id")]
             public string SessionID;
-        }
-
-        [DataContract]
-        public struct ProcessInformation : IMythicMessage
-        {
-            public MessageType GetTypeCode()
-            {
-                return MessageType.ProcessInformation;
-            }
-            [DataMember(Name = "process_id")]
-            public int PID;
-            [DataMember(Name = "architecture")]
-            public string Architecture;
-            [DataMember(Name = "name")]
-            public string Name;
-            [DataMember(Name = "user")]
-            public string Username;
-            [DataMember(Name = "bin_path")]
-            public string ProcessPath;
-            [DataMember(Name = "parent_process_id")]
-            public int ParentProcessId;
-            [DataMember(Name = "command_line")]
-            public string CommandLine;
-            [DataMember(Name = "integrity_level")]
-            public string IntegrityLevel;
-            [DataMember(Name = "start_time")]
-            public long StartTime;
-            [DataMember(Name = "description")]
-            public string Description;
-            [DataMember(Name = "signer")]
-            public string Signer;
-            [DataMember(Name = "session_id")]
-            public int SessionId;
-            [DataMember(Name = "company_name")]
-            public string CompanyName;
-            [DataMember(Name = "window_title")]
-            public string WindowTitle;
         }
 
         [DataContract]

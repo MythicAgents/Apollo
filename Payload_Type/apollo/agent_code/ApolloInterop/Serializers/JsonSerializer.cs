@@ -9,12 +9,25 @@ using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Types;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Diagnostics;
+using System.Reflection;
+using ApolloInterop.Structs.MythicStructs;
 
 namespace ApolloInterop.Serializers
 {
     public class JsonSerializer : ISerializer
     {
-        public JsonSerializer() { }
+        //List<Type> _knownTypes = new List<Type>();
+        public JsonSerializer()
+        {
+            //Assembly interopAsm = Assembly.GetAssembly(typeof(TaskResponse));
+            //foreach(Type t in interopAsm.GetTypes())
+            //{
+            //    if (t.FullName.StartsWith("ApolloInterop.Structs.MythicStructs") || t.FullName.StartsWith("ApolloInterop.Structs.ApolloStructs"))
+            //    {
+            //        _knownTypes.Add(t);
+            //    }
+            //}
+        }
 
         public virtual string Serialize(object msg)
         {

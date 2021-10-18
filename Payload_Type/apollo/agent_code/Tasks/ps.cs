@@ -56,7 +56,7 @@ namespace Tasks
             _pOpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
             _pNtQueryInformationProcess = _agent.GetApi().GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
             _pGetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
-            _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSid");
+            _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidW");
         }
 
 
@@ -326,16 +326,33 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                         {
                             windowTitle = "";
                         }
+                        current.PID = proc.Id;
+                        current.Architecture = arch;
+                        current.Name = proc.ProcessName;
+                        current.Username = processUser;
+                        current.ProcessPath = filePath;
+                        current.CommandLine = commandLine;
+                        current.Description = desc;
+                        current.Signer = desc;
+                        current.SessionId = sessionId;
+                        current.WindowTitle = windowTitle;
+                        processes.Add(current);
                     });
                 } catch (OperationCanceledException)
                 {
 
                 }
+                ProcessInformation[] all = processes.Flush();
+                IMythicMessage[] procs = new IMythicMessage[all.Length];
+
+                Array.Copy(all, procs, all.Length);
+                
+                
                 TaskResponse resp = CreateTaskResponse(
-                    processes.ToArray(),
+                    _jsonSerializer.Serialize(all),
                     true,
                     "completed",
-                    (IEnumerable<IMythicMessage>)processes.GetEnumerator());
+                    procs);
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
