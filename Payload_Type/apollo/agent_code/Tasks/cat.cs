@@ -117,6 +117,8 @@ namespace Tasks
                             _fileRead,
                             _cancellationToken.Token.WaitHandle
                         });
+                        _completed = true;
+                        _complete.Set();
                         resp = CreateTaskResponse("", true);
                     } catch (UnauthorizedAccessException ex)
                     {

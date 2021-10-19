@@ -6,15 +6,21 @@ class CatArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {}
+        self.args = {
+            "path": CommandParameter(name="File Path", required=True, type=ParameterType.String, description="File to read."),
+        }
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require file path to retrieve contents for.\n\tUsage: {}".format(CatCommand.help_cmd))
-        if self.command_line[0] == '"' and self.command_line[-1] == '"':
-            self.command_line = self.command_line[1:-1]
-        elif self.command_line[0] == "'" and self.command_line[-1] == "'":
-            self.command_line = self.command_line[1:-1]
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            if self.command_line[0] == '"' and self.command_line[-1] == '"':
+                self.command_line = self.command_line[1:-1]
+            elif self.command_line[0] == "'" and self.command_line[-1] == "'":
+                self.command_line = self.command_line[1:-1]
+            self.add_arg("path", self.command_line)
 
 class CatCommand(CommandBase):
     cmd = "cat"
