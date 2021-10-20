@@ -45,12 +45,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="assembly_inject.cs" />
+    <Compile Include="blockdlls.cs" />
     <Compile Include="cat.cs" />
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
     <Compile Include="link.cs" />
     <Compile Include="ls.cs" />
     <Compile Include="powerpick.cs" />
+    <Compile Include="ppid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ps.cs" />
     <Compile Include="psinject.cs" />
