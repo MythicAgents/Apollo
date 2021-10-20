@@ -35,7 +35,6 @@ namespace Tasks
                             "No command line arguments passed.", true, "error"));
                 } else
                 {
-                    ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
                     proc = _agent.GetProcessManager().NewProcess("cmd.exe", $"/S /c {_data.Parameters}");
                     proc.OutputDataReceived += DataReceived;
                     proc.ErrorDataReceieved += DataReceived;
