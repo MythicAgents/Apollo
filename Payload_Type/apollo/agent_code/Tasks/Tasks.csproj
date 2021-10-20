@@ -56,6 +56,7 @@
     <Compile Include="psinject.cs" />
     <Compile Include="pwd.cs" />
     <Compile Include="register_assembly.cs" />
+    <Compile Include="shell.cs" />
     <Compile Include="upload.cs" />
   </ItemGroup>
   <ItemGroup>

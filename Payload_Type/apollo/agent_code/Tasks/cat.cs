@@ -28,7 +28,7 @@ namespace Tasks
         private ThreadSafeList<string> _contents = new ThreadSafeList<string>();
         private Action _flushContents;
         private WaitHandle[] _timers;
-        private static int _chunkSize = 4096;
+        private static int _chunkSize = 256000;
         private byte[] _buffer = new byte[_chunkSize];
         private long _bytesRemaining = 0;
 
@@ -73,7 +73,7 @@ namespace Tasks
             try
             {
                 _contents.Add(System.Text.Encoding.UTF8.GetString(_buffer));
-                _bytesRemaining = _bytesRemaining - _buffer.Length;
+                _bytesRemaining = fs.Length - fs.Position;
                 if (_bytesRemaining > 0)
                 {
                     _buffer = _bytesRemaining > _chunkSize ? new byte[_chunkSize] : new byte[_bytesRemaining];
