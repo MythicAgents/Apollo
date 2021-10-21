@@ -23,5 +23,6 @@ namespace ApolloInterop.Classes.Api
         public static Library KERNEL32 { get { return new Library("kernel32.dll"); } }
         public static Library USER32 { get { return new Library("user32.dll"); } }
         public static Library USERENV { get { return new Library("userenv.dll"); } }
+        public static Library SHELL32 { get { return new Library("shell32.dll"); } }
     }
 }

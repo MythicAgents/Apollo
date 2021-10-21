@@ -10,7 +10,7 @@ namespace Process
     public class ProcessManager : IProcessManager
     {
         private bool _blockDlls = false;
-        private int _ppid;
+        private int _ppid = System.Diagnostics.Process.GetCurrentProcess().Id;
         private string _applicationx64 = @"C:\Windows\System32\rundll32.exe";
         private string _applicationx86 = @"C:\Windows\SysWOW64\rundll32.exe";
         private string _argumentsx64 = null;

@@ -36,7 +36,7 @@ namespace Process
         private ProcessInformation _processInfo = new ProcessInformation();
         private StartupInfo _startupInfo = new StartupInfo();
         private StartupInfoEx _startupInfoEx = new StartupInfoEx();
-        private CreateProcessFlags _processFlags = CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
+        private CreateProcessFlags _processFlags = CreateProcessFlags.CREATE_NEW_CONSOLE | CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
         private SecurityAttributes _securityAttributes = new SecurityAttributes();
         private readonly AutoResetEvent _exited = new AutoResetEvent(false);
 
@@ -386,7 +386,7 @@ namespace Process
             var evasionArgs = _agent.GetProcessManager().GetStartupInfo();
             
             // bad things happen if you're medium integrity and do ppid spoofing while under the effects of make_token
-            if (_agent.GetIdentityManager().GetOriginal() != _agent.GetIdentityManager().GetCurrentImpersonationIdentity())
+            if (_agent.GetIdentityManager().GetOriginal().Name != _agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name)
             {
                 evasionArgs.ParentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
             }
