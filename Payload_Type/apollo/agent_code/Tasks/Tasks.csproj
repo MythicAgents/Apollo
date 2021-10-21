@@ -47,6 +47,8 @@
     <Compile Include="assembly_inject.cs" />
     <Compile Include="blockdlls.cs" />
     <Compile Include="cat.cs" />
+    <Compile Include="cd.cs" />
+    <Compile Include="cp.cs" />
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
     <Compile Include="link.cs" />

