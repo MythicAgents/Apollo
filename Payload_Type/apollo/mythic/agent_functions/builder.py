@@ -21,10 +21,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     """.format(version)
     supports_dynamic_loading = True
     build_parameters = {
-        "version": BuildParameter(name="version", parameter_type=BuildParameterType.ChooseOne, description="Choose a target .NET Framework", choices=["4.0"]),
-        "arch": BuildParameter(name="arch", parameter_type=BuildParameterType.ChooseOne, choices=["x64", "x86", "Any CPU"], default_value="any", description="Target architecture"),
-        "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
-        "configuration": BuildParameter(name="configuration", parameter_type=BuildParameterType.ChooseOne, choices=["Release"], default_value="Release", description="Build a payload with or without debugging symbols.")
+        "arch": BuildParameter(name="arch", parameter_type=BuildParameterType.ChooseOne, choices=["x64", "x86", "Any CPU"], default_value="Any CPU", description="Target architecture"),
+        "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
     }
     c2_profiles = ["http", "smb", "tcp"]
     support_browser_scripts = [
@@ -65,8 +63,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 "pipename": "",
                 "port": "",
                 "encrypted_exchange_check": "",
-                "UUID_HERE": self.uuid,
-                "AESPSK": "",
+                "payload_uuid": self.uuid,
+                "staging_rsa_key": "",
             },
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
@@ -115,10 +113,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             elif self.get_parameter('output_type') == "DLL":
                 outputType = "library"
                 file_ext = "dll"
-            command = "nuget restore -NoCache -Force; msbuild -p:TargetFrameworkVersion=v{} -p:OutputType=\"{}\" -p:Configuration=\"{}\" -p:Platform=\"{}\"".format(
-                self.get_parameter('version'),
-                outputType,
-                self.get_parameter('configuration'),
+            command = "nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"{}\"".format(
                 self.get_parameter('arch'))
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -129,14 +124,16 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
             if self.get_parameter('arch') == "Any CPU":
-                output_path = "{}/Apollo/bin/{}/Apollo.{}".format(agent_build_path.name, self.get_parameter('configuration'), file_ext)
+                output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
             else:
-                output_path = "{}/Apollo/bin/{}/{}/Apollo.{}".format(agent_build_path.name, self.get_parameter('arch'), self.get_parameter('configuration'), file_ext)
+                output_path = "{}/Apollo/bin/{}/Release/Apollo.exe".format(agent_build_path.name, self.get_parameter('arch'))
             if os.path.exists(output_path):
                 resp.status = BuildStatus.Success
                 if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
+                    resp.status = BuildStatus.Success
+                    resp.build_stdout = stdout_err
                 else:
                     donutPic = None
                     # need to go through one more step to turn our exe into shellcode
