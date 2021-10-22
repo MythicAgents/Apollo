@@ -50,7 +50,7 @@ class PsInjectCommand(CommandBase):
     attackmapping = ["T1059", "T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        exePath = path.join(self.agent_code_path, "PowerShellHost/bin/Release/PowerShellHost.exe")
+        exePath = "/srv/PowerShellHost.exe"
         donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
         file_resp = await MythicRPC().execute("create_file",
                                               task_id=task.id,

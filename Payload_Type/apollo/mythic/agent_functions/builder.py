@@ -4,6 +4,7 @@ import os, fnmatch, tempfile, sys, asyncio
 from distutils.dir_util import copy_tree
 import traceback
 import donut
+import shutil
 
 class Apollo(PayloadType):
     name = "apollo"
@@ -21,7 +22,6 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     """.format(version)
     supports_dynamic_loading = True
     build_parameters = {
-        "arch": BuildParameter(name="arch", parameter_type=BuildParameterType.ChooseOne, choices=["x64", "x86", "Any CPU"], default_value="Any CPU", description="Target architecture"),
         "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
     }
     c2_profiles = ["http", "smb", "tcp"]
@@ -115,8 +115,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             elif self.get_parameter('output_type') == "DLL":
                 outputType = "library"
                 file_ext = "dll"
-            command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"{}\"".format(
-                self.get_parameter('arch'))
+            command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
@@ -124,12 +123,14 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 stdout_err += f'[stdout]\n{stdout.decode()}\n'
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
-            if self.get_parameter('arch') == "Any CPU":
-                output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
-            else:
-                output_path = "{}/Apollo/bin/{}/Release/Apollo.exe".format(agent_build_path.name, self.get_parameter('arch'))
+            output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
+            
             if os.path.exists(output_path):
                 resp.status = BuildStatus.Success
+                targetExeAsmPath = "/srv/ExecuteAssembly.exe"
+                targetPowerPickPath = "/srv/PowerShellHost.exe"
+                shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path), targetExeAsmPath)
+                shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path), targetPowerPickPath)
                 if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
@@ -138,10 +139,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 else:
                     donutPic = None
                     # need to go through one more step to turn our exe into shellcode
-                    if self.get_parameter('arch') == "x64" or self.get_parameter('arch') == "Any CPU":
-                        donutPic = donut.create(file=output_path, arch=3)
-                    else:
-                        donutPic = donut.create(file=output_path, arch=1)
+                    donutPic = donut.create(file=output_path, arch=3)
+                    
                     if (donutPic is None):
                         resp.message = "Failed to create shellcode"
                         resp.status = BuildStatus.Error

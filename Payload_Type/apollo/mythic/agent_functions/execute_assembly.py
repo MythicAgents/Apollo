@@ -41,7 +41,7 @@ class ExecuteAssemblyCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.args.add_arg("pipe_name", str(uuid4()))
-        exePath = path.join(self.agent_code_path, "ExecuteAssembly/bin/Release/ExecuteAssembly.exe")
+        exePath = "/srv/ExecuteAssembly.exe"
         donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
         file_resp = await MythicRPC().execute("create_file",
                                               task_id=task.id,
