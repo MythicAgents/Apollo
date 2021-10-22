@@ -1,4 +1,12 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define PS
+#endif
+
+#if PS
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -377,3 +385,4 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
         }
     }
 }
+#endif

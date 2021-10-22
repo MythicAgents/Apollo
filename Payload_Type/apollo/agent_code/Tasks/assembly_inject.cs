@@ -1,4 +1,11 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define ASSEMBLY_INJECT
+#endif
+
+#if ASSEMBLY_INJECT
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -238,3 +245,4 @@ namespace Tasks
         }
     }
 }
+#endif

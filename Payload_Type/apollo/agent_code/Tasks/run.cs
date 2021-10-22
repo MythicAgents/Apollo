@@ -1,4 +1,12 @@
-﻿using ApolloInterop.Classes;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define RUN
+#endif
+
+#if RUN
+
+using ApolloInterop.Classes;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Interfaces;
@@ -148,3 +156,4 @@ namespace Tasks
         }
     }
 }
+#endif

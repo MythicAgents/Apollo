@@ -1,4 +1,12 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define DOWNLOAD
+#endif
+
+#if DOWNLOAD
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -77,3 +85,4 @@ namespace Tasks
         }
     }
 }
+#endif

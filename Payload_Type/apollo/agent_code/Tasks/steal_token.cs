@@ -1,4 +1,12 @@
-﻿using ApolloInterop.Classes;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define STEAL_TOKEN
+#endif
+
+#if STEAL_TOKEN
+
+using ApolloInterop.Classes;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
@@ -104,3 +112,4 @@ namespace Tasks
         }
     }
 }
+#endif

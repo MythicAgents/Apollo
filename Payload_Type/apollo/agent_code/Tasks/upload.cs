@@ -1,4 +1,12 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define UPLOAD
+#endif
+
+#if UPLOAD
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -134,3 +142,4 @@ namespace Tasks
         }
     }
 }
+#endif

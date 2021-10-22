@@ -1,4 +1,12 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define PWD
+#endif
+
+#if PWD
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,3 +44,4 @@ namespace Tasks
         }
     }
 }
+#endif

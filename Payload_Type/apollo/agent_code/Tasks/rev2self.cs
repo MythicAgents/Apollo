@@ -1,4 +1,13 @@
-﻿using ApolloInterop.Classes;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define REV2SELF
+#endif
+
+#if REV2SELF
+
+
+using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
@@ -32,3 +41,4 @@ namespace Tasks
         }
     }
 }
+#endif

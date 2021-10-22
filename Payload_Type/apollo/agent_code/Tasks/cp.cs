@@ -1,4 +1,12 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define CP
+#endif
+
+#if CP
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -64,3 +72,4 @@ namespace Tasks
         }
     }
 }
+#endif

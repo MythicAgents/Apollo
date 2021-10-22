@@ -1,4 +1,13 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define REGISTER_ASSEMBLY
+#endif
+
+#if REGISTER_ASSEMBLY
+
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -75,3 +84,4 @@ namespace Tasks
         }
     }
 }
+#endif

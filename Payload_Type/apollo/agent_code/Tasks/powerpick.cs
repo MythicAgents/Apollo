@@ -1,4 +1,12 @@
-﻿using System;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define POWERPICK
+#endif
+
+#if POWERPICK
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -260,3 +268,4 @@ namespace Tasks
         }
     }
 }
+#endif

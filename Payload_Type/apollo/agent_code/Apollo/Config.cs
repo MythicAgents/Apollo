@@ -1,5 +1,8 @@
-﻿#define HTTP
+﻿#define C2PROFILE_NAME_UPPER
 
+#if DEBUG
+#define HTTP
+#endif
 
 using HttpTransport;
 using System;
@@ -26,6 +29,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
+#if DEBUG
                         { "callback_interval", "5" },
                         { "callback_jitter", "0" },
                         { "callback_port", "80" },
@@ -39,6 +43,21 @@ namespace Apollo
                         { "domain_front", "domain_front" },
                         { "killdate", "-1" },
                         { "USER_AGENT", "Apollo-Refactor" }
+#else
+                        { "callback_interval", "callback_interval_here" },
+                        { "callback_jitter", "callback_jitter_here" },
+                        { "callback_port", "callback_port_here" },
+                        { "callback_host", "callback_host_here" },
+                        { "post_uri", "post_uri_here" },
+                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
+                        { "proxy_host", "proxy_host_here" },
+                        { "proxy_port", "proxy_port_here" },
+                        { "proxy_user", "proxy_user_here" },
+                        { "proxy_pass", "proxy_pass_here" },
+                        { "domain_front", "domain_front_here" },
+                        { "killdate", "killdate_here" },
+                        { "USER_AGENT", "USER_AGENT_here" }
+#endif
                     }
                 }
             },
@@ -51,8 +70,13 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
+#if DEBUG
                         { "pipename", "ahatojqq-bo0w-oc3r-wqtg-4jf7voepqqbs" },
                         { "encrypted_exchange_check", "T" },
+#else
+                        { "pipename", "pipename_here" },
+                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
+#endif
                     }
                 }
             },
@@ -64,16 +88,22 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
+#if DEBUG
                         { "port", "40000" },
                         { "encrypted_exchange_check", "T" },
+#else
+                        { "port", "port_here" },
+                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
+#endif
                     }
                 }
             }
 #endif
-        };
+                    };
 
 
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
+#if DEBUG
 #if HTTP
         public static string StagingRSAPrivateKey = "mEsEiBA+pOpl7GEizdL1d8dNgoC24hMC3feZp4JYByk=";
 #elif SMB
@@ -87,6 +117,10 @@ namespace Apollo
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
         public static string PayloadUUID = "1b899f62-6f58-4367-87f4-f92ae97db803";
+#endif
+#else
+        public static string StagingRSAPrivateKey = "staging_rsa_key_here";
+        public static string PayloadUUID = "payload_uuid_here";
 #endif
     }
 }
