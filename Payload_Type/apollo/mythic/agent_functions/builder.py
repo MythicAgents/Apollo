@@ -113,7 +113,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             elif self.get_parameter('output_type') == "DLL":
                 outputType = "library"
                 file_ext = "dll"
-            command = "nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"{}\"".format(
+            command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"{}\"".format(
                 self.get_parameter('arch'))
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
