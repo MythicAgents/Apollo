@@ -119,7 +119,7 @@ namespace Apollo
         public static string PayloadUUID = "1b899f62-6f58-4367-87f4-f92ae97db803";
 #endif
 #else
-        public static string StagingRSAPrivateKey = "staging_rsa_key_here";
+        public static string StagingRSAPrivateKey = "AESPSK_here";
         public static string PayloadUUID = "payload_uuid_here";
 #endif
     }

@@ -64,17 +64,19 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 "port": "",
                 "encrypted_exchange_check": "",
                 "payload_uuid": self.uuid,
-                "staging_rsa_key": "",
+                "AESPSK": "",
             },
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
+        stdout_err = ""
         defines_profiles_upper = []
         for c2 in self.c2info:
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
             for key, val in c2.get_parameters_dict().items():
                 if isinstance(val, dict):
-                        special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
+                    stdout_err += "Setting {} to {}".format(key, val["enc_key"])
+                    special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
                 elif isinstance(val, list):
                     for item in val:
                         if not isinstance(item, dict):
@@ -118,7 +120,6 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
-            stdout_err = ""
             if stdout:
                 stdout_err += f'[stdout]\n{stdout.decode()}\n'
             if stderr:
