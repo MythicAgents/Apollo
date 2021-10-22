@@ -129,8 +129,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 resp.status = BuildStatus.Success
                 targetExeAsmPath = "/srv/ExecuteAssembly.exe"
                 targetPowerPickPath = "/srv/PowerShellHost.exe"
-                shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path), targetExeAsmPath)
-                shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path), targetPowerPickPath)
+                shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
+                shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
                 if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
