@@ -96,10 +96,8 @@ namespace Tasks
                     string path = ParsePath(parameters);
                     try
                     {
-                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                        {
-                            File.WriteAllBytes(path, fileData);
-                        }
+                        
+                        File.WriteAllBytes(path, fileData);
                         resp = CreateTaskResponse(
                             $"Uploaded {fileData.Length} bytes to {path}",
                             true,

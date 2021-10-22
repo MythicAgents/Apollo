@@ -53,6 +53,7 @@
     <Compile Include="execute_assembly.cs" />
     <Compile Include="link.cs" />
     <Compile Include="ls.cs" />
+    <Compile Include="make_token.cs" />
     <Compile Include="powerpick.cs" />
     <Compile Include="ppid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="psinject.cs" />
     <Compile Include="pwd.cs" />
     <Compile Include="register_assembly.cs" />
+    <Compile Include="rev2self.cs" />
     <Compile Include="run.cs" />
     <Compile Include="shell.cs" />
     <Compile Include="steal_token.cs" />

