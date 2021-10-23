@@ -85,7 +85,7 @@ class LoadCommand(CommandBase):
         pass
 
 
-def get_task_files(base_path: str) -> List[str]:
+def get_task_files(base_path: str) -> [str]:
     results = []
     for root, dirs, files in os.walk(base_path):
         for file in files:
