@@ -137,6 +137,7 @@ namespace ApolloInterop.Structs.ApolloStructs
     public struct IPCData
     {
         public TcpClient Client;
+        public NetworkStream NetworkStream;
         public PipeStream Pipe;
         public Object State;
         public Byte[] Data;

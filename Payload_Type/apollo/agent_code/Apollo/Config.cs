@@ -89,7 +89,7 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
 #if DEBUG
-                        { "port", "40000" },
+                        { "port", "25000" },
                         { "encrypted_exchange_check", "T" },
 #else
                         { "port", "port_here" },
@@ -109,14 +109,14 @@ namespace Apollo
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
-        public static string StagingRSAPrivateKey = "ea7PWJKuszQ5CtdnNnYc1cCimbV0ue8X9bPB88kIHX4=";
+        public static string StagingRSAPrivateKey = "dlBOwdZdnAY1YH/6BZyn/wjkoDZk6IzZ75+p+JZ8V14=";
 #endif
 #if HTTP
         public static string PayloadUUID = "179744f8-2496-4306-8822-ee8ac2f4db75";
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
-        public static string PayloadUUID = "1b899f62-6f58-4367-87f4-f92ae97db803";
+        public static string PayloadUUID = "1b79c340-b4ec-4801-b867-172fcb3491e5";
 #endif
 #else
         public static string StagingRSAPrivateKey = "AESPSK_here";

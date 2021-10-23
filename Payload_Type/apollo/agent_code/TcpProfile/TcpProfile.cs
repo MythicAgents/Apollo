@@ -46,6 +46,8 @@ namespace TcpTransport
         private ST.Task _agentConsumerTask = null;
         private ST.Task _agentProcessorTask = null;
 
+        private string _partialData = "";
+
         public TcpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             _port = int.Parse(data["port"]);
@@ -103,8 +105,76 @@ namespace TcpTransport
 
         public void OnAsyncMessageReceived(object sender, TcpMessageEventArgs args)
         {
-            IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(
-                Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray()));
+            string sData = Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray());
+            int sDataLen = sData.Length;
+            int bytesProcessed = 0;
+            while (bytesProcessed < sDataLen)
+            {
+                int lBracket = sData.IndexOf('{');
+                int rBracket = sData.IndexOf('}');
+                // No left bracket
+                if (lBracket == -1)
+                {
+                    // No left or right bracket
+                    if (rBracket == -1)
+                    {
+                        // Middle of the packet, just append
+                        _partialData += sData;
+                        bytesProcessed += sData.Length;
+                    }
+                    else
+                    {
+                        // This is an ending packet, so we need to process
+                        // then shift to the next
+                        string d = new string(sData.Take(rBracket+1).ToArray());
+                        _partialData += d;
+                        bytesProcessed += d.Length;
+                        UnwrapMessage();
+                        sData = new string(sData.Skip(rBracket).ToArray());
+                    }
+                }
+                // left bracket exists, we're starting a packet
+                else
+                {
+                    // left bracket is ahead of starting index
+                    // Thus we're in the middle of a packet receipt
+                    if (lBracket > 0)
+                    {
+                        string d = new string(sData.Take(lBracket).ToArray());
+                        _partialData += d;
+                        UnwrapMessage();
+                        bytesProcessed += d.Length;
+                        sData = new string(sData.Skip(d.Length).ToArray());
+                    // true start of a new packet
+                    } else
+                    {
+                        // No ending delimiter, will need to wait for more
+                        if (rBracket == -1)
+                        {
+                            _partialData += sData;
+                            bytesProcessed += sData.Length;
+                        }
+                        // Ending delimiter - time to unwrap singleton
+                        else
+                        {
+                            string d = new string(sData.Take(rBracket+1).ToArray());
+                            _partialData += d;
+                            bytesProcessed += d.Length;
+                            if (d.Length < sData.Length)
+                            {
+                                sData = new string(sData.Skip(d.Length).ToArray());
+                            }
+                            UnwrapMessage();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void UnwrapMessage()
+        {
+            IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(_partialData);
+            _partialData = "";
             lock (MessageStore)
             {
                 if (!MessageStore.ContainsKey(chunkedData.ID))

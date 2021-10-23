@@ -82,6 +82,17 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
+        public struct MythicEncryption
+        {
+            [DataMember(Name = "crypto_type")]
+            public bool IsCrypto;
+            [DataMember(Name = "enc_key")]
+            public string EncryptionKey;
+            [DataMember(Name = "dec_key")]
+            public string DecryptionKey;
+        }
+
+        [DataContract]
         public struct C2ProfileInstanceParameters
         {
             [DataMember(Name = "encrypted_exchange_check")]
@@ -91,7 +102,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "port")]
             public int Port;
             [DataMember(Name = "AESPSK")]
-            public string AESPSK;
+            public MythicEncryption AESPSK;
             [DataMember(Name = "killdate")]
             public string KillDate;
         }

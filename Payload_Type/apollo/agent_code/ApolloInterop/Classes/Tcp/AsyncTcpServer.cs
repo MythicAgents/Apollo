@@ -68,6 +68,7 @@ namespace ApolloInterop.Classes
             IPCData pd = new IPCData()
             {
                 Client = client,
+                NetworkStream = client.GetStream(),
                 State = null,
                 Data = new byte[_BUF_IN],
             };
@@ -95,7 +96,7 @@ namespace ApolloInterop.Classes
                 {
                     try
                     {
-                        pd.Client.GetStream().BeginRead(pd.Data, 0, pd.Data.Length, OnAsyncMessageReceived, pd);
+                        pd.NetworkStream.BeginRead(pd.Data, 0, pd.Data.Length, OnAsyncMessageReceived, pd);
                     }
                     catch (Exception ex)
                     {
@@ -118,7 +119,7 @@ namespace ApolloInterop.Classes
             IPCData pd = (IPCData)result.AsyncState;
             try
             {
-                Int32 bytesRead = pd.Client.GetStream().EndRead(result);
+                Int32 bytesRead = pd.NetworkStream.EndRead(result);
                 if (bytesRead > 0)
                 {
                     pd.DataLength = bytesRead;
