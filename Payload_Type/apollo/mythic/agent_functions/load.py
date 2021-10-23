@@ -12,21 +12,22 @@ class LoadArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            # CommandParameter(name="commands", 
-            #      type=ParameterType.ChooseMultiple, 
-            #      description="One or more commands to send to the agent", 
-            #      choices_are_all_commands=True),
-            CommandParameter(name="commands",
-                            type=ParameterType.String,
-                            description="One or more commands to send to the agent",
-                            required=True),
+            "commands" : CommandParameter(name="Commands", 
+                 type=ParameterType.ChooseMultiple, 
+                 description="One or more commands to send to the agent", 
+                 choices_are_all_commands=True),
         }
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            self.args.add_arg("commands", self.command_line)
+            all_cmds = self.commands.get_commands()
+            cmds = self.command_line.split(" ")
+            for cmd in cmds:
+                if cmd not in all_cmds:
+                    raise ValueError("Command '{}' not found".format(cmd))
+            self.args["commands"].value = cmds
         pass
 
 
@@ -47,8 +48,8 @@ class LoadCommand(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        defines_commands_upper = [f"#define {x.upper()}" for x in self.args.get_arg("commands")]
-        agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
+        defines_commands_upper = [f"#define {x.upper()}" for x in task.args.get_arg("commands")]
+        agent_build_path = tempfile.TemporaryDirectory()
             # shutil to copy payload files over
         copy_tree(self.agent_code_path, agent_build_path.name)
         results = []
