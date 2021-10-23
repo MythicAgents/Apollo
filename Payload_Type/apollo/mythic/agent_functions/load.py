@@ -1,6 +1,6 @@
 import asyncio
 import os
-from dirutils.dir_util import copytree
+from distutils.dir_util import copy_tree
 import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
 from mythic_payloadtype_container.MythicRPC import *
@@ -36,7 +36,7 @@ class LoadCommand(CommandBase):
     needs_admin = False
     help_cmd = "load [cmd1] [cmd2] [...]"
     description = 'Load one or more new commands into the agent.'
-    version = 2
+    version = 1
     is_exit = False
     is_file_browse = False
     is_process_list = False
@@ -51,7 +51,7 @@ class LoadCommand(CommandBase):
         defines_commands_upper = [f"#define {x.upper()}" for x in self.args.get_arg("commands")]
         agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
             # shutil to copy payload files over
-        copytree(self.agent_code_path, agent_build_path.name)
+        copy_tree(self.agent_code_path, agent_build_path.name)
         for csFile in get_task_files("{}/Tasks".format(agent_build_path.name)):
             templateFile = open(csFile, "rb").read().decode()
             templateFile = templateFile.replace("#define COMMAND_NAME_UPPER", "\n".join(defines_commands_upper))
