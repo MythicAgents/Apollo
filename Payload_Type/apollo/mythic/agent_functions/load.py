@@ -27,7 +27,7 @@ class LoadArguments(TaskArguments):
             for cmd in cmds:
                 if cmd not in all_cmds:
                     raise ValueError("Command '{}' not found".format(cmd))
-            self.add_arg("commands", cmds)
+            self.args["commands"].value = cmds
         pass
 
 
