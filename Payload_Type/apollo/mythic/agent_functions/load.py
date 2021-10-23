@@ -22,11 +22,7 @@ class LoadArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            all_cmds = self.commands.get_commands()
             cmds = self.command_line.split(" ")
-            for cmd in cmds:
-                if cmd not in all_cmds:
-                    raise ValueError("Command '{}' not found".format(cmd))
             self.args["commands"].value = cmds
         pass
 
