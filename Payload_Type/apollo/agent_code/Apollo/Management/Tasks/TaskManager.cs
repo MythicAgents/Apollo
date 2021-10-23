@@ -122,25 +122,39 @@ namespace Apollo.Management.Tasks
             }
         }
 
-        public bool LoadTaskModule(byte[] taskAsm, string command)
+        public bool LoadTaskModule(byte[] taskAsm, string[] commands)
         {
             bool bRet = false;
-            try
+            
+            Assembly taskingAsm = Assembly.Load(taskAsm);
+            Dictionary<string, Type> foundCmds = new Dictionary<string, Type>();
+            foreach(Type t in taskingAsm.GetExportedTypes())
             {
-                Assembly taskingAsm = Assembly.Load(taskAsm);
-                foreach(Type t in taskingAsm.GetExportedTypes())
+                if (commands.Contains(t.Name))
                 {
-                    if (t.Name == command)
+                    foundCmds[t.Name] = t;
+                }
+            }
+            if (foundCmds.Keys.Count != commands.Length)
+            {
+                bRet = false;
+            }
+            else
+            {
+                foreach(string k in foundCmds.Keys)
+                {
+                    if (_loadedTaskTypes.ContainsKey(k))
                     {
-                        _loadedTaskTypes[command] = t;
-                        bRet = true;
-                        break;
+                        throw new Exception($"Command '{k}' already loaded.");
                     }
                 }
-            } catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load new module. Reason: {ex.Message}");
+                foreach(string k in foundCmds.Keys)
+                {
+                    _loadedTaskTypes[k] = foundCmds[k];
+                }
+                bRet = true;
             }
+
             return bRet;
         }
 

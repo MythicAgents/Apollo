@@ -52,6 +52,7 @@
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
     <Compile Include="link.cs" />
+    <Compile Include="load.cs" />
     <Compile Include="ls.cs" />
     <Compile Include="make_token.cs" />
     <Compile Include="powerpick.cs" />

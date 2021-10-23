@@ -84,7 +84,8 @@ namespace ApolloInterop.Enums
             DownloadMessage,
             FileBrowserACE,
             IPCCommandArguments,
-            ProcessInformation
+            ProcessInformation,
+            CommandInformation
         }
     }
 }

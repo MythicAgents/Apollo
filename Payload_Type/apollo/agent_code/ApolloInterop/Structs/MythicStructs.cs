@@ -473,6 +473,20 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
+        public struct CommandInformation : IMythicMessage
+        {
+            [DataMember(Name = "action")]
+            public string Action;
+            [DataMember(Name = "cmd")]
+            public string Command;
+
+            public MessageType GetTypeCode()
+            {
+                return MessageType.CommandInformation;
+            }
+        }
+
+        [DataContract]
         public struct TaskResponse : IEquatable<TaskResponse>, IMythicMessage
         {
             public MessageType GetTypeCode()
@@ -511,6 +525,8 @@ namespace ApolloInterop.Structs
             public RemovedFileInformation[] RemovedFiles;
             [DataMember(Name = "artifacts")]
             public Artifact[] Artifacts;
+            [DataMember(Name = "commands")]
+            public CommandInformation[] Commands;
 
             public override bool Equals(object obj)
             {
