@@ -15,7 +15,7 @@ namespace Tasks
         internal struct LoadParameters
         {
             [DataMember(Name = "commands")]
-            public string[] Commands;
+            public string Commands;
             [DataMember(Name = "file_id")]
             public string FileId;
         }
@@ -44,7 +44,8 @@ namespace Tasks
                         parameters.FileId,
                         out byte[] taskLib))
                     {
-                        if (_agent.GetTaskManager().LoadTaskModule(taskLib, parameters.Commands))
+                        string[] cmds = parameters.Commands.Split(' ');
+                        if (_agent.GetTaskManager().LoadTaskModule(taskLib, cmds))
                         {
                             IMythicMessage[] items = new IMythicMessage[parameters.Commands.Length];
                             for(int i = 0; i < items.Length; i++)
@@ -52,7 +53,7 @@ namespace Tasks
                                 items[i] = new CommandInformation
                                 {
                                     Action = "add",
-                                    Command = parameters.Commands[i]
+                                    Command = cmds[i]
                                 };
                             }
                             resp = CreateTaskResponse(
