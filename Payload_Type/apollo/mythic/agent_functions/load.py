@@ -77,7 +77,7 @@ class LoadCommand(CommandBase):
         if os.path.exists(outputPath):
             dllBytes = open(outputPath, "rb").read()
             file_resp = await MythicRPC().execute("create_file",
-                                                  task_id=task.task_id,
+                                                  task_id=task.id,
                                                   file=base64.b64encode(dllBytes).decode(),
                                                   delete_after_fetch=True)
             if file_resp.status == MythicStatus.Success:
