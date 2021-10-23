@@ -52,7 +52,14 @@ class LoadCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
             # shutil to copy payload files over
         copy_tree(self.agent_code_path, agent_build_path.name)
-        for csFile in get_task_files("{}/Tasks".format(agent_build_path.name)):
+        results = []
+        for root, dirs, files in os.walk("{}/Tasks".format(agent_build_path.name)):
+            for file in files:
+                if file.endswith(".cs"):
+                    results.append(os.path.join(root, file))
+        if len(results) == 0:
+            raise ValueError("No .cs files found in task library")
+        for csFile in results:
             templateFile = open(csFile, "rb").read().decode()
             templateFile = templateFile.replace("#define COMMAND_NAME_UPPER", "\n".join(defines_commands_upper))
             if csFile.endswith(".cs"):
@@ -83,14 +90,3 @@ class LoadCommand(CommandBase):
 
     async def process_response(self, response: AgentResponse):
         pass
-
-
-def get_task_files(base_path: str) -> [str]:
-    results = []
-    for root, dirs, files in os.walk(base_path):
-        for file in files:
-            if file.endswith(".cs"):
-                results.append(os.path.join(root, file))
-    if len(results) == 0:
-        raise ValueError("No .cs files found in {}".format(base_path))
-    return results
