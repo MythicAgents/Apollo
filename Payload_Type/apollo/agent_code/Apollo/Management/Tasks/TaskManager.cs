@@ -143,13 +143,6 @@ namespace Apollo.Management.Tasks
             {
                 foreach(string k in foundCmds.Keys)
                 {
-                    if (_loadedTaskTypes.ContainsKey(k))
-                    {
-                        throw new Exception($"Command '{k}' already loaded.");
-                    }
-                }
-                foreach(string k in foundCmds.Keys)
-                {
                     _loadedTaskTypes[k] = foundCmds[k];
                 }
                 bRet = true;

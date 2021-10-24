@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Types.Delegates;
@@ -12,6 +13,8 @@ namespace ApolloInterop.Classes
     {
         public int SleepInterval { get; protected set; } = 0;
         public double Jitter { get; protected set; } = 0;
+        protected AutoResetEvent _sleepReset = new AutoResetEvent(false);
+        protected AutoResetEvent _exit = new AutoResetEvent(false);
         public bool Alive { get; protected set; } = true;
 
         protected Random random = new Random((int)DateTime.UtcNow.Ticks);
@@ -34,7 +37,7 @@ namespace ApolloInterop.Classes
         }
 
         public abstract void Start();
-        public virtual void Exit() { Alive = false; }
+        public virtual void Exit() { Alive = false; _exit.Set(); }
         public virtual void SetSleep(int seconds, double jitter=0)
         {
             SleepInterval = seconds * 1000;
@@ -43,19 +46,33 @@ namespace ApolloInterop.Classes
             {
                 Jitter = Jitter / 100.0; 
             }
+            _sleepReset.Set();
         }
 
         public virtual IApi GetApi()
         {
             return Api;
         }
-        public virtual int GetSleep()
+        public virtual void Sleep(WaitHandle[] handles = null)
         {
-            if (Jitter == 0 || SleepInterval == 0)
-                return SleepInterval;
-            int minSleep = (int)(SleepInterval * Jitter);
-            int maxSleep = (int)(SleepInterval * (Jitter + 1));
-            return (int)(random.NextDouble() * (maxSleep - minSleep) + minSleep);
+            int sleepTime = SleepInterval;
+            if (Jitter != 0)
+            {
+                int minSleep = (int)(SleepInterval * (1 - Jitter));
+                int maxSleep = (int)(SleepInterval * (Jitter + 1));
+                sleepTime = (int)(random.NextDouble() * (maxSleep - minSleep) + minSleep);
+            }
+            List<WaitHandle> newHandles = new List<WaitHandle>();
+            newHandles.Add(_sleepReset);
+            newHandles.Add(_exit);
+            if (handles != null)
+            {
+                foreach(WaitHandle h in handles)
+                {
+                    newHandles.Add(h);
+                }
+            }
+            WaitHandle.WaitAny(newHandles.ToArray(), sleepTime);
         }
 
         public abstract bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse);

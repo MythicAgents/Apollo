@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using ApolloInterop.Types.Delegates;
 using ApolloInterop.Structs.MythicStructs;
+using System.Threading;
 
 namespace ApolloInterop.Interfaces
 {
@@ -18,8 +19,8 @@ namespace ApolloInterop.Interfaces
         // Set agent sleep
         void SetSleep(int seconds, double jitter=0);
 
-        // Fetch sleep
-        int GetSleep();
+        // Do sleep
+        void Sleep(WaitHandle[] handles = null);
 
         // Retrieve a file from Mythic server and do something with file contents.
         bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse);

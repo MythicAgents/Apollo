@@ -65,6 +65,7 @@
     <Compile Include="rev2self.cs" />
     <Compile Include="run.cs" />
     <Compile Include="shell.cs" />
+    <Compile Include="sleep.cs" />
     <Compile Include="steal_token.cs" />
     <Compile Include="upload.cs" />
   </ItemGroup>
