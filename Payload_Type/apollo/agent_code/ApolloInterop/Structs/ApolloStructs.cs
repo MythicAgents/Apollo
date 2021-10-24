@@ -134,6 +134,14 @@ namespace ApolloInterop.Structs.ApolloStructs
         }
     }
 
+
+    [DataContract]
+    public struct ProcessResponse
+    {
+        [DataMember(Name = "jobs")]
+        public string[] Jobs;
+    }
+
     public struct IPCData
     {
         public TcpClient Client;

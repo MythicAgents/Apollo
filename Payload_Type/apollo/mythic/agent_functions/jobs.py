@@ -1,6 +1,6 @@
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
-
+from mythic_payloadtype_container.MythicRPC import *
 
 class JobsArguments(TaskArguments):
 
@@ -35,4 +35,20 @@ class JobsCommand(CommandBase):
         return task
 
     async def process_response(self, response: AgentResponse):
-        pass
+        resp = json.loads(response.response["jobs"])
+        jobs = []
+        for job in resp['jobs']:
+            job_resp = await MythicRPC().execute("get_task_for_id",
+                                              task_id=response.task.id,
+                                              requested_uuid=job)
+            if job_resp.status == MythicStatus.Success:
+                jobs.append(job_resp.response)
+            else:
+                raise Exception("Failed to get job info for job {}".format(job))
+            
+        addoutput_resp = await MythicRPC().execute("create_output",
+                                                task_id=response.task.id,
+                                                output=json.dumps(jobs))
+        if addoutput_resp.status != MythicStatus.Success:
+            raise Exception("Failed to add output to task")
+        

@@ -10,6 +10,7 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Net;
 using System.IO;
+using ApolloInterop.Structs.ApolloStructs;
 
 namespace ApolloInterop.Structs
 {
@@ -611,7 +612,8 @@ namespace ApolloInterop.Structs
             public Artifact[] Artifacts;
             [DataMember(Name = "commands")]
             public CommandInformation[] Commands;
-
+            [DataMember(Name = "process_response")]
+            public ProcessResponse ProcessResponse;
             public override bool Equals(object obj)
             {
                 return obj is TaskingMessage && this.Equals((TaskResponse)obj);

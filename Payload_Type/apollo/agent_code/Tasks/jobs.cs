@@ -4,6 +4,7 @@ using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using ST = System.Threading.Tasks;
 namespace Tasks
@@ -28,22 +29,9 @@ namespace Tasks
                         realJids.Add(j);
                     }
                 }
-                for(int i = 0; i < realJids.Count; i++)
-                {
-                    if (i == realJids.Count - 1)
-                    {
-                        fmtArr += $"\"{realJids[i]}\"";
-                    } else
-                    {
-                        fmtArr += $"\"{realJids[i]}\", ";
-                    }
-                }
-                fmtArr += "]";
-                string jstr = "{\"jobs\": " + fmtArr + "}";
-                _agent.GetTaskManager().AddTaskResponseToQueue(
-                    CreateTaskResponse(
-                        jstr,
-                        true));
+                TaskResponse resp = CreateTaskResponse("", true, "completed");
+                resp.ProcessResponse.Jobs = realJids.ToArray();
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
     }
