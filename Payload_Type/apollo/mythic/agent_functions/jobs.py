@@ -29,7 +29,7 @@ class JobsCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = JobsArguments
     attackmapping = []
-    browser_script = BrowserScript(script_name="jobs", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="jobs_new", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task
@@ -37,7 +37,7 @@ class JobsCommand(CommandBase):
     async def process_response(self, response: AgentResponse):
         resp = response.response["jobs"]
         jobs = []
-        for job in resp['jobs']:
+        for job in resp:
             job_resp = await MythicRPC().execute("get_task_for_id",
                                               task_id=response.task.id,
                                               requested_uuid=job)
