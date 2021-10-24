@@ -58,11 +58,7 @@ namespace Tasks
                         _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                             "", false, "", new IMythicMessage[]
                             {
-                                new Artifact
-                                {
-                                    BaseArtifact = "ProcessCreate",
-                                    ArtifactDetails = $"Started cmd.exe {_data.Parameters} (PID: {proc.PID})"
-                                }
+                                Artifact.ProcessCreate((int)proc.PID, "cmd.exe", $"/S /c {_data.Parameters}")
                             }));
                     }
                 }

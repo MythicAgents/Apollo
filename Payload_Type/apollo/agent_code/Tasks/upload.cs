@@ -84,7 +84,8 @@ namespace Tasks
                 return string.Format(@"\\{0}\{1}", host, path);
             } else
             {
-                return path;
+                FileInfo finfo = new FileInfo(path);
+                return finfo.FullName;
             }
         }
 
@@ -117,11 +118,7 @@ namespace Tasks
                                     FileID = parameters.FileID,
                                     FullPath = path
                                 },
-                                new Artifact()
-                                {
-                                    BaseArtifact = "FileCreate",
-                                    ArtifactDetails = $"Wrote {fileData.Length} to {path}"
-                                }
+                                Artifact.FileWrite(path, fileData.Length)
                             });
                     } catch (Exception ex)
                     {

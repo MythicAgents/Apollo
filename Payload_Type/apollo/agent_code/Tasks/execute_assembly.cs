@@ -140,13 +140,7 @@ namespace Tasks
                                         "",
                                         new IMythicMessage[]
                                         {
-                                            new Artifact
-                                            {
-                                                BaseArtifact = "ProcessCreate",
-                                                ArtifactDetails = string.IsNullOrEmpty(info.Arguments) ?
-                                                $"Started {info.Application} (PID: {proc.PID})" : 
-                                                $"Started {info.Application} {info.Arguments} (PID: {proc.PID})"
-                                            }
+                                            Artifact.ProcessCreate((int)proc.PID, info.Application, info.Arguments)
                                         }
                                     ));
                                     if (proc.Inject(exeAsmPic))
@@ -157,11 +151,7 @@ namespace Tasks
                                             "",
                                             new IMythicMessage[]
                                             {
-                                                new Artifact
-                                                {
-                                                    BaseArtifact = "ProcessInject",
-                                                    ArtifactDetails = $"Injected into PID {proc.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
-                                                }
+                                                Artifact.ProcessInject((int)proc.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
                                             }));
                                         IPCCommandArguments cmdargs = new IPCCommandArguments
                                         {
@@ -223,11 +213,7 @@ namespace Tasks
                     proc.Kill();
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]
                     {
-                        new Artifact
-                        {
-                            BaseArtifact = "ProcessKill",
-                            ArtifactDetails = $"Killed PID {proc.PID}"
-                        }
+                        Artifact.ProcessKill((int)proc.PID)
                     }));
                 }
             }, _cancellationToken.Token);

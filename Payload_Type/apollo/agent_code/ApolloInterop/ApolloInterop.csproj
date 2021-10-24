@@ -103,5 +103,6 @@
     <Compile Include="Types\Delegates.cs" />
     <Compile Include="Types\MythicTypes.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

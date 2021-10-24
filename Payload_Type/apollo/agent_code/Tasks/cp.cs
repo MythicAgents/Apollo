@@ -46,26 +46,22 @@ namespace Tasks
             {
                 CpParameters parameters = _jsonSerializer.Deserialize<CpParameters>(_data.Parameters);
                 TaskResponse resp;
+                List<IMythicMessage> artifacts = new List<IMythicMessage>();
                 try
                 {
-                    File.Copy(parameters.SourceFile, parameters.DestinationFile);
                     FileInfo source = new FileInfo(parameters.SourceFile);
+                    artifacts.Add(Artifact.FileOpen(source.FullName));
+                    File.Copy(parameters.SourceFile, parameters.DestinationFile);
                     FileInfo dest = new FileInfo(parameters.DestinationFile);
+                    artifacts.Add(Artifact.FileWrite(dest.FullName, source.Length));
                     resp = CreateTaskResponse(
                         $"Copied {source.FullName} to {source.FullName}",
                         true,
                         "completed",
-                        new IMythicMessage[1]
-                        {
-                            new Artifact
-                            {
-                                BaseArtifact = "FileWrite",
-                                ArtifactDetails = $"Wrote {source.Length} to {dest.FullName}"
-                            }
-                        });
+                        artifacts.ToArray());
                 } catch (Exception ex)
                 {
-                    resp = CreateTaskResponse($"Failed to copy file: {ex.Message}", true, "error");
+                    resp = CreateTaskResponse($"Failed to copy file: {ex.Message}", true, "error", artifacts.ToArray());
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);

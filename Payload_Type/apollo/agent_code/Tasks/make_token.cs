@@ -58,13 +58,16 @@ namespace Tasks
                         var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
                         resp = CreateTaskResponse(
                             $"Successfully impersonated {cur.Name}",
-                            true);
+                            true,
+                            "completed",
+                            new IMythicMessage[] { Artifact.PlaintextLogon(cur.Name, true)});
                     } else
                     {
                         resp = CreateTaskResponse(
                             $"Failed to impersonate {info.Username}: {Marshal.GetLastWin32Error()}",
                             true,
-                            "error");
+                            "error",
+                            new IMythicMessage[] { Artifact.PlaintextLogon(info.Username) });
                     }
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

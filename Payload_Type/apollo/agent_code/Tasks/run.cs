@@ -90,11 +90,7 @@ namespace Tasks
                             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                                 "", false, "", new IMythicMessage[]
                                 {
-                                new Artifact
-                                {
-                                    BaseArtifact = "ProcessCreate",
-                                    ArtifactDetails = $"Started {_data.Parameters} (PID: {proc.PID})"
-                                }
+                                    Artifact.ProcessCreate((int)proc.PID, app, cmdline)
                                 }));
                         }
                     }

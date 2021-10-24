@@ -412,6 +412,90 @@ namespace ApolloInterop.Structs
             public string BaseArtifact;
             [DataMember(Name = "artifact")]
             public string ArtifactDetails;
+
+            public static Artifact FileOpen(string path)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "FileOpen",
+                    ArtifactDetails = path
+                };
+            }
+
+            public static Artifact FileWrite(string path, long bytesWritten)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "FileWrite",
+                    ArtifactDetails = $"Wrote {bytesWritten} bytes to {path}"
+                };
+            }
+
+            public static Artifact FileDelete(string path)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "FileDelete",
+                    ArtifactDetails = $"Deleted {path}"
+                };
+            }
+
+            public static Artifact ProcessCreate(int pid, string application, string arguments = null)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "ProcessCreate",
+                    ArtifactDetails = string.IsNullOrEmpty(arguments) ?
+                    $"Started {application} (PID: {pid})" :
+                    $"Started {application} {arguments} (PID: {pid})"
+                };
+            }
+
+            public static Artifact ProcessOpen(int pid, string processName = null)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "ProcessOpen",
+                    ArtifactDetails = string.IsNullOrEmpty(processName) ?
+                    $"Opened process with PID {pid}" : $"Opened process {processName} with PID {pid}"
+                };
+            }
+
+            public static Artifact ProcessInject(int pid, string method)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "ProcessInject",
+                    ArtifactDetails = $"Injected into PID {pid} using {method}"
+                };
+            }
+
+            public static Artifact ProcessKill(int pid)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "ProcessKill",
+                    ArtifactDetails = $"Killed PID {pid}"
+                };
+            }
+
+            public static Artifact NetworkConnection(string hostname, int port = -1)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "NetworkConnection",
+                    ArtifactDetails = port > -1 ? $"Connected to {hostname}:{port}" : $"Connected to {hostname}"
+                };
+            }
+
+            public static Artifact PlaintextLogon(string username, bool success = false)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "Logon",
+                    ArtifactDetails = success ? $"Successful logon (type 9) for {username}" : $"Unsuccessful logon (type 9) for {username}"
+                };
+            }
         }
 
         public class StatusMessage

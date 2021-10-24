@@ -65,6 +65,10 @@ namespace Tasks
                 }
                 if (procHandle != IntPtr.Zero)
                 {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(
+                        CreateTaskResponse("", false, "", new IMythicMessage[] {
+                            Artifact.ProcessOpen(int.Parse(_data.Parameters))
+                        }));
                     bool bRet = _pOpenProcessToken(
                         procHandle,
                         TokenAccessLevels.Duplicate | TokenAccessLevels.AssignPrimary | TokenAccessLevels.Query,

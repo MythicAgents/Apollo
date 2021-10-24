@@ -88,6 +88,10 @@ namespace Tasks
                             });
                         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     };
+                    _agent.GetTaskManager().AddTaskResponseToQueue(
+                        CreateTaskResponse("", false, "", new IMythicMessage[] {
+                            Artifact.NetworkConnection(parameters.ConnectionInfo.Hostname)
+                        }));
                     if (!p.Start())
                     {
                         resp = CreateTaskResponse(

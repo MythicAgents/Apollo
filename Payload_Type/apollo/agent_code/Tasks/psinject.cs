@@ -146,11 +146,7 @@ namespace Tasks
                                             "",
                                             new IMythicMessage[]
                                             {
-                                            new Artifact
-                                            {
-                                                BaseArtifact = "ProcessInject",
-                                                ArtifactDetails = $"Injected into PID {parameters.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
-                                            }
+                                                Artifact.ProcessInject(parameters.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
                                             }));
                                     string cmd = "";
                                     string loadedScript = _agent.GetFileManager().GetScript();

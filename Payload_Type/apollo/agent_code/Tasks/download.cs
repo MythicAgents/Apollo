@@ -59,6 +59,14 @@ namespace Tasks
                     {
                         string path = string.IsNullOrEmpty(parameters.Hostname) ? parameters.FileName : $@"\\{parameters.Hostname}\{parameters.FileName}";
                         byte[] fileBytes = File.ReadAllBytes(path);
+                        IMythicMessage[] artifacts = new IMythicMessage[1]
+                        {
+                            new Artifact
+                            {
+                                BaseArtifact = "FileOpen",
+                                ArtifactDetails = path
+                            }
+                        };
                         if (_agent.GetFileManager().PutFile(
                             _cancellationToken.Token,
                             _data.ID,
@@ -67,13 +75,13 @@ namespace Tasks
                             false,
                             parameters.Hostname))
                         {
-                            resp = CreateTaskResponse("", true);
+                            resp = CreateTaskResponse("", true, "completed", artifacts);
                         } else
                         {
                             resp = CreateTaskResponse(
                                 $"Download of {path} failed or aborted.",
                                 true,
-                                "error");
+                                "error", artifacts);
                         }
                     }
                 } catch (Exception ex)

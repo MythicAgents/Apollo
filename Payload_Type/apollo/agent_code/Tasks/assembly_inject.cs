@@ -147,11 +147,7 @@ namespace Tasks
                                                 "",
                                                 new IMythicMessage[]
                                                 {
-                                                new Artifact
-                                                {
-                                                    BaseArtifact = "ProcessInject",
-                                                    ArtifactDetails = $"Injected into PID {parameters.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
-                                                }
+                                                    Artifact.ProcessInject(parameters.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
                                                 }));
                                         IPCCommandArguments cmdargs = new IPCCommandArguments
                                         {
