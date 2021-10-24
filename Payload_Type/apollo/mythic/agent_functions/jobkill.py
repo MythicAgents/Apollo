@@ -11,10 +11,6 @@ class JobkillArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require Job ID to terminate as a command line argument.")
-        try:
-            int(self.command_line)
-        except:
-            raise Exception("Error: Job IDs must be integers, received \"{}\"".format(self.command_line))
 
 
 class JobkillCommand(CommandBase):

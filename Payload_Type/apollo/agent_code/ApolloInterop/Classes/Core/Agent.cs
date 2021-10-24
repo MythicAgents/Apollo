@@ -15,6 +15,7 @@ namespace ApolloInterop.Classes
         public double Jitter { get; protected set; } = 0;
         protected AutoResetEvent _sleepReset = new AutoResetEvent(false);
         protected AutoResetEvent _exit = new AutoResetEvent(false);
+        protected WaitHandle[] _agentSleepHandles;
         public bool Alive { get; protected set; } = true;
 
         protected Random random = new Random((int)DateTime.UtcNow.Ticks);
@@ -34,6 +35,11 @@ namespace ApolloInterop.Classes
         public Agent(string uuid)
         {
             UUID = uuid;
+            _agentSleepHandles = new WaitHandle[]
+            {
+                _sleepReset,
+                _exit
+            };
         }
 
         public abstract void Start();
@@ -62,17 +68,15 @@ namespace ApolloInterop.Classes
                 int maxSleep = (int)(SleepInterval * (Jitter + 1));
                 sleepTime = (int)(random.NextDouble() * (maxSleep - minSleep) + minSleep);
             }
-            List<WaitHandle> newHandles = new List<WaitHandle>();
-            newHandles.Add(_sleepReset);
-            newHandles.Add(_exit);
+            WaitHandle[] sleepers = _agentSleepHandles;
             if (handles != null)
             {
-                foreach(WaitHandle h in handles)
-                {
-                    newHandles.Add(h);
-                }
+                WaitHandle[] tmp = new WaitHandle[handles.Length + sleepers.Length];
+                Array.Copy(handles, tmp, handles.Length);
+                Array.Copy(sleepers, 0, tmp, handles.Length, sleepers.Length);
+                sleepers = tmp;
             }
-            WaitHandle.WaitAny(newHandles.ToArray(), sleepTime);
+            WaitHandle.WaitAny(sleepers, sleepTime);
         }
 
         public abstract bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse);

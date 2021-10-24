@@ -17,11 +17,6 @@ using ApolloInterop.Classes.Collections;
 
 namespace Apollo.Management.Tasks
 {
-
-    internal struct TaskInformation {
-        Task Task;
-        CancellationToken Token;
-    }
     public class TaskManager : ITaskManager
     {
         protected IAgent _agent;
@@ -259,6 +254,11 @@ namespace Apollo.Management.Tasks
                 Socks = dgs.ToArray()
             };
             return onResponse(msg);
+        }
+
+        public string[] GetExecutingTaskIds()
+        {
+            return _runningTasks.Keys.ToArray();
         }
 
         public bool CancelTask(string taskId)
