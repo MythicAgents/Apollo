@@ -35,7 +35,7 @@ class JobsCommand(CommandBase):
         return task
 
     async def process_response(self, response: AgentResponse):
-        resp = json.loads(response.response["jobs"])
+        resp = response.response["jobs"]
         jobs = []
         for job in resp['jobs']:
             job_resp = await MythicRPC().execute("get_task_for_id",
