@@ -10,8 +10,8 @@ function(task, responses){
         let rows = [];
         let headers = [
             {"plaintext": "kill", "type": "button", "cellStyle": {}, "width": 6},
-            {"plaintext": "operator", "type": "string", "cellStyle": {}, "width": 6},
-            {"plaintext": "command", "type": "string", "cellStyle": {}, "width": 8},
+            {"plaintext": "operator", "type": "string", "cellStyle": {}, "width": 10},
+            {"plaintext": "command", "type": "string", "cellStyle": {}, "width": 10},
             {"plaintext": "arguments", "type": "string", "cellStyle": {}},
         ];
         for(let i = 0; i < responses.length; i++)
