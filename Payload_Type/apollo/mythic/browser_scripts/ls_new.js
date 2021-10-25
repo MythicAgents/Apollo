@@ -24,6 +24,7 @@ function(task, responses){
             {"plaintext": "DL", "type": "button", "cellStyle": {}, "width": 6},
             {"plaintext": "ACT", "type": "button", "cellStyle": {}, "width": 6}
         ];
+        let tableHeader = "";
         for(let i = 0; i < responses.length; i++)
         {
             try{
@@ -39,9 +40,9 @@ function(task, responses){
             if(data["parent_path"] === "/"){
                 ls_path = data["parent_path"] + data["name"];
             }else{
-                ls_path = data["parent_path"] + "/" + data["name"];
+                ls_path = data["parent_path"] + "\\" + data["name"];
             }
-            
+            tableHeader = "Contents of " + ls_path;
             for(let j = 0; j < data["files"].length; j++){
                 let finfo = data["files"][j];
                 let buttonSettings = {};
@@ -108,7 +109,7 @@ function(task, responses){
         return {"table":[{
             "headers": headers,
             "rows": rows,
-            "title": "File Listing Data"
+            "title": tableHeader,
         }]};
     }else{
         // this means we shouldn't have any output
