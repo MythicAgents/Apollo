@@ -59,5 +59,7 @@ class ScreenshotCommand(CommandBase):
                     "create_output",
                     task_id=task.id,
                     output=file_id)
+                if resp.status != MythicStatus.Success:
+                    raise Exception("Failed to create output")
 
         return task
