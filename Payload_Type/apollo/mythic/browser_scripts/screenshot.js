@@ -1,7 +1,7 @@
 function(task, responses){
+  console.log(responses);
   if(task.completed){
     try{
-        console.log(responses);
         // let status = JSON.parse(responses[0]['response']);
     	  let id = responses[0]['response'];
         let output = "<div class='card'><div class='card-header border border-dark shadow'><a class='btn stretched-link' type='button' data-toggle='collapse' data-target='#task" + task['id'] + "screencapture' aria-expanded='false' aria-controls='task" + task['id'] + "screencapture'>Finished <font color='red'>Screencapture " + task['original_params'] + "</font>. Click to view</div>";

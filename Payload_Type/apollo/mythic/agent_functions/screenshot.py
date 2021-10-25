@@ -31,7 +31,7 @@ class ScreenshotCommand(CommandBase):
     is_remove_file = False
     author = "@reznok"
     argument_class = ScreenshotArguments
-    browser_script = BrowserScript(script_name="screenshot", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="screenshot", author="@djhohnstein", for_new_ui=True)
     attackmapping = ["T1113"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
@@ -52,7 +52,7 @@ class ScreenshotCommand(CommandBase):
                     file_id = f["agent_file_id"]
                     break
             if file_id == "":
-                task.status = MythicStatus.Failed
+                task.status = MythicStatus.Error
                 return task
             else:
                 resp = await MythicRPC().execute(
