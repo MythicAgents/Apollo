@@ -16,11 +16,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 
 namespace Tasks
 {
     public class shell : Tasking
     {
+        private AutoResetEvent _complete = new AutoResetEvent(false);
+
         public shell(IAgent agent, Task task) : base(agent, task)
         {
 
@@ -60,6 +63,15 @@ namespace Tasks
                             {
                                 Artifact.ProcessCreate((int)proc.PID, "cmd.exe", $"/S /c {_data.Parameters}")
                             }));
+                        WaitHandle.WaitAny(new WaitHandle[]
+                        {
+                            _complete,
+                            _cancellationToken.Token.WaitHandle
+                        });
+                        if (!proc.HasExited)
+                        {
+                            proc.Kill();
+                        }
                     }
                 }
             }, _cancellationToken.Token);

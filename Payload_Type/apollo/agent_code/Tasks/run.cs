@@ -18,6 +18,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 
 namespace Tasks
 {
@@ -32,7 +33,7 @@ namespace Tasks
         private LocalFree _pLocalFree;
         private CommandLineToArgvW _pCommandLineToArgvW;
 
-
+        private AutoResetEvent _complete = new AutoResetEvent(false);
         public run(IAgent agent, Task task) : base(agent, task)
         {
             _pLocalFree = _agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
@@ -92,6 +93,15 @@ namespace Tasks
                                 {
                                     Artifact.ProcessCreate((int)proc.PID, app, cmdline)
                                 }));
+                            WaitHandle.WaitAny(new WaitHandle[]
+                            {
+                                _complete,
+                                _cancellationToken.Token.WaitHandle
+                            });
+                            if (!proc.HasExited)
+                            {
+                                proc.Kill();
+                            }
                         }
                     }
                 }
@@ -102,6 +112,7 @@ namespace Tasks
         {
             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                 "", true));
+            _complete.Set();
         }
 
         private void DataReceived(object sender, ApolloInterop.Classes.Events.StringDataEventArgs e)
