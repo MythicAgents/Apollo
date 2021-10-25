@@ -39,3 +39,25 @@ class ScreenshotCommand(CommandBase):
 
     async def process_response(self, response: AgentResponse):
         pass
+
+    async def screenshot_completed(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
+        if task.status == MythicStatus.Success:
+            responses = await MythicRPC().execute(
+                "get_responses",
+                task_id=task.id,
+            )
+            file_id = ""
+            for f in responses["files"]:
+                if "agent_file_id" in f.Keys() and f["agent_file_id"] != "" and f["agent_file_id"] != None:
+                    file_id = f["agent_file_id"]
+                    break
+            if file_id == "":
+                task.status = MythicStatus.Failed
+                return task
+            else:
+                resp = await MythicRPC().execute(
+                    "create_output",
+                    task_id=task.id,
+                    output=file_id)
+
+        return task

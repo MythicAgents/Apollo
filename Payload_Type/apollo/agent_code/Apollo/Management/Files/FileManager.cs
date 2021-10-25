@@ -27,9 +27,10 @@ namespace Apollo.Management.Files
             internal AutoResetEvent Complete;
             internal ChunkedMessageStore<TaskStatus> MessageStore;
             internal byte[] Data;
-
-            internal UploadMessageTracker(bool initialState = false, ChunkedMessageStore<TaskStatus> store = null, byte[] data = null)
+            private CancellationToken _ct;
+            internal UploadMessageTracker(CancellationToken ct, bool initialState = false, ChunkedMessageStore<TaskStatus> store = null, byte[] data = null)
             {
+                _ct = ct;
                 Complete = new AutoResetEvent(initialState);
                 MessageStore = store == null ? new ChunkedMessageStore<TaskStatus>() : store;
                 Data = data;
@@ -43,6 +44,7 @@ namespace Apollo.Management.Files
             public List<TaskStatus> Statuses = new List<TaskStatus>();
             public event EventHandler<ChunkMessageEventArgs<TaskStatus>> ChunkAdd;
             public event EventHandler<ChunkMessageEventArgs<TaskStatus>> AllChunksSent;
+            private CancellationToken _ct;
             public int TotalChunks { get; private set; }
             public string FilePath { get; private set; }
             public string Hostname { get; private set; }
@@ -52,8 +54,9 @@ namespace Apollo.Management.Files
             public string FileID = "";
             private object _lock = new object();
             public bool IsScreenshot { get; private set; }
-            internal DownloadMessageTracker(byte[] data, int chunkSize, string filePath, string hostName = "", bool screenshot = false)
+            internal DownloadMessageTracker(CancellationToken ct, byte[] data, int chunkSize, string filePath, string hostName = "", bool screenshot = false)
             {
+                _ct = ct;
                 TotalChunks = (int)Math.Ceiling((double)data.Length / (double)chunkSize);
                 Chunks = new byte[TotalChunks][];
                 for(int i = 0; i < TotalChunks; i++)
@@ -75,7 +78,7 @@ namespace Apollo.Management.Files
                     ChunksSent += 1;
                 }
                 Statuses.Add(t);
-                if (ChunksSent == TotalChunks)
+                if (ChunksSent == TotalChunks || t.StatusMessage == "error" || _ct.IsCancellationRequested)
                 {
                     Complete.Set();
                     AllChunksSent?.Invoke(this, new ChunkMessageEventArgs<TaskStatus>(new TaskStatus[] { t }));
@@ -134,7 +137,7 @@ namespace Apollo.Management.Files
                     {
                         originatingHost = Environment.GetEnvironmentVariable("COMPUTERNAME");
                     }
-                    _downloadMessageStore[taskID] = new DownloadMessageTracker(content, _chunkSize, originatingPath, originatingHost, isScreenshot);
+                    _downloadMessageStore[taskID] = new DownloadMessageTracker(ct, content, _chunkSize, originatingPath, originatingHost, isScreenshot);
                     _downloadMessageStore[taskID].ChunkAdd += DownloadChunkSent;
                 }
             }
@@ -155,8 +158,8 @@ namespace Apollo.Management.Files
                 _downloadMessageStore[taskID].Complete,
                 ct.WaitHandle
             });
-            _downloadMessageStore.TryRemove(taskID, out DownloadMessageTracker _);
-            return !ct.IsCancellationRequested;
+            _downloadMessageStore.TryRemove(taskID, out DownloadMessageTracker itemTracker);
+            return !ct.IsCancellationRequested && itemTracker.ChunksSent == itemTracker.TotalChunks;
         }
 
         public bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes)
@@ -165,7 +168,7 @@ namespace Apollo.Management.Files
             {
                 if (!_uploadMessageStore.ContainsKey(taskID))
                 {
-                    _uploadMessageStore[taskID] = new UploadMessageTracker(false);
+                    _uploadMessageStore[taskID] = new UploadMessageTracker(ct, false);
                     _uploadMessageStore[taskID].MessageStore.ChunkAdd += MessageStore_ChunkAdd;
                     _uploadMessageStore[taskID].MessageStore.MessageComplete += FileManager_MessageComplete;
                 }
