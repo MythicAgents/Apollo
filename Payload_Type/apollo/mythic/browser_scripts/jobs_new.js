@@ -34,6 +34,7 @@ function(task, responses){
                     "kill": {"button": {
                         "name": "kill",
                         "type": "task",
+                        "ui_feature": "jobkill",
                         "parameters": jinfo["agent_task_id"],
                         "cellStyle": {},
                     }},
@@ -47,7 +48,7 @@ function(task, responses){
         return {"table":[{
             "headers": headers,
             "rows": rows,
-            "title": "Process List"
+            "title": "Running Jobs"
         }]};
     }else{
         // this means we shouldn't have any output

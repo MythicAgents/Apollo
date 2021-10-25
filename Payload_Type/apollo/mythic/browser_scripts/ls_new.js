@@ -22,7 +22,7 @@ function(task, responses){
             {"plaintext": "EA", "type": "button", "cellStyle": {}, "width": 6},
             {"plaintext": "ACE", "type": "button", "cellStyle": {}, "width": 6},
             {"plaintext": "DL", "type": "button", "cellStyle": {}, "width": 6},
-            {"plaintext": "LS", "type": "button", "cellStyle": {}, "width": 6}
+            {"plaintext": "ACT", "type": "button", "cellStyle": {}, "width": 6}
         ];
         for(let i = 0; i < responses.length; i++)
         {
@@ -44,6 +44,27 @@ function(task, responses){
             
             for(let j = 0; j < data["files"].length; j++){
                 let finfo = data["files"][j];
+                let buttonSettings = {};
+                if (finfo["is_file"]) {
+                    buttonSettings = {
+                        "button": {
+                            "name": "CAT",
+                            "type": "task",
+                            "ui_feature": "cat",
+                            "parameters": finfo["full_name"],
+                        },
+                        "cellStyle": {},
+                    }
+                } else {
+                    buttonSettings = {"button": {
+                        "name": "LS",
+                        "type": "task",
+                        "ui_feature": "file_browser:list",
+                        "parameters": finfo["full_name"],
+                        },
+                        "cellStyle": {},
+                    }
+                }
                 let row = {
                     "rowStyle": data["files"][j]["is_file"] ? file:  folder,
                     "name": {"plaintext": data["files"][j]["name"], "cellStyle": {}},
@@ -79,15 +100,7 @@ function(task, responses){
                         },
                         "cellStyle": {},
                     },
-                    "LS": {"button": {
-                        "name": "LS",
-                        "type": "task",
-                        "ui_feature": "file_browser:list",
-                        "parameters": finfo["full_name"],
-                        "disabled": finfo["is_file"]
-                        },
-                        "cellStyle": {},
-                    },
+                    "ACT": buttonSettings,
                 };
                 rows.push(row);
             }

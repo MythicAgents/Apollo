@@ -34,6 +34,7 @@ class CatCommand(CommandBase):
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
+    supported_ui_features = ["cat"]
     author = "@djhohnstein"
     argument_class = CatArguments
     attackmapping = ["T1081", "T1106"]

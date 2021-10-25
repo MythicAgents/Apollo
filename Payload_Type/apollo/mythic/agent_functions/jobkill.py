@@ -20,6 +20,7 @@ class JobkillCommand(CommandBase):
     description = "Kill a job specified by the job identifier (jid)."
     version = 2
     is_exit = False
+    supported_ui_features = ["jobkill"]
     is_file_browse = False
     is_process_list = False
     is_download_file = False
