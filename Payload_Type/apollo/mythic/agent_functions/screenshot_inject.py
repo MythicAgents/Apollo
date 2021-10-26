@@ -47,7 +47,7 @@ class ScreenshotInjectCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         exePath = "/srv/ScreenshotInject.exe"
         donutPath = "/Mythic/agent_code/donut"
-        command = "chmod 777 {}; chmod +x {}".format(donutPath)
+        command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         
