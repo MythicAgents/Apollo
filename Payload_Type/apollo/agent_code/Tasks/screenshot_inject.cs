@@ -193,7 +193,7 @@ namespace Tasks
                                             resp = CreateTaskResponse("", true, "completed");
                                         } else
                                         {
-                                            resp = CreateTaskResponse("One or more screenshots failed to upload.", true, "error");
+                                            resp = CreateTaskResponse("", true, "error");
                                         }
                                     }
                                     else
