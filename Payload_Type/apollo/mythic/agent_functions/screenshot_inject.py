@@ -55,6 +55,7 @@ class ScreenshotInjectCommand(CommandBase):
         # need to go through one more step to turn our exe into shellcode
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                         stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
+        stdout, stderr = await proc.communicate()
         if os.path.exists("/tmp/loader.bin"):
             file_resp = await MythicRPC().execute(
                 "create_file",
