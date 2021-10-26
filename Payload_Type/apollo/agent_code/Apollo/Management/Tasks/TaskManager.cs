@@ -204,7 +204,7 @@ namespace Apollo.Management.Tasks
             {
                 foreach(TaskStatus t in resp.Responses)
                 {
-                    if (_agent.GetFileManager().GetPendingTransfers().Contains(t.TaskID))
+                    if (_agent.GetFileManager().GetPendingTransfers().Contains(t.ApolloTrackerUUID))
                     {
                         _agent.GetFileManager().ProcessResponse(t);
                     }

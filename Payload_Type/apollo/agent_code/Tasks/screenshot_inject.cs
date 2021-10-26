@@ -176,7 +176,7 @@ namespace Tasks
                                         };
                                         WaitHandle.WaitAny(waiters);
                                         ST.Task.WaitAll(uploadTasks.ToArray());
-                                        bool bRet = uploadTasks.Where(t => t.Result == false ).ToArray().Length > 0;
+                                        bool bRet = uploadTasks.Where(t => t.Result == false ).ToArray().Length == 0;
                                         if (bRet)
                                         {
                                             resp = CreateTaskResponse("", true, "completed");
@@ -223,8 +223,7 @@ namespace Tasks
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
         {
             e.Pipe.Close();
-            _cancellationToken.Cancel();
-            _complete.Set();
+            _senderEvent.Set();
         }
 
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)

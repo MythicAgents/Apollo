@@ -555,6 +555,8 @@ namespace ApolloInterop.Structs
             public string ChunkData;
             [DataMember(Name = "file_id")]
             public string FileID;
+            [DataMember(Name = "apollo_tracker_uuid")]
+            public string ApolloTrackerUUID;
         }
 
         [DataContract]
@@ -614,6 +616,9 @@ namespace ApolloInterop.Structs
             public CommandInformation[] Commands;
             [DataMember(Name = "process_response")]
             public ProcessResponse ProcessResponse;
+            [DataMember(Name = "apollo_tracker_uuid")]
+            public string ApolloTrackerUUID;
+
             public override bool Equals(object obj)
             {
                 return obj is TaskingMessage && this.Equals((TaskResponse)obj);
