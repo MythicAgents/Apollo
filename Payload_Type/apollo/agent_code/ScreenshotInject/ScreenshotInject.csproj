@@ -4,18 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B9BDA393-C258-44D3-8266-D62265008BD4}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Tasks</RootNamespace>
-    <AssemblyName>Tasks</AssemblyName>
+    <ProjectGuid>{E05B7224-D965-422C-9B12-E6DEE1BFAC64}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ScreenshotInject</RootNamespace>
+    <AssemblyName>ScreenshotInject</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -25,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -36,8 +35,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Management" />
-    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -46,37 +43,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="assembly_inject.cs" />
-    <Compile Include="blockdlls.cs" />
-    <Compile Include="cat.cs" />
-    <Compile Include="cd.cs" />
-    <Compile Include="cp.cs" />
-    <Compile Include="download.cs" />
-    <Compile Include="execute_assembly.cs" />
-    <Compile Include="exit.cs" />
-    <Compile Include="jobkill.cs" />
-    <Compile Include="jobs.cs" />
-    <Compile Include="keylog.cs" />
-    <Compile Include="link.cs" />
-    <Compile Include="load.cs" />
-    <Compile Include="ls.cs" />
-    <Compile Include="make_token.cs" />
-    <Compile Include="net_dclist.cs" />
-    <Compile Include="powerpick.cs" />
-    <Compile Include="ppid.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ps.cs" />
-    <Compile Include="psinject.cs" />
-    <Compile Include="pwd.cs" />
-    <Compile Include="register_assembly.cs" />
-    <Compile Include="rev2self.cs" />
-    <Compile Include="run.cs" />
-    <Compile Include="screenshot.cs" />
-    <Compile Include="screenshot_inject.cs" />
-    <Compile Include="shell.cs" />
-    <Compile Include="sleep.cs" />
-    <Compile Include="steal_token.cs" />
-    <Compile Include="upload.cs" />
+    <Compile Include="Screenshot.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">

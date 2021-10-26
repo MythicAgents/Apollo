@@ -1,5 +1,5 @@
 function(task, responses){
-  if(task.status.toLowercase().includes("error")){
+  if(task.status == "error"){
         const combined = responses.reduce( (prev, cur) => {
             return prev + cur;
         }, "");

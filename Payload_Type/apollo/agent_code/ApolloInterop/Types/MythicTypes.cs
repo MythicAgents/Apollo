@@ -89,6 +89,9 @@ namespace ApolloInterop.Types
             } else if (msg == MessageType.IPCCommandArguments)
             {
                 return typeof(IPCCommandArguments);
+            } else if (msg == MessageType.ScreenshotInformation)
+            {
+                return typeof(ScreenshotInformation);
             }
             else
             {

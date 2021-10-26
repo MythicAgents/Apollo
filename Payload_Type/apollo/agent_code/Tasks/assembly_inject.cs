@@ -131,7 +131,8 @@ namespace Tasks
                         {
                             System.Diagnostics.Process.GetProcessById(parameters.PID);
                             pidRunning = true;
-                        } catch { pidRunning = false; }
+                        }
+                        catch { pidRunning = false; }
                         if (pidRunning)
                         {
                             if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
@@ -192,7 +193,8 @@ namespace Tasks
                             {
                                 resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
                             }
-                        } else
+                        }
+                        else
                         {
                             resp = CreateTaskResponse(
                                 $"Process with ID {parameters.PID} is not running.",

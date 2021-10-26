@@ -17,6 +17,23 @@ using TT = System.Threading.Tasks;
 namespace ApolloInterop.Structs.ApolloStructs
 {
 
+    [DataContract]
+    public struct ScreenshotInformation : IMythicMessage
+    {
+        [DataMember]
+        public byte[] Data;
+
+        public ScreenshotInformation(byte[] screenBytes)
+        {
+            Data = screenBytes;
+        }
+
+        public MessageType GetTypeCode()
+        {
+            return MessageType.ScreenshotInformation;
+        }
+    }
+
     public struct ApolloTokenInformation
     {
         public IntPtr Token;

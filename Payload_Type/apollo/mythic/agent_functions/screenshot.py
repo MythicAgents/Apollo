@@ -29,7 +29,7 @@ class ScreenshotCommand(CommandBase):
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
-    author = "@reznok"
+    author = "@reznok, @djhohnstein"
     argument_class = ScreenshotArguments
     browser_script = BrowserScript(script_name="screenshot", author="@djhohnstein", for_new_ui=True)
     attackmapping = ["T1113"]
