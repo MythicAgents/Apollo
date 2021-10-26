@@ -72,10 +72,11 @@ namespace Tasks
                             _data.ID,
                             fileBytes,
                             parameters.FileName,
+                            out string mythicFileId,
                             false,
                             parameters.Hostname))
                         {
-                            resp = CreateTaskResponse("", true, "completed", artifacts);
+                            resp = CreateTaskResponse(mythicFileId, true, "completed", artifacts);
                         } else
                         {
                             resp = CreateTaskResponse(

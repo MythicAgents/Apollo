@@ -35,7 +35,7 @@ class ScreenshotCommand(CommandBase):
     attackmapping = ["T1113"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.completed_callback_function = self.screenshot_completed
+        # task.completed_callback_function = self.screenshot_completed
         return task
 
     async def process_response(self, response: AgentResponse):
