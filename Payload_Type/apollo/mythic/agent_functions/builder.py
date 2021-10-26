@@ -132,7 +132,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 targetScreenshotInjectPath = "/srv/ScreenshotInject.exe"
                 shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
                 shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
-                shutil.move("{}/PowerShellHost/bin/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
+                shutil.move("{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
                 if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
