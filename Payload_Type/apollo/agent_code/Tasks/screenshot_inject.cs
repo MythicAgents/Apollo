@@ -38,6 +38,7 @@ namespace Tasks
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private AutoResetEvent _receiverEvent = new AutoResetEvent(false);
         private AutoResetEvent _putFilesEvent = new AutoResetEvent(false);
+        private AutoResetEvent _filesSent = new AutoResetEvent(false);
 
         private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private ConcurrentQueue<byte[]> _putFilesQueue = new ConcurrentQueue<byte[]>();
@@ -46,6 +47,8 @@ namespace Tasks
         private AutoResetEvent _complete = new AutoResetEvent(false);
         private Action<object> _sendAction;
         private Action<object> _putFilesAction;
+
+        private bool bRet = true;
 
         private bool _completed = false;
 
@@ -91,8 +94,15 @@ namespace Tasks
                         uploadTask.Start();
                     }
                 }
-                ST.Task.WaitAll(uploadTasks.ToArray());
-                _putFilesEvent.Set();
+                ST.Task.WaitAll(uploadTasks.ToArray(), _cancellationToken.Token);
+                foreach(ST.Task<bool> t in uploadTasks)
+                {
+                    if (!t.Result)
+                    {
+                        bRet = false;
+                    }
+                }
+                _filesSent.Set();
             };
         }
 
@@ -189,12 +199,18 @@ namespace Tasks
                                         }
                                         _completed = true;
                                         _complete.Set();
-                                        WaitHandle.WaitAll(new WaitHandle[]
+                                        WaitHandle.WaitAny(new WaitHandle[]
                                         {
-                                            _complete,
-                                            _putFilesEvent
+                                            _filesSent,
+                                            _cancellationToken.Token.WaitHandle
                                         });
-                                        resp = CreateTaskResponse("", true, "completed");
+                                        if (!bRet)
+                                        {
+                                            resp = CreateTaskResponse("One or more screenshots failed to send to Mytyhic.", true, "error");
+                                        } else
+                                        {
+                                            resp = CreateTaskResponse("", true);
+                                        }
                                     }
                                     else
                                     {
@@ -234,13 +250,12 @@ namespace Tasks
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
         {
             e.Pipe.Close();
-            _cancellationToken.Cancel();
-            _complete.Set();
         }
 
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
         {
             System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe, _cancellationToken.Token);
+            System.Threading.Tasks.Task.Factory.StartNew(_putFilesAction, null, _cancellationToken.Token);
         }
 
         private void OnAsyncMessageSent(IAsyncResult result)
