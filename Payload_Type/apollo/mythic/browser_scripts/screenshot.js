@@ -5,7 +5,7 @@ function(task, responses){
       responseArr.push({
           "agent_file_id": responses[i],
           "variant": "contained",
-          "name": "View Screenshot"
+          "name": "View Screenshot " + String(i+1)
       });
     }
     return {"screenshot": responseArr};
