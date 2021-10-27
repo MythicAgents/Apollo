@@ -86,7 +86,8 @@ namespace ApolloInterop.Enums
             IPCCommandArguments,
             ProcessInformation,
             CommandInformation,
-            ScreenshotInformation
+            ScreenshotInformation,
+            KeylogInformation
         }
     }
 }

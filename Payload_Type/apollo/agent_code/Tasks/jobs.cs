@@ -30,7 +30,10 @@ namespace Tasks
                     }
                 }
                 TaskResponse resp = CreateTaskResponse("", true, "completed");
-                resp.ProcessResponse.Jobs = realJids.ToArray();
+                resp.ProcessResponse = new ApolloInterop.Structs.ApolloStructs.ProcessResponse
+                {
+                    Jobs = realJids.ToArray()
+                };
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }

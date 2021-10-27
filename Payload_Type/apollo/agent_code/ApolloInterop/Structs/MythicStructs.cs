@@ -615,7 +615,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "commands")]
             public CommandInformation[] Commands;
             [DataMember(Name = "process_response")]
-            public ProcessResponse ProcessResponse;
+            public ProcessResponse? ProcessResponse;
             [DataMember(Name = "apollo_tracker_uuid")]
             public string ApolloTrackerUUID;
 
