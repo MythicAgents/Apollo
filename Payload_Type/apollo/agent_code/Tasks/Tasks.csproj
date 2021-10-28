@@ -56,13 +56,11 @@
     <Compile Include="exit.cs" />
     <Compile Include="jobkill.cs" />
     <Compile Include="jobs.cs" />
-    <Compile Include="keylog.cs" />
     <Compile Include="keylog_inject.cs" />
     <Compile Include="link.cs" />
     <Compile Include="load.cs" />
     <Compile Include="ls.cs" />
     <Compile Include="make_token.cs" />
-    <Compile Include="net_dclist.cs" />
     <Compile Include="powerpick.cs" />
     <Compile Include="ppid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
