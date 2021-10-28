@@ -1,4 +1,12 @@
-﻿using ApolloInterop.Classes;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define SCREENSHOT_INJECT
+#endif
+
+#if SCREENSHOT_INJECT
+
+using ApolloInterop.Classes;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
@@ -294,3 +302,4 @@ namespace Tasks
         }
     }
 }
+#endif

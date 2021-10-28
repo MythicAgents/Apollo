@@ -51,6 +51,7 @@ namespace ApolloInterop.Classes
                 List<Artifact> artifacts = new List<Artifact>();
                 List<ProcessInformation> processes = new List<ProcessInformation>();
                 List<CommandInformation> cmds = new List<CommandInformation>();
+                List<KeylogInformation> keylogs = new List<KeylogInformation>();
                 foreach (IMythicMessage msg in messages)
                 {
                     switch (msg.GetTypeCode())
@@ -82,6 +83,9 @@ namespace ApolloInterop.Classes
                         case MessageType.ProcessInformation:
                             processes.Add((ProcessInformation)msg);
                             break;
+                        case MessageType.KeylogInformation:
+                            keylogs.Add((KeylogInformation)msg);
+                            break;
                         default:
                             throw new Exception($"Unhandled message type while generating response: {msg.GetTypeCode()}");
                     }
@@ -91,6 +95,7 @@ namespace ApolloInterop.Classes
                 resp.RemovedFiles = removed.ToArray();
                 resp.Artifacts = artifacts.ToArray();
                 resp.Commands = cmds.ToArray();
+                resp.Keylogs = keylogs.ToArray();
                 if (processes.Count > 0)
                 {
                     resp.Processes = processes.ToArray();

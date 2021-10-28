@@ -20,6 +20,7 @@ using System.IO;
 using System.Security.AccessControl;
 using TT = System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Globalization;
 
 namespace Tasks
 {
@@ -110,6 +111,59 @@ namespace Tasks
             }
         }
 
+        /// <summary>
+        /// Gets the exact case used on the file system for an existing file or directory.
+        /// </summary>
+        /// <param name="path">A relative or absolute path.</param>
+        /// <param name="exactPath">The full path using the correct case if the path exists.  Otherwise, null.</param>
+        /// <returns>True if the exact path was found.  False otherwise.</returns>
+        /// <remarks>
+        /// This supports drive-lettered paths and UNC paths, but a UNC root
+        /// will be returned in title case (e.g., \\Server\Share).
+        /// </remarks>
+        public static bool TryGetExactPath(string path, out string exactPath)
+        {
+            bool result = false;
+            exactPath = null;
+
+            // DirectoryInfo accepts either a file path or a directory path, and most of its properties work for either.
+            // However, its Exists property only works for a directory path.
+            DirectoryInfo directory = new DirectoryInfo(path);
+            if (File.Exists(path) || directory.Exists)
+            {
+                List<string> parts = new List<string>();
+
+                DirectoryInfo parentDirectory = directory.Parent;
+                while (parentDirectory != null)
+                {
+                    FileSystemInfo entry = parentDirectory.EnumerateFileSystemInfos(directory.Name).First();
+                    parts.Add(entry.Name);
+
+                    directory = parentDirectory;
+                    parentDirectory = directory.Parent;
+                }
+
+                // Handle the root part (i.e., drive letter or UNC \\server\share).
+                string root = directory.FullName;
+                if (root.Contains(':'))
+                {
+                    root = root.ToUpper();
+                }
+                else
+                {
+                    string[] rootParts = root.Split('\\');
+                    root = string.Join("\\", rootParts.Select(part => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(part)));
+                }
+
+                parts.Add(root);
+                parts.Reverse();
+                exactPath = Path.Combine(parts.ToArray());
+                result = true;
+            }
+
+            return result;
+        }
+
         public ls(IAgent agent, Task task) : base(agent, task)
         {
 
@@ -136,144 +190,151 @@ namespace Tasks
                 {
                     Host = host
                 };
-                string errorMessage = "";
-                bool bRet = true;
-                FileDataStream ds = new FileDataStream();
-                ds.FileChunkReached += (object o, EventArgs _) =>
+                if (TryGetExactPath(path, out path))
                 {
-                    FileDataStream tmp = (FileDataStream)o;
-                    List<FileInformation> tmpStore = new List<FileInformation>();
-                    int i = 0;
-                    while (i < 20 &&
-                    tmp.FileQueue.TryDequeue(out FileInformation res))
+                    string errorMessage = "";
+                    bool bRet = true;
+                    FileDataStream ds = new FileDataStream();
+                    ds.FileChunkReached += (object o, EventArgs _) =>
                     {
-                        tmpStore.Add(res);
-                    }
-                    results.Success = true;
-                    results.Files = tmpStore.ToArray();
-                    var tmpResp = CreateTaskResponse(
-                        _jsonSerializer.Serialize(results),
-                        false,
-                        "",
-                        new IMythicMessage[]
+                        FileDataStream tmp = (FileDataStream)o;
+                        List<FileInformation> tmpStore = new List<FileInformation>();
+                        int i = 0;
+                        while (i < 20 &&
+                        tmp.FileQueue.TryDequeue(out FileInformation res))
                         {
-                            results
-                        });
-                    _agent.GetTaskManager().AddTaskResponseToQueue(tmpResp);
-                };
-                if (File.Exists(path))
-                {
-                    try
-                    {
-                        var tmp = new FileInfo(path);
-                        FileInformation finfo = new FileInformation(tmp, null);
-                        results.IsFile = true;
-                        results.Name = finfo.Name;
-                        results.ParentPath = finfo.Directory;
-                        results.CreationDate = finfo.CreationDate;
-                        results.AccessTime = finfo.AccessTime;
-                        results.ModifyTime = finfo.ModifyTime;
-                        results.Size = finfo.Size;
-                        try
-                        {
-                            results.Permissions = GetPermissions(tmp);
-                        } catch { }
-                        ds.Add(finfo);
-                    } catch (Exception ex)
-                    {
-                        bRet = false;
-                        errorMessage = $"Failed to get information on file {path}: {ex.Message}\n\n{ex.StackTrace}";
-                    }
-                } else if (Directory.Exists(path))
-                {
-                    try
-                    {
-                        DirectoryInfo dinfo = new DirectoryInfo(path);
-                        FileInformation finfo = new FileInformation(dinfo, null);
-                        results.IsFile = false;
-                        results.Name = finfo.Name;
-                        results.ParentPath = dinfo.Parent == null ? "" : dinfo.Parent.FullName;
-                        results.AccessTime = finfo.AccessTime;
-                        results.CreationDate = finfo.CreationDate;
-                        results.ModifyTime = finfo.ModifyTime;
-                        results.Size = finfo.Size;
-                        try
-                        {
-                            results.Permissions = GetPermissions(dinfo);
-                        } catch { }
-                        string[] directories = Directory.GetDirectories(path);
-                        TT.ParallelOptions po = new TT.ParallelOptions();
-                        po.CancellationToken = _cancellationToken.Token;
-                        po.MaxDegreeOfParallelism = 2;
-                        try
-                        {
-                            TT.Parallel.ForEach(directories, po, (dir) =>
+                            tmpStore.Add(res);
+                        }
+                        results.Success = true;
+                        results.Files = tmpStore.ToArray();
+                        var tmpResp = CreateTaskResponse(
+                            _jsonSerializer.Serialize(results),
+                            false,
+                            "",
+                            new IMythicMessage[]
                             {
-                                po.CancellationToken.ThrowIfCancellationRequested();
-                                try
+                                results
+                            });
+                        _agent.GetTaskManager().AddTaskResponseToQueue(tmpResp);
+                    };
+                    if (File.Exists(path))
+                    {
+                        try
+                        {
+                            var tmp = new FileInfo(path);
+                            FileInformation finfo = new FileInformation(tmp, null);
+                            results.IsFile = true;
+                            results.Name = finfo.Name;
+                            results.ParentPath = finfo.Directory;
+                            results.CreationDate = finfo.CreationDate;
+                            results.AccessTime = finfo.AccessTime;
+                            results.ModifyTime = finfo.ModifyTime;
+                            results.Size = finfo.Size;
+                            try
+                            {
+                                results.Permissions = GetPermissions(tmp);
+                            } catch { }
+                            ds.Add(finfo);
+                        } catch (Exception ex)
+                        {
+                            bRet = false;
+                            errorMessage = $"Failed to get information on file {path}: {ex.Message}\n\n{ex.StackTrace}";
+                        }
+                    } else if (Directory.Exists(path))
+                    {
+                        try
+                        {
+                            DirectoryInfo dinfo = new DirectoryInfo(path);
+                            FileInformation finfo = new FileInformation(dinfo, null);
+                            results.IsFile = false;
+                            results.Name = finfo.Name;
+                            results.ParentPath = dinfo.Parent == null ? "" : dinfo.Parent.FullName;
+                            results.AccessTime = finfo.AccessTime;
+                            results.CreationDate = finfo.CreationDate;
+                            results.ModifyTime = finfo.ModifyTime;
+                            results.Size = finfo.Size;
+                            try
+                            {
+                                results.Permissions = GetPermissions(dinfo);
+                            } catch { }
+                            string[] directories = Directory.GetDirectories(path);
+                            TT.ParallelOptions po = new TT.ParallelOptions();
+                            po.CancellationToken = _cancellationToken.Token;
+                            po.MaxDegreeOfParallelism = 2;
+                            try
+                            {
+                                TT.Parallel.ForEach(directories, po, (dir) =>
                                 {
-                                    var tmp = new DirectoryInfo(dir);
-                                    FileInformation dirInfo = new FileInformation(tmp, null);
+                                    po.CancellationToken.ThrowIfCancellationRequested();
                                     try
                                     {
-                                        dirInfo.Permissions = GetPermissions(tmp);
+                                        var tmp = new DirectoryInfo(dir);
+                                        FileInformation dirInfo = new FileInformation(tmp, null);
+                                        try
+                                        {
+                                            dirInfo.Permissions = GetPermissions(tmp);
+                                        }
+                                        catch { }
+                                        ds.Add(dirInfo);
                                     }
                                     catch { }
-                                    ds.Add(dirInfo);
-                                }
-                                catch { }
-                            });
-                        } catch (OperationCanceledException)
-                        {
-
-                        }
-                        string[] dirFiles = Directory.GetFiles(path);
-                        try
-                        {
-                            TT.Parallel.ForEach(dirFiles, po, (f) =>
+                                });
+                            } catch (OperationCanceledException)
                             {
-                                po.CancellationToken.ThrowIfCancellationRequested();
-                                try
+
+                            }
+                            string[] dirFiles = Directory.GetFiles(path);
+                            try
+                            {
+                                TT.Parallel.ForEach(dirFiles, po, (f) =>
                                 {
-                                    var tmp = new FileInfo(f);
-                                    FileInformation newFinfo = new FileInformation(tmp, null);
+                                    po.CancellationToken.ThrowIfCancellationRequested();
                                     try
                                     {
-                                        newFinfo.Permissions = GetPermissions(tmp);
+                                        var tmp = new FileInfo(f);
+                                        FileInformation newFinfo = new FileInformation(tmp, null);
+                                        try
+                                        {
+                                            newFinfo.Permissions = GetPermissions(tmp);
+                                        }
+                                        catch { }
+                                        ds.Add(newFinfo);
                                     }
                                     catch { }
-                                    ds.Add(newFinfo);
-                                }
-                                catch { }
-                            });
-                        }
-                        catch (OperationCanceledException)
-                        {
+                                });
+                            }
+                            catch (OperationCanceledException)
+                            {
 
+                            }
+                        } catch (Exception ex)
+                        {
+                            bRet = false;
+                            errorMessage = $"Failed to get information on directory {path}: {ex.Message}\n\n{ex.StackTrace}";
                         }
-                    } catch (Exception ex)
+                    } else
                     {
                         bRet = false;
-                        errorMessage = $"Failed to get information on directory {path}: {ex.Message}\n\n{ex.StackTrace}";
+                        errorMessage = $"Could not find file or directory {path}";
                     }
+
+                    results.Success = bRet;
+                    results.Files = ds.GetAll().ToArray();
+
+                    TaskResponse resp = CreateTaskResponse(
+                            bRet ? _jsonSerializer.Serialize(results) : errorMessage,
+                            true,
+                            bRet ? "completed" : "error",
+                            new IMythicMessage[]
+                            {
+                                results
+                            });
+                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                 } else
                 {
-                    bRet = false;
-                    errorMessage = $"Could not find file or directory {path}";
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                        $"Failed to get exact path.", true, "error"));
                 }
-
-                results.Success = bRet;
-                results.Files = ds.GetAll().ToArray();
-
-                TaskResponse resp = CreateTaskResponse(
-                        bRet ? _jsonSerializer.Serialize(results) : errorMessage,
-                        true,
-                        bRet ? "completed" : "error",
-                        new IMythicMessage[]
-                        {
-                            results
-                        });
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
     }

