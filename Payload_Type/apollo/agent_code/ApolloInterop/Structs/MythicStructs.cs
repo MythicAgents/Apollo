@@ -86,7 +86,7 @@ namespace ApolloInterop.Structs
         public struct MythicEncryption
         {
             [DataMember(Name = "crypto_type")]
-            public bool IsCrypto;
+            public string CryptoType;
             [DataMember(Name = "enc_key")]
             public string EncryptionKey;
             [DataMember(Name = "dec_key")]
