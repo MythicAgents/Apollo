@@ -1,4 +1,12 @@
-﻿using ApolloInterop.Classes;
+﻿#define COMMAND_NAME_UPPER
+
+#if DEBUG
+#define KEYLOG_INJECT
+#endif
+
+#if KEYLOG_INJECT
+
+using ApolloInterop.Classes;
 using ApolloInterop.Classes.Collections;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
@@ -214,3 +222,4 @@ namespace Tasks
         }
     }
 }
+#endif
