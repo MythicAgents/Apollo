@@ -66,6 +66,7 @@ namespace Tasks
                         ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                     }
                 }
+                ps.Close();
                 _complete.Set();
             };
 
@@ -103,7 +104,9 @@ namespace Tasks
 
         public override void Kill()
         {
+            _completed = true;
             _cancellationToken.Cancel();
+            _complete.Set();
         }
 
         public override System.Threading.Tasks.Task CreateTasking()
@@ -170,8 +173,11 @@ namespace Tasks
                                                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
                                             }
                                             _senderEvent.Set();
-                                            _complete.WaitOne();
-                                            _completed = true;
+                                            WaitHandle.WaitAny(new WaitHandle[]
+                                            {
+                                                _complete,
+                                                _cancellationToken.Token.WaitHandle
+                                            });
                                             resp = CreateTaskResponse("", true, "completed");
                                         } else
                                         {
@@ -222,6 +228,7 @@ namespace Tasks
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
         {
             e.Pipe.Close();
+            _completed = true;
             _cancellationToken.Cancel();
             _complete.Set();
         }

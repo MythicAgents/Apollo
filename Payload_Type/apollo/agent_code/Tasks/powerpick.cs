@@ -64,6 +64,7 @@ namespace Tasks
                         ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                     }
                 }
+                ps.Close();
                 _complete.Set();
             };
 

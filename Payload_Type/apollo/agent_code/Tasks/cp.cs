@@ -55,7 +55,7 @@ namespace Tasks
                     FileInfo dest = new FileInfo(parameters.DestinationFile);
                     artifacts.Add(Artifact.FileWrite(dest.FullName, source.Length));
                     resp = CreateTaskResponse(
-                        $"Copied {source.FullName} to {source.FullName}",
+                        $"Copied {source.FullName} to {dest.FullName}",
                         true,
                         "completed",
                         artifacts.ToArray());
