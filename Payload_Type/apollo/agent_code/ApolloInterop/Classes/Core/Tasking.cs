@@ -17,7 +17,6 @@ namespace ApolloInterop.Classes
         protected Task _data;
         protected static JsonSerializer _jsonSerializer = new JsonSerializer();
         protected CancellationTokenSource _cancellationToken;
-        public System.Threading.Tasks.Task RunningTask { get; protected set; }
         public Tasking(IAgent agent, Task data)
         {
             _agent = agent;
@@ -35,7 +34,6 @@ namespace ApolloInterop.Classes
         public virtual void Kill()
         {
             _cancellationToken.Cancel();
-            ThreadingTask.WaitAny(new ThreadingTask[] { RunningTask }, 60000);
         }
 
         public virtual TaskResponse CreateTaskResponse(object userOutput, bool completed, string status = "completed", IEnumerable<IMythicMessage> messages = null)
