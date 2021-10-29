@@ -141,17 +141,28 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     resp.status = BuildStatus.Success
                     resp.build_stdout = stdout_err
                 else:
-                    donutPic = None
-                    # need to go through one more step to turn our exe into shellcode
-                    donutPic = donut.create(file=output_path, arch=3)
+                    shellcode_path = "{}/loader.bin".format(agent_build_path.name)
+                    donutPath = "/Mythic/agent_code/donut"
+                    command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
+                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
+                    stdout, stderr = await proc.communicate()
                     
-                    if (donutPic is None):
+                    command = "{} -f 1 {}".format(donutPath, output_path)
+                    # need to go through one more step to turn our exe into shellcode
+                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
+                                                    stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                    stdout, stderr = await proc.communicate()
+                    
+                    stdout_err += f'[stdout]\n{stdout.decode()}\n'
+                    stdout_err += f'[stderr]\n{stderr.decode()}'
+
+                    if (not os.path.exists(shellcode_path)):
                         resp.message = "Failed to create shellcode"
                         resp.status = BuildStatus.Error
                         resp.payload = b""
                         resp.build_stderr = stdout_err
                     else:
-                        resp.payload = donutPic
+                        resp.payload = open(shellcode_path, 'rb').read()
                         resp.message = success_message
                         resp.status = BuildStatus.Success
                         resp.build_stdout = stdout_err

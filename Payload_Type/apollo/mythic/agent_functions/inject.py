@@ -10,7 +10,6 @@ class InjectArguments(TaskArguments):
         self.args = {
             "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["apollo"], supported_agent_build_parameters={"apollo": {"output_type": "Shellcode"}}),
             "pid": CommandParameter(name="PID", type=ParameterType.Number),
-            "arch": CommandParameter(name="Architecture", type=ParameterType.ChooseOne, choices=["x64", "x86"])
         }
 
     errorMsg = "Missing required parameter: {}"
