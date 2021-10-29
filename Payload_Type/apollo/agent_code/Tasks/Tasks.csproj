@@ -35,6 +35,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
@@ -62,6 +63,10 @@
     <Compile Include="load.cs" />
     <Compile Include="ls.cs" />
     <Compile Include="make_token.cs" />
+    <Compile Include="net_dclist.cs" />
+    <Compile Include="net_localgroup.cs" />
+    <Compile Include="net_localgroup_member.cs" />
+    <Compile Include="net_shares.cs" />
     <Compile Include="powerpick.cs" />
     <Compile Include="ppid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

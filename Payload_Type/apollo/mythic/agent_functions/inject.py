@@ -60,10 +60,8 @@ class InjectCommand(CommandBase):
                         task.args.add_arg("shellcode", resp.response["file"]['agent_file_id'])
                         task.args.remove_arg("template")
                         task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
-                        response = await MythicRPC().execute("shinject", pid=task.args.get_arg("pid"), shellcode=pe)
-                        task.status = response.status
-                        task.stderr = response.stderr
-                        task.stdout = response.stdout
+                        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                                         command="shinject", params=task.args.to_json())
                         break
                     elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])

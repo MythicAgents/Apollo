@@ -60,7 +60,10 @@ namespace Tasks
                         if (technique.Inject())
                         {
                             resp = CreateTaskResponse(
-                                $"Injected code into {proc.ProcessName} ({proc.Id})", true);
+                                $"Injected code into {proc.ProcessName} ({proc.Id})", true, "completed",
+                                new IMythicMessage[] {
+                                    Artifact.ProcessInject(proc.Id, technique.GetType().Name)
+                                });
                         }
                         else
                         {

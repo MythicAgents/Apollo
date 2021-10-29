@@ -24,5 +24,9 @@ namespace ApolloInterop.Classes.Api
         public static Library USER32 { get { return new Library("user32.dll"); } }
         public static Library USERENV { get { return new Library("userenv.dll"); } }
         public static Library SHELL32 { get { return new Library("shell32.dll"); } }
+        public static Library SAMCLI { get { return new Library("samcli.dll"); } }
+        public static Library NETUTILS { get { return new Library("netutils.dll"); } }
+        public static Library NETAPI32 { get { return new Library("Netapi32.dll"); } }
+        public static Library SRVCLI { get { return new Library("srvcli.dll"); } }
     }
 }
