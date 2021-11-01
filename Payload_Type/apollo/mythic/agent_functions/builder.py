@@ -24,7 +24,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     build_parameters = {
         "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
     }
-    c2_profiles = ["http", "smb", "tcp"]
+    c2_profiles = ["http", "smb", "tcp", "dns"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
         BrowserScript(script_name="create_table", author="@djhohnstein"),
@@ -65,6 +65,10 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 "encrypted_exchange_check": "",
                 "payload_uuid": self.uuid,
                 "AESPSK": "",
+                "callback_domains": "",
+                "msginit": "",
+                "msgdefault": "",
+                "hmac_key": "",
             },
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
