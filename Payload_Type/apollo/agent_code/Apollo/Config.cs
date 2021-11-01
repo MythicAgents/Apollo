@@ -14,6 +14,7 @@ using PSKCryptography;
 using ApolloInterop.Serializers;
 using NamedPipeTransport;
 using TcpTransport;
+using DnsTransport;
 
 namespace Apollo
 {

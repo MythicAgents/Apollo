@@ -82,6 +82,10 @@
       <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
       <Name>ApolloInterop</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DnsProfile\DnsProfile.csproj">
+      <Project>{0584449a-65f2-4bf7-ae8a-6a7dd9c04d0e}</Project>
+      <Name>DnsProfile</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EncryptedFileStore\EncryptedFileStore.csproj">
       <Project>{21b9b3fa-acbf-4ed2-a0bb-2782e708f6f9}</Project>
       <Name>EncryptedFileStore</Name>

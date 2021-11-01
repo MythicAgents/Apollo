@@ -41,8 +41,41 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="DnsProfile.cs" />
+    <Compile Include="DnsRip\Enums.cs" />
+    <Compile Include="DnsRip\Extensions\Extensions.cs" />
+    <Compile Include="DnsRip\Models\DnsHeader.cs" />
+    <Compile Include="DnsRip\Models\DnsQuestion.cs" />
+    <Compile Include="DnsRip\Models\DnsRequest.cs" />
+    <Compile Include="DnsRip\Models\DnsResponse.cs" />
+    <Compile Include="DnsRip\Models\ParseResult.cs" />
+    <Compile Include="DnsRip\Models\Record.cs" />
+    <Compile Include="DnsRip\Models\RecordA.cs" />
+    <Compile Include="DnsRip\Models\RecordAaaa.cs" />
+    <Compile Include="DnsRip\Models\RecordCName.cs" />
+    <Compile Include="DnsRip\Models\RecordMx.cs" />
+    <Compile Include="DnsRip\Models\RecordNs.cs" />
+    <Compile Include="DnsRip\Models\RecordPtr.cs" />
+    <Compile Include="DnsRip\Models\RecordSoa.cs" />
+    <Compile Include="DnsRip\Models\RecordTxt.cs" />
+    <Compile Include="DnsRip\Models\RecordUnknown.cs" />
+    <Compile Include="DnsRip\Models\ResolveResponse.cs" />
+    <Compile Include="DnsRip\Parser.cs" />
+    <Compile Include="DnsRip\Resolver.cs" />
+    <Compile Include="DnsRip\Utilites\AdditionalReader.cs" />
+    <Compile Include="DnsRip\Utilites\AnswerReader.cs" />
+    <Compile Include="DnsRip\Utilites\AuthorityReader.cs" />
+    <Compile Include="DnsRip\Utilites\RecordHelper.cs" />
+    <Compile Include="DnsRip\Utilites\RecordReader.cs" />
+    <Compile Include="DnsRip\Utilites\SocketHelper.cs" />
+    <Compile Include="DnsRip\Utilites\Validator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
+      <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
+      <Name>ApolloInterop</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
