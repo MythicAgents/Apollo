@@ -140,7 +140,7 @@ namespace DnsTransport
         {
             if (this.is_fallback == true)
             {
-                Agent.Sleep();
+                Thread.Sleep(this.CallbackInterval * 1000);
             }
         }
 
@@ -260,7 +260,6 @@ namespace DnsTransport
                         this.channel = channel;
 
                     }
-
                     this.bit_flip = this.agent_turn;
                     this.next_seq = seq;
                     this.init_seq = seq;
@@ -404,6 +403,8 @@ namespace DnsTransport
             {
 
                 int packet_pos = seq - this.init_seq;
+
+
                 this.dns_msg[packet_pos] = packet;
 
                 if (this.dns_msg.Count == this.message_count)
@@ -436,6 +437,7 @@ namespace DnsTransport
                         }
                         else
                         {
+                            this.bit_flip = this.message_count_turn;
                             return;
                         }
                     }
@@ -505,18 +507,21 @@ namespace DnsTransport
                                 {
                                     if (dFields.ContainsKey("data") && !string.IsNullOrEmpty(dFields["data"]))
                                     {
-                                        add_packet(seq_resp, dFields["data"]);
+                                        try
+                                        {
+                                            add_packet(seq_resp, dFields["data"]);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            this.bit_flip = this.reset_turn;
+                                        }
                                     }
                                 }
-                                else
-                                {
-                                    if (Int32.Parse(dFields["bit_flip"]) == 4)
-                                    {
-                                        this.bit_flip = this.reset_turn;
-                                    }
-                                }
-
                             }
+                        }
+                        if (Int32.Parse(dFields["bit_flip"]) == 4)
+                        {
+                            this.bit_flip = this.reset_turn;
                         }
                         reset_error_count();
                     }
@@ -562,7 +567,7 @@ namespace DnsTransport
             {
                 try
                 {
-                    for (int i = 0; i < this.next_msg_queue.Length && i < this.message_count && i < this.max_threads_conn; i++)
+                    for (int i = 0; i < this.next_msg_queue.Length && i < this.message_count && i < this.max_threads_conn && this.bit_flip == this.server_turn; i++)
                     {
                         check_fallback();
                         int new_start = seq + this.next_msg_queue[i];
@@ -576,8 +581,7 @@ namespace DnsTransport
                     }
                 }
                 catch (Exception ex)
-                {
-                }
+                {}
             }
         }
 
@@ -816,7 +820,7 @@ namespace DnsTransport
         {
             try
             {
-                
+
                 TaskingMessage new_message = (TaskingMessage)(object)message;
                 if (new_message.GetTypeCode() != MessageType.TaskingMessage)
                 {
@@ -832,7 +836,7 @@ namespace DnsTransport
                 }
             }
             catch (Exception ex)
-            {}
+            { }
             return false;
         }
 
@@ -847,7 +851,7 @@ namespace DnsTransport
             if (auxMsg == this.cached_message_client)
             {
                 is_cache = true;
-                sMsg = cache_code;
+                sMsg = this.cache_code;
             }
             else
             {
@@ -866,7 +870,6 @@ namespace DnsTransport
                     send_dns_data(domain, is_cache);
                     set_message_count(domain);
                     string enc_message = get_dns_data(domain, is_cache);//sent dns data, start receiving response
-
                     if (enc_message == this.cache_code)
                     {
                         result = this.cached_message_server;
