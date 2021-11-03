@@ -17,7 +17,7 @@ namespace Injection
         public InjectionManager(IAgent agent)
         {
             _agent = agent;
-            foreach (Type t in Assembly.GetCallingAssembly().GetTypes())
+            foreach (Type t in Assembly.GetExecutingAssembly().GetTypes())
             {
                 if (t.Namespace == "Injection.Techniques" &&
                     t.IsPublic &&

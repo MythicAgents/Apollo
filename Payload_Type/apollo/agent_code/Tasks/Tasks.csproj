@@ -82,6 +82,7 @@
     <Compile Include="run.cs" />
     <Compile Include="screenshot.cs" />
     <Compile Include="screenshot_inject.cs" />
+    <Compile Include="set_injection_technique.cs" />
     <Compile Include="shell.cs" />
     <Compile Include="shinject.cs" />
     <Compile Include="sleep.cs" />

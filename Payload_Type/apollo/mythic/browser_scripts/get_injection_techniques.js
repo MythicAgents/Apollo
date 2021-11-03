@@ -35,7 +35,7 @@ function(task, responses){
                     "set": {"button": {
                         "name": "set",
                         "type": "task",
-                        "disabled": !jinfo["is_current"],
+                        "disabled": jinfo["is_current"],
                         "ui_feature": "set_injection_technique",
                         "parameters": jinfo["name"],
                         "cellStyle": {},
