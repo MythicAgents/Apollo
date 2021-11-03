@@ -9,13 +9,7 @@ function(task, responses){
         let data = "";
         let rows = [];
         let tableTitle = "";
-        try {
-            let originalParams = JSON.parse(task.original_params);
-            tableTitle = originalParams["hive"] + "\\" + originalParams["key"];
-        } catch (error){
-            console.log("Error trying to load original params: " + error);
-            tableTitle = "Registry Listing";
-        }
+        
         let headers = [
             {"plaintext": "query", "type": "button", "cellStyle": {}, "width": 10},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
@@ -36,6 +30,13 @@ function(task, responses){
             
             for(let j = 0; j < data.length; j++){
                 let jinfo = data[j];
+                let fullname = jinfo["full_name"];
+                if (fullname[0] == "\\")
+                {
+                    fullname = jinfo["hive"] + ":" + fullname;
+                } else {
+                    fullname = jinfo["hive"] + ":\\" + fullname;
+                }
                 let row = {
                     // If process name is BAD, then highlight red.
                     "rowStyle": {},
@@ -44,7 +45,7 @@ function(task, responses){
                         "type": "task",
                         "disabled": jinfo["result_type"] != "key",
                         "ui_feature": "reg_query",
-                        "parameters": jinfo["full_name"],
+                        "parameters": fullname,
                         "cellStyle": {},
                     }},
                     "name": {"plaintext": jinfo["name"], "cellStyle": {}},
@@ -57,7 +58,7 @@ function(task, responses){
         return {"table":[{
             "headers": headers,
             "rows": rows,
-            "title": tableTitle
+            "title": task.display_params,
         }]};
     }else{
         // this means we shouldn't have any output
