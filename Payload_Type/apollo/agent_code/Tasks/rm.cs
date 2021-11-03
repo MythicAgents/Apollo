@@ -1,10 +1,10 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define YOUR_COMMAND
+#define RM
 #endif
 
-#if YOUR_COMMAND
+#if RM
 
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;

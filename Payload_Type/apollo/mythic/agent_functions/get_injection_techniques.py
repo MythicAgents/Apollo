@@ -2,21 +2,19 @@ from mythic_payloadtype_container.MythicCommandBase import *
 import json
 
 
-class ListInjectionTechniquesArguments(TaskArguments):
+class GetInjectionTechniquesArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {}
 
     async def parse_arguments(self):
-        if len(self.command_line) > 0:
-            raise Exception("list_injection_techniques takes no parameters.")
+        pass
 
-
-class ListInjectionTechniquesCommand(CommandBase):
-    cmd = "list_injection_techniques"
+class GetInjectionTechniquesCommand(CommandBase):
+    cmd = "get_injection_techniques"
     needs_admin = False
-    help_cmd = "list_injection_techniques"
+    help_cmd = "get_injection_techniques"
     description = "List the currently available injection techniques the agent knows about."
     version = 2
     is_exit = False
@@ -26,8 +24,9 @@ class ListInjectionTechniquesCommand(CommandBase):
     is_upload_file = False
     is_remove_file = False
     author = "@djhohnstein"
-    argument_class = ListInjectionTechniquesArguments
+    argument_class = GetInjectionTechniquesArguments
     attackmapping = []
+    browser_script = BrowserScript(script_name="get_injection_techniques", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task
