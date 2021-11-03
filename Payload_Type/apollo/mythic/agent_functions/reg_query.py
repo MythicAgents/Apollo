@@ -54,7 +54,7 @@ class RegQuery(CommandBase):
     author = "@djhohnstein"
     argument_class = RegQueryArguments
     attackmapping = ["T1012", "T1552"]
-    ui_features = ["reg_query"]
+    supported_ui_features = ["reg_query"]
     browser_script = BrowserScript(script_name="reg_query", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
