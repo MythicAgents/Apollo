@@ -7,8 +7,9 @@ class RmArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "path": CommandParameter(name="File to Remove", type=ParameterType.String, description="The file to remove on the specified host (if empty, defaults to localhost)", required=True),
-            "host": CommandParameter(name="Host", type=ParameterType.String, description="Computer from which to remove the file.", required=False)
+            "path": CommandParameter(name="Directory of File", type=ParameterType.String, description="The file to remove on the specified host (if empty, defaults to localhost)", required=True),
+            "file": CommandParameter(name="File", type=ParameterType.String, description="The file to remove on the specified host (if empty, defaults to localhost)", required=False),
+            "host": CommandParameter(name="Host", type=ParameterType.String, description="Computer from which to remove the file.", required=False),
         }
 
     async def parse_arguments(self):
@@ -21,18 +22,13 @@ class RmArguments(TaskArguments):
                     final = self.command_line.find("\\", 2)
                     if final != -1:
                         host = self.command_line[2:final]
+                    else:
+                        raise Exception("Invalid UNC path: {}".format(self.command_line))
                 self.add_arg("host", host)
                 self.add_arg("path", self.command_line)
         else:
             raise Exception("rm requires a path to remove.\n\tUsage: {}".format(RmCommand.help_cmd))
-        path = self.get_arg("path")
-        if path != "" and path != None:
-            path = path.strip()
-            if path[0] == '"' and path[-1] == '"':
-                path = path[1:-1]
-            elif path[0] == "'" and path[-1] == "'":
-                path = path[1:-1]
-            self.add_arg("path", path)
+
 
 
 class RmCommand(CommandBase):

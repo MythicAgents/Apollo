@@ -9,6 +9,7 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
+using ApolloInterop.Utils;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -56,93 +57,26 @@ namespace Tasks
 
         private static string[] GetValueNames(string hive, string subkey)
         {
-            string[] results = new string[0];
-            RegistryKey regKey;
-            switch (hive)
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
             {
-                case "HKU":
-                    regKey = Registry.Users.OpenSubKey(subkey);
-                    break;
-                case "HKCC":
-                    regKey = Registry.CurrentConfig.OpenSubKey(subkey);
-                    break;
-                case "HKCU":
-                    regKey = Registry.CurrentUser.OpenSubKey(subkey);
-                    break;
-                case "HKLM":
-                    regKey = Registry.LocalMachine.OpenSubKey(subkey);
-                    break;
-                case "HKCR":
-                    regKey = Registry.ClassesRoot.OpenSubKey(subkey);
-                    break;
-                default:
-                    throw new Exception($"Unknown registry hive: {hive}");
+                return regKey.GetValueNames();
             }
-            if (regKey != null)
-            {
-                results = regKey.GetValueNames();
-            }
-            regKey.Close();
-            return results;
         }
 
         private static object GetValue(string hive, string subkey, string key)
         {
-            RegistryKey regKey;
-            object val;
-            switch (hive)
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
             {
-                case "HKU":
-                    regKey = Registry.Users.OpenSubKey(subkey);
-                    break;
-                case "HKCC":
-                    regKey = Registry.CurrentConfig.OpenSubKey(subkey);
-                    break;
-                case "HKCU":
-                    regKey = Registry.CurrentUser.OpenSubKey(subkey);
-                    break;
-                case "HKLM":
-                    regKey = Registry.LocalMachine.OpenSubKey(subkey);
-                    break;
-                case "HKCR":
-                    regKey = Registry.ClassesRoot.OpenSubKey(subkey);
-                    break;
-                default:
-                    throw new Exception($"Unknown registry hive: {hive}");
+                return regKey.GetValue(key);
             }
-            val = regKey.GetValue(key);
-            regKey.Close();
-            return val;
         }
 
         private static string[] GetSubKeys(string hive, string subkey)
         {
-            // subkey is gonna be in format of HKLM:\, HKCU:\, HKCR:\
-            RegistryKey regKey;
-            string[] results = new string[0];
-            switch (hive)
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
             {
-                case "HKU":
-                    regKey = Registry.Users.OpenSubKey(subkey);
-                    break;
-                case "HKCC":
-                    regKey = Registry.CurrentConfig.OpenSubKey(subkey);
-                    break;
-                case "HKCU":
-                    regKey = Registry.CurrentUser.OpenSubKey(subkey);
-                    break;
-                case "HKLM":
-                    regKey = Registry.LocalMachine.OpenSubKey(subkey);
-                    break;
-                case "HKCR":
-                    regKey = Registry.ClassesRoot.OpenSubKey(subkey);
-                    break;
-                default:
-                    throw new Exception($"Unknown registry hive: {hive}");
+                return regKey.GetSubKeyNames();
             }
-            results = regKey.GetSubKeyNames();
-            regKey.Close();
-            return results;
         }
 
         private void SetValueType(object tmpVal, ref RegQueryResult res)
@@ -181,10 +115,12 @@ namespace Tasks
                 TaskResponse resp;
                 RegQueryParameters parameters = _jsonSerializer.Deserialize<RegQueryParameters>(_data.Parameters);
                 List<RegQueryResult> results = new List<RegQueryResult>();
+                List<IMythicMessage> artifacts = new List<IMythicMessage>();
                 string error = "";
                 try
                 {
                     string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
+                    artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
                     foreach(string subkey in subkeys)
                     {
                         results.Add(new RegQueryResult
@@ -218,24 +154,8 @@ namespace Tasks
                         }
                         SetValueType(tmpVal, ref res);
                         results.Add(res);
+                        artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
                     }
-                    
-                    //try
-                    //{
-                    //    tmpVal = GetValue(parameters.Hive, parameters.Key, "");
-                    //} catch (Exception ex)
-                    //{
-                    //    tmpVal = ex.Message;
-                    //}
-                    //RegQueryResult defaultVal = new RegQueryResult
-                    //{
-                    //    Name = "(Default)",
-                    //    FullName = parameters.Key,
-                    //    Hive = parameters.Hive,
-                    //    ResultType = "value"
-                    //};
-                    //SetValueType(tmpVal, ref defaultVal);
-                    //results.Add(defaultVal);
                 } catch (Exception ex)
                 {
                     error += $"\n{ex.Message}";
@@ -243,11 +163,11 @@ namespace Tasks
 
                 if (results.Count == 0)
                 {
-                    resp = CreateTaskResponse(error, true, "error");
+                    resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
                 } else
                 {
                     resp = CreateTaskResponse(
-                        _jsonSerializer.Serialize(results.ToArray()), true);
+                        _jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
                 }
 
                 // Your code here..

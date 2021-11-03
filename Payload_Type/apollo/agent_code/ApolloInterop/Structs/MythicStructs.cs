@@ -512,6 +512,24 @@ namespace ApolloInterop.Structs
                     ArtifactDetails = success ? $"Successful logon (type 9) for {username}" : $"Unsuccessful logon (type 9) for {username}"
                 };
             }
+
+            public static Artifact RegistryRead(string hive, string subkey)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "RegistryRead",
+                    ArtifactDetails = subkey.StartsWith("\\") ? $"{hive}:{subkey}" : $"{hive}:\\{subkey}"
+                };
+            }
+
+            public static Artifact RegistryWrite(string hive, string subkey, string name, object val)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "RegistryWrite",
+                    ArtifactDetails = subkey.StartsWith("\\") ? $"{hive}:{subkey} {name} {val}" : $"{hive}:\\{subkey} {name} {val}"
+                };
+            }
         }
 
         public class StatusMessage
