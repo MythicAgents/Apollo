@@ -1,26 +1,17 @@
 function(task, responses){
-    if (responses.length == 1) {
+    let output = responses[0];
+    if (responses.length == 0) {
         try {
-            let jsonStatus = JSON.parse(responses[0]['response'].replaceAll("\\", "\\\\"));
-            console.log(jsonStatus);
-            if(jsonStatus['agent_file_id']){
-                let output = "<div class='card'><div class='card-header border border-dark shadow'>Started download of <span class='display'>" + jsonStatus['filename'] + "</span></div></div>";
-                return output;
-            }
+            output = "<div class='card'><div class='card-header border border-dark shadow'>Downloading...</div></div>";
         } catch(error) {
-            return responses[0]['response'];
+            console.log(error);
         }
     }
-    if(responses.length == 2){
-        if (responses[0]['response'].indexOf("-") != -1)
+    if(responses.length == 1){
+        if (responses[0].indexOf("-") != -1)
         {
-            let output = "<div class='card'><div class='card-header border border-dark shadow'>Download of <span class='display'>" + responses[0]['response'] + "</span> failed</div></div>";
-            return output;
-        }
-        else
-        {
-            return responses[0]['response'];
+            output = "<div class='card'><div class='card-header border border-dark shadow'>Click <a href='/api/v1.4/files/download/" + responses[0] + "'>here</a> to download.</div></div>";
         }
     }
-    return responses[0]['response'];
+    return {"plaintext": output};
 }

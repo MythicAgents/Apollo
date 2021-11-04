@@ -11,9 +11,10 @@ function(task, responses){
         let tableTitle = "";
         
         let headers = [
-            {"plaintext": "group", "type": "string", "cellStyle": {}, "width": 10},
+            {"plaintext": "list", "type": "button", "cellStyle": {}, "width": 10},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "sid", "type": "string", "cellStyle": {}},
+            {"plaintext": "comment", "type": "string", "cellStyle": {}},
+            {"plaintext": "type", "type": "string", "cellStyle": {}},
         ];
         for(let i = 0; i < responses.length; i++)
         {
@@ -26,26 +27,23 @@ function(task, responses){
                 }, "");
                 return {'plaintext': combined};
             }
+            
             for(let j = 0; j < data.length; j++){
                 let jinfo = data[j];
-                if (tableTitle == ""){
-                    tableTitle = jinfo["group_name"] + " Membership";
-                }
-                let groupText = "";
-                if (jinfo["is_group"])
-                {
-                    groupText = "Group";
-                }
-                else
-                {
-                    groupText = "User";
-                }
                 let row = {
                     // If process name is BAD, then highlight red.
                     "rowStyle": {},
-                    "group": {"plaintext": groupText, "cellStyle": {}},
-                    "name": {"plaintext": jinfo["member_name"], "cellStyle": {}},
-                    "sid": {"plaintext": jinfo["sid"], "cellStyle": {}},
+                    "list": {"button": {
+                        "name": "list",
+                        "type": "task",
+                        "ui_feature": "file_browser:list",
+                        "parameters": "\\\\" + jinfo["computer_name"] + "\\" + jinfo["share_name"],
+                        "disabled": !jinfo["readable"],
+                        "cellStyle": {},
+                    }},
+                    "name": {"plaintext": jinfo["share_name"], "cellStyle": {}},
+                    "comment": {"plaintext": jinfo["comment"], "cellStyle": {}},
+                    "type": {"plaintext": jinfo["type"], "cellStyle": {}},
                 };
                 rows.push(row);
             }
@@ -53,7 +51,7 @@ function(task, responses){
         return {"table":[{
             "headers": headers,
             "rows": rows,
-            "title": tableTitle,
+            "title": "Local Groups",
         }]};
     }else{
         // this means we shouldn't have any output
