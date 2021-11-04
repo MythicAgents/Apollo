@@ -65,7 +65,7 @@ class DownloadCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = DownloadArguments
     attackmapping = ["T1020", "T1030", "T1041"]
-    browser_script = BrowserScript(script_name="download", author="@its_a_feature_")
+    browser_script = BrowserScript(script_name="download_new", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("host"):

@@ -13,7 +13,7 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, width: 10},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 14},
             {"plaintext": "ACT", "type": "button", "cellStyle": {}, "width": 10},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
             {"plaintext": "size", "type": "size", "cellStyle": {}},
@@ -47,7 +47,7 @@ function(task, responses){
                 if (finfo["is_file"]) {
                     buttonSettings = {
                         "button": {
-                            "name": "CAT",
+                            "name": "cat",
                             "type": "task",
                             "ui_feature": "cat",
                             "parameters": finfo["full_name"],
@@ -56,7 +56,7 @@ function(task, responses){
                     }
                 } else {
                     buttonSettings = {"button": {
-                        "name": "LS",
+                        "name": "ls",
                         "type": "task",
                         "ui_feature": "file_browser:list",
                         "parameters": finfo["full_name"],

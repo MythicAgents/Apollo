@@ -16,7 +16,7 @@ function(task, responses){
             {"plaintext": "user", "type": "string", "cellStyle": {}, "width": 15},
             {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 6},
             {"plaintext": "signer", "type": "string", "cellStyle": {}},
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 6},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 14},
         ];
         for(let i = 0; i < responses.length; i++)
         {
@@ -72,13 +72,13 @@ function(task, responses){
                                 "name": "Steal Token",
                                 "type": "task",
                                 "ui_feature": "steal_token",
-                                "parameters": pinfo["pid"]
+                                "parameters": pinfo["process_id"]
                             },
                             {
                                 "name": "Kill",
                                 "type": "task",
                                 "ui_feature": "kill",
-                                "parameters": pinfo["pid"]
+                                "parameters": pinfo["process_id"]
                             }
                         ]
                     }},
