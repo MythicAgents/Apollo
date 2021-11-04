@@ -64,7 +64,7 @@ class InjectCommand(CommandBase):
                         # it's done, so we can register a file for it
                         task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
                         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                                         command="shinject", params={"PID": task.args.get_arg("pid"), "Shellcode File ID": resp.response["file"]['agent_file_id']}, subtask_callback_function="shinject_completed")
+                                         command="shinject", params=json.dumps({"PID": task.args.get_arg("pid"), "Shellcode File ID": resp.response["file"]["agent_file_id"]}), subtask_callback_function="shinject_completed")
                         task.status = MythicStatus.Processed
                         break
                     elif resp.response["build_phase"] == 'error':
