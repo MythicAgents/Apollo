@@ -616,13 +616,14 @@ namespace Tasks
                             if (InstallService(parameters.Computer, parameters.Service, parameters.DisplayName, parameters.Binpath))
                             {
                                 ServiceController createdService = new ServiceController(parameters.Service, parameters.Computer);
-                                resp = CreateTaskResponse(_jsonSerializer.Serialize(new ServiceResult
+                                results.Add(new ServiceResult
                                 {
                                     DisplayName = createdService.DisplayName,
                                     Service = createdService.ServiceName,
                                     Status = createdService.Status.ToString(),
                                     CanStop = createdService.CanStop
-                                }), true);
+                                });
+                                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                             } else
                             {
                                 resp = CreateTaskResponse("Failed to create service.", true, "error");
@@ -665,16 +666,17 @@ namespace Tasks
                                 {
                                     instance.WaitForStatus(ServiceControllerStatus.Running);
                                 }, _cancellationToken.Token);
+                                waitForServiceAsync.Start();
                                 ST.Task.WaitAny(new ST.Task[] { waitForServiceAsync }, _cancellationToken.Token);
                                 _cancellationToken.Token.ThrowIfCancellationRequested();
-                                
-                                resp = CreateTaskResponse(_jsonSerializer.Serialize(new ServiceResult
+                                results.Add(new ServiceResult
                                 {
                                     DisplayName = instance.DisplayName,
                                     Service = instance.ServiceName,
                                     CanStop = instance.CanStop,
                                     Status = instance.Status.ToString()
-                                }), true);
+                                });
+                                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                             }
                         } catch (Exception ex)
                         {
@@ -691,21 +693,25 @@ namespace Tasks
                                     true, "error");
                             } else
                             {
+                                stopInstance.Stop();
+                                ST.Task stopTask = new ST.Task(() =>
+                                {
+                                    stopInstance.WaitForStatus(ServiceControllerStatus.Stopped);
+                                });
+                                stopTask.Start();
                                 ST.Task.WaitAny(new ST.Task[]
                                 {
-                                    new ST.Task(() =>
-                                    {
-                                        stopInstance.Stop();
-                                    }, _cancellationToken.Token)
+                                    stopTask
                                 }, _cancellationToken.Token);
                                 _cancellationToken.Token.ThrowIfCancellationRequested();
-                                resp = CreateTaskResponse(_jsonSerializer.Serialize(new ServiceResult
+                                results.Add(new ServiceResult
                                 {
                                     DisplayName = stopInstance.DisplayName,
                                     Service = stopInstance.ServiceName,
                                     CanStop = stopInstance.CanStop,
                                     Status = stopInstance.Status.ToString()
-                                }), true);
+                                });
+                                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                             }
                         } catch (Exception ex)
                         {

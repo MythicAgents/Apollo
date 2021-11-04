@@ -28,7 +28,7 @@ function(task, responses){
                 }, "");
                 return {'plaintext': combined};
             }
-            let original_params = JSON.loads(task.original_params);
+            let original_params = JSON.parse(task.original_params);
             for(let j = 0; j < data.length; j++){
                 let jinfo = data[j];
                 let isStart = jinfo["status"] == "Stopped";
