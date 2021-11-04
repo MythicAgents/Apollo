@@ -13,16 +13,14 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, width: 10},
+            {"plaintext": "ACT", "type": "button", "cellStyle": {}, "width": 10},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
             {"plaintext": "size", "type": "size", "cellStyle": {}},
             {"plaintext": "owner", "type": "string", "cellStyle": {}},
             {"plaintext": "creation date", "type": "string", "cellStyle": {}},
             {"plaintext": "last modified", "type": "string", "cellStyle": {}},
             {"plaintext": "last accessed", "type": "string", "cellStyle": {}},
-            {"plaintext": "EA", "type": "button", "cellStyle": {}, "width": 6},
-            {"plaintext": "ACE", "type": "button", "cellStyle": {}, "width": 6},
-            {"plaintext": "DL", "type": "button", "cellStyle": {}, "width": 6},
-            {"plaintext": "ACT", "type": "button", "cellStyle": {}, "width": 6}
         ];
         let tableHeader = "";
         for(let i = 0; i < responses.length; i++)
@@ -68,40 +66,48 @@ function(task, responses){
                 }
                 let row = {
                     "rowStyle": data["files"][j]["is_file"] ? file:  folder,
+                    "actions": {"button": {
+                        "name": "Actions",
+                        "type": "menu",
+                        "value": [
+                            {
+                                "name": "Extended Attributes",
+                                "type": "dictionary",
+                                "value": {"Extended Attributes": finfo["extended_attributes"]},
+                                "leftColumnTitle": "Extended Attributes",
+                                "rightColumnTitle": "Values",
+                                "title": "Viewing Extended Attributes for " + finfo["name"]
+                            },
+                            {
+                                "name": "Access Control Entries",
+                                "type": "dictionary",
+                                "value": {"acls": finfo["permissions"]},
+                                "leftColumnTitle": "acls",
+                                "rightColumnTitle": "Values",
+                                "title": "Viewing Acess Control Lists for " + data["files"][j]["name"]
+                            },
+                            {
+                                "name": "Download",
+                                "type": "task",
+                                "disabled": !finfo["is_file"],
+                                "ui_feature": "file_browser:download",
+                                "parameters": finfo["full_name"]
+                            },
+                            {
+                                "name": "Delete",
+                                "type": "task",
+                                "ui_feature": "file_browser:remove",
+                                "parameters": finfo["full_name"]
+                            },
+                        ]
+                    }},
+                    "ACT": buttonSettings,
                     "name": {"plaintext": data["files"][j]["name"], "cellStyle": {}},
                     "size": {"plaintext": data["files"][j]["size"], "cellStyle": {}},
                     "owner": {"plaintext": data["files"][j]["owner"], "cellStyle": {}},
                     "creation date": {"plaintext": data["files"][j]["creation_date"], "cellStyle": {}},
                     "last modified": {"plaintext": data["files"][j]["modify_time"], "cellStyle": {}},
                     "last accessed": {"plaintext": data["files"][j]["access_time"], "cellStyle": {}},
-                    "EA": {"button": {
-                        "name": "EA",
-                        "type": "dictionary",
-                        "value": {"Extended Attributes": finfo["extended_attributes"]},
-                        "leftColumnTitle": "Extended Attributes",
-                        "rightColumnTitle": "Values",
-                        "title": "Viewing Extended Attributes for " + finfo["name"]
-                    }},
-                    "ACE": {"button": {
-                        "name": "ACE",
-                        "type": "dictionary",
-                        "value": {"acls": finfo["permissions"]},
-                        "leftColumnTitle": "acls",
-                        "rightColumnTitle": "Values",
-                        "title": "Viewing Acess Control Lists for " + data["files"][j]["name"]
-                        },
-                        "cellStyle": {},
-                    },
-                    "DL": {"button": {
-                        "name": "DL",
-                        "type": "task",
-                        "disabled": !finfo["is_file"],
-                        "ui_feature": "file_browser:download",
-                        "parameters": finfo["full_name"]
-                        },
-                        "cellStyle": {},
-                    },
-                    "ACT": buttonSettings,
                 };
                 rows.push(row);
             }
