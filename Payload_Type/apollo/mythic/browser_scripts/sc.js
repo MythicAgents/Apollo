@@ -11,8 +11,8 @@ function(task, responses){
         let tableTitle = "";
         
         let headers = [
-            {"plaintext": "start", "type": "button", "cellStyle": {}, "width": 6},
-            {"plaintext": "stop", "type": "button", "cellStyle": {}, "width": 6},
+            {"plaintext": "start", "type": "button", "cellStyle": {}, "width": 10},
+            {"plaintext": "stop", "type": "button", "cellStyle": {}, "width": 10},
             {"plaintext": "status", "type": "string", "cellStyle": {}, "width": 10},
             {"plaintext": "service", "type": "string", "cellStyle": {}},
             {"plaintext": "display name", "type": "string", "cellStyle": {}},
@@ -28,7 +28,7 @@ function(task, responses){
                 }, "");
                 return {'plaintext': combined};
             }
-            
+            let original_params = JSON.loads(task.original_params);
             for(let j = 0; j < data.length; j++){
                 let jinfo = data[j];
                 let isStart = jinfo["status"] == "Stopped";
@@ -41,13 +41,13 @@ function(task, responses){
                         "type": "task",
                         "disabled": !isStart,
                         "ui_feature": "sc:start",
-                        "parameters": {
+                        "parameters": JSON.stringify({
                             "Action": "start",
-                            "Computer": task.original_params["Computer"],
+                            "Computer": original_params["Computer"],
                             "Service Name": jinfo["service"],
                             "Display Name": jinfo["display_name"],
                             "Binary Path": "",
-                        },
+                        }),
                         "cellStyle": {},
                     }},
                     "stop": {"button": {
@@ -55,13 +55,13 @@ function(task, responses){
                         "type": "task",
                         "disabled": !isStop,
                         "ui_feature": "sc:stop",
-                        "parameters": {
+                        "parameters": JSON.stringify({
                             "Action": "stop",
-                            "Computer": task.original_params["Computer"],
+                            "Computer": original_params["Computer"],
                             "Service Name": jinfo["service"],
                             "Display Name": jinfo["display_name"],
                             "Binary Path": "",
-                        },
+                        }),
                         "cellStyle": {},
                     }},
                     "status": {"plaintext": jinfo["status"], "cellStyle": {}},

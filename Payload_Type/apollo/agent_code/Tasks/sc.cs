@@ -515,6 +515,42 @@ namespace Tasks
             base.Kill();
         }
 
+        private void ValidateParameters(ScParameters args)
+        {
+            switch(args.Action)
+            {
+                case "start":
+                    if (string.IsNullOrEmpty(args.Service))
+                    {
+                        throw new Exception("Start action requires service name to start.");
+                    }
+                    break;
+                case "stop":
+                    if (string.IsNullOrEmpty(args.Service))
+                    {
+                        throw new Exception("Stop action requires service name to stop.");
+                    }
+                    break;
+                case "delete":
+                    if (string.IsNullOrEmpty(args.Service))
+                    {
+                        throw new Exception("Delete action requires service name to delete.");
+                    }
+                    break;
+                case "create":
+                    if (string.IsNullOrEmpty(args.Service))
+                    {
+                        throw new Exception("Create action requires service name to create.");
+                    } else if (string.IsNullOrEmpty(args.Binpath))
+                    {
+                        throw new Exception("Create action requires binpath to new service binary.");
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
         public override ST.Task CreateTasking()
         {
             return new ST.Task(() =>
@@ -525,6 +561,7 @@ namespace Tasks
                 {
                     parameters.Computer = Environment.GetEnvironmentVariable("COMPUTERNAME");
                 }
+                ValidateParameters(parameters);
                 string errorMessage = "";
                 List<ServiceResult> results = new List<ServiceResult>();
                 switch(parameters.Action)
