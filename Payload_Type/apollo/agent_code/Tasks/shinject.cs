@@ -26,7 +26,7 @@ namespace Tasks
         {
             [DataMember(Name = "pid")]
             public int PID;
-            [DataMember(Name = "shellcode")]
+            [DataMember(Name = "shellcode-file-id")]
             public string Shellcode;
         }
         public shinject(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)

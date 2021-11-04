@@ -37,6 +37,11 @@ class InjectCommand(CommandBase):
     argument_class = InjectArguments
     attackmapping = ["T1055"]
 
+
+    async def shinject_completed(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
+        task.status = MythicStatus.Completed
+        pass
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         temp = await MythicRPC().execute("get_payload",
                                          payload_uuid=task.args.get_arg("template"))
@@ -57,11 +62,10 @@ class InjectCommand(CommandBase):
                         if len(pe) > 1 and pe[:2] == b"\x4d\x5a":
                             raise Exception("Inject requires a payload of Raw output, but got an executable.")
                         # it's done, so we can register a file for it
-                        task.args.add_arg("shellcode", resp.response["file"]['agent_file_id'])
-                        task.args.remove_arg("template")
                         task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
                         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                                         command="shinject", params={"PID": task.args.get_arg("pid"), "Shellcode File": pe})
+                                         command="shinject", params={"PID": task.args.get_arg("pid"), "Shellcode File ID": resp.response["file"]['agent_file_id']}, subtask_callback_function="shinject_completed")
+                        task.status = MythicStatus.Processed
                         break
                     elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])
