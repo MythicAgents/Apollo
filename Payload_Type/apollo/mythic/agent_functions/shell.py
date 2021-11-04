@@ -31,6 +31,8 @@ class ShellCommand(CommandBase):
     attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                        command="run", params_string="cmd.exe /S /c {}".format(task.args.command_line))
         return task
 
     async def process_response(self, response: AgentResponse):

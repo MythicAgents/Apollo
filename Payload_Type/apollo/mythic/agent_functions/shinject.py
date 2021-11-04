@@ -40,7 +40,6 @@ class ShInjectCommand(CommandBase):
     attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['Shellcode File']
         if task.args.get_arg("shellcode") != None:
             resp = await MythicRPC().execute("create_file",
                                             task_id=task.id,
