@@ -39,6 +39,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -80,6 +81,7 @@
     <Compile Include="rev2self.cs" />
     <Compile Include="rm.cs" />
     <Compile Include="run.cs" />
+    <Compile Include="sc.cs" />
     <Compile Include="screenshot.cs" />
     <Compile Include="screenshot_inject.cs" />
     <Compile Include="set_injection_technique.cs" />
@@ -88,6 +90,7 @@
     <Compile Include="sleep.cs" />
     <Compile Include="steal_token.cs" />
     <Compile Include="upload.cs" />
+    <Compile Include="whoami.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">

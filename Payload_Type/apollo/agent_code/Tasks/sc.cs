@@ -486,11 +486,11 @@ namespace Tasks
             }
             if (_pOpenService == null)
             {
-                _pOpenService = _agent.GetApi().GetLibraryFunction<OpenService>(Library.ADVAPI32, "OpenService");
+                _pOpenService = _agent.GetApi().GetLibraryFunction<OpenService>(Library.ADVAPI32, "OpenServiceA");
             }
             if (_pStartService == null)
             {
-                _pStartService = _agent.GetApi().GetLibraryFunction<StartService>(Library.ADVAPI32, "StartService");
+                _pStartService = _agent.GetApi().GetLibraryFunction<StartService>(Library.ADVAPI32, "StartServiceA");
             }
             if (_pCloseServiceHandle == null)
             {
@@ -498,11 +498,11 @@ namespace Tasks
             }
             if (_pOpenSCManager == null)
             {
-                _pOpenSCManager = _agent.GetApi().GetLibraryFunction<OpenSCManager>(Library.ADVAPI32, "OpenSCManager");
+                _pOpenSCManager = _agent.GetApi().GetLibraryFunction<OpenSCManager>(Library.ADVAPI32, "OpenSCManagerA");
             }
             if (_pCreateService == null)
             {
-                _pCreateService = _agent.GetApi().GetLibraryFunction<CreateService>(Library.ADVAPI32, "CreateService");
+                _pCreateService = _agent.GetApi().GetLibraryFunction<CreateService>(Library.ADVAPI32, "CreateServiceA");
             }
             if (_pControlService == null)
             {
