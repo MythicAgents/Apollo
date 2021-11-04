@@ -30,6 +30,10 @@ function(task, responses){
             
             for(let j = 0; j < data.length; j++){
                 let jinfo = data[j];
+                if (tableTitle == "")
+                {
+                    tableTitle = "Shares for " + jinfo["computer_name"];
+                }
                 let row = {
                     // If process name is BAD, then highlight red.
                     "rowStyle": {},
