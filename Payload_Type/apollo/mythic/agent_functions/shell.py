@@ -1,6 +1,6 @@
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
-
+from mythic_payloadtype_container.MythicRPC import *
 
 class ShellArguments(TaskArguments):
 
@@ -28,9 +28,12 @@ class ShellCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = ShellArguments
+    script_only = True
     attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                        command="run", params_string="cmd.exe /S /c {}".format(task.args.command_line))
         return task
 
     async def process_response(self, response: AgentResponse):

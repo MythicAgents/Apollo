@@ -38,6 +38,7 @@ class killCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = KillArguments
     attackmapping = ["T1106"]
+    supported_ui_features = ["kill"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = task.args.get_arg("pid")

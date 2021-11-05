@@ -29,6 +29,7 @@ class SetInjectionTechniqueCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = SetInjectionTechniqueArguments
     attackmapping = ["T1055"]
+    supported_ui_features = ["set_injection_technique"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

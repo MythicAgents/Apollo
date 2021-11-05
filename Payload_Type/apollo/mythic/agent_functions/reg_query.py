@@ -54,7 +54,8 @@ class RegQuery(CommandBase):
     author = "@djhohnstein"
     argument_class = RegQueryArguments
     attackmapping = ["T1012", "T1552"]
-    # browser_script = BrowserScript(script_name="reg", author="@djhohnstein")
+    supported_ui_features = ["reg_query"]
+    browser_script = BrowserScript(script_name="reg_query", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = task.args.get_arg("hive") + ":\\" + task.args.get_arg("key")

@@ -9,6 +9,7 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
+using ApolloInterop.Utils;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -56,119 +57,55 @@ namespace Tasks
 
         private static string[] GetValueNames(string hive, string subkey)
         {
-            switch (hive)
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
             {
-                case "HKCU":
-                    using (RegistryKey regKey = Registry.CurrentUser.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            return regKey.GetValueNames();
-                        }
-                    }
-                    break;
-                case "HKLM":
-                    using (RegistryKey regKey = Registry.LocalMachine.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            return regKey.GetValueNames();
-                        }
-                    }
-                    break;
-                case "HKCR":
-                    using (RegistryKey regKey = Registry.ClassesRoot.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            return regKey.GetValueNames();
-                        }
-                    }
-                    break;
-                default:
-                    throw new Exception("Invalid string format. Key must be of the form HKLM:, HKCU:, or HKCR");
+                return regKey.GetValueNames();
             }
-            return null;
         }
 
         private static object GetValue(string hive, string subkey, string key)
         {
-            
-            switch (hive)
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
             {
-                case "HKCU":
-                    using (RegistryKey regKey = Registry.CurrentUser.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            Object o = regKey.GetValue(key);
-                            return o;
-                        }
-                    }
-                    break;
-                case "HKLM":
-                    using (RegistryKey regKey = Registry.LocalMachine.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            Object o = regKey.GetValue(key);
-                            return o;
-                        }
-                    }
-                    break;
-                case "HKCR":
-                    using (RegistryKey regKey = Registry.ClassesRoot.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            Object o = regKey.GetValue(key);
-                            return o;
-                        }
-                    }
-                    break;
-                default:
-                    throw new Exception("Invalid string format. Key must be of the form HKLM:, HKCU:, or HKCR");
+                return regKey.GetValue(key);
             }
-            return null;
         }
 
         private static string[] GetSubKeys(string hive, string subkey)
         {
-            // subkey is gonna be in format of HKLM:\, HKCU:\, HKCR:\
-            
-            switch (hive)
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
             {
-                case "HKCU":
-                    using (RegistryKey regKey = Registry.CurrentUser.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            return regKey.GetSubKeyNames();
-                        }
-                    }
-                    break;
-                case "HKLM":
-                    using (RegistryKey regKey = Registry.LocalMachine.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            return regKey.GetSubKeyNames();
-                        }
-                    }
-                    break;
-                case "HKCR":
-                    using (RegistryKey regKey = Registry.ClassesRoot.OpenSubKey(subkey))
-                    {
-                        if (regKey != null)
-                        {
-                            return regKey.GetSubKeyNames();
-                        }
-                    }
-                    break;
-                default:
-                    throw new Exception("Invalid string format. Key must be of the form HKLM:, HKCU:, or HKCR");
+                return regKey.GetSubKeyNames();
             }
-            return null;
+        }
+
+        private void SetValueType(object tmpVal, ref RegQueryResult res)
+        {
+            if (tmpVal is String)
+            {
+                res.Value = string.IsNullOrEmpty(tmpVal.ToString()) ? "(value not set)" : tmpVal.ToString();
+                res.Type = "string";
+            }
+            else if (tmpVal is int)
+            {
+                res.Value = tmpVal.ToString();
+                res.Type = "int";
+            }
+            else if (tmpVal is byte[])
+            {
+                res.Value = BitConverter.ToString((byte[])tmpVal);
+                res.Type = "byte[]";
+            }
+            else if (tmpVal is null)
+            {
+                res.Value = "(value not set)";
+                res.Type = "null";
+            }
+            else
+            {
+                res.Value = tmpVal.ToString();
+                res.Type = "unknown";
+            }
         }
 
         public override ST.Task CreateTasking()
@@ -178,15 +115,18 @@ namespace Tasks
                 TaskResponse resp;
                 RegQueryParameters parameters = _jsonSerializer.Deserialize<RegQueryParameters>(_data.Parameters);
                 List<RegQueryResult> results = new List<RegQueryResult>();
+                List<IMythicMessage> artifacts = new List<IMythicMessage>();
                 string error = "";
                 try
                 {
                     string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
+                    artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
                     foreach(string subkey in subkeys)
                     {
                         results.Add(new RegQueryResult
                         {
                             Name = subkey,
+                            FullName = parameters.Key.EndsWith("\\") ? $"{parameters.Key}{subkey}" : $"{parameters.Key}\\{subkey}",
                             Hive = parameters.Hive,
                             ResultType = "key"
                         });
@@ -194,17 +134,17 @@ namespace Tasks
                 } catch (Exception ex){ error = ex.Message; }
                 try
                 {
+                    object tmpVal;
                     string[] subValNames = GetValueNames(parameters.Hive, parameters.Key);
                     foreach(string valName in subValNames)
                     {
                         RegQueryResult res = new RegQueryResult
                         {
                             Name = valName,
+                            FullName = parameters.Key,
                             Hive = parameters.Hive,
                             ResultType = "value"
                         };
-                        string resultantVal = "";
-                        object tmpVal;
                         try
                         {
                             tmpVal = GetValue(parameters.Hive, parameters.Key, valName);
@@ -212,32 +152,9 @@ namespace Tasks
                         {
                             tmpVal = ex.Message;
                         }
-                        if (tmpVal is String)
-                        {
-                            res.Value = string.IsNullOrEmpty(tmpVal.ToString()) ? "(value not set)" : tmpVal.ToString();
-                            res.Type = "string";
-                        }
-                        else if (tmpVal is int)
-                        {
-                            res.Value = tmpVal.ToString();
-                            res.Type = "int";
-                        }
-                        else if (tmpVal is byte[])
-                        {
-                            res.Value = BitConverter.ToString((byte[])tmpVal);
-                            res.Type = "byte[]";
-                        }
-                        else if (tmpVal is null)
-                        {
-                            res.Value = "(value not set)";
-                            res.Type = "null";
-                        }
-                        else
-                        {
-                            res.Value = tmpVal.ToString();
-                            res.Type = "unknown";
-                        }
+                        SetValueType(tmpVal, ref res);
                         results.Add(res);
+                        artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
                     }
                 } catch (Exception ex)
                 {
@@ -246,11 +163,11 @@ namespace Tasks
 
                 if (results.Count == 0)
                 {
-                    resp = CreateTaskResponse(error, true, "error");
+                    resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
                 } else
                 {
                     resp = CreateTaskResponse(
-                        _jsonSerializer.Serialize(results.ToArray()), true);
+                        _jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
                 }
 
                 // Your code here..

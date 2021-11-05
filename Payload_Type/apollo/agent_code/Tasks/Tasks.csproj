@@ -39,6 +39,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -56,9 +57,11 @@
     <Compile Include="execute_assembly.cs" />
     <Compile Include="exit.cs" />
     <Compile Include="getprivs.cs" />
+    <Compile Include="get_injection_techniques.cs" />
     <Compile Include="jobkill.cs" />
     <Compile Include="jobs.cs" />
     <Compile Include="keylog_inject.cs" />
+    <Compile Include="kill.cs" />
     <Compile Include="link.cs" />
     <Compile Include="load.cs" />
     <Compile Include="ls.cs" />
@@ -75,15 +78,20 @@
     <Compile Include="pwd.cs" />
     <Compile Include="register_assembly.cs" />
     <Compile Include="reg_query.cs" />
+    <Compile Include="reg_write_value.cs" />
     <Compile Include="rev2self.cs" />
+    <Compile Include="rm.cs" />
     <Compile Include="run.cs" />
+    <Compile Include="sc.cs" />
     <Compile Include="screenshot.cs" />
     <Compile Include="screenshot_inject.cs" />
-    <Compile Include="shell.cs" />
+    <Compile Include="set_injection_technique.cs" />
     <Compile Include="shinject.cs" />
     <Compile Include="sleep.cs" />
+    <Compile Include="spawn.cs" />
     <Compile Include="steal_token.cs" />
     <Compile Include="upload.cs" />
+    <Compile Include="whoami.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">

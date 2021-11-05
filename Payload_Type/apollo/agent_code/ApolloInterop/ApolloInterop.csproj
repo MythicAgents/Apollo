@@ -102,6 +102,8 @@
     <Compile Include="Structs\Win32.cs" />
     <Compile Include="Types\Delegates.cs" />
     <Compile Include="Types\MythicTypes.cs" />
+    <Compile Include="Utils\PathUtils.cs" />
+    <Compile Include="Utils\RegistryUtils.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

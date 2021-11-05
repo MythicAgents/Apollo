@@ -27,7 +27,7 @@ class NetLocalGroupCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = NetLocalGroupArguments
     attackmapping = ["T1590", "T1069"]
-    browser_script = BrowserScript(script_name="net_localgroup", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="net_localgroup_new", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

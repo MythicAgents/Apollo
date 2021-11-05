@@ -35,6 +35,7 @@ class StealTokenCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = StealTokenArguments
     attackmapping = ["T1134", "T1528"]
+    supported_ui_features=["steal_token"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

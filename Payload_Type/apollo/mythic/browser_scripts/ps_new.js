@@ -16,7 +16,7 @@ function(task, responses){
             {"plaintext": "user", "type": "string", "cellStyle": {}, "width": 15},
             {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 6},
             {"plaintext": "signer", "type": "string", "cellStyle": {}},
-            {"plaintext": "info", "type": "button", "cellStyle": {}, "width": 6},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 14},
         ];
         for(let i = 0; i < responses.length; i++)
         {
@@ -51,18 +51,36 @@ function(task, responses){
                     "user": {"plaintext": pinfo["user"], "cellStyle": {}},
                     "session": {"plaintext": pinfo["session_id"], "cellStyle": {}},
                     "signer": {"plaintext": pinfo["company_name"], "cellStyle": {}},
-                    "info": {"button": {
-                        "name": "info",
-                        "type": "dictionary",
-                        "value": {
-                            "Process Path": pinfo["bin_path"],
-                            "File Description" : pinfo["description"],
-                            "Command Line": pinfo["command_line"],
-                            "Window Title": pinfo["window_title"]
-                        },
-                        "leftColumnTitle": "Attribute",
-                        "rightColumnTitle": "Values",
-                        "title": "Information for " + pinfo["name"]
+                    "actions": {"button": {
+                        "name": "Actions",
+                        "type": "menu",
+                        "value": [
+                            {
+                                "name": "More Info",
+                                "type": "dictionary",
+                                "value": {
+                                    "Process Path": pinfo["bin_path"],
+                                    "File Description" : pinfo["description"],
+                                    "Command Line": pinfo["command_line"],
+                                    "Window Title": pinfo["window_title"]
+                                },
+                                "leftColumnTitle": "Attribute",
+                                "rightColumnTitle": "Values",
+                                "title": "Information for " + pinfo["name"]
+                            },
+                            {
+                                "name": "Steal Token",
+                                "type": "task",
+                                "ui_feature": "steal_token",
+                                "parameters": pinfo["process_id"]
+                            },
+                            {
+                                "name": "Kill",
+                                "type": "task",
+                                "ui_feature": "kill",
+                                "parameters": pinfo["process_id"]
+                            }
+                        ]
                     }},
                 };
                 rows.push(row);
