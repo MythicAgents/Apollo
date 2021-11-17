@@ -11,7 +11,13 @@ namespace ApolloInterop.Classes.IO
 	{
 		public event EventHandler<StringDataEventArgs> BufferWritten;
 
-		public override void Write(char[] buffer, int index, int count)
+        public override void Write(string value)
+        {
+			BufferWritten?.Invoke(this, new StringDataEventArgs(value));
+            base.Write(value);
+        }
+
+        public override void Write(char[] buffer, int index, int count)
 		{
 			string value = new string(buffer.Skip(index).Take(count).ToArray());
 			BufferWritten?.Invoke(this, new StringDataEventArgs(value));

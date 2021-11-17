@@ -37,7 +37,7 @@ namespace Tasks
                     WindowsIdentity.GetCurrent().Name, true);
                 // Your code here..
                 // Then add response to queue
-                // _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
     }

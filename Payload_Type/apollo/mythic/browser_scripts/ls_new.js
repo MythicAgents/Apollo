@@ -35,8 +35,11 @@ function(task, responses){
                 return {'plaintext': combined};
             }
             let ls_path = "";
-            
-            ls_path = data["parent_path"] + "\\" + data["name"];
+            if(data["parent_path"] === "/"){
+                ls_path = data["parent_path"] + data["name"];
+            }else{
+                ls_path = data["parent_path"] + "\\" + data["name"];
+            }
             tableHeader = "Contents of " + ls_path;
             for(let j = 0; j < data["files"].length; j++){
                 let finfo = data["files"][j];
