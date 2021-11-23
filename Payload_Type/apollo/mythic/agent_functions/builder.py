@@ -131,12 +131,12 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 targetPowerPickPath = "/srv/PowerShellHost.exe"
                 targetScreenshotInjectPath = "/srv/ScreenshotInject.exe"
                 targetKeylogInjectPath = "/srv/KeylogInject.exe"
-                targetKeylogInjectPath = "/srv/ExecutePE.exe"
+                targetExecutePEPath = "/srv/ExecutePE.exe"
                 shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
                 shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
                 shutil.move("{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
                 shutil.move("{}/KeylogInject/bin/Release/KeylogInject.exe".format(agent_build_path.name), targetKeylogInjectPath)
-                shutil.move("{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name), targetKeylogInjectPath)
+                shutil.move("{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
                 if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
