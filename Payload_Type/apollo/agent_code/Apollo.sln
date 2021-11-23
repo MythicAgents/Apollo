@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenshotInject", "Screens
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeylogInject", "KeylogInject\KeylogInject.csproj", "{6EACC51E-1E46-4C6F-9516-B71F09AD00D1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecutePE", "ExecutePE\ExecutePE.csproj", "{44D50BF5-4C12-4328-B983-0045C157D932}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -223,6 +225,18 @@ Global
 		{6EACC51E-1E46-4C6F-9516-B71F09AD00D1}.Release|x64.Build.0 = Release|Any CPU
 		{6EACC51E-1E46-4C6F-9516-B71F09AD00D1}.Release|x86.ActiveCfg = Release|Any CPU
 		{6EACC51E-1E46-4C6F-9516-B71F09AD00D1}.Release|x86.Build.0 = Release|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Debug|x64.Build.0 = Debug|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Debug|x86.Build.0 = Debug|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x64.ActiveCfg = Release|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x64.Build.0 = Release|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x86.ActiveCfg = Release|Any CPU
+		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

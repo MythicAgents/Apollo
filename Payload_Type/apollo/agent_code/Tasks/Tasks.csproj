@@ -55,6 +55,7 @@
     <Compile Include="cp.cs" />
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
+    <Compile Include="execute_pe.cs" />
     <Compile Include="exit.cs" />
     <Compile Include="getprivs.cs" />
     <Compile Include="get_injection_techniques.cs" />
