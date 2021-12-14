@@ -3,7 +3,7 @@ import json
 from mythic_payloadtype_container.MythicRPC import *
 import base64
 
-class RegisterAssemblyArguments(TaskArguments):
+class RegisterFileArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
@@ -20,11 +20,11 @@ class RegisterAssemblyArguments(TaskArguments):
         pass
 
 
-class RegisterAssemblyCommand(CommandBase):
-    cmd = "register_assembly"
+class RegisterFileCommand(CommandBase):
+    cmd = "register_file"
     needs_admin = False
     help_cmd = "register_assembly (modal popup)"
-    description = "Register an assembly with the agent to execute later in `execute_assembly`."
+    description = "Register a file to later use in the agent."
     version = 2
     is_exit = False
     is_file_browse = False
@@ -33,14 +33,14 @@ class RegisterAssemblyCommand(CommandBase):
     is_upload_file = False
     is_remove_file = False
     author = "@djhohnstein"
-    argument_class = RegisterAssemblyArguments
+    argument_class = RegisterFileArguments
     attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         original_file_name = json.loads(task.original_params)['File']
         resp = await MythicRPC().execute("create_file",
                                           task_id=task.id,
-                                          file=base64.b64encode(task.args.get_arg("assembly")).decode(),
+                                          file=base64.b64encode(task.args.get_arg("file")).decode(),
                                           saved_file_name=original_file_name,
                                           delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
