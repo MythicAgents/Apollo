@@ -15,7 +15,7 @@ class ExecutePEArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("Require an assembly to execute.\n\tUsage: {}".format(ExecuteAssemblyCommand.help_cmd))
+            raise Exception("Require a PE to execute.\n\tUsage: {}".format(ExecutePECommand.help_cmd))
         parts = self.command_line.split(" ", maxsplit=1)
         self.add_arg("pe_name", parts[0])
         self.add_arg("pe_arguments", "")

@@ -50,12 +50,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExtensionMethods.cs" />
-    <Compile Include="PEFile.cs" />
-    <Compile Include="PEMapper.cs" />
+    <Compile Include="Helpers\StdHandleRedirector.cs" />
+    <Compile Include="Helpers\Utils.cs" />
+    <Compile Include="Internals\NativeDeclarations.cs" />
+    <Compile Include="Internals\PELoader.cs" />
+    <Compile Include="NativeDeclarations.cs" />
+    <Compile Include="Patchers\ArgumentPatcher.cs" />
+    <Compile Include="Patchers\ExitPatcher.cs" />
+    <Compile Include="Patchers\ExtraAPIPatcher.cs" />
+    <Compile Include="Patchers\ExtraEnvironmentPatcher.cs" />
+    <Compile Include="Patchers\ImportResolver.cs" />
+    <Compile Include="Patchers\PEMapper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UnmanagedAllocator.cs" />
-    <Compile Include="VirtualAllocAllocator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
