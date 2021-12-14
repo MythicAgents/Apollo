@@ -8,7 +8,7 @@ class RegisterAssemblyArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "assembly": CommandParameter(name="Assembly", type=ParameterType.File)
+            "file": CommandParameter(name="File", type=ParameterType.File)
         }
 
     async def parse_arguments(self):
@@ -37,16 +37,16 @@ class RegisterAssemblyCommand(CommandBase):
     attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['Assembly']
+        original_file_name = json.loads(task.original_params)['File']
         resp = await MythicRPC().execute("create_file",
                                           task_id=task.id,
                                           file=base64.b64encode(task.args.get_arg("assembly")).decode(),
                                           saved_file_name=original_file_name,
                                           delete_after_fetch=False)
         if resp.status == MythicStatus.Success:
-            task.args.add_arg("assembly_id", resp.response['agent_file_id'])
-            task.args.add_arg("assembly_name", original_file_name)
-            task.args.remove_arg("assembly")
+            task.args.add_arg("file_id", resp.response['agent_file_id'])
+            task.args.add_arg("file_name", original_file_name)
+            task.args.remove_arg("file")
         else:
             raise Exception(f"Failed to host assembly: {resp.error}")
         task.display_params = original_file_name

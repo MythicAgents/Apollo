@@ -21,18 +21,18 @@ using System.IO;
 
 namespace Tasks
 {
-    public class register_assembly : Tasking
+    public class register_file : Tasking
     {
         [DataContract]
-        internal struct RegisterAssemblyParameters
+        internal struct RegisterFileParameters
         {
-            [DataMember(Name = "assembly_id")]
+            [DataMember(Name = "file_id")]
             internal string FileID;
-            [DataMember(Name = "assembly_name")]
-            internal string AssemblyName;
+            [DataMember(Name = "file_name")]
+            internal string FileName;
         }
 
-        public register_assembly(IAgent agent, Task task) : base(agent, task)
+        public register_file(IAgent agent, Task task) : base(agent, task)
         {
 
         }
@@ -47,7 +47,7 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 TaskResponse resp;
-                RegisterAssemblyParameters parameters = _jsonSerializer.Deserialize<RegisterAssemblyParameters>(_data.Parameters);
+                RegisterFileParameters parameters = _jsonSerializer.Deserialize<RegisterFileParameters>(_data.Parameters);
                 // some additional upload logic
                 if (_agent.GetFileManager().GetFile(
                     _cancellationToken.Token,
@@ -55,15 +55,15 @@ namespace Tasks
                     parameters.FileID,
                     out byte[] fileData))
                 {
-                    if (_agent.GetFileManager().AddFileToStore(parameters.AssemblyName, fileData))
+                    if (_agent.GetFileManager().AddFileToStore(parameters.FileName, fileData))
                     {
                         resp = CreateTaskResponse(
-                            $"{parameters.AssemblyName} is now ready for execution",
+                            $"{parameters.FileName} has been registered.",
                             true);
                     } else
                     {
                         resp = CreateTaskResponse(
-                            $"Failed to register {parameters.AssemblyName}",
+                            $"Failed to register {parameters.FileName}",
                             true,
                             "error");
                     }
