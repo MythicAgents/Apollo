@@ -77,7 +77,7 @@
     <Compile Include="ps.cs" />
     <Compile Include="psinject.cs" />
     <Compile Include="pwd.cs" />
-    <Compile Include="register_assembly.cs" />
+    <Compile Include="register_file.cs" />
     <Compile Include="reg_query.cs" />
     <Compile Include="reg_write_value.cs" />
     <Compile Include="rev2self.cs" />
