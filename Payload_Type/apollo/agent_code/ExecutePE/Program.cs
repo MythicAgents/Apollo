@@ -117,7 +117,7 @@ namespace ExecutePE
                     peMapper.SetPagePermissions();
 
                     var argumentHandler = new ArgumentHandler();
-                    if (!argumentHandler.UpdateArgs(peRunDetails.filename, realArgs))
+                    if (!argumentHandler.UpdateArgs(peRunDetails.filename, peRunDetails.args))
                     {
                         return -3;
                     }
