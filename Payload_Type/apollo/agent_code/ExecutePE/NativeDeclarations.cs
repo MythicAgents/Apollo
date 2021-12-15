@@ -104,6 +104,12 @@ namespace ExecutePE
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         internal static extern IntPtr GetModuleHandle(string lpModuleName);
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern bool AttachConsole(int pid);
+
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         internal static extern bool VirtualFree(IntPtr pAddress, uint size, uint freeType);
 

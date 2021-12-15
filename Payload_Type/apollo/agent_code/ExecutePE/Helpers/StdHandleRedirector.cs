@@ -48,6 +48,7 @@ namespace ExecutePE.Helpers
 
         private void Initialize()
         {
+            NativeDeclarations.AllocConsole();
             string stdoutGuid = Guid.NewGuid().ToString();
 
             stdoutServerStream = new NamedPipeServerStream(stdoutGuid, PipeDirection.InOut, 100, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);

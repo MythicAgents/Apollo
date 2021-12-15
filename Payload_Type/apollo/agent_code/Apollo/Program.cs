@@ -64,8 +64,8 @@ namespace Apollo
             //client.Disconnect += Client_Disconnect;
             //IPCCommandArguments cmdargs = new IPCCommandArguments
             //{
-            //    ByteData = System.IO.File.ReadAllBytes(@"C:\mimikatz\x64\mimikatz.exe"),
-            //    StringData = "mimikatz.exe coffee coffee coffee"
+            //    ByteData = System.IO.File.ReadAllBytes(@"C:\PrintSpoofer\x64\Release\PrintSpoofer.exe"),
+            //    StringData = "PrintSpoofer.exe --help"
             //};
             //if (client.Connect(3000))
             //{

@@ -60,8 +60,7 @@ namespace ExecutePE
             }
             _namedPipeName = args[0];
 
-            //_namedPipeName = "exetest";
-
+            
             _sendAction = (object p) =>
             {
                 PipeStream pipe = (PipeStream)p;
@@ -285,24 +284,8 @@ namespace ExecutePE
 
             
             filename = args[0];
-            if (args.Count > 1)
-            {
-                binaryArgs = new string[args.Count - 1];
-                Array.Copy(args.ToArray(), 1, binaryArgs, 0, args.Count - 1);
-#if DEBUG
-
-
-#endif
-            }
-            else
-            {
-                binaryArgs = new string[] { };
-#if DEBUG
-
-
-#endif
-            }
-            return new PeRunDetails { filename = filename, args = binaryArgs };
+            
+            return new PeRunDetails { filename = filename, args = args.ToArray() };
         }
 
         private static void PrintUsage()
