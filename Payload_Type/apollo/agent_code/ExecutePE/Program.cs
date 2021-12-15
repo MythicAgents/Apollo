@@ -280,12 +280,19 @@ namespace ExecutePE
         {
             string filename;
             string[] binaryArgs;
-            byte[] binaryBytes;
 
-            
+            if (args.Count > 1)
+            {
+                binaryArgs = new string[args.Count - 1];
+                Array.Copy(args.ToArray(), 1, binaryArgs, 0, args.Count - 1);
+            }
+            else
+            {
+                binaryArgs = new string[] { };
+            }
             filename = args[0];
             
-            return new PeRunDetails { filename = filename, args = args.ToArray() };
+            return new PeRunDetails { filename = filename, args = binaryArgs };
         }
 
         private static void PrintUsage()
