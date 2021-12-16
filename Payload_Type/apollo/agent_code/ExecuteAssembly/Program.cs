@@ -91,10 +91,10 @@ namespace ExecuteAssembly
                 EventableStringWriter stderrSw = new EventableStringWriter();
 
                 stdoutSw.BufferWritten += OnBufferWrite;
-                stderrSw.BufferWritten += OnBufferWrite;
+                //stderrSw.BufferWritten += OnBufferWrite;
 
                 Console.SetOut(stdoutSw);
-                Console.SetError(stderrSw);
+                Console.SetError(stdoutSw);
 
                 try
                 {
@@ -160,7 +160,6 @@ namespace ExecuteAssembly
         {
             if (args.Data != null)
             {
-                StackTrace st = new StackTrace(true);
                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(args.Data));
                 _senderEvent.Set();
             }
