@@ -1,6 +1,7 @@
 ﻿using ApolloInterop.Classes.Events;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,32 @@ namespace ApolloInterop.Classes.IO
 	{
 		public event EventHandler<StringDataEventArgs> BufferWritten;
 
+        private bool IsRecursive()
+        {
+            StackTrace st = new StackTrace();
+            StackFrame[] frames = st.GetFrames();
+            if (frames.Length < 4)
+            {
+                return false;
+            }
+            StackFrame f1 = frames[3];
+            if (f1.GetMethod().ReflectedType == typeof(EventableStringWriter))
+            {
+                return true;
+            } else
+            {
+                return false;
+            }
+        }
+
+        private void OnBufferWrite(StringDataEventArgs args)
+        {
+            if (!IsRecursive())
+            {
+                BufferWritten?.Invoke(this, args);
+            }
+        }
+
         public override void Write(string value)
         {
 			BufferWritten?.Invoke(this, new StringDataEventArgs(value));
@@ -19,8 +46,8 @@ namespace ApolloInterop.Classes.IO
 
         public override void Write(char[] buffer, int index, int count)
 		{
-			string value = new string(buffer.Skip(index).Take(count).ToArray());
-			BufferWritten?.Invoke(this, new StringDataEventArgs(value));
+            string value = new string(buffer.Skip(index).Take(count).ToArray());
+			OnBufferWrite(new StringDataEventArgs(value));
 			base.Write(buffer, index, count);
 		}
 
@@ -188,7 +215,7 @@ namespace ApolloInterop.Classes.IO
 
         public override void WriteLine(string value)
         {
-            BufferWritten?.Invoke(this, new StringDataEventArgs(value.ToString() + "\r\n"));
+            OnBufferWrite(new StringDataEventArgs(value.ToString() + "\r\n"));
             base.WriteLine(value);
         }
 

@@ -70,7 +70,7 @@ namespace ExecuteAssembly
                         pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }
                 }
-                pipe.Flush();
+                //pipe.Flush();
                 pipe.Close();
             };
             _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
@@ -91,7 +91,7 @@ namespace ExecuteAssembly
                 EventableStringWriter stderrSw = new EventableStringWriter();
 
                 stdoutSw.BufferWritten += OnBufferWrite;
-                //stderrSw.BufferWritten += OnBufferWrite;
+                stderrSw.BufferWritten += OnBufferWrite;
 
                 Console.SetOut(stdoutSw);
                 Console.SetError(stdoutSw);
