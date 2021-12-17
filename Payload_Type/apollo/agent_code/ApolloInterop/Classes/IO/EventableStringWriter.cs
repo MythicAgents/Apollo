@@ -12,25 +12,6 @@ namespace ApolloInterop.Classes.IO
     {
         public event EventHandler<StringDataEventArgs> BufferWritten;
 
-        private bool IsRecursive()
-        {
-            StackTrace st = new StackTrace();
-            StackFrame[] frames = st.GetFrames();
-            if (frames.Length < 2)
-            {
-                return false;
-            }
-            StackFrame f1 = frames[1];
-            if (f1.GetMethod().ReflectedType == typeof(EventableStringWriter))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         public override void Write(string value)
         {
             BufferWritten?.Invoke(this, new StringDataEventArgs(value));

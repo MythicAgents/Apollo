@@ -33,6 +33,9 @@ namespace ApolloInterop.Interfaces
 
         string GetUUID();
 
+        void AcquireOutputLock();
+        void ReleaseOutputLock();
+
         ITaskManager GetTaskManager();
         IPeerManager GetPeerManager();
 

@@ -99,6 +99,8 @@ namespace Apollo.Management.Tasks
 
         private void InitializeTaskLibrary()
         {
+            // Annoying note - if there's an assembly in the Tasks DLL that isn't in the Apollo
+            // reference assemblies, then you'll run into loading errors.
             _tasksAsm = Assembly.Load("Tasks, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
             if (_tasksAsm == null)
             {

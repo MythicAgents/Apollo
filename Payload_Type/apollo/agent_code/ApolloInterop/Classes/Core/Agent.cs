@@ -11,6 +11,7 @@ namespace ApolloInterop.Classes
 {
     public abstract class Agent : IAgent
     {
+        private static Mutex _outputLock = new Mutex();
         public int SleepInterval { get; protected set; } = 0;
         public double Jitter { get; protected set; } = 0;
         protected AutoResetEvent _sleepReset = new AutoResetEvent(false);
@@ -77,6 +78,16 @@ namespace ApolloInterop.Classes
                 sleepers = tmp;
             }
             WaitHandle.WaitAny(sleepers, sleepTime);
+        }
+
+        public void AcquireOutputLock()
+        {
+            _outputLock.WaitOne();
+        }
+
+        public void ReleaseOutputLock()
+        {
+            _outputLock.ReleaseMutex();
         }
 
         public abstract bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse);

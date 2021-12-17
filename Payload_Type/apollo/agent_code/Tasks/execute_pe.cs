@@ -38,8 +38,8 @@ namespace Tasks
             public string PEArguments;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
-            [DataMember(Name = "mimipe")]
-            public string MimiPeFileId;
+            [DataMember(Name = "PeId")]
+            public string PeId;
         }
 
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
@@ -47,7 +47,6 @@ namespace Tasks
         private JsonSerializer _serializer = new JsonSerializer();
         private AutoResetEvent _complete = new AutoResetEvent(false);
         private Action<object> _sendAction;
-        private const string MIMIKATZ_PE_ID = "mimikatz_x64";
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
@@ -132,17 +131,18 @@ namespace Tasks
                     else
                     {
                         byte[] peBytes = new byte[0];
-                        
-                        if (!string.IsNullOrEmpty(parameters.MimiPeFileId))
+
+                        if (!string.IsNullOrEmpty(parameters.PeId))
                         {
-                            if (!_agent.GetFileManager().GetFileFromStore(MIMIKATZ_PE_ID, out peBytes))
+                            if (!_agent.GetFileManager().GetFileFromStore(parameters.PeId, out peBytes))
                             {
-                                if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.MimiPeFileId, out peBytes))
+                                if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
                                 {
-                                    _agent.GetFileManager().AddFileToStore(MIMIKATZ_PE_ID, peBytes);
+                                    _agent.GetFileManager().AddFileToStore(parameters.PeId, peBytes);
                                 }
                             }
-                        } else
+                        }
+                        else
                         {
                             _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
                         }
