@@ -38,7 +38,7 @@ namespace Tasks
             public string PEArguments;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
-            [DataMember(Name = "PeId")]
+            [DataMember(Name = "pe_id")]
             public string PeId;
         }
 

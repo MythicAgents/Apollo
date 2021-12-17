@@ -6,7 +6,9 @@ class MkdirArguments(TaskArguments):
 
     def __init__(self, command_line):
         super().__init__(command_line)
-        self.args = {}
+        self.args = {
+            "path": CommandParameter(name="Directory Path", type=ParameterType.String, description="Directory to create.", required=True),
+        }
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -15,6 +17,12 @@ class MkdirArguments(TaskArguments):
             self.command_line = self.command_line[1:-1]
         elif self.command_line[0] == "'" and self.command_line[-1] == "'":
             self.command_line = self.command_line[1:-1]
+        
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            self.add_arg("path", self.command_line)
+
         pass
 
 
@@ -35,6 +43,7 @@ class MkdirCommand(CommandBase):
     attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = task.args.get_arg("path")
         return task
 
     async def process_response(self, response: AgentResponse):

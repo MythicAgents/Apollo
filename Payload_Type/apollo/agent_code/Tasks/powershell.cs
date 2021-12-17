@@ -322,7 +322,7 @@ namespace Tasks
                     {
                         _completed,
                         _cancellationToken.Token.WaitHandle
-                    }, 3000);
+                    }, 1000);
                     output = string.Join("", _psOutput.Flush());
                     if (!string.IsNullOrEmpty(output))
                     {

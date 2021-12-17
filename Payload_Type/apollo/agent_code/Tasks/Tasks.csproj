@@ -74,6 +74,8 @@
     <Compile Include="load.cs" />
     <Compile Include="ls.cs" />
     <Compile Include="make_token.cs" />
+    <Compile Include="mkdir.cs" />
+    <Compile Include="mv.cs" />
     <Compile Include="net_dclist.cs" />
     <Compile Include="net_localgroup.cs" />
     <Compile Include="net_localgroup_member.cs" />
@@ -101,6 +103,7 @@
     <Compile Include="spawnto_x64.cs" />
     <Compile Include="spawnto_x86.cs" />
     <Compile Include="steal_token.cs" />
+    <Compile Include="unlink.cs" />
     <Compile Include="upload.cs" />
     <Compile Include="whoami.cs" />
   </ItemGroup>

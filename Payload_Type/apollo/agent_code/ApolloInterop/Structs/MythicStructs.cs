@@ -455,6 +455,15 @@ namespace ApolloInterop.Structs
                     ArtifactDetails = $"Deleted {path}"
                 };
             }
+            
+            public static Artifact FileCreate(string path)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "FileCreate",
+                    ArtifactDetails = $"Created {path}"
+                };
+            }
 
             public static Artifact ProcessCreate(int pid, string application, string arguments = null)
             {
