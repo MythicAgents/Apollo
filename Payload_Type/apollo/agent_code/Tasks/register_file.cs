@@ -55,17 +55,26 @@ namespace Tasks
                     parameters.FileID,
                     out byte[] fileData))
                 {
-                    if (_agent.GetFileManager().AddFileToStore(parameters.FileName, fileData))
+                    if (parameters.FileName.EndsWith(".ps1"))
                     {
+                        _agent.GetFileManager().SetScript(fileData);
                         resp = CreateTaskResponse(
-                            $"{parameters.FileName} has been registered.",
-                            true);
-                    } else
+                            $"{parameters.FileName} will now be imported in PowerShell commands.", true);
+                    }
+                    else
                     {
-                        resp = CreateTaskResponse(
-                            $"Failed to register {parameters.FileName}",
-                            true,
-                            "error");
+                        if (_agent.GetFileManager().AddFileToStore(parameters.FileName, fileData))
+                        {
+                            resp = CreateTaskResponse(
+                                $"{parameters.FileName} has been registered.",
+                                true);
+                        } else
+                        {
+                            resp = CreateTaskResponse(
+                                $"Failed to register {parameters.FileName}",
+                                true,
+                                "error");
+                        }   
                     }
                 }
                 else

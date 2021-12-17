@@ -55,12 +55,17 @@ namespace Tasks
                     try
                     {
                         DirectoryInfo info = Directory.CreateDirectory(parameters.Path);
-                        IMythicMessage[] artifacts = new IMythicMessage[1]
+                        FileInformation finfo = new FileInformation(info);
+                        IMythicMessage[] artifacts = new IMythicMessage[2]
                         {
-                            Artifact.FileCreate(info.FullName)
+                            Artifact.FileCreate(info.FullName),
+                            new FileBrowser(finfo),
                         };
                         resp = CreateTaskResponse(
-                            $"Created {info.FullName}", true, "completed", artifacts);
+                    $"Created {info.FullName}",
+                    true,
+                        "completed",
+                            artifacts);
                     }
                     catch (Exception ex)
                     {

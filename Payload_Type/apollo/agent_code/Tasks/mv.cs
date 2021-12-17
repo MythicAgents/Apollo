@@ -16,6 +16,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
+using ApolloInterop.Utils;
 using ST = System.Threading.Tasks;
 
 
@@ -29,6 +30,26 @@ namespace Tasks
             [DataMember(Name = "source")] public string SourceFile;
             [DataMember(Name = "destination")] public string DestinationFile;
         }
+
+        internal struct HostFileInfo
+        {
+            internal string Host;
+            internal string Path;
+        }
+
+        private HostFileInfo ParsePath(string path)
+        {
+            HostFileInfo results = new HostFileInfo();
+            results.Host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            results.Path = path;
+            if (path.StartsWith("\\\\"))
+            {
+                results.Host = path.Split('\\')[2];
+            }
+
+            return results;
+        }
+        
         public mv(IAgent agent, Task data) : base(agent, data)
         {
         }
@@ -43,8 +64,14 @@ namespace Tasks
             return new ST.Task(() =>
             {
                 TaskResponse resp;
+                string sourcePath;
+                HostFileInfo sourceInfo;
+                string destPath;
+                HostFileInfo destInfo;
                 MvParameters parameters = _jsonSerializer.Deserialize<MvParameters>(_data.Parameters);
-                if (!File.Exists(parameters.SourceFile))
+                destPath = parameters.DestinationFile;
+                
+                if (!PathUtils.TryGetExactPath(parameters.SourceFile, out sourcePath))
                 {
                     resp = CreateTaskResponse(
                         $"File {parameters.SourceFile} does not exist.",
@@ -52,11 +79,32 @@ namespace Tasks
                 }
                 else
                 {
+                    bool isDir = false;
+                    FileSystemInfo sinfo = null;
+                    FileInformation dinfo;
+                    if (Directory.Exists(parameters.SourceFile))
+                    {
+                        sinfo = new DirectoryInfo(parameters.SourceFile);
+                        isDir = true;
+                    }
+                    else
+                    {
+                        sinfo = new FileInfo(parameters.SourceFile);
+                    }
                     try
                     {
-                        FileInfo sinfo = new FileInfo(parameters.SourceFile);
-                        File.Move(parameters.SourceFile, parameters.DestinationFile);
-                        FileInfo dinfo = new FileInfo(parameters.DestinationFile);
+                        if (isDir)
+                        {
+                            Directory.Move(parameters.SourceFile, parameters.DestinationFile);
+                        }
+                        else
+                        {
+                            File.Move(parameters.SourceFile, parameters.DestinationFile);
+                        }
+
+                        dinfo = !isDir ? new FileInformation(new FileInfo(parameters.DestinationFile)) : new FileInformation(new DirectoryInfo(parameters.DestinationFile));
+                        sourceInfo = ParsePath(parameters.SourceFile);
+                        destInfo = ParsePath(parameters.DestinationFile);
                         resp = CreateTaskResponse(
                             $"Moved {sinfo.FullName} to {dinfo.FullName}",
                             true,
@@ -66,8 +114,17 @@ namespace Tasks
                                 Artifact.FileOpen(sinfo.FullName),
                                 Artifact.FileDelete(sinfo.FullName),
                                 Artifact.FileOpen(dinfo.FullName),
-                                Artifact.FileWrite(dinfo.FullName, dinfo.Length)
+                                Artifact.FileWrite(dinfo.FullName, isDir ? 0 : dinfo.Size),
+                                new FileBrowser(dinfo)
                             });
+                        resp.RemovedFiles = new RemovedFileInformation[]
+                        {
+                            new RemovedFileInformation
+                            {
+                                Host = sourceInfo.Host,
+                                Path = sinfo.FullName
+                            }
+                        };
                     }
                     catch (Exception ex)
                     {

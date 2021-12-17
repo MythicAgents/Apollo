@@ -329,6 +329,28 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "files")]
             public FileInformation[] Files;
 
+            public FileBrowser(FileInformation finfo, bool success = true, FileInformation[] files = null)
+            {
+                if (finfo.FullName.StartsWith("\\"))
+                {
+                    Host = finfo.FullName.Split('\\')[2];
+                }
+                else
+                {
+                    Host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+                }
+                IsFile = finfo.IsFile;
+                Name = finfo.Name;
+                ParentPath = finfo.Directory;
+                CreationDate = finfo.CreationDate;
+                AccessTime = finfo.AccessTime;
+                ModifyTime = finfo.ModifyTime;
+                Size = finfo.Size;
+                Permissions = finfo.Permissions;
+                Success = success;
+                Files = files;
+            }
+
             public override bool Equals(object obj)
             {
                 return obj is FileBrowser && Equals((FileBrowser)obj);
