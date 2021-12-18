@@ -105,14 +105,14 @@ namespace Apollo
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
 #if DEBUG
 #if HTTP
-        public static string StagingRSAPrivateKey = "U5fLDaI4t7uu21Uw8rCUa6WPMfkq1m11YokvAZBqoBo=";
+        public static string StagingRSAPrivateKey = "UEEMFRXbr63WhXUomS+hys3Pt11WBqBC2+TpghbQWes=";
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
         public static string StagingRSAPrivateKey = "dlBOwdZdnAY1YH/6BZyn/wjkoDZk6IzZ75+p+JZ8V14=";
 #endif
 #if HTTP
-        public static string PayloadUUID = "fd605fc0-f8ff-4ed5-bd8d-45a1b1ed142c";
+        public static string PayloadUUID = "bf6b7755-b8c5-4dc9-a80a-75fd8d70527b";
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
