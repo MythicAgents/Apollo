@@ -19,7 +19,7 @@ class ExecutePEArguments(TaskArguments):
         self.args = [
             CommandParameter(
                 name="pe_name",
-                cli_name = "PE",
+                cli_name="PE",
                 display_name = "Executable to Run",
                 type=ParameterType.ChooseOne,
                 dynamic_query_function=self.get_files,

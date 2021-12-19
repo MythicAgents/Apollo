@@ -21,9 +21,15 @@ class Apollo(PayloadType):
 A fully featured .NET 4.0 compatible training agent. Version: {}
     """.format(version)
     supports_dynamic_loading = True
-    build_parameters = {
-        "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
-    }
+    build_parameters = [
+        BuildParameter(
+            name = "output_type",
+            parameter_type=BuildParameterType.ChooseOne,
+            choices=[ "WinExe", "Shellcode"],
+            default_value="WinExe",
+            description="Output as shellcode, executable, or dynamically loaded library.",
+        )
+    ]
     c2_profiles = ["http", "smb", "tcp"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
