@@ -24,7 +24,7 @@ namespace Tasks
         [DataContract]
         internal struct UnlinkParameters
         {
-            [DataMember(Name = "connection_info")]
+            [DataMember(Name = "link_info")]
             public LinkInformation ConnectionInfo;
         }
 
@@ -44,17 +44,34 @@ namespace Tasks
                 TaskResponse resp;
                 UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
                 CallbackInformation peerInfo;
+                string sourceUUID;
+                string destUUID;
                 if (parameters.ConnectionInfo.Direction == EdgeDirection.BiDirectional || parameters.ConnectionInfo.Direction == EdgeDirection.SourceToDestination)
                 {
                     peerInfo = parameters.ConnectionInfo.Destination;
+                    sourceUUID = _agent.GetUUID();
+                    destUUID = peerInfo.UUID;
                 }
                 else
                 {
                     peerInfo = parameters.ConnectionInfo.Source;
+                    sourceUUID = peerInfo.UUID;
+                    destUUID = _agent.GetUUID();
                 }
                 if (_agent.GetPeerManager().Remove(peerInfo.UUID))
                 {
-                    resp = CreateTaskResponse($"Unlinked {peerInfo.Host}", true);
+                    resp = CreateTaskResponse($"Unlinked {peerInfo.Host}", true, "completed", new IMythicMessage[1]
+                    {
+                        new EdgeNode()
+                        {
+                            Source =  sourceUUID,
+                            Destination = destUUID,
+                            Direction = parameters.ConnectionInfo.Direction,
+                            Action = "remove",
+                            C2Profile = parameters.ConnectionInfo.Profile.Name,
+                            MetaData = ""
+                        }
+                    });
                 }
                 else
                 {
