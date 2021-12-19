@@ -112,7 +112,7 @@ namespace Apollo
         public static string StagingRSAPrivateKey = "dlBOwdZdnAY1YH/6BZyn/wjkoDZk6IzZ75+p+JZ8V14=";
 #endif
 #if HTTP
-        public static string PayloadUUID = "bf6b7755-b8c5-4dc9-a80a-75fd8d70527b";
+        public static string PayloadUUID = "d971bd41-036e-44d7-9adc-5ac8c79325b3";
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
