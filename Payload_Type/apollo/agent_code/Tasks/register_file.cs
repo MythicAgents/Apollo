@@ -1,10 +1,10 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define REGISTER_ASSEMBLY
+#define REGISTER_FILE
 #endif
 
-#if REGISTER_ASSEMBLY
+#if REGISTER_FILE
 
 
 using System;
