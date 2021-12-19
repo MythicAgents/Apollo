@@ -9,9 +9,45 @@ import donut
 
 class ExecuteAssemblyArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="assembly_name",
+                cli_name = "Assembly",
+                display_name = "Assembly",
+                type=ParameterType.ChooseOne,
+                dynamic_query_function=self.get_files,
+                description="Assembly to execute (e.g., Seatbelt.exe).",),
+            CommandParameter(
+                name="assembly_arguments",
+                cli_name="Arguments",
+                display_name="Arguments",
+                type=ParameterType.String,
+                description="Arguments to pass to the assembly.",
+                parameter_group_info = [
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Default",
+                    ),
+                ]),
+        ]
+
+
+    async def get_files(self, callback: dict):
+        file_resp = await MythicRPC().execute("get_file", callback_id=callback["id"],
+                                              limit_by_callback=False,
+                                              get_contents=False,
+                                              filename="",
+                                              max_results=-1)
+        if file_resp.status == MythicRPCStatus.Success:
+            file_names = []
+            for f in file_resp.response:
+                if f["filename"] not in file_names:
+                    file_names.append(f["filename"])
+            return file_names
+        else:
+            return []
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

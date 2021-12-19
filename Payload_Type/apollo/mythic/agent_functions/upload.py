@@ -7,14 +7,35 @@ import base64
 
 class UploadArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "remote_path": CommandParameter(name="Destination", required=False, type=ParameterType.String,
-                              description="Path to write the file on the target. If empty, defaults to current working directory."),
-            "file": CommandParameter(name="File", type=ParameterType.File),
-            "host": CommandParameter(name="Host", required=False, type=ParameterType.String, description="Computer to upload the file to. If empty, the current computer.")
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="remote_path",
+                cli_name="Destination",
+                type=ParameterType.String,
+                description="Path to write the file on the target. If empty, defaults to current working directory.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="file",
+                cli_name="File",
+                display_name="File to upload",
+                type=ParameterType.File),
+            CommandParameter(
+                name="host",
+                cli_name="Host", 
+                display_name="Host",
+                type=ParameterType.String, description="Computer to upload the file to. If empty, the current computer.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

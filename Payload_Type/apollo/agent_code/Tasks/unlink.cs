@@ -60,7 +60,7 @@ namespace Tasks
                 }
                 if (_agent.GetPeerManager().Remove(peerInfo.UUID))
                 {
-                    resp = CreateTaskResponse($"Unlinked {peerInfo.Host}", true, "completed", new IMythicMessage[1]
+                    resp = CreateTaskResponse($"Unlinked {peerInfo.Host}", true, "completed", new IMythicMessage[]
                     {
                         new EdgeNode()
                         {
@@ -70,7 +70,7 @@ namespace Tasks
                             Action = "remove",
                             C2Profile = parameters.ConnectionInfo.Profile.Name,
                             MetaData = ""
-                        }
+                        }, 
                     });
                 }
                 else

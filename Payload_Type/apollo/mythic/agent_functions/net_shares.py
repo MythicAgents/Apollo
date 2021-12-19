@@ -4,11 +4,27 @@ import json
 
 class NetSharesArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="computer",
+                cli_name="Computer",
+                display_name="Computer",
+                type=ParameterType.String,
+                description="Computer to enumerate.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    )
+                ]),
+        ]
 
     async def parse_arguments(self):
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            self.add_arg("computer", self.command_line.strip())
         pass
 
 class NetSharesCommand(CommandBase):

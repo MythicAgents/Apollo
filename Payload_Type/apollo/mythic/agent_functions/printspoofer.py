@@ -9,11 +9,16 @@ import base64
 
 class PrintSpooferArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "command": CommandParameter(name="Command(s)", type=ParameterType.String, description="PrintSpoofer command to run (can be one or more).", required=True),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="command",
+                cli_name="Command",
+                display_name="Command(s)",
+                type=ParameterType.String,
+                description="PrintSpoofer command to run (can be one or more)."),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line):

@@ -4,17 +4,30 @@ import json
 
 class RegQueryArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "hive": CommandParameter(name="hive",
-                                     type=ParameterType.ChooseOne,
-                                        description="The hive to query",
-                                        required=True,
-                                        default_value="HKLM",
-                                        choices=["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]),
-            "key": CommandParameter(name="Registry Key", required=False, type=ParameterType.String, description='Registry key to interrogate.', default_value=''),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="hive",
+                cli_name="Hive",
+                display_name="Registry Hive",
+                type=ParameterType.ChooseOne,
+                description="The hive to query",
+                default_value="HKLM",
+                choices=["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]),
+            CommandParameter(
+                name="key",
+                cli_name="Key",
+                display_name="Registry Key", 
+                type=ParameterType.String,
+                description='Registry key to interrogate.', 
+                default_value='',
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+        ]
 
 
     async def parse_arguments(self):

@@ -4,9 +4,34 @@ import json
 
 class LsArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="host",
+                cli_name="Host",
+                display_name="Host",
+                type=ParameterType.String,
+                description="Host to list files from.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Default",
+                    ),
+                ]),
+            CommandParameter(
+                name="path",
+                cli_name="Path",
+                display_name="Path to list files from.",
+                type=ParameterType.String,
+                description="Path to list files from.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default",
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) > 0:

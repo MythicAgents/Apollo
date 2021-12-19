@@ -4,11 +4,16 @@ from mythic_payloadtype_container.MythicRPC import *
 
 class SocksArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "port": CommandParameter(name="port", required=False, type=ParameterType.Number, description="Port to start the socks server on."),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="port", 
+                cli_name="Port",
+                display_name="Port",
+                type=ParameterType.Number,
+                description="Port to start the socks server on."),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

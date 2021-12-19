@@ -4,12 +4,27 @@ import json
 
 class NetLocalgroupMemberArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "computer": CommandParameter(name="Computer", required=False, type=ParameterType.String, description="Computer to enumerate."),
-            "group": CommandParameter(name="Group", type=ParameterType.String, description="Group to enumerate.")
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="computer",
+                cli_name="Computer",
+                display_name="Computer",
+                type=ParameterType.String,
+                description="Computer to enumerate.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="group",
+                cli_name="Group",
+                display_name="Group",
+                type=ParameterType.String,
+                description="Group to enumerate.")
+        ]
 
     def split_commandline(self):
         if self.command_line[0] == "{":

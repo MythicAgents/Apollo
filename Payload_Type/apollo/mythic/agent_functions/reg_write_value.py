@@ -4,19 +4,49 @@ import json
 
 class RegWriteValueArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "hive": CommandParameter(name="hive",
-                                     type=ParameterType.ChooseOne,
-                                        description="The hive to query",
-                                        required=True,
-                                        default_value="HKLM",
-                                        choices=["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]),
-            "key": CommandParameter(name="Registry Key", required=True, type=ParameterType.String, description='Registry key to interrogate.', default_value='\\'),
-            "value_name": CommandParameter(name="Name", required=False, type=ParameterType.String, description='Registry value to write to.', default_value=''),
-            "value_value": CommandParameter(name="Value", required=False, type=ParameterType.String, description='New value to store in the above registry value.', default_value=''),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="hive",
+                cli_name="Hive",
+                display_name="Registry Hive",
+                type=ParameterType.ChooseOne,
+                description="The hive to query",
+                default_value="HKLM",
+                choices=["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]),
+            CommandParameter(
+                name="key",
+                cli_name="Key",
+                display_name="Registry Key",
+                type=ParameterType.String,
+                description='Registry key to interrogate.', 
+                default_value='\\'),
+            CommandParameter(
+                name="value_name",
+                cli_name="Name",
+                display_name="Name",
+                type=ParameterType.String,
+                description='Registry value to write to.',
+                default_value='',
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="value_value",
+                cli_name="Value",
+                display_name="Value",
+                type=ParameterType.String,
+                description='New value to store in the above registry value.',
+                default_value='',
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+        ]
 
     def split_commandline(self):
         if self.command_line[0] == "{":

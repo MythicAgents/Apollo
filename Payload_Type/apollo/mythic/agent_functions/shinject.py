@@ -6,13 +6,53 @@ import base64
 
 class ShInjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "pid": CommandParameter(name="PID", type=ParameterType.Number),
-            "shellcode": CommandParameter(name="Shellcode File", type=ParameterType.File, required=False),
-            "shellcode-file-id": CommandParameter(name="Shellcode File ID", description="Used for automation. Ignore.", type=ParameterType.String, required=False),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="pid",
+                cli_name="PID",
+                display_name="PID",
+                type=ParameterType.Number,
+                description="Process ID to inject into.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Modal"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Scripted"
+                    ),
+                ]),
+            CommandParameter(
+                name="shellcode",
+                cli_name="Shellcode",
+                display_name="Shellcode File",
+                type=ParameterType.File,
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Modal"
+                    ),
+                ]),
+            CommandParameter(
+                name="shellcode-file-id",
+                cli_name="FileID",
+                display_name="Shellcode File ID",
+                description="Used for automation. Ignore.",
+                type=ParameterType.String,
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Scripted"
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

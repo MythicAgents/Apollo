@@ -8,13 +8,65 @@ import donut
 
 class AssemblyInjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject into."),
-            "assembly_name": CommandParameter(name="Assembly Name", type=ParameterType.String, description="Name of the assembly to execute."),
-            "assembly_arguments": CommandParameter(name="Assembly Arguments", type=ParameterType.String, description="Arguments to pass to the assembly."),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="pid",
+                cli_name = "PID",
+                display_name = "Process ID",
+                type=ParameterType.Number,
+                description="Process ID to inject into.",
+                parameter_group_info = [
+                    ParameterGroupInfo(
+                        required=True,
+                        ui_position=0,
+                        group_name="Default",
+                    )
+                ]),
+            CommandParameter(
+                name="assembly_name",
+                cli_name="Assembly",
+                display_name="Assembly",
+                type=ParameterType.ChooseOne,
+                dynamic_query_function=self.get_files,
+                description="Assembly to execute (e.g., Seatbelt.exe).",
+                parameter_group_info = [
+                    ParameterGroupInfo(
+                        required=True,
+                        ui_position=1,
+                        group_name="Default",
+                    ),
+                ]),
+            CommandParameter(
+                name="assembly_arguments",
+                cli_name="Arguments",
+                display_name="Arguments",
+                type=ParameterType.String,
+                description="Arguments to pass to the assembly.",
+                parameter_group_info = [
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=2,
+                        group_name="Default",
+                    ),
+                ]),
+        ]
+
+    async def get_files(self, callback: dict):
+        file_resp = await MythicRPC().execute("get_file", callback_id=callback["id"],
+                                              limit_by_callback=False,
+                                              get_contents=False,
+                                              filename="",
+                                              max_results=-1)
+        if file_resp.status == MythicRPCStatus.Success:
+            file_names = []
+            for f in file_resp.response:
+                if f["filename"] not in file_names:
+                    file_names.append(f["filename"])
+            return file_names
+        else:
+            return []
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":
@@ -65,8 +117,6 @@ class AssemblyInjectCommand(CommandBase):
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
             raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
-
-        task.args.remove_arg("arch")
         
         return task
 

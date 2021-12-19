@@ -22,6 +22,11 @@ namespace Tasks
 {
     public class cd : Tasking
     {
+        [DataContract]
+        public struct CdParameters
+        {
+            [DataMember(Name = "path")] public string Path;
+        }
         public cd(IAgent agent, Task task) : base(agent, task)
         {
 
@@ -36,15 +41,16 @@ namespace Tasks
         {
             return new System.Threading.Tasks.Task(() =>
             {
-                if (!Directory.Exists(_data.Parameters))
+                CdParameters parameters = _jsonSerializer.Deserialize<CdParameters>(_data.Parameters);
+                if (!Directory.Exists(parameters.Path))
                 {
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                        $"Directory {_data.Parameters} does not exist",
+                        $"Directory {parameters.Path} does not exist",
                         true,
                         "error"));
                 } else
                 {
-                    Directory.SetCurrentDirectory(_data.Parameters);
+                    Directory.SetCurrentDirectory(parameters.Path);
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                         $"Working directory set to {Directory.GetCurrentDirectory()}",
                         true));

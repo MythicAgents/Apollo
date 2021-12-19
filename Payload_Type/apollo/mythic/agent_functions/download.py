@@ -4,12 +4,28 @@ import json
 
 class DownloadArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "file": CommandParameter(name="File", type=ParameterType.String, description="File to download."),
-            "host": CommandParameter(name="Host", type=ParameterType.String, description="File to download.", required=False),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="file",
+                cli_name="Path",
+                display_name="Path to file to download.",
+                type=ParameterType.String,
+                description="File to download."),
+            CommandParameter(
+                name="host",
+                cli_name="Host",
+                display_name="Host",
+                type=ParameterType.String,
+                description="File to download.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Default",
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

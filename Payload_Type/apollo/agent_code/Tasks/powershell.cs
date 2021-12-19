@@ -22,6 +22,7 @@ using ApolloInterop.Structs.MythicStructs;
 using ST = System.Threading.Tasks;
 using System.Management.Automation.Runspaces;
 using System.Collections.Concurrent;
+using System.Runtime.Serialization;
 using ApolloInterop.Classes.Collections;
 
 namespace Tasks
@@ -311,6 +312,13 @@ namespace Tasks
         private bool _complete = false;
         private Action _flushMessages;
 
+        [DataContract]
+        internal struct PowerShellParameters
+        {
+            [DataMember(Name = "command")] public string Command;
+        }
+        
+        
         public powershell(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
         {
             _flushMessages = () =>
@@ -363,7 +371,8 @@ namespace Tasks
                     cmd += loadedScript;
                 }
 
-                cmd += "\n\n" + _data.Parameters;
+                PowerShellParameters parameters = _jsonSerializer.Deserialize<PowerShellParameters>(_data.Parameters);
+                cmd += "\n\n" + parameters.Command;
 
                 _agent.AcquireOutputLock();
 

@@ -4,12 +4,16 @@ import json
 
 class Spawntox64Arguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "application": CommandParameter(name="Path to Application", type=ParameterType.String, required=True, default_value="C:\\Windows\\System32\\rundll32.exe"),
-            "arguments": CommandParameter(name="Arguments", type=ParameterType.String, default_value="", required=False)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(name="application",cli_name="Application", display_name="Path to Application", type=ParameterType.String, default_value="C:\\Windows\\System32\\rundll32.exe"),
+            CommandParameter(name="arguments", cli_name="Arguments", display_name="Arguments", type=ParameterType.String, default_value="", parameter_group_info=[
+                ParameterGroupInfo(
+                    required=False
+                )
+            ]),
+        ]
 
     def split_commandline(self):
         if self.command_line[0] == "{":

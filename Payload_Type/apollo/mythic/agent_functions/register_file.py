@@ -5,11 +5,15 @@ import base64
 
 class RegisterFileArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "file": CommandParameter(name="File", type=ParameterType.File)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="file",
+                cli_name="File", 
+                display_name="File",
+                type=ParameterType.File)
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

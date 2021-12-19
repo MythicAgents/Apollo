@@ -5,12 +5,22 @@ import base64
 
 class InjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "template": CommandParameter(name="Payload Template", type=ParameterType.Payload, supported_agents=["apollo"], supported_agent_build_parameters={"apollo": {"output_type": "Shellcode"}}),
-            "pid": CommandParameter(name="PID", type=ParameterType.Number),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="template",
+                cli_name="Payload",
+                display_name="Payload",
+                type=ParameterType.Payload,
+                supported_agents=["apollo"],
+                supported_agent_build_parameters={"apollo": {"output_type": "Shellcode"}}),
+            CommandParameter(
+                name="pid",
+                cli_name="PID",
+                display_name="PID",
+                type=ParameterType.Number),
+        ]
 
     errorMsg = "Missing required parameter: {}"
 

@@ -3,15 +3,131 @@ import json
 
 
 class ScArguments(TaskArguments):
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "action": CommandParameter(name="Action", type=ParameterType.ChooseOne, choices=["query", "start", "stop", "create", "delete"], required=True, description="Service controller action to perform."),
-            "computer": CommandParameter(name="Computer", type=ParameterType.String, required=False, description="Host to perform the service action on."),
-            "service": CommandParameter(name="Service Name", type=ParameterType.String, required=False, description="The name of the service."),
-            "display_name": CommandParameter(name="Display Name", type=ParameterType.String, required=False, description="The display name of the service"),
-            "binpath": CommandParameter(name="Binary Path", type=ParameterType.String, required=False, description="Path to the binary used in the create action."),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="action",
+                cli_name="Action",
+                display_name="Action",
+                type=ParameterType.ChooseOne, 
+                choices=["query", "start", "stop", "create", "delete"], 
+                description="Service controller action to perform.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Query"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Start"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Stop"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Create"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Delete"
+                    ),
+                ]),
+            CommandParameter(
+                name="computer",
+                cli_name="Computer",
+                display_name="Computer",
+                type=ParameterType.String,
+                description="Host to perform the service action on.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Default"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Query"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Start"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Stop"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Create"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Delete"
+                    ),
+                ]),
+            CommandParameter(
+                name="service",
+                cli_name="ServiceName",
+                display_name="Service Name",
+                type=ParameterType.String,
+                description="The name of the service.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Query"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Start"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Stop"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Create"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Delete"
+                    ),
+                ]),
+            CommandParameter(
+                name="display_name",
+                cli_name="DisplayName",
+                display_name="Display Name of Service",
+                type=ParameterType.String,
+                description="The display name of the service",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Query"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Create"
+                    ),
+                ]),
+            CommandParameter(
+                name="binpath",
+                cli_name="BinPath",
+                display_name="Binary Path",
+                type=ParameterType.String,
+                description="Path to the binary used in the create action.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Create"
+                    ),
+                ]),
+        ]
 
     def split_commandline(self):
         if self.command_line[0] == "{":
@@ -46,7 +162,7 @@ class ScArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            raise Exception("Require modal popup.")
+            raise Exception("Require JSON.")
 
 class ScCommand(CommandBase):
     cmd = "sc"

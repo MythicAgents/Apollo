@@ -9,12 +9,22 @@ import donut
 
 class PsInjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject into."),
-            "powershell_params": CommandParameter(name="PowerShell Command", type=ParameterType.String, description="PowerShell command to execute."),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="pid",
+                cli_name="PID",
+                display_name="PID",
+                type=ParameterType.Number,
+                description="Process ID to inject into."),
+            CommandParameter(
+                name="powershell_params",
+                cli_name="Command",
+                display_name="PowerShell Command",
+                type=ParameterType.String,
+                description="PowerShell command to execute."),
+        ]
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":

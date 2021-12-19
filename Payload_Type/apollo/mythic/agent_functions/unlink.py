@@ -4,11 +4,15 @@ import json
 
 class UnlinkArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "link_info": CommandParameter(name="Connection to Unlink", type=ParameterType.LinkInfo)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="link_info",
+                cli_name="Callback",
+                display_name="Callback to Unlink",
+                type=ParameterType.LinkInfo)
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

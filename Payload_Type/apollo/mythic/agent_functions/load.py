@@ -9,13 +9,22 @@ import json
 
 class LoadArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "commands" : CommandParameter(name="Commands", 
-                 type=ParameterType.ChooseMultiple, 
-                 description="One or more commands to send to the agent", 
-                 choices_are_all_commands=True),
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="commands",
+                cli_name="Commands",
+                display_name="Commands", 
+                type=ParameterType.ChooseMultiple, 
+                description="One or more commands to load into the agent", 
+                choices_are_all_commands=True),
+        ]
+        self.script_cmds = {
+            "mimikatz": "execute_pe",
+            "printspoofer": "execute_pe",
+            "shell": "run",
+            "inject": "shinject"
         }
 
     async def parse_arguments(self):
@@ -23,6 +32,9 @@ class LoadArguments(TaskArguments):
             self.load_args_from_json_string(self.command_line)
         else:
             cmds = self.command_line.split(" ")
+            for i in range(len(cmds)):
+                if cmds[i] in self.script_cmds:
+                    cmds[i] = self.script_cmds[cmds[i]]
             self.args["commands"].value = cmds
         pass
 

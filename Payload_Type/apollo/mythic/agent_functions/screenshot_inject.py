@@ -9,13 +9,39 @@ import donut
 
 class ScreenshotInjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject into."),
-            "count": CommandParameter(name="Number of Screenshots", type=ParameterType.Number, description="The number of screenshots to take when executing.", required=False, default_value=1),
-            "interval": CommandParameter(name="Interval Between Screenshots", type=ParameterType.Number, description="Interval in seconds to wait between capturing screenshots. Default 0.", required=False, default_value=0),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="pid",
+                cli_name="PID",
+                display_name="PID",
+                type=ParameterType.Number, description="Process ID to inject into."),
+            CommandParameter(
+                name="count",
+                cli_name="Count",
+                display_name="Number of Screenshots",
+                type=ParameterType.Number,
+                description="The number of screenshots to take when executing.",
+                default_value=1,
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="interval",
+                cli_name="Interval",
+                display_name="Interval Between Screenshots", 
+                type=ParameterType.Number, 
+                description="Interval in seconds to wait between capturing screenshots. Default 0.",
+                default_value=0,
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ])
+        ]
 
     async def parse_arguments(self):
         if not len(self.command_line):

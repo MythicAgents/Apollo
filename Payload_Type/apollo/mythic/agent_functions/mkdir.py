@@ -4,11 +4,16 @@ import json
 
 class MkdirArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "path": CommandParameter(name="Directory Path", type=ParameterType.String, description="Directory to create.", required=True),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="path",
+                cli_name="Path",
+                display_name="Path to new directory",
+                type=ParameterType.String, 
+                description="Directory to create."),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

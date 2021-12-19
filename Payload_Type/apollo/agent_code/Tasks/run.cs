@@ -24,6 +24,12 @@ namespace Tasks
 {
     public class run : Tasking
     {
+        [DataContract]
+        internal struct RunParameters
+        {
+            [DataMember(Name = "executable")] public string Executable;
+            [DataMember(Name = "arguments")] public string Arguments;
+        }
         private delegate IntPtr CommandLineToArgvW(
             [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine,
             out int pNumArgs);
@@ -39,7 +45,7 @@ namespace Tasks
             _pLocalFree = _agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
             _pCommandLineToArgvW = _agent.GetApi().GetLibraryFunction<CommandLineToArgvW>(Library.SHELL32, "CommandLineToArgvW");
         }
-
+        
         public override void Kill()
         {
             _cancellationToken.Cancel();
@@ -58,7 +64,13 @@ namespace Tasks
                 }
                 else
                 {
-                    string[] parts = ParseCommandLine(_data.Parameters);
+                    RunParameters parameters = _jsonSerializer.Deserialize<RunParameters>(_data.Parameters);
+                    string mythiccmd = parameters.Executable;
+                    if (!string.IsNullOrEmpty(parameters.Arguments))
+                    {
+                        mythiccmd += " " + parameters.Arguments;
+                    }
+                    string[] parts = ParseCommandLine(mythiccmd);
                     if (parts == null)
                     {
                         _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(

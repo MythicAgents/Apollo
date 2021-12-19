@@ -7,11 +7,17 @@ from os import path
 import donut
 class PowerpickArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "powershell_params": CommandParameter(name="Command", type=ParameterType.String, description="PowerShell command to execute.", required=True),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="powershell_params",
+                cli_name="Command",
+                display_name="Command",
+                type=ParameterType.String,
+                description="PowerShell command to execute.",
+            )
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:

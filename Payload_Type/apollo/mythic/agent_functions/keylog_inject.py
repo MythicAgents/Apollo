@@ -9,11 +9,16 @@ import base64
 
 class KeylogInjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "pid": CommandParameter(name="PID", type=ParameterType.Number, description="Process ID to inject keylogger into."),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="pid",
+                cli_name="PID",
+                display_name="PID",
+                type=ParameterType.Number,
+                description="Process ID to inject keylogger into."),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

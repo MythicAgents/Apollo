@@ -4,11 +4,17 @@ import json
 
 class CatArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "path": CommandParameter(name="File Path", required=True, type=ParameterType.String, description="File to read."),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="path",
+                cli_name="Path",
+                display_name="Path to File",
+                required=True,
+                type=ParameterType.String,
+                description="File to read."),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:

@@ -4,12 +4,22 @@ import json
 
 class MvArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "source": CommandParameter(name="Source File", type=ParameterType.String, description="File to be moved."),
-            "destination": CommandParameter(name="Destination", type=ParameterType.String, description="Final name or location the file will be moved to.")
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="source",
+                cli_name = "Path",
+                display_name = "Source file to copy.",
+                type=ParameterType.String,
+                description='Source file to copy.'),
+            CommandParameter(
+                name="destination",
+                cli_name="Destination",
+                display_name="Destination path.",
+                type=ParameterType.String,
+                description="Where the new file will be created.")
+        ]
 
     def split_commandline(self):
         if self.command_line[0] == "{":

@@ -4,9 +4,20 @@ import json
 
 class CdArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="path",
+                cli_name="Path",
+                display_name="Path to Directory",
+                required=True,
+                type=ParameterType.String,
+                description="Directory to change to."),
+        ]
+    
+
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -15,6 +26,7 @@ class CdArguments(TaskArguments):
             self.command_line = self.command_line[1:-1]
         elif self.command_line[0] == "'" and self.command_line[-1] == "'":
             self.command_line = self.command_line[1:-1]
+        self.add_arg("path", self.command_line)
 
 
 class CdCommand(CommandBase):

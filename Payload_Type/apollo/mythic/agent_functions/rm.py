@@ -4,13 +4,37 @@ import json
 
 class RmArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "path": CommandParameter(name="Directory of File", type=ParameterType.String, description="The file to remove on the specified host (if empty, defaults to localhost)", required=True),
-            "file": CommandParameter(name="File", type=ParameterType.String, description="The file to remove on the specified host (if empty, defaults to localhost)", required=False),
-            "host": CommandParameter(name="Host", type=ParameterType.String, description="Computer from which to remove the file.", required=False),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="path",
+                cli_name="Path",
+                display_name="Directory of File",
+                type=ParameterType.String,
+                description="The full path of the file to remove on the specified host"),
+            CommandParameter(
+                name="file",
+                cli_name="File", 
+                display_name="File",
+                type=ParameterType.String, description="The file to remove on the specified host (used by file browser)",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="host",
+                cli_name="Host",
+                display_name="Host",
+                type=ParameterType.String,
+                description="Computer from which to remove the file.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) > 0:
