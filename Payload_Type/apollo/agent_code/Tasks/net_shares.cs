@@ -1,10 +1,10 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define YOUR_COMMAND
+#define NET_SHARES
 #endif
 
-#if YOUR_COMMAND
+#if NET_SHARES
 
 using ApolloInterop.Classes;
 using ApolloInterop.Classes.Api;

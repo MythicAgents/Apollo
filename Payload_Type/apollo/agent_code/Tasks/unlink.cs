@@ -25,7 +25,7 @@ namespace Tasks
         internal struct UnlinkParameters
         {
             [DataMember(Name = "connection_info")]
-            public PeerInformation ConnectionInfo;
+            public LinkInformation ConnectionInfo;
         }
 
         public unlink(IAgent agent, Task data) : base(agent, data)
@@ -43,14 +43,22 @@ namespace Tasks
             {
                 TaskResponse resp;
                 UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
-
-                if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.AgentUUID))
+                CallbackInformation peerInfo;
+                if (parameters.ConnectionInfo.Direction == EdgeDirection.BiDirectional || parameters.ConnectionInfo.Direction == EdgeDirection.SourceToDestination)
                 {
-                    resp = CreateTaskResponse($"Unlinked {parameters.ConnectionInfo.Hostname}", true);
+                    peerInfo = parameters.ConnectionInfo.Destination;
                 }
                 else
                 {
-                    resp = CreateTaskResponse($"Failed to unlink {parameters.ConnectionInfo.Hostname}", true, "error");
+                    peerInfo = parameters.ConnectionInfo.Source;
+                }
+                if (_agent.GetPeerManager().Remove(peerInfo.UUID))
+                {
+                    resp = CreateTaskResponse($"Unlinked {peerInfo.Host}", true);
+                }
+                else
+                {
+                    resp = CreateTaskResponse($"Failed to unlink {peerInfo.Host}", true, "error");
                 }
                 // Your code here..
                 // // CreateTaskResponse to create a new TaskResposne object

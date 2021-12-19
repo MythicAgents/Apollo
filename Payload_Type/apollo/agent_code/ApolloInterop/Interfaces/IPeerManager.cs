@@ -8,7 +8,7 @@ namespace ApolloInterop.Interfaces
 {
     public interface IPeerManager
     {
-        Peer AddPeer(PeerInformation info);
+        Peer AddPeer(NewPeerInformation info);
         bool Remove(string uuid);
         bool Remove(IPeer peer);
         bool Route(DelegateMessage msg);

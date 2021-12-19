@@ -56,7 +56,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct PeerInformation
+        public struct NewPeerInformation
         {
             [DataMember(Name = "host")]
             public string Hostname;
@@ -64,6 +64,77 @@ namespace ApolloInterop.Structs
             public C2ProfileData C2Profile;
             [DataMember(Name = "agent_uuid")]
             public string AgentUUID;
+        }
+
+        [DataContract]
+        public struct CallbackInformation
+        {
+            [DataMember(Name = "agent_callback_id")]
+            public string UUID;
+
+            [DataMember(Name = "host")] public string Host;
+            [DataMember(Name = "id")] public int Id;
+            [DataMember(Name = "payload")] public PyPayload Payload;
+
+            [DataMember(Name = "c2profileparametersinstances")]
+            public PyC2ProfileParameterInstance[] ParameterInstances;
+
+            [DataMember(Name = "__typename")] public string PyType;
+        }
+
+        [DataContract]
+        public struct PyPayload
+        {
+            [DataMember(Name = "id")] public int Id;
+            [DataMember(Name = "uuid")] public string UUID;
+            [DataMember(Name = "__typename")] public string PyType;
+        }
+        
+        
+        [DataContract]
+        public struct PyC2Profile
+        {
+            [DataMember(Name = "id")] public int Id;
+            [DataMember(Name = "name")] public string Name;
+            [DataMember(Name = "__typename")] public string PyType;
+        }
+
+        [DataContract]
+        public struct PyC2ProfileParameter
+        {
+            [DataMember(Name = "crypto_type")] public bool IsCrypto;
+            [DataMember(Name = "name")] public string Name;
+            [DataMember(Name = "id")] public int Id;
+            [DataMember(Name = "__typename")] public string PyType;
+        }
+
+        [DataContract]
+        public struct PyC2ProfileParameterInstance
+        {
+            [DataMember(Name = "enc_key_base64")] public string Base64EncryptionKey;
+            [DataMember(Name = "dec_key_base64")] public string Base64DecryptionKey;
+            [DataMember(Name = "value")] public string Value;
+            [DataMember(Name = "id")] public int Id;
+            [DataMember(Name = "c2_profile_id")] public int C2ProfileId;
+
+            [DataMember(Name = "c2profileparameter")]
+            public PyC2ProfileParameter C2ProfileParameter;
+
+            [DataMember(Name = "__typename")] public string PyType;
+        }
+        
+        
+        [DataContract]
+        public struct LinkInformation
+        {
+            [DataMember(Name = "id")] public int Id;
+            [DataMember(Name = "c2profile")] public PyC2Profile Profile;
+            [DataMember(Name = "direction")] public EdgeDirection Direction;
+            [DataMember(Name = "destination")] public CallbackInformation Destination;
+            [DataMember(Name = "source")] public CallbackInformation Source;
+            [DataMember(Name = "end_timestamp")] public string EndTimestamp;
+            [DataMember(Name = "__typename")] public string PyType;
+            [DataMember(Name = "display")] public string DisplayString;
         }
 
         // Profile data sent from the Mythic Server
