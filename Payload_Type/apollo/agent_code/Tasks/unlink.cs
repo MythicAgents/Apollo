@@ -24,7 +24,8 @@ namespace Tasks
         [DataContract]
         internal struct UnlinkParameters
         {
-            [DataMember(Name = "parameter_name")] public string ParameterName;
+            [DataMember(Name = "connection_info")]
+            public PeerInformation ConnectionInfo;
         }
 
         public unlink(IAgent agent, Task data) : base(agent, data)
@@ -40,12 +41,21 @@ namespace Tasks
         {
             return new ST.Task(() =>
             {
-                // TaskResponse resp;
-                // UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
-                // // Your code here..
+                TaskResponse resp;
+                UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
+
+                if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.AgentUUID))
+                {
+                    resp = CreateTaskResponse($"Unlinked {parameters.ConnectionInfo.Hostname}", true);
+                }
+                else
+                {
+                    resp = CreateTaskResponse($"Failed to unlink {parameters.ConnectionInfo.Hostname}", true, "error");
+                }
+                // Your code here..
                 // // CreateTaskResponse to create a new TaskResposne object
                 // // Then add response to queue
-                // _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
     }
