@@ -12,7 +12,6 @@ class CdArguments(TaskArguments):
                 name="path",
                 cli_name="Path",
                 display_name="Path to Directory",
-                required=True,
                 type=ParameterType.String,
                 description="Directory to change to."),
         ]

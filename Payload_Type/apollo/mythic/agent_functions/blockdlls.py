@@ -12,7 +12,6 @@ class BlockDllsArguments(TaskArguments):
                 cli_name="EnableBlock",
                 display_name="Block Non-Microsoft DLLs",
                 type=ParameterType.Boolean,
-                required=True,
                 default_value=True,
                 description="Block non-Microsoft DLLs from being loaded.",
                 parameter_group_info=[

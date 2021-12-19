@@ -11,7 +11,6 @@ class CatArguments(TaskArguments):
                 name="path",
                 cli_name="Path",
                 display_name="Path to File",
-                required=True,
                 type=ParameterType.String,
                 description="File to read."),
         ]
