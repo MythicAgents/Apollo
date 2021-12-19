@@ -20,12 +20,22 @@ namespace ApolloInterop.Classes.P2P
         public abstract Peer AddPeer(PeerInformation info);
         public virtual bool Remove(string uuid)
         {
-            return _peers.TryRemove(uuid, out var p);
+            bool bRet = true;
+            if (_peers.ContainsKey(uuid))
+            {
+                bRet = _peers.TryRemove(uuid, out var p);
+                if (bRet)
+                {
+                    p.Stop();
+                }
+            }
+
+            return bRet;
         }
 
         public virtual bool Remove(IPeer peer)
         {
-            return _peers.TryRemove(peer.GetUUID(), out var p);
+            return Remove(peer.GetUUID());
         }
 
         public abstract bool Route(DelegateMessage msg);

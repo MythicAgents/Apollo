@@ -7,7 +7,7 @@ class UnlinkArguments(TaskArguments):
     def __init__(self, command_line):
         super().__init__(command_line)
         self.args = {
-            "connection_info": CommandParameter(name="Connection to Unlink", type=ParameterType.ConnectionInfo)
+            "link_info": CommandParameter(name="Connection to Unlink", type=ParameterType.LinkInfo)
         }
 
     async def parse_arguments(self):
