@@ -41,7 +41,7 @@ class RegisterFileCommand(CommandBase):
     attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['File']
+        original_file_name = json.loads(task.original_params)['file']
         resp = await MythicRPC().execute("create_file",
                                           task_id=task.id,
                                           file=base64.b64encode(task.args.get_arg("file")).decode(),
