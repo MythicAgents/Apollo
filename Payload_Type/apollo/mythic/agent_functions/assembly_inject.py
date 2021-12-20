@@ -62,7 +62,7 @@ class AssemblyInjectArguments(TaskArguments):
         if file_resp.status == MythicRPCStatus.Success:
             file_names = []
             for f in file_resp.response:
-                if f["filename"] not in file_names:
+                if f["filename"] not in file_names and f["filename"].endswith(".exe"):
                     file_names.append(f["filename"])
             return file_names
         else:

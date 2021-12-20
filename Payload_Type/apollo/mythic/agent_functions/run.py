@@ -35,8 +35,8 @@ class RunArguments(TaskArguments):
         else:
             parts = self.command_line.split(" ", 1)
             self.add_arg("executable", parts[0])
-        if len(parts) > 1:
-            self.add_arg("arguments", parts[1])
+            if len(parts) > 1:
+                self.add_arg("arguments", parts[1])
         pass
 
 
