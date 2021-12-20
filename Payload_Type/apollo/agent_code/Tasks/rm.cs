@@ -112,7 +112,7 @@ namespace Tasks
                         new RemovedFileInformation
                         {
                             Host = host,
-                            Path = rmFilePath
+                            Path = realPath
                         }
                     };
                 }

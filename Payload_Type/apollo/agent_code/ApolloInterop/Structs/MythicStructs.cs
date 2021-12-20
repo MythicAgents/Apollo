@@ -283,7 +283,7 @@ namespace ApolloInterop.Structs
             {
                 FullName = finfo.FullName;
                 Name = finfo.Name;
-                Directory = finfo.DirectoryName;
+                Directory = finfo.Directory.FullName;
                 CreationDate = finfo.CreationTimeUtc.ToString();
                 ModifyTime = finfo.LastWriteTimeUtc.ToString();
                 AccessTime = finfo.LastAccessTimeUtc.ToString();
@@ -418,6 +418,29 @@ namespace ApolloInterop.Structs
                 ModifyTime = finfo.ModifyTime;
                 Size = finfo.Size;
                 Permissions = finfo.Permissions;
+                Success = success;
+                Files = files;
+            }
+            
+            public FileBrowser(FileInfo finfo, bool success = true, FileInformation[] files = null)
+            {
+                FileInformation finfo2 = new FileInformation(finfo);
+                if (finfo2.FullName.StartsWith("\\"))
+                {
+                    Host = finfo2.FullName.Split('\\')[2];
+                }
+                else
+                {
+                    Host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+                }
+                IsFile = finfo2.IsFile;
+                Name = finfo.Name;
+                ParentPath = finfo2.Directory;
+                CreationDate = finfo2.CreationDate;
+                AccessTime = finfo2.AccessTime;
+                ModifyTime = finfo2.ModifyTime;
+                Size = finfo2.Size;
+                Permissions = finfo2.Permissions;
                 Success = success;
                 Files = files;
             }

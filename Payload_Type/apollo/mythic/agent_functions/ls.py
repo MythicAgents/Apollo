@@ -38,18 +38,22 @@ class LsArguments(TaskArguments):
             # We'll never enter this control flow
             if self.command_line[0] == '{':
                 temp_json = json.loads(self.command_line)
-                host = ""
-                path = temp_json['path']
-                if 'file' in temp_json and temp_json['file'] != "":
-                    path += "\\" + temp_json['file']
-                if 'host' in temp_json:
-                    # this means we have tasking from the file browser rather than the popup UI
-                    # the apfell agent doesn't currently have the ability to do _remote_ listings, so we ignore it
-                    host = temp_json['host']
+                if "file" in temp_json.keys():
+                    # we came from the file browser
+                    host = ""
+                    path = temp_json['path']
+                    if 'file' in temp_json and temp_json['file'] != "":
+                        path += "\\" + temp_json['file']
+                    if 'host' in temp_json:
+                        # this means we have tasking from the file browser rather than the popup UI
+                        # the apfell agent doesn't currently have the ability to do _remote_ listings, so we ignore it
+                        host = temp_json['host']
 
-                self.add_arg("host", host)
-                self.add_arg("path", path)
-                self.add_arg("file_browser", "true")
+                    self.add_arg("host", host)
+                    self.add_arg("path", path)
+                    self.add_arg("file_browser", "true")
+                else:
+                    self.load_args_from_json_string(self.command_line)
             else:
                 host = ""
                 if self.command_line[0] == "\\" and self.command_line[1] == "\\":

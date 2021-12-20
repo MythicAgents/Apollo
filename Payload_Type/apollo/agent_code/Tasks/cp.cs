@@ -51,14 +51,26 @@ namespace Tasks
                 {
                     FileInfo source = new FileInfo(parameters.SourceFile);
                     artifacts.Add(Artifact.FileOpen(source.FullName));
-                    File.Copy(parameters.SourceFile, parameters.DestinationFile);
-                    FileInfo dest = new FileInfo(parameters.DestinationFile);
-                    artifacts.Add(Artifact.FileWrite(dest.FullName, source.Length));
-                    resp = CreateTaskResponse(
-                        $"Copied {source.FullName} to {dest.FullName}",
-                        true,
-                        "completed",
-                        artifacts.ToArray());
+                    if (source.Attributes.HasFlag(FileAttributes.Directory))
+                    {
+                        resp = CreateTaskResponse(
+                            $"{source.FullName} is a directory.  Please specify a file.",
+                            true,
+                            "error",
+                            artifacts.ToArray());
+                    }
+                    else
+                    {
+                        File.Copy(parameters.SourceFile, parameters.DestinationFile);
+                        FileInfo dest = new FileInfo(parameters.DestinationFile);
+                        artifacts.Add(Artifact.FileWrite(dest.FullName, source.Length));
+                        artifacts.Add(new FileBrowser(dest));
+                        resp = CreateTaskResponse(
+                            $"Copied {source.FullName} to {dest.FullName}",
+                            true,
+                            "completed",
+                            artifacts.ToArray());   
+                    }
                 } catch (Exception ex)
                 {
                     resp = CreateTaskResponse($"Failed to copy file: {ex.Message}", true, "error", artifacts.ToArray());
