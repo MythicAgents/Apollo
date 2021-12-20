@@ -52,11 +52,14 @@ class ExecuteAssemblyArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require an assembly to execute.\n\tUsage: {}".format(ExecuteAssemblyCommand.help_cmd))
-        parts = self.command_line.split(" ", maxsplit=1)
-        self.add_arg("assembly_name", parts[0])
-        self.add_arg("assembly_arguments", "")
-        if len(parts) == 2:
-            self.add_arg("assembly_arguments", parts[1])
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            parts = self.command_line.split(" ", maxsplit=1)
+            self.add_arg("assembly_name", parts[0])
+            self.add_arg("assembly_arguments", "")
+            if len(parts) == 2:
+                self.add_arg("assembly_arguments", parts[1])
 
 
 class ExecuteAssemblyCommand(CommandBase):

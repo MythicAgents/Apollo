@@ -57,11 +57,14 @@ class ExecutePEArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require a PE to execute.\n\tUsage: {}".format(ExecutePECommand.help_cmd))
-        parts = self.command_line.split(" ", maxsplit=1)
-        self.add_arg("pe_name", parts[0])
-        self.add_arg("pe_arguments", "")
-        if len(parts) == 2:
-            self.add_arg("pe_arguments", parts[1])
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            parts = self.command_line.split(" ", maxsplit=1)
+            self.add_arg("pe_name", parts[0])
+            self.add_arg("pe_arguments", "")
+            if len(parts) == 2:
+                self.add_arg("pe_arguments", parts[1])
 
 
 class ExecutePECommand(CommandBase):
