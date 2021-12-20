@@ -83,7 +83,7 @@ namespace Tasks
                         string cmdline = null;
                         if (parts.Length > 1)
                         {
-                            cmdline = _data.Parameters.Replace(app, "").TrimStart();
+                            cmdline = mythiccmd.Replace(app, "").TrimStart();
                         }
                         proc = _agent.GetProcessManager().NewProcess(app, cmdline);
                         proc.OutputDataReceived += DataReceived;
