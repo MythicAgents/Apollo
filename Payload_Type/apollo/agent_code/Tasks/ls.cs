@@ -126,7 +126,8 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 LsParameters parameters = _jsonSerializer.Deserialize<LsParameters>(_data.Parameters);
-                string host = localhostAliases.Contains(parameters.Host.ToLower()) ? "" : parameters.Host;
+                string host = string.IsNullOrEmpty(parameters.Host) ? "" : parameters.Host;
+                host = localhostAliases.Contains(host.ToLower()) ? "" : host;
                 string path = string.IsNullOrEmpty(host) ?
                               parameters.Path : $@"\\{host}\{parameters.Path}";
                 if (string.IsNullOrEmpty(path))
