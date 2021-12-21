@@ -25,7 +25,7 @@ namespace Tasks
         internal struct UnlinkParameters
         {
             [DataMember(Name = "link_info")]
-            public LinkInformation ConnectionInfo;
+            public NewPeerInformation ConnectionInfo;
         }
 
         public unlink(IAgent agent, Task data) : base(agent, data)
@@ -43,39 +43,25 @@ namespace Tasks
             {
                 TaskResponse resp;
                 UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
-                CallbackInformation peerInfo;
-                string sourceUUID;
-                string destUUID;
-                if (parameters.ConnectionInfo.Direction == EdgeDirection.BiDirectional || parameters.ConnectionInfo.Direction == EdgeDirection.SourceToDestination)
+                
+                if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.AgentUUID))
                 {
-                    peerInfo = parameters.ConnectionInfo.Destination;
-                    sourceUUID = _agent.GetUUID();
-                    destUUID = peerInfo.UUID;
-                }
-                else
-                {
-                    peerInfo = parameters.ConnectionInfo.Source;
-                    sourceUUID = peerInfo.UUID;
-                    destUUID = _agent.GetUUID();
-                }
-                if (_agent.GetPeerManager().Remove(peerInfo.UUID))
-                {
-                    resp = CreateTaskResponse($"Unlinked {peerInfo.Host}", true, "completed", new IMythicMessage[]
+                    resp = CreateTaskResponse($"Unlinked {parameters.ConnectionInfo.Hostname}", true, "completed", new IMythicMessage[]
                     {
                         new EdgeNode()
                         {
-                            Source =  sourceUUID,
-                            Destination = destUUID,
-                            Direction = parameters.ConnectionInfo.Direction,
+                            Source =  _agent.GetUUID(),
+                            Destination = parameters.ConnectionInfo.AgentUUID,
+                            Direction = EdgeDirection.SourceToDestination,
                             Action = "remove",
-                            C2Profile = parameters.ConnectionInfo.Profile.Name,
+                            C2Profile = parameters.ConnectionInfo.C2Profile.Name,
                             MetaData = ""
                         }, 
                     });
                 }
                 else
                 {
-                    resp = CreateTaskResponse($"Failed to unlink {peerInfo.Host}", true, "error");
+                    resp = CreateTaskResponse($"Failed to unlink {parameters.ConnectionInfo.Hostname}", true, "error");
                 }
                 // Your code here..
                 // // CreateTaskResponse to create a new TaskResposne object

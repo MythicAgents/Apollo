@@ -6,16 +6,12 @@
 
 #if MV
 
+using System;
+using System.IO;
+using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.Serialization;
-using System.Text;
 using ApolloInterop.Utils;
 using ST = System.Threading.Tasks;
 
@@ -24,54 +20,29 @@ namespace Tasks
 {
     public class mv : Tasking
     {
-        [DataContract]
-        internal struct MvParameters
-        {
-            [DataMember(Name = "source")] public string SourceFile;
-            [DataMember(Name = "destination")] public string DestinationFile;
-        }
-
-        internal struct HostFileInfo
-        {
-            internal string Host;
-            internal string Path;
-        }
-
-        private HostFileInfo ParsePath(string path)
-        {
-            HostFileInfo results = new HostFileInfo();
-            results.Host = Environment.GetEnvironmentVariable("COMPUTERNAME");
-            results.Path = path;
-            if (path.StartsWith("\\\\"))
-            {
-                results.Host = path.Split('\\')[2];
-            }
-
-            return results;
-        }
-        
         public mv(IAgent agent, Task data) : base(agent, data)
         {
         }
 
-        public override void Kill()
+        private HostFileInfo ParsePath(string path)
         {
-            base.Kill();
-        }
+            var results = new HostFileInfo();
+            results.Host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            results.Path = path;
+            if (path.StartsWith("\\\\")) results.Host = path.Split('\\')[2];
 
+            return results;
+        }
+        
         public override ST.Task CreateTasking()
         {
             return new ST.Task(() =>
             {
                 TaskResponse resp;
-                string sourcePath;
                 HostFileInfo sourceInfo;
-                string destPath;
-                HostFileInfo destInfo;
-                MvParameters parameters = _jsonSerializer.Deserialize<MvParameters>(_data.Parameters);
-                destPath = parameters.DestinationFile;
-                
-                if (!PathUtils.TryGetExactPath(parameters.SourceFile, out sourcePath))
+                var parameters = _jsonSerializer.Deserialize<MvParameters>(_data.Parameters);
+
+                if (!PathUtils.TryGetExactPath(parameters.SourceFile, out _))
                 {
                     resp = CreateTaskResponse(
                         $"File {parameters.SourceFile} does not exist.",
@@ -79,7 +50,7 @@ namespace Tasks
                 }
                 else
                 {
-                    bool isDir = false;
+                    var isDir = false;
                     FileSystemInfo sinfo = null;
                     FileInformation dinfo;
                     if (Directory.Exists(parameters.SourceFile))
@@ -91,20 +62,19 @@ namespace Tasks
                     {
                         sinfo = new FileInfo(parameters.SourceFile);
                     }
+
                     try
                     {
                         if (isDir)
-                        {
                             Directory.Move(parameters.SourceFile, parameters.DestinationFile);
-                        }
                         else
-                        {
                             File.Move(parameters.SourceFile, parameters.DestinationFile);
-                        }
 
-                        dinfo = !isDir ? new FileInformation(new FileInfo(parameters.DestinationFile)) : new FileInformation(new DirectoryInfo(parameters.DestinationFile));
+                        dinfo = !isDir
+                            ? new FileInformation(new FileInfo(parameters.DestinationFile))
+                            : new FileInformation(new DirectoryInfo(parameters.DestinationFile));
                         sourceInfo = ParsePath(parameters.SourceFile);
-                        destInfo = ParsePath(parameters.DestinationFile);
+                        ParsePath(parameters.DestinationFile);
                         resp = CreateTaskResponse(
                             $"Moved {sinfo.FullName} to {dinfo.FullName}",
                             true,
@@ -117,7 +87,7 @@ namespace Tasks
                                 Artifact.FileWrite(dinfo.FullName, isDir ? 0 : dinfo.Size),
                                 new FileBrowser(dinfo)
                             });
-                        resp.RemovedFiles = new RemovedFileInformation[]
+                        resp.RemovedFiles = new[]
                         {
                             new RemovedFileInformation
                             {
@@ -132,11 +102,25 @@ namespace Tasks
                             $"Failed to move {parameters.SourceFile}: {ex.Message}", true, "error");
                     }
                 }
+
                 // Your code here..
                 // CreateTaskResponse to create a new TaskResposne object
                 // Then add response to queue
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
+        }
+
+        [DataContract]
+        internal struct MvParameters
+        {
+            [DataMember(Name = "source")] public string SourceFile;
+            [DataMember(Name = "destination")] public string DestinationFile;
+        }
+
+        internal struct HostFileInfo
+        {
+            internal string Host;
+            internal string Path;
         }
     }
 }
