@@ -49,7 +49,8 @@ class LoadArguments(TaskArguments):
             tmpjson = json.loads(self.command_line)
             if tmpjson.get("Commands") is not None and type(tmpjson.get("Commands")) is not list:
                 cmds = tmpjson.get("Commands").split(" ")
-                self.args.add_arg("commands", cmds)
+                tmpjson["Commands"] = cmds
+                self.load_args_from_json_string(json.dumps(tmpjson)) 
             else:
                 self.load_args_from_json_string(self.command_line)
         else:
