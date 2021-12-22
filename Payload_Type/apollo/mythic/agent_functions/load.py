@@ -129,6 +129,7 @@ class LoadCommand(CommandBase):
             for file in files:
                 if file.endswith(".cs"):
                     results.append(os.path.join(root, file))
+        
         if len(results) == 0:
             raise ValueError("No .cs files found in task library")
         for csFile in results:
@@ -163,7 +164,10 @@ class LoadCommand(CommandBase):
     async def process_response(self, response: AgentResponse):
         resp = response.response["commands"]
         self.mprint("Parsing commands from process_response: {}".format(resp))
-        cmd_resp = await MythicRPC().execute("get_commands", payload_type_name="apollo")
+        cmd_resp = await MythicRPC().execute(
+            "get_commands"
+            callback_id=response.task.callback.id,
+            loaded_only=False)
         if cmd_resp.status != MythicStatus.Success:
             raise Exception("Failed to get commands for agent: {}".format(cmd_resp.response))
         
