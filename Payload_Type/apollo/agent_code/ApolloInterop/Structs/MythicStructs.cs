@@ -54,7 +54,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "window_title")]
             public string WindowTitle;
         }
-
+//
         [DataContract]
         public struct PeerInformation
         {
