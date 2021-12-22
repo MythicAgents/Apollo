@@ -75,7 +75,7 @@ class LoadCommand(CommandBase):
         requested_cmds = task.args.get_arg("commands")
         cmd_resp = await MythicRPC().execute(
             "get_commands",
-            callback_id=task.callback["id"],
+            callback_id=task.callback.id,
             loaded_only=False)
         if cmd_resp.status != MythicStatus.Success:
             raise Exception("Failed to get commands for agent: {}".format(cmd_resp.response))
