@@ -46,7 +46,12 @@ class LoadArguments(TaskArguments):
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":
-            self.load_args_from_json_string(self.command_line)
+            tmpjson = json.loads(self.command_line)
+            if tmpjson.get("Commands") is not None and type(tmpjson.get("Commands")) is not list:
+                cmds = tmpjson.get("Commands").split(" ")
+                self.args.add_arg("commands", cmds)
+            else:
+                self.load_args_from_json_string(self.command_line)
         else:
             raise Exception("No command line parsing available.")
 
