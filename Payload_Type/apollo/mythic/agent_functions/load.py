@@ -141,8 +141,8 @@ class LoadCommand(CommandBase):
                     f.write("\n".join(defines_commands_upper))
             with open(csFile, "wb") as f:
                 f.write(templateFile.encode())
-        
-        outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
+    
+        outputPath = "rm -rf packages/*; nuget restore -NoCache -Force; {}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
         shell_cmd = "msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -165,7 +165,7 @@ class LoadCommand(CommandBase):
         resp = response.response["commands"]
         self.mprint("Parsing commands from process_response: {}".format(resp))
         cmd_resp = await MythicRPC().execute(
-            "get_commands"
+            "get_commands",
             callback_id=response.task.callback.id,
             loaded_only=False)
         if cmd_resp.status != MythicStatus.Success:
@@ -184,20 +184,20 @@ class LoadCommand(CommandBase):
                 if add:
                     to_register.append(all_cmd["cmd"])
         
-        self.mprint("to_register: {}".format(to_register))
+        self.mprint("To register: {}".format(to_register))
+        if to_register > 0:
+            reg_resp = await MythicRPC().execute(
+                "update_loaded_commands",
+                task_id=response.task.id,
+                commands=to_register,
+                add=True)
+            if reg_resp.status != MythicStatus.Success:
+                raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
 
-        reg_resp = await MythicRPC().execute(
-            "update_loaded_commands",
-            task_id=response.task_id,
-            commands=to_register,
-            add=True)
-        if reg_resp.status != MythicStatus.Success:
-            raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
 
-
-        addoutput_resp = await MythicRPC().execute("create_output",
-                                                task_id=response.task.id,
-                                                output="Loaded {}".format(", ".join(to_register)))
-        if addoutput_resp.status != MythicStatus.Success:
-            raise Exception("Failed to add output to task")
+            addoutput_resp = await MythicRPC().execute("create_output",
+                                                    task_id=response.task.id,
+                                                    output="\nLoaded {}".format(", ".join(to_register)))
+            if addoutput_resp.status != MythicStatus.Success:
+                raise Exception("Failed to add output to task")
         
