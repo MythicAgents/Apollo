@@ -32,6 +32,9 @@ class InjectArguments(TaskArguments):
 
 class InjectCommand(CommandBase):
     cmd = "inject"
+    attributes=CommandAttributes(
+        dependencies=["shinject"]
+    )
     needs_admin = False
     help_cmd = "inject (modal popup)"
     description = "Inject agent shellcode into a remote process."

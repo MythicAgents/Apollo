@@ -157,6 +157,8 @@ namespace ApolloInterop.Structs.ApolloStructs
     {
         [DataMember(Name = "jobs")]
         public string[] Jobs;
+        [DataMember(Name = "commands")]
+        public string[] Commands;
     }
 
     public struct IPCData

@@ -5,6 +5,7 @@ import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
 from mythic_payloadtype_container.MythicRPC import *
 import json
+import sys
 
 
 class LoadArguments(TaskArguments):
@@ -24,7 +25,8 @@ class LoadArguments(TaskArguments):
             "mimikatz": "execute_pe",
             "printspoofer": "execute_pe",
             "shell": "run",
-            "inject": "shinject"
+            "inject": "shinject",
+            "socks": "",
         }
 
     async def parse_arguments(self):
@@ -35,8 +37,7 @@ class LoadArguments(TaskArguments):
             for i in range(len(cmds)):
                 if cmds[i] in self.script_cmds:
                     cmds[i] = self.script_cmds[cmds[i]]
-            self.args["commands"].value = cmds
-        pass
+            self.args.add_arg("commands", cmds)
 
 
 class LoadCommand(CommandBase):
@@ -55,8 +56,57 @@ class LoadCommand(CommandBase):
     argument_class = LoadArguments
     attackmapping = []
 
+    def mprint(self, thing):
+        print(thing)
+        sys.stdout.flush()
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        defines_commands_upper = [f"#define {x.upper()}" for x in task.args.get_arg("commands")]
+        requested_cmds = task.args.get_arg("commands")
+        cmd_resp = await MythicRPC().execute("get_commands", payload_type_name="apollo")
+        if cmd_resp.status != MythicStatus.Success:
+            raise Exception("Failed to get commands for agent: {}".format(cmd_resp.response))
+        
+        agent_cmds = []
+        no_dep_cmds = []
+
+
+        all_cmds = cmd_resp.response
+        for requested_cmd in requested_cmds:
+            found = False
+            for all_cmd in all_cmds:
+                if requested_cmd == all_cmd["cmd"]:
+                    found = True
+                    if all_cmd["attributes"] != None:
+                        if requested_cmd == "socks":
+                            no_dep_cmds.append(requested_cmd)
+                        else:
+                            for dep in all_cmd["attributes"]["dependencies"]:
+                                agent_cmds.append(dep)
+                    else:
+                        agent_cmds.append(requested_cmd)
+            if not found:
+                raise Exception("Command {} not found".format(requested_cmd))
+
+        if len(no_dep_cmds) > 0:
+            register_resp = await MythicRPC().execute(
+                "update_loaded_commands",
+                task_id=task.id,
+                commands=no_dep_cmds,
+                add=True)
+            if register_resp.status != MythicStatus.Success:
+                raise Exception("Failed to register commands {} for agent: {}".format(", ".join(no_dep_cmds), register_resp.response))
+            else:
+                addoutput_resp = await MythicRPC().execute(
+                    "create_output",
+                    task_id=task.id,
+                    output="Loaded {}".format(", ".join(no_dep_cmds)))
+                if addoutput_resp.status != MythicStatus.Success:
+                    raise Exception("Failed to add output for agent, but registered commands: {}".format(", ".join(no_dep_cmds)))
+
+        self.mprint("Loading commands: {}".format(agent_cmds))
+
+
+        defines_commands_upper = [f"#define {x.upper()}" for x in agent_cmds]
         agent_build_path = tempfile.TemporaryDirectory()
             # shutil to copy payload files over
         copy_tree(self.agent_code_path, agent_build_path.name)
@@ -97,4 +147,39 @@ class LoadCommand(CommandBase):
         return task
 
     async def process_response(self, response: AgentResponse):
-        pass
+        resp = response.response["commands"]
+        self.mprint("Parsing commands from process_response: {}".format(resp))
+        cmd_resp = await MythicRPC().execute("get_commands", payload_type_name="apollo")
+        if cmd_resp.status != MythicStatus.Success:
+            raise Exception("Failed to get commands for agent: {}".format(cmd_resp.response))
+        
+        all_cmds = cmd_resp.response
+        
+        to_register = []
+
+        for all_cmd in all_cmds:
+            if all_cmd["attributes"] != None:
+                add = True
+                for dep in all_cmd["attributes"]["dependencies"]:
+                    if dep not in resp:
+                        add = False
+                if add:
+                    to_register.append(all_cmd["cmd"])
+        
+        self.mprint("to_register: {}".format(to_register))
+
+        reg_resp = await MythicRPC().execute(
+            "update_loaded_commands",
+            task_id=response.task_id,
+            commands=to_register,
+            add=True)
+        if reg_resp.status != MythicStatus.Success:
+            raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
+
+
+        addoutput_resp = await MythicRPC().execute("create_output",
+                                                task_id=response.task.id,
+                                                output="Loaded {}".format(", ".join(to_register)))
+        if addoutput_resp.status != MythicStatus.Success:
+            raise Exception("Failed to add output to task")
+        

@@ -34,6 +34,9 @@ class PrintSpooferArguments(TaskArguments):
 
 class PrintSpooferCommand(CommandBase):
     cmd = "printspoofer"
+    attributes=CommandAttributes(
+        dependencies=["execute_pe"]
+    )
     needs_admin = False
     help_cmd = "printspoofer [args]"
     description = "Execute one or more PrintSpoofer commands"

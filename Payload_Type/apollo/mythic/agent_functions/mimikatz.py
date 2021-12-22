@@ -34,6 +34,9 @@ class MimikatzArguments(TaskArguments):
 
 class MimikatzCommand(CommandBase):
     cmd = "mimikatz"
+    attributes=CommandAttributes(
+        dependencies=["execute_pe"]
+    )
     needs_admin = False
     help_cmd = "mimikatz [command1] [command2] [...]"
     description = "Execute one or more mimikatz commands (e.g. `mimikatz coffee sekurlsa::logonpasswords`)."
@@ -50,9 +53,27 @@ class MimikatzCommand(CommandBase):
     attackmapping = ["T1134", "T1098", "T1547", "T1555", "T1003", "T1207", "T1558", "T1552", "T1550"]
     script_only = True
 
+    async def parse_credentials(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
+    #     get_responses(task_id: int) -> dict
+    # For a given Task, get all of the user_output, artifacts, files, and credentials that task as created within Mythic
+    # :param task_id: The TaskID you're interested in (i.e. task.id)
+    # :return: A dictionary of the following format:
+    # {
+    #   "user_output": array of dictionaries where each dictionary is user_output message for the task,
+    #   "artifacts": array of dictionaries where each dictionary is an artifact created for the task,
+    #   "files": array of dictionaries where each dictionary is a file registered as part of the task,
+    #   "credentials": array of dictionaries where each dictionary is a credential created as part of the task.
+    # }
+        response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
+        
+        for output in response.response.user_output:
+            pass
+            # parse the output strings here
+        return task
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                        command="execute_pe", params_string=task.args.get_arg("command"))
+                        command="execute_pe", params_string=task.args.get_arg("command"), subtask_callback_function="parse_credentials")
         return task
 
     async def process_response(self, response: AgentResponse):

@@ -16,6 +16,9 @@ class ShellArguments(TaskArguments):
 
 class ShellCommand(CommandBase):
     cmd = "shell"
+    attributes=CommandAttributes(
+        dependencies=["run"]
+    )
     needs_admin = False
     help_cmd = "shell [command] [arguments]"
     description = "Run a shell command which will translate to a process being spawned with command line: `cmd.exe /C [command]`"

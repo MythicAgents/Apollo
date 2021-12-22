@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using ApolloInterop.Structs.ApolloStructs;
 using ST = System.Threading.Tasks;
 namespace Tasks
 {
@@ -68,6 +69,10 @@ namespace Tasks
                                 true,
                                 "completed",
                                 items);
+                            resp.ProcessResponse = new ProcessResponse()
+                            {
+                                Commands = parameters.Commands
+                            };
                         } else
                         {
                             resp = CreateTaskResponse(
