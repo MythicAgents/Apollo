@@ -174,18 +174,22 @@ class LoadCommand(CommandBase):
         all_cmds = cmd_resp.response
         
         to_register = []
-
+        self.mprint("Total number of commands: {}".format(len(all_cmds)))
         for all_cmd in all_cmds:
+            self.mprint("Attributes for {}: {}".format(all_cmd["cmd"], all_cmd["attributes"]))
             if all_cmd["attributes"].get("dependencies", None) != None:
                 add = True
                 for dep in all_cmd["attributes"]["dependencies"]:
                     if dep not in resp:
+                        self.mprint("{} not in response, skipping".format(dep))
                         add = False
                 if add:
                     to_register.append(all_cmd["cmd"])
+            else:
+                self.mprint("No dependencies for {}".format(all_cmd["cmd"]))
         
         self.mprint("To register: {}".format(to_register))
-        if to_register > 0:
+        if len(to_register) > 0:
             reg_resp = await MythicRPC().execute(
                 "update_loaded_commands",
                 task_id=response.task.id,
