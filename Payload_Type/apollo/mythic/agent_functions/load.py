@@ -142,8 +142,8 @@ class LoadCommand(CommandBase):
             with open(csFile, "wb") as f:
                 f.write(templateFile.encode())
     
-        outputPath = "rm -rf packages/*; nuget restore -NoCache -Force; {}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
-        shell_cmd = "msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
+        outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
