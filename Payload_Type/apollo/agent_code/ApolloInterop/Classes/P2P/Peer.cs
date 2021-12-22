@@ -19,7 +19,7 @@ namespace ApolloInterop.Classes.P2P
         public string C2ProfileName { get; protected set; }
         protected IAgent _agent;
         protected ISerializer _serializer;
-        protected NewPeerInformation _peerInfo;
+        protected PeerInformation _peerInfo;
         protected string _uuid;
         protected string _mythicUUID;
         protected bool _previouslyConnected;
@@ -33,7 +33,7 @@ namespace ApolloInterop.Classes.P2P
         public event EventHandler<EventArgs> Disconnect;
         protected CancellationTokenSource _cts = new CancellationTokenSource();
 
-        public Peer(IAgent agent, NewPeerInformation data, ISerializer serializer = null)
+        public Peer(IAgent agent, PeerInformation data, ISerializer serializer = null)
         {
             _agent = agent;
             _peerInfo = data;

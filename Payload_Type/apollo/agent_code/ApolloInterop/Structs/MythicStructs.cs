@@ -56,7 +56,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct NewPeerInformation
+        public struct PeerInformation
         {
             [DataMember(Name = "host")]
             public string Hostname;
@@ -64,6 +64,8 @@ namespace ApolloInterop.Structs
             public C2ProfileData C2Profile;
             [DataMember(Name = "agent_uuid")]
             public string AgentUUID;
+            [DataMember(Name = "callback_uuid")]
+            public string CallbackUUID;
         }
 
         [DataContract]

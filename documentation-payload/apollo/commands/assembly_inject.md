@@ -7,7 +7,7 @@ hidden = true
 
 ## Summary
 
-Inject the unmanaged .NET assembly loader into a remote process and execute an assembly registered with `register_assembly` within that process. 
+Inject the .NET assembly loader into a remote process and execute an assembly registered with `register_assembly` within that process. 
 
 ### Arguments (Positional or Popup)
 
@@ -16,7 +16,7 @@ Inject the unmanaged .NET assembly loader into a remote process and execute an a
 #### arch
 Target process architecture. Must be x86 or x64
 
-#### assembly_arguments
+#### Arguments
 Any arguments to be executed with the assembly.
 
 #### assembly_name

@@ -25,7 +25,7 @@ namespace Tasks
         internal struct LinkParameters
         {
             [DataMember(Name = "connection_info")]
-            public NewPeerInformation ConnectionInfo;
+            public PeerInformation ConnectionInfo;
         }
 
         public link(IAgent agent, Task task) : base(agent, task)

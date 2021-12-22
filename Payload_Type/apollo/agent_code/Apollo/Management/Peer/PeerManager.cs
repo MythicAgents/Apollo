@@ -16,7 +16,7 @@ namespace Apollo.Management.Peer
 
         }
 
-        public override AI.Classes.P2P.Peer AddPeer(NewPeerInformation connectionInfo)
+        public override AI.Classes.P2P.Peer AddPeer(PeerInformation connectionInfo)
         {
             AI.Classes.P2P.Peer peer = null;
             switch(connectionInfo.C2Profile.Name.ToUpper())

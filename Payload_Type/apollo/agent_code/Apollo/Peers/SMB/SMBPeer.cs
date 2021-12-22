@@ -26,7 +26,7 @@ namespace Apollo.Peers.SMB
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
 
-        public SMBPeer(IAgent agent, NewPeerInformation info) : base(agent, info)
+        public SMBPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
             C2ProfileName = "smb";
             _pipeClient = new AsyncNamedPipeClient(info.Hostname, info.C2Profile.Parameters.PipeName);

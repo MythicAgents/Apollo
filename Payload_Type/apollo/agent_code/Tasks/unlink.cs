@@ -25,7 +25,7 @@ namespace Tasks
         internal struct UnlinkParameters
         {
             [DataMember(Name = "link_info")]
-            public NewPeerInformation ConnectionInfo;
+            public PeerInformation ConnectionInfo;
         }
 
         public unlink(IAgent agent, Task data) : base(agent, data)
@@ -44,14 +44,14 @@ namespace Tasks
                 TaskResponse resp;
                 UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
                 
-                if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.AgentUUID))
+                if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.CallbackUUID))
                 {
                     resp = CreateTaskResponse($"Unlinked {parameters.ConnectionInfo.Hostname}", true, "completed", new IMythicMessage[]
                     {
                         new EdgeNode()
                         {
                             Source =  _agent.GetUUID(),
-                            Destination = parameters.ConnectionInfo.AgentUUID,
+                            Destination = parameters.ConnectionInfo.CallbackUUID,
                             Direction = EdgeDirection.SourceToDestination,
                             Action = "remove",
                             C2Profile = parameters.ConnectionInfo.C2Profile.Name,

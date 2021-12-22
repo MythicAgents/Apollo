@@ -17,7 +17,7 @@ namespace ApolloInterop.Classes.P2P
             _agent = agent;
         }
 
-        public abstract Peer AddPeer(NewPeerInformation info);
+        public abstract Peer AddPeer(PeerInformation info);
         public virtual bool Remove(string uuid)
         {
             bool bRet = true;
