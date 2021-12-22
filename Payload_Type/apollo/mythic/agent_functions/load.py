@@ -172,7 +172,7 @@ class LoadCommand(CommandBase):
         to_register = []
 
         for all_cmd in all_cmds:
-            if all_cmd["attributes"] != None:
+            if all_cmd["attributes"] != None and "dependencies" in all_cmd["attributes"].keys():
                 add = True
                 for dep in all_cmd["attributes"]["dependencies"]:
                     if dep not in resp:
