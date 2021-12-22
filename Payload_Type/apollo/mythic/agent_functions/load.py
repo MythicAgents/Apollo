@@ -17,27 +17,38 @@ class LoadArguments(TaskArguments):
                 name="commands",
                 cli_name="Commands",
                 display_name="Commands", 
-                type=ParameterType.ChooseMultiple, 
+                type=ParameterType.ChooseMultiple,
                 description="One or more commands to load into the agent", 
-                choices_are_all_commands=True),
+                dynamic_query_function=self.get_remaining_commands,),
         ]
-        self.script_cmds = {
-            "mimikatz": "execute_pe",
-            "printspoofer": "execute_pe",
-            "shell": "run",
-            "inject": "shinject",
-            "socks": "",
-        }
+
+
+    async def get_remaining_commands(self, callback: dict):
+        all_cmds = await MythicRPC().execute(
+            "get_commands",
+            callback_id=callback["id"],
+            loaded_only=False)
+        loaded_cmds = await MythicRPC().execute(
+            "get_commands",
+            callback_id=callback["id"],
+            loaded_only=True)
+
+        if all_cmds.status != MythicStatus.Success:
+            raise Exception("Failed to get commands for apollo agent: {}".format(all_cmds.status))
+        if loaded_cmds.status != MythicStatus.Success:
+            raise Exception("Failed to fetch loaded commands from callback {}: {}".format(callback["id"], loaded_cmds.status))
+        
+        all_cmds_names = set([r["cmd"] for r in all_cmds.response])
+        loaded_cmds_names = set([r["cmd"] for r in loaded_cmds.response])
+        diff = all_cmds_names.difference(loaded_cmds_names)
+        return sorted(diff)
+
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            cmds = self.command_line.split(" ")
-            for i in range(len(cmds)):
-                if cmds[i] in self.script_cmds:
-                    cmds[i] = self.script_cmds[cmds[i]]
-            self.args.add_arg("commands", cmds)
+            raise Exception("No command line parsing available.")
 
 
 class LoadCommand(CommandBase):
