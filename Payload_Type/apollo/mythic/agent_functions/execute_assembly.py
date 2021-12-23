@@ -1,3 +1,6 @@
+from distutils.dir_util import copy_tree
+import shutil
+import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
@@ -6,6 +9,8 @@ from mythic_payloadtype_container.MythicRPC import *
 from os import path
 import base64
 import donut
+
+EXEECUTE_ASSEMBLY_PATH = "/srv/ExecuteAssembly.exe"
 
 class ExecuteAssemblyArguments(TaskArguments):
 
@@ -78,10 +83,29 @@ class ExecuteAssemblyCommand(CommandBase):
     argument_class = ExecuteAssemblyArguments
     attackmapping = ["T1547"]
 
+    async def build_exeasm(self):
+        global EXEECUTE_ASSEMBLY_PATH
+        agent_build_path = tempfile.TemporaryDirectory()
+        outputPath = "{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name)
+            # shutil to copy payload files over
+        copy_tree(self.agent_code_path, agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecuteAssembly/ExecuteAssembly.csproj".format(agent_build_path.name)
+        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
+                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+        stdout, stderr = await proc.communicate()
+        if not path.exists(outputPath):
+            raise Exception("Failed to build ExecuteAssembly.exe:\n{}".format(stderr.decode()))
+        shutil.copy(outputPath, EXEECUTE_ASSEMBLY_PATH)
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        global EXEECUTE_ASSEMBLY_PATH
         task.args.add_arg("pipe_name", str(uuid4()))
-        exePath = "/srv/ExecuteAssembly.exe"
-        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
+        if not path.exists(EXEECUTE_ASSEMBLY_PATH):
+            # create
+            await self.build_exeasm()
+        
+        
+        donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=task.args.get_arg("pipe_name"))
         file_resp = await MythicRPC().execute("create_file",
                                               task_id=task.id,
                                               file=base64.b64encode(donutPic).decode(),
@@ -89,7 +113,7 @@ class ExecuteAssemblyCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
+            raise Exception("Failed to register execute_assembly binary: " + file_resp.error)
 
         return task
 
