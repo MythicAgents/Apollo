@@ -71,7 +71,7 @@ class RegQuery(CommandBase):
     browser_script = BrowserScript(script_name="reg_query", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = task.args.get_arg("hive") + ":\\" + task.args.get_arg("key")
+        task.display_params = "-Hive {} -Key {}".format(task.args.get_arg("hive"), task.args.get_arg("key"))
         return task
 
     async def process_response(self, response: AgentResponse):

@@ -40,6 +40,7 @@ class UnlinkCommand(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "{}".format(task.args.get_arg("link_info")["host"])
         return task
 
     async def process_response(self, response: AgentResponse):

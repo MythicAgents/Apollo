@@ -55,6 +55,7 @@ class PrintSpooferCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
                         command="execute_pe", params_string=task.args.get_arg("command"))
+        task.display_params = "-Command {}".format(task.args.get_arg("command"))
         return task
 
     async def process_response(self, response: AgentResponse):

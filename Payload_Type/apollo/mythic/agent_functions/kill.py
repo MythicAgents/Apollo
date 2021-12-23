@@ -45,7 +45,7 @@ class killCommand(CommandBase):
     supported_ui_features = ["kill"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = task.args.get_arg("pid")
+        task.display_params = "-PID {}".format(task.args.get_arg("pid"))
         return task
 
     async def process_response(self, response: AgentResponse):

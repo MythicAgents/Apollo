@@ -182,6 +182,11 @@ class ExecutePECommand(CommandBase):
                     PRINTSPOOFER_FILE_ID = file_resp.response["agent_file_id"]
                 else:
                     raise Exception("Failed to register PrintSpoofer: " + file_resp.error)
+
+        task.display_params = "-PE {} -Arguments {}".format(
+            task.args.get_arg("pe_name"),
+            task.args.get_arg("pe_arguments")
+        )
         return task
 
     async def process_response(self, response: AgentResponse):

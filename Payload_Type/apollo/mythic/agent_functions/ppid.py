@@ -48,7 +48,7 @@ class PpidCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         pid = task.args.get_arg("ppid")
-        task.display_params = "{}".format(pid)
+        task.display_params = "-PPID {}".format(pid)
         return task
 
     async def process_response(self, response: AgentResponse):

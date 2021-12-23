@@ -43,6 +43,7 @@ class PowershellCommand(CommandBase):
     attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "-Command {}".format(task.args.get_arg("command"))
         return task
 
     async def process_response(self, response: AgentResponse):

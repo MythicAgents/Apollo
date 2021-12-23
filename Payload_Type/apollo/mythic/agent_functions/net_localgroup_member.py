@@ -85,9 +85,9 @@ class NetLocalgroupMemberCommand(CommandBase):
         computer = task.args.get_arg("computer")
         group = task.args.get_arg("group")
         if computer:
-            task.display_params = "{} {}".format(computer, group)
+            task.display_params = "-Computer {} -Group {}".format(computer, group)
         else:
-            task.display_params = group
+            task.display_params = "-Group {}".format(group)
         return task
 
     async def process_response(self, response: AgentResponse):

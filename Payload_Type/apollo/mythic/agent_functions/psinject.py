@@ -70,7 +70,7 @@ class PsInjectCommand(CommandBase):
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
             raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
-        task.display_params = "{} {}".format(task.args.get_arg("pid"), task.args.get_arg("powershell_params"))
+        task.display_params = "-PID {} -Command {}".format(task.args.get_arg("pid"), task.args.get_arg("powershell_params"))
         return task
 
     async def process_response(self, response: AgentResponse):

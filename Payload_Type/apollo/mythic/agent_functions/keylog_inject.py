@@ -96,6 +96,7 @@ class KeylogInjectCommand(CommandBase):
                 raise Exception("Failed to register keylog assembly: " + file_resp.error)
         else:
             raise Exception("Failed to find loader.bin")
+        task.display_params = "-PID {}".format(task.args.get_arg("pid"))
         return task
 
     async def process_response(self, response: AgentResponse):

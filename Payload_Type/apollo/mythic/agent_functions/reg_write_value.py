@@ -124,9 +124,9 @@ class RegWriteValueBase(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         key = task.args.get_arg("key")
         if key[0] == "\\":
-            task.display_params = "{}:{} '{}' '{}'".format(task.args.get_arg("hive"), key, task.args.get_arg("value_name"), task.args.get_arg("value_value"))
+            task.display_params = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(task.args.get_arg("hive"), key, task.args.get_arg("value_name"), task.args.get_arg("value_value"))
         else:
-            task.display_params = "{}:\\{} '{}' '{}'".format(task.args.get_arg("hive"), key, task.args.get_arg("value_name"), task.args.get_arg("value_value"))
+            task.display_params = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(task.args.get_arg("hive"), key, task.args.get_arg("value_name"), task.args.get_arg("value_value"))
         return task
 
     async def process_response(self, response: AgentResponse):
