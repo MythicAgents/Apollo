@@ -41,7 +41,7 @@ class ExecuteAssemblyArguments(TaskArguments):
 
     async def get_files(self, callback: dict):
         file_resp = await MythicRPC().execute("get_file", callback_id=callback["id"],
-                                              limit_by_callback=False,
+                                              limit_by_callback=True,
                                               get_contents=False,
                                               filename="",
                                               max_results=-1)
