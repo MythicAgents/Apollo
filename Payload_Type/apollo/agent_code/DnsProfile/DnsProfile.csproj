@@ -74,5 +74,11 @@
     <Compile Include="DnsRip\Utilites\Validator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
+      <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
+      <Name>ApolloInterop</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
