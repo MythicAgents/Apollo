@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeylogInject", "KeylogInjec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecutePE", "ExecutePE\ExecutePE.csproj", "{44D50BF5-4C12-4328-B983-0045C157D932}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnsProfile", "DnsProfile\DnsProfile.csproj", "{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -237,6 +239,18 @@ Global
 		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x64.Build.0 = Release|Any CPU
 		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x86.ActiveCfg = Release|Any CPU
 		{44D50BF5-4C12-4328-B983-0045C157D932}.Release|x86.Build.0 = Release|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Debug|x64.Build.0 = Debug|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Debug|x86.Build.0 = Debug|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Release|x64.ActiveCfg = Release|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Release|x64.Build.0 = Release|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Release|x86.ActiveCfg = Release|Any CPU
+		{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
