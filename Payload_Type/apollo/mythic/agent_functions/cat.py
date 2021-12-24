@@ -45,6 +45,7 @@ class CatCommand(CommandBase):
     attackmapping = ["T1081", "T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = task.args.get_arg("path")
         return task
 
     async def process_response(self, response: AgentResponse):

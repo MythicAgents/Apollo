@@ -115,6 +115,11 @@ class ExecuteAssemblyCommand(CommandBase):
         else:
             raise Exception("Failed to register execute_assembly binary: " + file_resp.error)
 
+        task.display_params = "-Assembly {} -Arguments {}".format(
+            task.args.get_arg("assembly_name"),
+            task.args.get_arg("assembly_arguments")
+        )
+
         return task
 
     async def process_response(self, response: AgentResponse):

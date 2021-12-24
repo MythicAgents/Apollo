@@ -64,16 +64,17 @@ class MimikatzCommand(CommandBase):
     #   "files": array of dictionaries where each dictionary is a file registered as part of the task,
     #   "credentials": array of dictionaries where each dictionary is a credential created as part of the task.
     # }
-        response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
+        # response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
         
-        for output in response.response.user_output:
-            pass
-            # parse the output strings here
+        # for output in response.response.user_output:
+        #     pass
+        #     # parse the output strings here
         return task
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
                         command="execute_pe", params_string=task.args.get_arg("command"), subtask_callback_function="parse_credentials")
+        task.display_params = "-Command {}".format(task.args.get_arg("command"))
         return task
 
     async def process_response(self, response: AgentResponse):

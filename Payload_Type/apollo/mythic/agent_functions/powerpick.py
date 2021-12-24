@@ -58,7 +58,7 @@ class PowerpickCommand(CommandBase):
         else:
             raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
 
-        task.display_params = task.args.get_arg("powershell_params")
+        task.display_params = "-Command {}".format(task.args.get_arg("powershell_params"))
         return task
 
     async def process_response(self, response: AgentResponse):

@@ -27,7 +27,7 @@ class LsArguments(TaskArguments):
                 description="Path to list files from.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=True,
+                        required=False,
                         group_name="Default",
                     ),
                 ]),
@@ -67,6 +67,8 @@ class LsArguments(TaskArguments):
             self.add_arg("host", "")
             self.add_arg("path", self.command_line)
             self.add_arg("file_browser", "true")
+        if self.get_arg("path") is None:
+            self.add_arg("path", ".")
 
 
 

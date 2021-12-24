@@ -77,9 +77,9 @@ class Spawntox64Command(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         args = task.args.get_arg("arguments")
-        task.display_params = task.args.get_arg("application")
+        task.display_params = "-Application {}".format(task.args.get_arg("application"))
         if args:
-            task.display_params += " {}".format(args)
+            task.display_params += " -Arguments {}".format(args)
         return task
 
     async def process_response(self, response: AgentResponse):

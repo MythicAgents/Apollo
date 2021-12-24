@@ -104,7 +104,6 @@ class AssemblyInjectCommand(CommandBase):
     attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        arch = task.args.get_arg("arch")
         pipe_name = str(uuid4())
         task.args.add_arg("pipe_name", pipe_name)
         exePath = "/srv/ExecuteAssembly.exe"
@@ -118,6 +117,11 @@ class AssemblyInjectCommand(CommandBase):
         else:
             raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
         
+        task.display_params = "-PID {} -Assembly {} -Arguments {}".format(
+            task.args.get_arg("pid"),
+            task.args.get_arg("assembly_name"),
+            task.args.get_arg("assembly_arguments")
+        )
         return task
 
     async def process_response(self, response: AgentResponse):

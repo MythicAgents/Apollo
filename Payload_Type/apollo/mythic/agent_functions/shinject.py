@@ -80,7 +80,10 @@ class ShInjectCommand(CommandBase):
     attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "-PID {}".format(task.args.get_arg("pid"))
         if task.args.get_arg("shellcode") != None:
+            original_file_name = json.loads(task.original_params)['Shellcode']
+            task.display_params += " -File {}".format(original_file_name)
             resp = await MythicRPC().execute("create_file",
                                             task_id=task.id,
                                             file=base64.b64encode(task.args.get_arg("shellcode")).decode(),
@@ -93,7 +96,6 @@ class ShInjectCommand(CommandBase):
                 raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
         if task.args.get_arg("shellcode-file-id") == None or task.args.get_arg("shellcode-file-id") == "":
             raise Exception("No file provided.")
-        task.display_params = "into PID {}".format(task.args.get_arg("pid"))
         return task
 
     async def process_response(self, response: AgentResponse):

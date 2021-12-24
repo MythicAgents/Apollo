@@ -37,6 +37,7 @@ class LinkCommand(CommandBase):
     attackmapping = ["T1570", "T1572", "T1021"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "{}".format(task.args.get_arg("connection_info")["host"])
         return task
 
     async def process_response(self, response: AgentResponse):

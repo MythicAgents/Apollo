@@ -73,9 +73,9 @@ class RmCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         host = task.args.get_arg("host")
-        task.display_params = task.args.get_arg("path")
+        task.display_params = "-Path {}".format(task.args.get_arg("path"))
         if host:
-            task.display_params += " on host {}".format(host)
+            task.display_params += " -Host {}".format(host)
         return task
 
     async def process_response(self, response: AgentResponse):

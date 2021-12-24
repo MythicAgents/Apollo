@@ -183,6 +183,26 @@ class ScCommand(CommandBase):
     browser_script = BrowserScript(script_name="sc", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        action = task.args.get_arg("action")
+        computer = task.args.get_arg("computer")
+        service_name = task.args.get_arg("service")
+        display_name = task.args.get_arg("display_name")
+        binpath = task.args.get_arg("binpath")
+        
+
+        task.display_params = "-Action {}".format(action)
+        if computer is not None and computer is not "":
+            task.display_params += " -Computer {}".format(computer)
+
+        if service_name is not None and service_name is not "":
+            task.display_params += " -Service {}".format(service_name)
+
+        if display_name is not None and display_name is not "":
+            task.display_params += " -DisplayName '{}'".format(display_name)
+
+        if binpath is not None and binpath is not "":
+            task.display_params += " -BinPath '{}'".format(binpath)
+
         return task
 
     async def process_response(self, response: AgentResponse):

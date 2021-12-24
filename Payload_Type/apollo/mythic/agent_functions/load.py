@@ -167,6 +167,7 @@ class LoadCommand(CommandBase):
                 raise Exception("Failed to register task dll with Mythic")
         else:
             raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
+        task.display_params = "-Commands {}".format(" ".join(task.args.get_arg("commands")))
         return task
 
     async def process_response(self, response: AgentResponse):

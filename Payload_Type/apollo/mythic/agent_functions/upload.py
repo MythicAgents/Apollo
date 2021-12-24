@@ -86,11 +86,11 @@ class UploadCommand(CommandBase):
         disp_str = ""
         if path is not None and path != "":
             if host is not None and host != "":
-                disp_str = "{} to \\\\{}\\{}".format(original_file_name, host, path)
+                disp_str = "-File {} -Host {} -Path {}".format(original_file_name, host, path)
             else:
-                disp_str = "{} to {}".format(original_file_name, path)
+                disp_str = "-File {} -Path {}".format(original_file_name, path)
         else:
-            disp_str = original_file_name
+            disp_str = "-File {}".format(original_file_name)
         task.display_params = disp_str
         return task
 

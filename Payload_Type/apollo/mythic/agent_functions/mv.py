@@ -76,7 +76,7 @@ class MvCommand(CommandBase):
     attackmapping = ["T1106"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "{} {}".format(task.args.get_arg("source"), task.args.get_arg("destination"))
+        task.display_params = "-Path {} -Destination {}".format(task.args.get_arg("source"), task.args.get_arg("destination"))
         return task
 
     async def process_response(self, response: AgentResponse):

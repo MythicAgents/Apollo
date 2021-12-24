@@ -19,7 +19,7 @@ class ScreenshotArguments(TaskArguments):
 class ScreenshotCommand(CommandBase):
     cmd = "screenshot"
     needs_admin = False
-    help_cmd = "screenshot [pid] [x86/x64]"
+    help_cmd = "screenshot"
     description = "Take a screenshot of the current desktop."
     version = 2
     is_exit = False

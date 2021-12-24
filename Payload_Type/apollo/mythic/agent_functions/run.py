@@ -57,6 +57,10 @@ class RunCommand(CommandBase):
     attackmapping = ["T1106", "T1218", "T1553"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "-Executable {} -Arguments {}".format(
+            task.args.get_arg("executable"),
+            task.args.get_arg("arguments")
+        )
         return task
 
     async def process_response(self, response: AgentResponse):
