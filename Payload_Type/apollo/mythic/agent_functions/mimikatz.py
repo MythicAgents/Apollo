@@ -67,8 +67,13 @@ class MimikatzCommand(CommandBase):
         response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
         
         for output in response.response["user_output"]:
-            print("[PARSE_CREDENTIALS] {}".format(output))
-            sys.stdout.flush()
+            resp = json.loads(output)
+            mimikatz_out = resp.get("response", "")
+            if mimikatz_out != "":
+                lines = mimikatz_out.split("\r\n")
+                for line in lines:
+                    print("[PARSE_CREDENTIALS] {}".format(line))
+                    sys.stdout.flush()
             # parse the output strings here
         return task
 
