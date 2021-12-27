@@ -22,10 +22,6 @@ class ShInjectArguments(TaskArguments):
                     ),
                     ParameterGroupInfo(
                         required=True,
-                        group_name="Modal"
-                    ),
-                    ParameterGroupInfo(
-                        required=True,
                         group_name="Scripted"
                     ),
                 ]),
@@ -37,7 +33,7 @@ class ShInjectArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
-                        group_name="Modal"
+                        group_name="Default"
                     ),
                 ]),
             CommandParameter(

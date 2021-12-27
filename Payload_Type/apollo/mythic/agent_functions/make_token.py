@@ -36,7 +36,7 @@ class MakeTokenCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         cred = task.args.get_arg("credential")
-        task.display_params = "{}\\{} {}".format(cred['realm'], cred['account'], cred['credential'])
+        task.display_params = "{}\\{} {}".format(cred.get("realm"), cred.get("account"), cred.get("credential"))
         return task
 
     async def process_response(self, response: AgentResponse):
