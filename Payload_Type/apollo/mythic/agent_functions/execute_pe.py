@@ -1,4 +1,4 @@
-from shutil import copytree
+from distutils.dir_util import copy_tree
 import shutil
 import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
@@ -93,7 +93,7 @@ class ExecutePECommand(CommandBase):
         global EXECUTE_PE_PATH
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name)
-        copytree(self.agent_code_path, agent_build_path.name)
+        copy_tree(self.agent_code_path, agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecutePE/ExecutePE.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
