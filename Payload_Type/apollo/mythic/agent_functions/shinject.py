@@ -90,7 +90,9 @@ class ShInjectCommand(CommandBase):
                 task.args.remove_arg("shellcode")
             else:
                 raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
-        if task.args.get_arg("shellcode-file-id") == None or task.args.get_arg("shellcode-file-id") == "":
+        elif task.args.get_arg("shellcode-file-id") != None and task.args.get_arg("shellcode-file-id") != "":
+            task.display_params += " (scripting automation)"
+        else:
             raise Exception("No file provided.")
         return task
 
