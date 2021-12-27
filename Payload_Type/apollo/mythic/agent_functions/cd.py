@@ -21,11 +21,14 @@ class CdArguments(TaskArguments):
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require path to change directory to.\nUsage:\n\t{}".format(CdCommand.help_cmd))
-        if self.command_line[0] == '"' and self.command_line[-1] == '"':
-            self.command_line = self.command_line[1:-1]
-        elif self.command_line[0] == "'" and self.command_line[-1] == "'":
-            self.command_line = self.command_line[1:-1]
-        self.add_arg("path", self.command_line)
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            if self.command_line[0] == '"' and self.command_line[-1] == '"':
+                self.command_line = self.command_line[1:-1]
+            elif self.command_line[0] == "'" and self.command_line[-1] == "'":
+                self.command_line = self.command_line[1:-1]    
+            self.add_arg("path", self.command_line)
 
 
 class CdCommand(CommandBase):

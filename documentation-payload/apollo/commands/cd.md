@@ -9,16 +9,17 @@ hidden = true
 Change the process's current working directory to a specified directory. This command accepts relative paths such as `..\` as well.
 
 ## Arguments
-### path
+### Path
 Change to the directory specified by path.
 
 ## Usage
 ```
+cd -Path [path]
 cd [path]
 ```
 Example
 ```
-cd C:\Users
+cd -Path C:\Users
 ```
 Change to the root directory.
 ```
