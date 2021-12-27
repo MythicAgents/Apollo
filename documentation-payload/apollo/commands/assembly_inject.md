@@ -11,7 +11,7 @@ Inject the .NET assembly loader into a remote process and execute an assembly re
 
 ### Arguments (Positional or Popup)
 
-![args](../images/assembly_inject01.png)
+![args](../images/assembly_inject.png)
 
 #### arch
 Target process architecture. Must be x86 or x64
