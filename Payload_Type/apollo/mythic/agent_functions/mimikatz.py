@@ -76,7 +76,7 @@ class MimikatzCommand(CommandBase):
             if mimikatz_out != "":
                 lines = mimikatz_out.split("\r\n")
                 
-                for i in range(lines):
+                for i in range(len(lines)):
                     line = lines[i]
                     if "Username" in line:
                         # Check to see if Password is null
