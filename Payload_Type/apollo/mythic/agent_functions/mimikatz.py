@@ -5,7 +5,7 @@ from sRDI import ShellcodeRDI
 from os import path
 from mythic_payloadtype_container.MythicRPC import *
 import base64
-
+import sys
 
 class MimikatzArguments(TaskArguments):
 
@@ -64,11 +64,12 @@ class MimikatzCommand(CommandBase):
     #   "files": array of dictionaries where each dictionary is a file registered as part of the task,
     #   "credentials": array of dictionaries where each dictionary is a credential created as part of the task.
     # }
-        # response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
+        response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
         
-        # for output in response.response.user_output:
-        #     pass
-        #     # parse the output strings here
+        for output in response.response["user_output"]:
+            print("[PARSE_CREDENTIALS] {}".format(output))
+            sys.stdout.flush()
+            # parse the output strings here
         return task
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
