@@ -207,10 +207,11 @@ class LoadCommand(CommandBase):
             if reg_resp.status != MythicStatus.Success:
                 raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
 
-
+            for i in range(to_register):
+                to_register[i] = "{} (script only)".format(to_register[i])
             addoutput_resp = await MythicRPC().execute("create_output",
                                                     task_id=response.task.id,
-                                                    output="\nLoaded {}".format(", ".join(to_register)))
+                                                    output=", {}".format(", ".join(to_register)))
             if addoutput_resp.status != MythicStatus.Success:
                 raise Exception("Failed to add output to task")
         
