@@ -97,16 +97,22 @@ class LoadCommand(CommandBase):
                 if requested_cmd == all_cmd["cmd"]:
                     found = True
                     if all_cmd["attributes"].get("dependencies", None) != None:
-                        if len(all_cmd["attributes"]["dependencies"]) == 0:
-                            no_dep_cmds.append(requested_cmd)
+                        if all_cmd["script_only"]:
+                            if len(all_cmd["attributes"]["dependencies"]) == 0:
+                                no_dep_cmds.append(requested_cmd)
+                            else:
+                                for dep in all_cmd["attributes"]["dependencies"]:
+                                    agent_cmds.append(dep)
                         else:
                             for dep in all_cmd["attributes"]["dependencies"]:
                                 agent_cmds.append(dep)
+                            agent_cmds.append(requested_cmd)
                     else:
                         agent_cmds.append(requested_cmd)
             if not found:
                 raise Exception("Command {} not found".format(requested_cmd))
 
+        no_dep_cmds = list(set(no_dep_cmds))
         if len(no_dep_cmds) > 0:
             register_resp = await MythicRPC().execute(
                 "update_loaded_commands",

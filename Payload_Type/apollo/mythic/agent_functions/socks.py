@@ -38,7 +38,9 @@ class SocksCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = SocksArguments
     attackmapping = ["T1090"]
-
+    attributes=CommandAttributes(
+        dependencies=[]
+    )
     async def create_tasking(self, task: MythicTask) -> MythicTask:
 
         resp = await MythicRPC().execute("control_socks",
