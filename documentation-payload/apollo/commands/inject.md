@@ -10,10 +10,7 @@ Inject agent shellcode into a specified process.
 
 ### Arguments (Popup)
 
-![args](../images/inject01.png)
-
-#### Architecture
-The target process's architecture. Must be x86 or x64
+![args](../images/inject.png)
 
 #### PID
 The target process's ID to inject the agent into.

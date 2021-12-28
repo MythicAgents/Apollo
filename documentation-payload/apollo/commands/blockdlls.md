@@ -10,7 +10,8 @@ Prevent non-Microsoft signed DLLs from loading into post-exploitation jobs.
 
 ## Usage
 ```
-blockdlls [on|true|off|false]
+blockdlls
+blockdlls -EnableBlock [true|false]
 ```
 
 ## Detailed Summary

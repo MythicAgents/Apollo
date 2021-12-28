@@ -9,6 +9,9 @@ hidden = true
 Change the process's current working directory to a specified directory. This command accepts relative paths such as `..\` as well.
 
 ## Arguments
+
+![args](../images/cd.png)
+
 ### Path
 Change to the directory specified by path.
 

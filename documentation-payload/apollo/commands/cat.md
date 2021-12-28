@@ -9,7 +9,8 @@ hidden = true
 
 Print the contents of a file.
 
-### Arguments (Positional)
+### Arguments
+![args](../images/cat.png)
 #### Path
 Specify path to file to read contents
 
