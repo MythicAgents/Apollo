@@ -12,7 +12,14 @@ class DownloadArguments(TaskArguments):
                 cli_name="Path",
                 display_name="Path to file to download.",
                 type=ParameterType.String,
-                description="File to download."),
+                description="File to download.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default",
+                        ui_position=0
+                    )
+                ]),
             CommandParameter(
                 name="host",
                 cli_name="Host",
@@ -23,6 +30,7 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=1
                     ),
                 ]),
         ]
