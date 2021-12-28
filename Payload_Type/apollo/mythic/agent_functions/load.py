@@ -97,7 +97,7 @@ class LoadCommand(CommandBase):
                 if requested_cmd == all_cmd["cmd"]:
                     found = True
                     if all_cmd["attributes"].get("dependencies", None) != None:
-                        if requested_cmd == "socks":
+                        if len(all_cmd["attributes"]["dependencies"]) == 0:
                             no_dep_cmds.append(requested_cmd)
                         else:
                             for dep in all_cmd["attributes"]["dependencies"]:
