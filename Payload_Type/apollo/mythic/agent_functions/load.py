@@ -125,7 +125,7 @@ class LoadCommand(CommandBase):
                 addoutput_resp = await MythicRPC().execute(
                     "create_output",
                     task_id=task.id,
-                    output="Loaded {}".format(", ".join(no_dep_cmds)))
+                    output="Loaded {}\n".format(", ".join(no_dep_cmds)))
                 if addoutput_resp.status != MythicStatus.Success:
                     raise Exception("Failed to add output for agent, but registered commands: {}".format(", ".join(no_dep_cmds)))
 
@@ -215,7 +215,7 @@ class LoadCommand(CommandBase):
             if reg_resp.status != MythicStatus.Success:
                 raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
 
-            for i in range(to_register):
+            for i in range(len(to_register)):
                 to_register[i] = "{} (script only)".format(to_register[i])
             addoutput_resp = await MythicRPC().execute("create_output",
                                                     task_id=response.task.id,
