@@ -123,6 +123,8 @@ class LoadCommand(CommandBase):
                 if addoutput_resp.status != MythicStatus.Success:
                     raise Exception("Failed to add output for agent, but registered commands: {}".format(", ".join(no_dep_cmds)))
 
+        agent_cmds = list(set(agent_cmds).difference(set(no_dep_cmds)))
+
         self.mprint("Loading commands: {}".format(agent_cmds))
 
 
