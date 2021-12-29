@@ -7,38 +7,70 @@ class ScArguments(TaskArguments):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="action",
-                cli_name="Action",
-                display_name="Action",
-                type=ParameterType.ChooseOne, 
-                choices=["query", "start", "stop", "create", "delete"], 
-                description="Service controller action to perform.",
+                name="query",
+                cli_name="Query",
+                display_name="Query",
+                type=ParameterType.Boolean, 
+                default_value=False, 
+                description="Query for services",
                 parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=True,
-                        group_name="Default"
-                    ),
                     ParameterGroupInfo(
                         required=True,
                         group_name="Query"
                     ),
+            ]),
+            CommandParameter(
+                name="start",
+                cli_name="Start",
+                display_name="Start",
+                type=ParameterType.Boolean, 
+                default_value=False, 
+                description="Service controller action to perform.",
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
                         group_name="Start"
                     ),
+            ]),
+            CommandParameter(
+                name="stop",
+                cli_name="Stop",
+                display_name="Stop",
+                type=ParameterType.Boolean, 
+                default_value=False, 
+                description="Service controller action to perform.",
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
                         group_name="Stop"
                     ),
+            ]),
+            CommandParameter(
+                name="create",
+                cli_name="Create",
+                display_name="Create",
+                type=ParameterType.Boolean, 
+                default_value=False, 
+                description="Service controller action to perform.",
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
                         group_name="Create"
                     ),
+            ]),
+            CommandParameter(
+                name="delete",
+                cli_name="Delete",
+                display_name="Delete",
+                type=ParameterType.Boolean, 
+                default_value=False, 
+                description="Service controller action to perform.",
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
                         group_name="Delete"
                     ),
-                ]),
+            ]),
             CommandParameter(
                 name="computer",
                 cli_name="Computer",
@@ -46,10 +78,6 @@ class ScArguments(TaskArguments):
                 type=ParameterType.String,
                 description="Host to perform the service action on.",
                 parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=False,
-                        group_name="Default"
-                    ),
                     ParameterGroupInfo(
                         required=False,
                         group_name="Query"
@@ -164,6 +192,7 @@ class ScArguments(TaskArguments):
         else:
             raise Exception("Require JSON.")
 
+
 class ScCommand(CommandBase):
     cmd = "sc"
     needs_admin = False
@@ -183,14 +212,30 @@ class ScCommand(CommandBase):
     browser_script = BrowserScript(script_name="sc", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        action = task.args.get_arg("action")
         computer = task.args.get_arg("computer")
         service_name = task.args.get_arg("service")
         display_name = task.args.get_arg("display_name")
         binpath = task.args.get_arg("binpath")
         
+        
+        query = task.args.get_arg("query")
+        if query:
+            task.display_params += "-Query"
+        start = task.args.get_arg("start")
+        if start:
+            task.display_params += "-Start"
+        stop = task.args.get_arg("stop")
+        if stop:
+            task.display_params += "-Stop"
+        create = task.args.get_arg("create")
+        if create:
+            task.display_params += "-Create"
+        delete = task.args.get_arg("delete")
+        if delete:
+            task.display_params += "-Delete"
 
-        task.display_params = "-Action {}".format(action)
+        if not any([query, start, stop, create, delete]):
+            raise Exception("Failed to get a valid action to perform.")
         if computer is not None and computer is not "":
             task.display_params += " -Computer {}".format(computer)
 
