@@ -61,6 +61,8 @@ namespace Tasks
             public string Status;
             [DataMember(Name = "can_stop")]
             public bool CanStop;
+
+            [DataMember(Name = "computer")] public string Computer;
         }
 
         #region typedefs
@@ -600,6 +602,7 @@ namespace Tasks
                                         Service = svc.ServiceName,
                                         CanStop = svc.CanStop,
                                         Status = svc.Status.ToString(),
+                                        Computer =  parameters.Computer
                                     });
                                 } else if (svc.DisplayName == filterString || svc.ServiceName == filterString)
                                 {
@@ -609,6 +612,7 @@ namespace Tasks
                                         Service = svc.ServiceName,
                                         CanStop = svc.CanStop,
                                         Status = svc.Status.ToString(),
+                                        Computer =  parameters.Computer
                                     });
                                     break;
                                 }
@@ -631,7 +635,8 @@ namespace Tasks
                                 DisplayName = createdService.DisplayName,
                                 Service = createdService.ServiceName,
                                 Status = createdService.Status.ToString(),
-                                CanStop = createdService.CanStop
+                                CanStop = createdService.CanStop,
+                                Computer =  parameters.Computer
                             });
                             resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                         } else
@@ -684,7 +689,8 @@ namespace Tasks
                                 DisplayName = instance.DisplayName,
                                 Service = instance.ServiceName,
                                 CanStop = instance.CanStop,
-                                Status = instance.Status.ToString()
+                                Status = instance.Status.ToString(),
+                                Computer =  parameters.Computer
                             });
                             resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                         }
@@ -719,7 +725,8 @@ namespace Tasks
                                 DisplayName = stopInstance.DisplayName,
                                 Service = stopInstance.ServiceName,
                                 CanStop = stopInstance.CanStop,
-                                Status = stopInstance.Status.ToString()
+                                Status = stopInstance.Status.ToString(),
+                                Computer =  parameters.Computer
                             });
                             resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                         }

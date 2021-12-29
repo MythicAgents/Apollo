@@ -28,7 +28,6 @@ function(task, responses){
                 }, "");
                 return {'plaintext': combined};
             }
-            let original_params = JSON.parse(task.original_params);
             for(let j = 0; j < data.length; j++){
                 let jinfo = data[j];
                 let isStart = jinfo["status"] == "Stopped";
@@ -43,7 +42,7 @@ function(task, responses){
                         "ui_feature": "sc:start",
                         "parameters": JSON.stringify({
                             "Action": "start",
-                            "Computer": original_params["Computer"],
+                            "Computer": jinfo["computer"],
                             "Service Name": jinfo["service"],
                             "Display Name": jinfo["display_name"],
                             "Binary Path": "",
@@ -57,7 +56,7 @@ function(task, responses){
                         "ui_feature": "sc:stop",
                         "parameters": JSON.stringify({
                             "Action": "stop",
-                            "Computer": original_params["Computer"],
+                            "Computer": jinfo["computer"],
                             "Service Name": jinfo["service"],
                             "Display Name": jinfo["display_name"],
                             "Binary Path": "",

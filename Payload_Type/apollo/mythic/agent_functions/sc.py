@@ -220,19 +220,19 @@ class ScCommand(CommandBase):
         
         query = task.args.get_arg("query")
         if query:
-            task.display_params += "-Query"
+            task.display_params = "-Query"
         start = task.args.get_arg("start")
         if start:
-            task.display_params += "-Start"
+            task.display_params = "-Start"
         stop = task.args.get_arg("stop")
         if stop:
-            task.display_params += "-Stop"
+            task.display_params = "-Stop"
         create = task.args.get_arg("create")
         if create:
-            task.display_params += "-Create"
+            task.display_params = "-Create"
         delete = task.args.get_arg("delete")
         if delete:
-            task.display_params += "-Delete"
+            task.display_params = "-Delete"
 
         if not any([query, start, stop, create, delete]):
             raise Exception("Failed to get a valid action to perform.")
