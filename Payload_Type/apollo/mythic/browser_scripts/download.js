@@ -7,14 +7,14 @@ function(task, responses){
     }else if(task.completed){
         if(responses.length > 0){
             try{
-                console.log(data);
                 let data = JSON.parse(responses[0]);
                 return {"download":[{
-                    "agent_file_id": data["agent_file_id"],
+                    "agent_file_id": responses[0],
                     "variant": "contained",
-                    "name": "Download " + data["filename"]
+                    "name": "Download " + task["display_params"]
                 }]};
             }catch(error){
+                console.log(error);
                 const combined = responses.reduce( (prev, cur) => {
                     return prev + cur;
                 }, "");
