@@ -7,7 +7,6 @@ function(task, responses){
     }else if(task.completed){
         if(responses.length > 0){
             try{
-                let data = JSON.parse(responses[0]);
                 return {"download":[{
                     "agent_file_id": responses[0],
                     "variant": "contained",
