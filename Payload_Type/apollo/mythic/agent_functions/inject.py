@@ -29,7 +29,8 @@ class InjectArguments(TaskArguments):
         if (self.command_line[0] != "{"):
             raise Exception("Inject requires JSON parameters and not raw command line.")
         self.load_args_from_json_string(self.command_line)
-
+        if self.get_arg("pid") == 0:
+            raise Exception("Required non-zero PID")
 
 class InjectCommand(CommandBase):
     cmd = "inject"
@@ -102,7 +103,7 @@ class InjectCommand(CommandBase):
                                     command="link",
                                     params_dict={
                                         "connection_info": connection_info
-                                    }, subtask_callback_func="inject_callback")
+                                    }, subtask_callback_function="inject_callback")
                                 task.status = response.status
                             else:
                                 task.status = MythicStatus.Error
