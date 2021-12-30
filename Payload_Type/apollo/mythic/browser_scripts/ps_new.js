@@ -45,7 +45,7 @@ function(task, responses){
                         backgroundColor: "rgb(106,255,255)",
                         color: "black"
                     };
-                } else if (pinfo["name"] == "explorer" || pinfo["name"] == "WinLogon") {
+                } else if (pinfo["name"] == "explorer" || pinfo["name"] == "winlogon") {
                     rowStyle = {
                         backgroundColor: "cornflowerblue",
                         color: "black",
