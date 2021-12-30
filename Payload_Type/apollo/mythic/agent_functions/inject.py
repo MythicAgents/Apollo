@@ -78,7 +78,7 @@ class InjectCommand(CommandBase):
                         # it's done, so we can register a file for it
                         task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
                         task.status = MythicStatus.Processed
-                        print(resp.response["c2info"][0])
+                        print(resp.response["c2info"])
                         sys.stdout.flush()
                         c2_info = resp.response["c2info"][0]
                         is_p2p = c2_info.get("is_p2p")
@@ -98,11 +98,12 @@ class InjectCommand(CommandBase):
                                 print(connection_info)
                                 sys.stdout.flush()
                                 response = await MythicRPC().execute("create_subtask",
-                                parent_task_id=task.id,
-                                command="link",
-                                params_dict={
-                                    "connection_info": connection_info
-                                }, callback_func="inject_callback")
+                                    parent_task_id=task.id,
+                                    command="link",
+                                    params_dict={
+                                        "connection_info": connection_info
+                                    }, subtask_callback_func="inject_callback")
+                                task.status = response.status
                             else:
                                 task.status = MythicStatus.Error
                             
