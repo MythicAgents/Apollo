@@ -71,8 +71,6 @@ class InjectCommand(CommandBase):
                                                  get_contents=True)
                 if resp.status == MythicStatus.Success:
                     if resp.response["build_phase"] == 'success':
-                        print(resp.response);
-                        sys.stdout.flush();
                         b64contents = resp.response["contents"]
                         pe = base64.b64decode(b64contents)
                         if len(pe) > 1 and pe[:2] == b"\x4d\x5a":
@@ -80,6 +78,8 @@ class InjectCommand(CommandBase):
                         # it's done, so we can register a file for it
                         task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
                         task.status = MythicStatus.Processed
+                        print(resp.response["c2info"][0])
+                        sys.stdout.flush()
                         is_p2p = resp.response["c2info"][0].get("is_p2p")
                         callback_func = ""
                         if not is_p2p:
@@ -87,7 +87,7 @@ class InjectCommand(CommandBase):
                         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
                                          command="shinject", params_dict={"pid": task.args.get_arg("pid"), "shellcode-file-id": resp.response["file"]["agent_file_id"]},
                                          subtask_callback_function=callback_func)
-                        if response.status == MythicStatus.Success and resp.response["c2info"][0].get("is_p2p"):
+                        if response.status == MythicStatus.Success and is_p2p:
                             response = await MythicRPC().execute("create_subtask",
                             parent_task_id=task.id,
                             command="link",
