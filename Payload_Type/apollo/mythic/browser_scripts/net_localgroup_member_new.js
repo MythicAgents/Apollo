@@ -44,8 +44,8 @@ function(task, responses){
                     // If process name is BAD, then highlight red.
                     "rowStyle": {},
                     "group": {"plaintext": groupText, "cellStyle": {}},
-                    "name": {"plaintext": jinfo["member_name"], "cellStyle": {}},
-                    "sid": {"plaintext": jinfo["sid"], "cellStyle": {}},
+                    "name": {"plaintext": jinfo["member_name"], "copyIcon": true, "cellStyle": {}},
+                    "sid": {"plaintext": jinfo["sid"], "copyIcon": true, "cellStyle": {}},
                 };
                 rows.push(row);
             }
