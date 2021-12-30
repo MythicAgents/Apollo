@@ -36,6 +36,7 @@ function(task, responses){
                     "members": {"button": {
                         "name": "query",
                         "type": "task",
+                        "startIcon": "list",
                         "ui_feature": "net_localgroup_member",
                         "parameters": JSON.stringify(
                             {
