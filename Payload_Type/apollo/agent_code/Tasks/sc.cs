@@ -430,7 +430,7 @@ namespace Tasks
                 UninstallService(hostname, ServiceName);
             }
             catch (Exception ex) { }
-            Console.WriteLine("[*] Attempting to create service {0} on {1}...", ServiceName, hostname);
+            // Console.WriteLine("[*] Attempting to create service {0} on {1}...", ServiceName, hostname);
             using (var scmHandle = _pOpenSCManager(hostname, null, SCMAccess.SC_MANAGER_CREATE_SERVICE))
             {
                 if (scmHandle.IsInvalid)

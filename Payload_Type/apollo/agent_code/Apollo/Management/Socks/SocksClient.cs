@@ -122,7 +122,7 @@ namespace Apollo.Management.Socks
                         _addr = Dns.GetHostEntry(domainName).AddressList[0];
                     } catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to resolve DNS for {domainName}: {ex.Message}");
+                        // Console.WriteLine($"Failed to resolve DNS for {domainName}: {ex.Message}");
                         return false;
                     }
                     _client = new AsyncTcpClient(domainName, _port);
@@ -172,7 +172,7 @@ namespace Apollo.Management.Socks
                 data = Convert.FromBase64String(dg.Data);
             } catch (Exception ex)
             {
-                Console.WriteLine($"Invalid b64 data from Mythic: {ex.Message}");
+                // Console.WriteLine($"Invalid b64 data from Mythic: {ex.Message}");
                 return bRet;
             }
 

@@ -129,12 +129,11 @@ namespace Apollo.Agent
                         return bRet;
                     }))
                     {
-                        Console.WriteLine($"Our new UUID: {UUID}");
                         break;
                     }
                 } catch(Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    
                 }
             }
             return bRet;
