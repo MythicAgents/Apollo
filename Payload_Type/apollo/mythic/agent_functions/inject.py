@@ -95,6 +95,8 @@ class InjectCommand(CommandBase):
                                     "agent_uuid": gen_resp.response["uuid"],
                                     "c2_profile": c2_info
                                 }
+                                print(connection_info)
+                                sys.stdout.flush()
                                 response = await MythicRPC().execute("create_subtask",
                                 parent_task_id=task.id,
                                 command="link",
