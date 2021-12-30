@@ -2,6 +2,7 @@ from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from mythic_payloadtype_container.MythicRPC import *
 import base64
+import sys
 
 class InjectArguments(TaskArguments):
 
@@ -51,7 +52,7 @@ class InjectCommand(CommandBase):
     attackmapping = ["T1055"]
 
 
-    async def shinject_completed(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
+    async def inject_callback(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
         task.status = MythicStatus.Completed
         return task
 
@@ -70,16 +71,30 @@ class InjectCommand(CommandBase):
                                                  get_contents=True)
                 if resp.status == MythicStatus.Success:
                     if resp.response["build_phase"] == 'success':
+                        print(resp.response);
+                        sys.stdout.flush();
                         b64contents = resp.response["contents"]
                         pe = base64.b64decode(b64contents)
                         if len(pe) > 1 and pe[:2] == b"\x4d\x5a":
                             raise Exception("Inject requires a payload of Raw output, but got an executable.")
                         # it's done, so we can register a file for it
                         task.display_params = "payload '{}' into PID {}".format(temp.response["tag"], task.args.get_arg("pid"))
+                        task.status = MythicStatus.Processed
+                        is_p2p = resp.response["c2info"][0].get("is_p2p")
+                        callback_func = ""
+                        if not is_p2p:
+                            callback_func = "inject_callback"
                         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
                                          command="shinject", params_dict={"pid": task.args.get_arg("pid"), "shellcode-file-id": resp.response["file"]["agent_file_id"]},
-                                         subtask_callback_function="shinject_completed")
-                        task.status = MythicStatus.Processed
+                                         subtask_callback_function=callback_func)
+                        if response.status == MythicStatus.Success and resp.response["c2info"][0].get("is_p2p"):
+                            response = await MythicRPC().execute("create_subtask",
+                            parent_task_id=task.id,
+                            command="link",
+                            params_dict={
+                                "connection_info": resp.response["c2info"][0]
+                            }, callback_func="inject_callback")
+                            
                         break
                     elif resp.response["build_phase"] == 'error':
                         raise Exception("Failed to build new payload: " + resp.response["error_message"])
