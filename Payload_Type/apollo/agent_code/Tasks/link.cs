@@ -71,7 +71,7 @@ namespace Tasks
                     p.Disconnect += (object o2, EventArgs a2) =>
                     {
                         resp = CreateTaskResponse(
-                            $"Lost link to {parameters.ConnectionInfo.Hostname}",
+                            $"\nLost link to {parameters.ConnectionInfo.Hostname}",
                             true,
                             "error",
                             new IMythicMessage[1]
