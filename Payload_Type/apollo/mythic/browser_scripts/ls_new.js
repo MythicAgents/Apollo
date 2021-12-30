@@ -16,7 +16,7 @@ function(task, responses){
         var powerPoint = [".ppt", ".pptx", ".potx", ".ppsx", ".thmx", ".pot", ".pps"];
         var pdfExt = [".pdf"];
         var dbExt = [".db", ".sql", ".psql"];
-        var keyFiles = [".pem", ".ppk", ".cer", ".pvk"];
+        var keyFiles = [".pem", ".ppk", ".cer", ".pvk", ".pfx"];
         var codeFiles = [".config", ".ps1", ".psm1", ".psd1", ".vbs", ".js", ".py", ".pl", ".rb", ".go", ".xml", ".html", ".css", ".sh", ".bash", ".yaml", ".yml", ".c", ".cpp", ".h", ".hpp", ".cs", ".sln", ".csproj"];
         var imageFiles = [".2000",".ani",".anim",".apng",".art",".avif",".bmp",".bpg",".bsave",".cal",".cin",".cpc",".cpt",".cur",".dds",".dpx",".ecw",".ep",".exr",".fits",".flic",".flif",".fpx",".gif",".hdr",".hdri",".hevc",".icer",".icns",".ico",".ics",".ilbm",".it",".jbig",".jbig2",".jng",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".kra",".logluv",".ls",".miff",".mng",".nrrd",".pam",".pbm",".pcx",".pgf",".pgm",".pictor",".png",".pnm",".ppm",".psb",".psd",".psp",".qtvr",".ras",".rgbe",".sgi",".tga",".tiff",".tiff",".tiff",".tiff",".ufo",".ufp",".wbmp",".webp",".xbm",".xcf",".xl",".xpm",".xr",".xs",".xt",".xwd"];
         let file = {};
