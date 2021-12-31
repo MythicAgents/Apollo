@@ -9,15 +9,17 @@ hidden = true
 
 Execute a .NET Framework assembly with the specified arguments. This assembly must first be cached in the agent using the `register_assembly` command before being executed.
 
-### Arguments (Positional)
-#### assembly_name
-The name of the assembly to execute. This must match the file name used with `register_assembly`. If you have questions as to what assemblies are available, you can issue [`list_assemblies`](/agents/apollo/commands/list_assemblies/). 
+### Arguments
+![exeasm](../images/execute_assembly.png)
+#### Assembly
+The name of the assembly to execute. This must match the file name used with `register_assembly`. 
 
-#### arguments (optional)
+#### Arguments (optional)
 Arguments to pass to the assembly.
 
 ## Usage
 ```
+execute_assembly -Assembly [assembly_name] -Arguments [arguments]
 execute_assembly [assembly_name] [arguments]
 ```
 

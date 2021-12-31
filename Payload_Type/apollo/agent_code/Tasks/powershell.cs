@@ -399,7 +399,17 @@ namespace Tasks
                             pipeline.Commands.AddScript(cmd);
                             pipeline.Commands[0].MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
                             pipeline.Commands.Add("Out-Default");
-                            pipeline.Invoke();
+                            try
+                            {
+                                ST.Task.WaitAny(new ST.Task[]
+                                {
+                                    new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token)
+                                }, _cancellationToken.Token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                
+                            }
                         }
                     }
                     resp = CreateTaskResponse("", true);

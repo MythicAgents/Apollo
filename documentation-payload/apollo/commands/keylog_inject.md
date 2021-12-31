@@ -9,19 +9,16 @@ hidden = true
 Start a keylogger in a specified process.
 
 ### Arguments (Positional)
-#### pid
+#### PID
 The target process's ID to inject the keylogging stub.
-
-#### arch
-The target process's architecture. Must be one of x86 or x64
 
 ## Usage
 ```
-keylog [pid] [arch]
+keylog [pid]
 ```
 Example
 ```
-keylog 1234 x64
+keylog 1234
 ```
 
 

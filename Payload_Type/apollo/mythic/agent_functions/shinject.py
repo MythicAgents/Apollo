@@ -22,10 +22,6 @@ class ShInjectArguments(TaskArguments):
                     ),
                     ParameterGroupInfo(
                         required=True,
-                        group_name="Modal"
-                    ),
-                    ParameterGroupInfo(
-                        required=True,
                         group_name="Scripted"
                     ),
                 ]),
@@ -37,7 +33,7 @@ class ShInjectArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
-                        group_name="Modal"
+                        group_name="Default"
                     ),
                 ]),
             CommandParameter(
@@ -82,7 +78,7 @@ class ShInjectCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = "-PID {}".format(task.args.get_arg("pid"))
         if task.args.get_arg("shellcode") != None:
-            original_file_name = json.loads(task.original_params)['Shellcode']
+            original_file_name = json.loads(task.original_params)['shellcode']
             task.display_params += " -File {}".format(original_file_name)
             resp = await MythicRPC().execute("create_file",
                                             task_id=task.id,
@@ -94,7 +90,9 @@ class ShInjectCommand(CommandBase):
                 task.args.remove_arg("shellcode")
             else:
                 raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
-        if task.args.get_arg("shellcode-file-id") == None or task.args.get_arg("shellcode-file-id") == "":
+        elif task.args.get_arg("shellcode-file-id") != None and task.args.get_arg("shellcode-file-id") != "":
+            task.display_params += " (scripting automation)"
+        else:
             raise Exception("No file provided.")
         return task
 

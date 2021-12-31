@@ -219,7 +219,7 @@ namespace TcpTransport
             }
 
             IMythicMessage msg = Serializer.DeserializeIPCMessage(data.ToArray(), mt);
-            Console.WriteLine("We got a message: {0}", mt.ToString());
+            // Console.WriteLine("We got a message: {0}", mt.ToString());
             _recieverQueue.Enqueue(msg);
             _receiverEvent.Set();
         }

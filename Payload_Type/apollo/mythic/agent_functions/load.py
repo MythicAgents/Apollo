@@ -97,16 +97,22 @@ class LoadCommand(CommandBase):
                 if requested_cmd == all_cmd["cmd"]:
                     found = True
                     if all_cmd["attributes"].get("dependencies", None) != None:
-                        if requested_cmd == "socks":
-                            no_dep_cmds.append(requested_cmd)
+                        if all_cmd["script_only"]:
+                            if len(all_cmd["attributes"]["dependencies"]) == 0:
+                                no_dep_cmds.append(requested_cmd)
+                            else:
+                                for dep in all_cmd["attributes"]["dependencies"]:
+                                    agent_cmds.append(dep)
                         else:
                             for dep in all_cmd["attributes"]["dependencies"]:
                                 agent_cmds.append(dep)
+                            agent_cmds.append(requested_cmd)
                     else:
                         agent_cmds.append(requested_cmd)
             if not found:
                 raise Exception("Command {} not found".format(requested_cmd))
 
+        no_dep_cmds = list(set(no_dep_cmds))
         if len(no_dep_cmds) > 0:
             register_resp = await MythicRPC().execute(
                 "update_loaded_commands",
@@ -119,9 +125,11 @@ class LoadCommand(CommandBase):
                 addoutput_resp = await MythicRPC().execute(
                     "create_output",
                     task_id=task.id,
-                    output="Loaded {}".format(", ".join(no_dep_cmds)))
+                    output="Loaded {}\n".format(", ".join(no_dep_cmds)))
                 if addoutput_resp.status != MythicStatus.Success:
                     raise Exception("Failed to add output for agent, but registered commands: {}".format(", ".join(no_dep_cmds)))
+
+        agent_cmds = list(set(agent_cmds).difference(set(no_dep_cmds)))
 
         self.mprint("Loading commands: {}".format(agent_cmds))
 
@@ -207,10 +215,11 @@ class LoadCommand(CommandBase):
             if reg_resp.status != MythicStatus.Success:
                 raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
 
-
+            for i in range(len(to_register)):
+                to_register[i] = "{} (script only)".format(to_register[i])
             addoutput_resp = await MythicRPC().execute("create_output",
                                                     task_id=response.task.id,
-                                                    output="\nLoaded {}".format(", ".join(to_register)))
+                                                    output=", {}".format(", ".join(to_register)))
             if addoutput_resp.status != MythicStatus.Success:
                 raise Exception("Failed to add output to task")
         

@@ -10,7 +10,7 @@ class MkdirArguments(TaskArguments):
             CommandParameter(
                 name="path",
                 cli_name="Path",
-                display_name="Path to new directory",
+                display_name="Path",
                 type=ParameterType.String, 
                 description="Directory to create."),
         ]

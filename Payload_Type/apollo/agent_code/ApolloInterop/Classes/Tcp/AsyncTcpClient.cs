@@ -119,7 +119,7 @@ namespace ApolloInterop.Classes
                 }
             } catch (Exception ex)
             {
-                Console.WriteLine($"Error in end read: {ex.Message}");
+                // Console.WriteLine($"Error in end read: {ex.Message}");
             }
             BeginRead(pd);
         }

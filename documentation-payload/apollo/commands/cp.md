@@ -8,9 +8,9 @@ hidden = true
 ## Summary
 Copy a specified file to another location.
 
-### Arguments (Positional or Popup)
+### Arguments
 
-![args](../images/cp01.png)
+![args](../images/cp.png)
 
 #### Destination
 The path to copy a file too.

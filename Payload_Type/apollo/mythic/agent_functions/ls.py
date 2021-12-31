@@ -17,6 +17,7 @@ class LsArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=1
                     ),
                 ]),
             CommandParameter(
@@ -29,6 +30,7 @@ class LsArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=0
                     ),
                 ]),
         ]

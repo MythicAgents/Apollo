@@ -13,6 +13,7 @@ class UploadArguments(TaskArguments):
             CommandParameter(
                 name="remote_path",
                 cli_name="Destination",
+                display_name="Destination",
                 type=ParameterType.String,
                 description="Path to write the file on the target. If empty, defaults to current working directory.",
                 parameter_group_info=[
@@ -23,7 +24,7 @@ class UploadArguments(TaskArguments):
             CommandParameter(
                 name="file",
                 cli_name="File",
-                display_name="File to upload",
+                display_name="File",
                 type=ParameterType.File),
             CommandParameter(
                 name="host",

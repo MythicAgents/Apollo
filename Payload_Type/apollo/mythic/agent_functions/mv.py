@@ -10,13 +10,13 @@ class MvArguments(TaskArguments):
             CommandParameter(
                 name="source",
                 cli_name = "Path",
-                display_name = "Source file to copy.",
+                display_name = "Source File",
                 type=ParameterType.String,
                 description='Source file to copy.'),
             CommandParameter(
                 name="destination",
                 cli_name="Destination",
-                display_name="Destination path.",
+                display_name="Destination Path",
                 type=ParameterType.String,
                 description="Where the new file will be created.")
         ]
