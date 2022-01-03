@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{2ED749A9-A6FF-4C49-BDA5-E3435E50DD5E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>DnsProfile</RootNamespace>
+    <AssemblyName>DnsProfile</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DnsProfile.cs" />
+    <Compile Include="DnsRip\Enums.cs" />
+    <Compile Include="DnsRip\Extensions\Extensions.cs" />
+    <Compile Include="DnsRip\Models\DnsHeader.cs" />
+    <Compile Include="DnsRip\Models\DnsQuestion.cs" />
+    <Compile Include="DnsRip\Models\DnsRequest.cs" />
+    <Compile Include="DnsRip\Models\DnsResponse.cs" />
+    <Compile Include="DnsRip\Models\ParseResult.cs" />
+    <Compile Include="DnsRip\Models\Record.cs" />
+    <Compile Include="DnsRip\Models\RecordA.cs" />
+    <Compile Include="DnsRip\Models\RecordAaaa.cs" />
+    <Compile Include="DnsRip\Models\RecordCName.cs" />
+    <Compile Include="DnsRip\Models\RecordMx.cs" />
+    <Compile Include="DnsRip\Models\RecordNs.cs" />
+    <Compile Include="DnsRip\Models\RecordPtr.cs" />
+    <Compile Include="DnsRip\Models\RecordSoa.cs" />
+    <Compile Include="DnsRip\Models\RecordTxt.cs" />
+    <Compile Include="DnsRip\Models\RecordUnknown.cs" />
+    <Compile Include="DnsRip\Models\ResolveResponse.cs" />
+    <Compile Include="DnsRip\Parser.cs" />
+    <Compile Include="DnsRip\Resolver.cs" />
+    <Compile Include="DnsRip\Utilites\AdditionalReader.cs" />
+    <Compile Include="DnsRip\Utilites\AnswerReader.cs" />
+    <Compile Include="DnsRip\Utilites\AuthorityReader.cs" />
+    <Compile Include="DnsRip\Utilites\RecordHelper.cs" />
+    <Compile Include="DnsRip\Utilites\RecordReader.cs" />
+    <Compile Include="DnsRip\Utilites\SocketHelper.cs" />
+    <Compile Include="DnsRip\Utilites\Validator.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
+      <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
+      <Name>ApolloInterop</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

