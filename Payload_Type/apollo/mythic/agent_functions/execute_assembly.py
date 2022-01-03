@@ -23,7 +23,14 @@ class ExecuteAssemblyArguments(TaskArguments):
                 display_name = "Assembly",
                 type=ParameterType.ChooseOne,
                 dynamic_query_function=self.get_files,
-                description="Assembly to execute (e.g., Seatbelt.exe).",),
+                description="Assembly to execute (e.g., Seatbelt.exe).",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default",
+                        ui_position=0
+                    )
+                ]),
             CommandParameter(
                 name="assembly_arguments",
                 cli_name="Arguments",
@@ -34,6 +41,7 @@ class ExecuteAssemblyArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=1
                     ),
                 ]),
         ]
