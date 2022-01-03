@@ -198,6 +198,7 @@ namespace Tasks
                 Process proc = null;
                 try
                 {
+                    _agent.AcquireOutputLock();
                     InlineAssemblyParameters parameters = _jsonSerializer.Deserialize<InlineAssemblyParameters>(_data.Parameters);
                     if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
                         string.IsNullOrEmpty(parameters.AssemblyName))
@@ -244,6 +245,10 @@ namespace Tasks
                 catch (Exception ex)
                 {
                     resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+                }
+                finally
+                {
+                    _agent.ReleaseOutputLock();
                 }
             }, _cancellationToken.Token);
         }
