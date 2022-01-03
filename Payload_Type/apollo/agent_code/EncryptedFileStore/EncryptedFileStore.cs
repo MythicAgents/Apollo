@@ -55,7 +55,19 @@ namespace EncryptedFileStore
 
         public bool TryAddOrUpdate(string keyName, byte[] data)
         {
-            return FileStore.TryAdd(keyName, EncryptData(data));
+            byte[] encData = EncryptData(data);
+            if (FileStore.TryAdd(keyName, encData))
+            {
+                return true;
+            }
+            else
+            {
+                if (!FileStore.TryGetValue(keyName, out byte[] compData))
+                {
+                    return false;
+                }
+                return FileStore.TryUpdate(keyName, encData, compData);
+            }
         }
 
         public bool TryGetValue(string keyName, out byte[] data)

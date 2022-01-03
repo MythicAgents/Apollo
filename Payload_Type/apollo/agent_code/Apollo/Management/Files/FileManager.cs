@@ -26,7 +26,7 @@ namespace Apollo.Management.Files
                 new ICryptographicRoutine[]
                 {
                     new AesRoutine(),
-                    new DpapiRoutine(),
+                    new DpapiRoutine(System.Guid.NewGuid().ToByteArray()),
                 });
         }
 
