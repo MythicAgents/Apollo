@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using EncryptedFileStore.Aes;
+using EncryptedFileStore.DPAPI;
 using EncryptedFileStore.XOR;
 
 namespace Apollo.Management.Files
@@ -22,7 +23,7 @@ namespace Apollo.Management.Files
         public FileManager(IAgent agent)
         {
             _agent = agent;
-            _fileStore = new AesFileStore(_agent);
+            _fileStore = new DPAPIFileStore(_agent);
         }
         internal struct UploadMessageTracker
         {
