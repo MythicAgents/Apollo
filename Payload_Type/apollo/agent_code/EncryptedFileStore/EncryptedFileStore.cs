@@ -7,25 +7,66 @@ using System.Text;
 
 namespace EncryptedFileStore
 {
-    public abstract class EncryptedFileStore : IEncryptedFileStore
+    public class EncryptedFileStore : IEncryptedFileStore
     {
-        protected IAgent _agent;
-        protected byte[] _currentScript = new byte[0];
-        protected ConcurrentDictionary<string, byte[]> _fileStore = new ConcurrentDictionary<string, byte[]>();
-
-        public EncryptedFileStore(IAgent agent)
+        protected byte[] CurrentScript = new byte[0];
+        protected readonly ConcurrentDictionary<string, byte[]> FileStore = new ConcurrentDictionary<string, byte[]>();
+        private readonly ICryptographicRoutine[] _providers;
+        public EncryptedFileStore(ICryptographicRoutine[] providers)
         {
-            _agent = agent;
+            _providers = providers;
         }
 
-        public abstract string GetScript();
+        private byte[] EncryptData(byte[] data)
+        {
+            byte[] cipherText = data;
+            
+            for(int i = 0; i < _providers.Length; i++)
+            {
+                cipherText = _providers[i].Encrypt(cipherText);
+            }
+            return cipherText;
+        }
 
-        public abstract void SetScript(string script);
+        private byte[] DecryptData(byte[] data)
+        {
+            byte[] plainText = data;
+            for(int i = _providers.Length - 1; i >= 0; i--)
+            {
+                plainText = _providers[i].Decrypt(plainText);
+            }
+            return plainText;
+        }
 
-        public abstract void SetScript(byte[] script);
+        public string GetScript()
+        {
+            return Encoding.UTF8.GetString(DecryptData(CurrentScript));
+        }
 
-        public abstract bool TryAddOrUpdate(string keyName, byte[] data);
+        public void SetScript(string script)
+        {
+            SetScript(Encoding.UTF8.GetBytes(script));
+        }
 
-        public abstract bool TryGetValue(string keyName, out byte[] data);
+        public void SetScript(byte[] script)
+        {
+            CurrentScript = EncryptData(script);
+        }
+
+        public bool TryAddOrUpdate(string keyName, byte[] data)
+        {
+            return FileStore.TryAdd(keyName, EncryptData(data));
+        }
+
+        public bool TryGetValue(string keyName, out byte[] data)
+        {
+            if (FileStore.TryGetValue(keyName, out data))
+            {
+                data = DecryptData(data);
+                return true;
+            }
+
+            return false;
+        }
     }
 }

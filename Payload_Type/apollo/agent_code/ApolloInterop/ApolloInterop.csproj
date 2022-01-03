@@ -34,6 +34,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,6 +48,9 @@
     <Compile Include="Classes\Core\ChunkedMessageStore.cs" />
     <Compile Include="Classes\Core\InjectionTechnique.cs" />
     <Compile Include="Classes\Core\Process.cs" />
+    <Compile Include="Classes\Cryptography\AesRoutine.cs" />
+    <Compile Include="Classes\Cryptography\DpapiRoutine.cs" />
+    <Compile Include="Classes\Cryptography\XorRoutine.cs" />
     <Compile Include="Classes\Events\ChunkMessageEventArgs.cs" />
     <Compile Include="Classes\Events\MythicMessageEventArgs.cs" />
     <Compile Include="Classes\Events\StringDataEventArgs.cs" />
@@ -75,6 +79,7 @@
     <Compile Include="Interfaces\IApi.cs" />
     <Compile Include="Interfaces\IC2Profile.cs" />
     <Compile Include="Interfaces\IC2ProfileManager.cs" />
+    <Compile Include="Interfaces\ICryptographicRoutine.cs" />
     <Compile Include="Interfaces\ICryptography.cs" />
     <Compile Include="Interfaces\ICryptographySerializer.cs" />
     <Compile Include="Interfaces\IEncryptedFileStore.cs" />

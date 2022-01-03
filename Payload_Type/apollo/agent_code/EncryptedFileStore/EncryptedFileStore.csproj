@@ -41,12 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Aes\AesFileStore.cs" />
-    <Compile Include="DPAPI\DPAPIFileStore.cs" />
     <Compile Include="EncryptedFileStore.cs" />
-    <Compile Include="Plaintext\PlaintextFileStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="XOR\XORFileStore.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
