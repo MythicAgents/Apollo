@@ -11,10 +11,10 @@ function(task, responses){
         let headers = [
             {"plaintext": "ppid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
             {"plaintext": "pid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
-            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 50},
+            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 100},
             {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
-            {"plaintext": "user", "type": "string", "cellStyle": {}, "fillWidth": true},
-            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 75},
+            {"plaintext": "user", "type": "string", "cellStyle": {}, "fillWidth": 250},
+            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 100},
             {"plaintext": "signer", "type": "string", "cellStyle": {}, "fillWidth": true},
             {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
         ];

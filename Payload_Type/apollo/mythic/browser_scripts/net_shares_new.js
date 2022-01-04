@@ -12,9 +12,9 @@ function(task, responses){
         
         let headers = [
             {"plaintext": "list", "type": "button", "startIcon": "list", "cellStyle": {}, "width": 100},
-            {"plaintext": "name", "type": "string", "cellStyle": {}, "width": 200},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
             {"plaintext": "comment", "type": "string", "cellStyle": {}, "fillWidth": true},
-            {"plaintext": "type", "type": "string", "cellStyle": {}, "width": 200},
+            {"plaintext": "type", "type": "string", "cellStyle": {}, "fillWidth": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {
