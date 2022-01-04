@@ -11,10 +11,10 @@ function(task, responses){
         let tableTitle = "";
         
         let headers = [
-            {"plaintext": "list", "type": "button", "startIcon": "list", "cellStyle": {}, "width": 10},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "comment", "type": "string", "cellStyle": {}},
-            {"plaintext": "type", "type": "string", "cellStyle": {}},
+            {"plaintext": "list", "type": "button", "startIcon": "list", "cellStyle": {}, "width": 100},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "width": 200},
+            {"plaintext": "comment", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "type", "type": "string", "cellStyle": {}, "width": 200},
         ];
         for(let i = 0; i < responses.length; i++)
         {

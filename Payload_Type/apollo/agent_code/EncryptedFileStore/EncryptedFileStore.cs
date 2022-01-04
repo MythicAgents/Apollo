@@ -40,6 +40,10 @@ namespace EncryptedFileStore
 
         public string GetScript()
         {
+            if (CurrentScript.Length == 0)
+            {
+                return "";
+            }
             return Encoding.UTF8.GetString(DecryptData(CurrentScript));
         }
 

@@ -12,9 +12,9 @@ function(task, responses){
         
         let headers = [
             {"plaintext": "members", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "comment", "type": "string", "cellStyle": {}},
-            {"plaintext": "sid", "type": "string", "cellStyle": {}},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "comment", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "sid", "type": "string", "cellStyle": {}, "fillWidth": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {
@@ -48,7 +48,7 @@ function(task, responses){
                     }},
                     "name": {"plaintext": jinfo["group_name"], "cellStyle": {}},
                     "comment": {"plaintext": jinfo["comment"], "cellStyle": {}},
-                    "sid": {"plaintext": jinfo["sid"], "cellStyle": {}},
+                    "sid": {"plaintext": jinfo["sid"], "cellStyle": {}, "copyIcon": true,},
                 };
                 rows.push(row);
             }

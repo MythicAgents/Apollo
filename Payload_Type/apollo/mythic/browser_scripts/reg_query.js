@@ -12,9 +12,9 @@ function(task, responses){
         
         let headers = [
             {"plaintext": "query", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "type", "type": "string", "cellStyle": {}, "width": 10},
-            {"plaintext": "value", "type": "string", "cellStyle": {}},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "type", "type": "string", "cellStyle": {}, "width": 100},
+            {"plaintext": "value", "type": "string", "cellStyle": {}, "fillWidth": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {

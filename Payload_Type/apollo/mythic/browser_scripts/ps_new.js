@@ -9,13 +9,13 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "ppid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 6},
-            {"plaintext": "pid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 6},
-            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 5},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "user", "type": "string", "cellStyle": {}, "width": 15},
-            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 6},
-            {"plaintext": "signer", "type": "string", "cellStyle": {}},
+            {"plaintext": "ppid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
+            {"plaintext": "pid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
+            {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 50},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "user", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 75},
+            {"plaintext": "signer", "type": "string", "cellStyle": {}, "fillWidth": true},
             {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
         ];
         for(let i = 0; i < responses.length; i++)
@@ -63,8 +63,8 @@ function(task, responses){
                     */
                     // If process name is BAD, then highlight red.
                     "rowStyle": rowStyle,
-                    "ppid": {"plaintext": pinfo["parent_process_id"], "cellStyle": {}},
-                    "pid": {"plaintext": pinfo["process_id"], "cellStyle": {}},
+                    "ppid": {"plaintext": pinfo["parent_process_id"], "cellStyle": {}, "copyIcon": true},
+                    "pid": {"plaintext": pinfo["process_id"], "cellStyle": {}, "copyIcon": true},
                     "arch": {"plaintext": pinfo["architecture"], "cellStyle": {}},
                     "name": {"plaintext": pinfo["name"], "cellStyle": {}},
                     "user": {"plaintext": pinfo["user"], "cellStyle": {}},

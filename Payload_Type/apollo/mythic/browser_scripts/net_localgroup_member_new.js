@@ -11,9 +11,9 @@ function(task, responses){
         let tableTitle = "";
         
         let headers = [
-            {"plaintext": "group", "type": "string", "cellStyle": {}, "width": 10},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "sid", "type": "string", "cellStyle": {}},
+            {"plaintext": "group", "type": "string", "cellStyle": {}, "width": 100},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "sid", "type": "string", "cellStyle": {}, "fillWidth": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {

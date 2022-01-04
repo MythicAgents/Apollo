@@ -12,8 +12,7 @@ function(task, responses){
         
         let headers = [
             {"plaintext": "set", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
-            {"plaintext": "is current", "type": "string", "cellStyle": {}, "width": 10},
+            {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true },
         ];
         for(let i = 0; i < responses.length; i++)
         {
@@ -41,7 +40,6 @@ function(task, responses){
                         "cellStyle": {},
                     }},
                     "name": {"plaintext": jinfo["name"], "cellStyle": {}},
-                    "is current": {"plaintext": jinfo["is_current"], "cellStyle": {}},
                 };
                 rows.push(row);
             }

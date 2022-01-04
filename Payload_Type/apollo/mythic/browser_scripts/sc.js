@@ -13,9 +13,9 @@ function(task, responses){
         let headers = [
             {"plaintext": "start", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "stop", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
-            {"plaintext": "status", "type": "string", "cellStyle": {}, "width": 10},
-            {"plaintext": "service", "type": "string", "cellStyle": {}},
-            {"plaintext": "display name", "type": "string", "cellStyle": {}},
+            {"plaintext": "status", "type": "string", "cellStyle": {}, "width": 125},
+            {"plaintext": "service", "type": "string", "cellStyle": {}, "fillWidth": true},
+            {"plaintext": "display name", "type": "string", "cellStyle": {}, "fillWidth": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {
