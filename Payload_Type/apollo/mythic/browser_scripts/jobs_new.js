@@ -9,7 +9,7 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "kill", "type": "button", "startIcon": "kill", "cellStyle": {}, "width": 6},
+            {"plaintext": "kill", "type": "button", "startIcon": "kill", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "operator", "type": "string", "cellStyle": {}, "width": 10},
             {"plaintext": "command", "type": "string", "cellStyle": {}, "width": 10},
             {"plaintext": "arguments", "type": "string", "cellStyle": {}},

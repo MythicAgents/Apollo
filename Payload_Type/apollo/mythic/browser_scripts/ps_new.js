@@ -16,7 +16,7 @@ function(task, responses){
             {"plaintext": "user", "type": "string", "cellStyle": {}, "width": 15},
             {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 6},
             {"plaintext": "signer", "type": "string", "cellStyle": {}},
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 14},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {

@@ -23,8 +23,8 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 14},
-            {"plaintext": "Task", "type": "button", "cellStyle": {}, "width": 10},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
+            {"plaintext": "Task", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
             {"plaintext": "size", "type": "size", "cellStyle": {}},
             {"plaintext": "owner", "type": "string", "cellStyle": {}},

@@ -11,7 +11,7 @@ function(task, responses){
         let tableTitle = "";
         
         let headers = [
-            {"plaintext": "members", "type": "button", "cellStyle": {}, "width": 10},
+            {"plaintext": "members", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "name", "type": "string", "cellStyle": {}},
             {"plaintext": "comment", "type": "string", "cellStyle": {}},
             {"plaintext": "sid", "type": "string", "cellStyle": {}},
