@@ -120,6 +120,18 @@ function(task, responses){
                         "cellStyle": {},
                     }
                 }
+                /*
+                
+data["files"][j]["creation_date"], "cellStyle": {}},
+                    "last modified": {"plaintext": data["files"][j]["modify_time"], "cellStyle": {}},
+                    "last accessed": {"plaintext": data["files"][j]["access_time"]                */
+                let creation_date = new Date(data["files"][j]["creation_date"]);
+                let last_modified_date = new Date(data["files"][j]["modify_time"]);
+                let access_date = new Date(data["files"][j]["access_time"]);
+
+                let fmt_creation = (creation_date.getMonth() + 1) + "/" + creation_date.getDate() + "/" + creation_date.getFullYear()
+                let fmt_last_modified = (last_modified_date.getMonth() + 1) + "/" + last_modified_date.getDate() + "/" + last_modified_date.getFullYear()
+                let fmt_access = (access_date.getMonth() + 1) + "/" + access_date.getDate() + "/" + access_date.getFullYear()
                 let row = {
                     "rowStyle": {}, //data["files"][j]["is_file"] ? file:  folder,
                     "actions": {
@@ -173,9 +185,9 @@ function(task, responses){
                     },
                     "size": {"plaintext": data["files"][j]["size"], "cellStyle": {}},
                     "owner": {"plaintext": data["files"][j]["owner"], "cellStyle": {}},
-                    "creation date": {"plaintext": data["files"][j]["creation_date"], "cellStyle": {}},
-                    "last modified": {"plaintext": data["files"][j]["modify_time"], "cellStyle": {}},
-                    "last accessed": {"plaintext": data["files"][j]["access_time"], "cellStyle": {}},
+                    "creation date": {"plaintext": fmt_creation, "cellStyle": {}},
+                    "last modified": {"plaintext": fmt_last_modified, "cellStyle": {}},
+                    "last accessed": {"plaintext": fmt_access, "cellStyle": {}},
                 };
                 rows.push(row);
             }

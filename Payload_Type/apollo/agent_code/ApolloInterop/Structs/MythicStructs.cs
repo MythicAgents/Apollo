@@ -17,6 +17,7 @@ namespace ApolloInterop.Structs
 
     namespace MythicStructs
     {
+
         [Serializable]
         [DataContract]
         public struct ProcessInformation : IMythicMessage
@@ -261,11 +262,11 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "directory")]
             public string Directory;
             [DataMember(Name = "creation_date")]
-            public string CreationDate;
+            public Int64 CreationDate;
             [DataMember(Name = "modify_time")]
-            public string ModifyTime;
+            public Int64 ModifyTime;
             [DataMember(Name = "access_time")]
-            public string AccessTime;
+            public Int64 AccessTime;
             [DataMember(Name = "permissions")]
             public ACE[] Permissions; // People need to set their own ACEs
             [DataMember(Name = "extended_attributes")]
@@ -283,12 +284,13 @@ namespace ApolloInterop.Structs
 
             public FileInformation(FileInfo finfo, ACE[] perms = null)
             {
+                DateTime unixEpoc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 FullName = finfo.FullName;
                 Name = finfo.Name;
                 Directory = finfo.Directory.FullName;
-                CreationDate = finfo.CreationTimeUtc.ToString();
-                ModifyTime = finfo.LastWriteTimeUtc.ToString();
-                AccessTime = finfo.LastAccessTimeUtc.ToString();
+                CreationDate = (Int64)((TimeSpan)(finfo.CreationTimeUtc - unixEpoc)).TotalSeconds * 1000;
+                ModifyTime = (Int64)((TimeSpan)(finfo.LastWriteTimeUtc - unixEpoc)).TotalSeconds * 1000;
+                AccessTime = (Int64)((TimeSpan)(finfo.LastAccessTime - unixEpoc)).TotalSeconds * 1000;
                 Permissions = perms;
                 ExtendedAttributes = finfo.Attributes.ToString();
                 Size = finfo.Length;
@@ -301,12 +303,13 @@ namespace ApolloInterop.Structs
 
             public FileInformation(DirectoryInfo finfo, ACE[] perms = null)
             {
+                DateTime unixEpoc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 FullName = finfo.FullName;
                 Name = finfo.Name;
                 Directory = finfo.Parent == null ? "" : finfo.Parent.ToString();
-                CreationDate = finfo.CreationTimeUtc.ToString();
-                ModifyTime = finfo.LastWriteTimeUtc.ToString();
-                AccessTime = finfo.LastAccessTimeUtc.ToString();
+                CreationDate = (Int64)((TimeSpan)(finfo.CreationTimeUtc - unixEpoc)).TotalSeconds * 1000;
+                ModifyTime = (Int64)((TimeSpan)(finfo.LastWriteTimeUtc - unixEpoc)).TotalSeconds * 1000;
+                AccessTime = (Int64)((TimeSpan)(finfo.LastAccessTime - unixEpoc)).TotalSeconds * 1000;
                 Permissions = perms;
                 ExtendedAttributes = finfo.Attributes.ToString();
                 Size = 0;
@@ -392,11 +395,11 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "success")]
             public bool Success;
             [DataMember(Name = "creation_date")]
-            public string CreationDate;
+            public Int64 CreationDate;
             [DataMember(Name = "access_time")]
-            public string AccessTime;
+            public Int64 AccessTime;
             [DataMember(Name = "modify_time")]
-            public string ModifyTime;
+            public Int64 ModifyTime;
             [DataMember(Name = "size")]
             public long Size;
             [DataMember(Name = "files")]
