@@ -115,6 +115,7 @@ class InjectCommand(CommandBase):
         desc = string_payload[1]
         file_resp = await MythicRPC().execute(
             "search_payloads",
+            callback_id=task.callback.id,
             payload_types=["apollo"],
             include_auto_generated=False,
             description=desc,
