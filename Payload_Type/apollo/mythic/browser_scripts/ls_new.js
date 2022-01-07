@@ -25,12 +25,12 @@ function(task, responses){
         let headers = [
             {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "Task", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
-            {"plaintext": "name", "type": "string", "cellStyle": {}},
+            {"plaintext": "name", "type": "string", "fillWidth": true, "cellStyle": {}},
             {"plaintext": "size", "type": "size", "cellStyle": {}},
-            {"plaintext": "owner", "type": "string", "cellStyle": {}},
-            {"plaintext": "creation date", "type": "string", "cellStyle": {}},
-            {"plaintext": "last modified", "type": "string", "cellStyle": {}},
-            {"plaintext": "last accessed", "type": "string", "cellStyle": {}},
+            {"plaintext": "owner", "type": "string", "fillWidth": true, "cellStyle": {}},
+            {"plaintext": "creation date", "type": "string", "width": 150, "cellStyle": {}},
+            {"plaintext": "last modified", "type": "string", "width": 150, "cellStyle": {}},
+            {"plaintext": "last accessed", "type": "string", "width": 150, "cellStyle": {}},
         ];
         let tableHeader = "";
         for(let i = 0; i < responses.length; i++)
