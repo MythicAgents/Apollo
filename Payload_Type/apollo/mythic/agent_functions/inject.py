@@ -24,9 +24,10 @@ class InjectArguments(TaskArguments):
 
     errorMsg = "Missing required parameter: {}"
 
-    async def get_payloads(self):
+    async def get_payloads(self, callback: dict):
         file_resp = await MythicRPC().execute(
             "search_payloads",
+            callback_id=callback["id"],
             payload_types=["apollo"],
             include_auto_generated=False,
             build_parameters={
