@@ -287,14 +287,13 @@ namespace Tasks
             string output = "";
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
             EventableStringWriter stdoutWriter = new EventableStringWriter();
-            stdoutWriter.BufferWritten += (sender, args) =>
-            {
-                if (!string.IsNullOrEmpty(args.Data))
-                {
-                    output += args.Data;
-                    AppDomain.CurrentDomain.SetData("output", output);
-                }
-            };
+            // stdoutWriter.BufferWritten += (sender, args) =>
+            // {
+            //     if (!string.IsNullOrEmpty(args.Data))
+            //     {
+            //         output += args.Data;
+            //     }
+            // };
             Console.SetOut(stdoutWriter);
             Console.SetError(stdoutWriter);
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
