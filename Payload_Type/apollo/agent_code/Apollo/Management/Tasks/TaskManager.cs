@@ -63,30 +63,36 @@ namespace Apollo.Management.Tasks
                         }
                         else
                         {
-                            Tasking t = (Tasking)Activator.CreateInstance(
-                            _loadedTaskTypes[result.Command],
-                            new object[] { _agent, result });
-                            var taskObj = t.CreateTasking();
-                            // When the task finishes, we remove it from the queue.
-                            taskObj.ContinueWith((_) =>
+                            try
                             {
-                                _runningTasks.TryRemove(t.ID(), out Tasking _);
-                            });
-                            // Unhandled exception occurred in task, report it.
-                            taskObj.ContinueWith((_) =>
+                                Tasking t = (Tasking) Activator.CreateInstance(
+                                    _loadedTaskTypes[result.Command],
+                                    new object[] {_agent, result});
+                                var taskObj = t.CreateTasking();
+                                // When the task finishes, we remove it from the queue.
+                                taskObj.ContinueWith((_) => { _runningTasks.TryRemove(t.ID(), out Tasking _); });
+                                // Unhandled exception occurred in task, report it.
+                                taskObj.ContinueWith((_) => { OnTaskErrorOrCancel(t, taskObj); },
+                                    System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
+                                // If it got cancelled and threw an exception of that type,
+                                // report it.
+                                taskObj.ContinueWith((_) => { OnTaskErrorOrCancel(t, taskObj); },
+                                    System.Threading.Tasks.TaskContinuationOptions.OnlyOnCanceled);
+                                _runningTasks.TryAdd(t.ID(), t);
+                                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                                {
+                                    taskObj.Start();
+                                }
+                            }
+                            catch (Exception ex)
                             {
-                                OnTaskErrorOrCancel(t, taskObj);
-                            }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
-                            // If it got cancelled and threw an exception of that type,
-                            // report it.
-                            taskObj.ContinueWith((_) =>
-                            {
-                                OnTaskErrorOrCancel(t, taskObj);
-                            }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnCanceled);
-                            _runningTasks.TryAdd(t.ID(), t);
-                            using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                            {
-                                taskObj.Start();
+                                AddTaskResponseToQueue(new TaskResponse()
+                                {
+                                    UserOutput = $"Unexpected error during create and execute: {ex.Message}\n{ex.StackTrace}",
+                                    TaskID = result.ID,
+                                    Completed = true,
+                                    Status = "error"
+                                });
                             }
                         }
 
