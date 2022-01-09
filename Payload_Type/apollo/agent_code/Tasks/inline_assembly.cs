@@ -238,6 +238,10 @@ namespace Tasks
             var codeSleeve = (IntPtr)sleeve.GetType().GetField("_methodPtrAux", flags).GetValue(sleeve);
             var codeAce = (IntPtr)ace.GetType().GetField("_methodPtrAux", flags).GetValue(ace);
 
+            if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
+            {
+                return false;
+            }
             int[] patch = new int[3];
 
             patch[0] = 10;
@@ -258,11 +262,7 @@ namespace Tasks
             {
                 return false;
             }
-
-            if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
-            {
-                return false;
-            }
+            
             try
             {
                 isolationDomain.DoCallBack(sleeve);
