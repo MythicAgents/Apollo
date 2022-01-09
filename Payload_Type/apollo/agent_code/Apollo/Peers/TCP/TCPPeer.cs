@@ -5,6 +5,7 @@ using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
@@ -22,9 +23,9 @@ namespace Apollo.Peers.TCP
     public class TCPPeer : AI.Classes.P2P.Peer
     {
         private AsyncTcpClient _tcpClient = null;
-        private TcpClient _client = null;
         private Action<object> _sendAction;
         private TTasks.Task _sendTask;
+        private bool _connected = false;
         private string _partialData = "";
         public TCPPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
@@ -63,12 +64,12 @@ namespace Apollo.Peers.TCP
 
         public override bool Connected()
         {
-            return _client.Connected;
+            return _connected;
         }
 
         public override bool Finished()
         {
-            return _previouslyConnected && !_client.Connected;
+            return _previouslyConnected && !_connected;
         }
 
         public void OnConnect(object sender, TcpMessageEventArgs args)
@@ -77,6 +78,7 @@ namespace Apollo.Peers.TCP
             OnConnectionEstablished(sender, args);
             _sendTask = new TTasks.Task(_sendAction, args.Client);
             _sendTask.Start();
+            _connected = true;
             _previouslyConnected = true;
         }
 
@@ -86,6 +88,7 @@ namespace Apollo.Peers.TCP
             args.Client.Close();
             _senderEvent.Set();
             _sendTask.Wait();
+            _connected = false;
             base.OnDisconnect(this, args);
         }
 
@@ -180,7 +183,7 @@ namespace Apollo.Peers.TCP
 
         public override void Stop()
         {
-            _client.Close();
+            _cts.Cancel();
             _sendTask.Wait();
         }
     }

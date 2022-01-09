@@ -1,7 +1,7 @@
 ﻿#define C2PROFILE_NAME_UPPER
 
 #if DEBUG
-#define HTTP
+#define TCP
 #endif
 
 using HttpTransport;
@@ -89,7 +89,7 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
 #if DEBUG
-                        { "port", "25000" },
+                        { "port", "40000" },
                         { "encrypted_exchange_check", "T" },
 #else
                         { "port", "port_here" },
@@ -105,18 +105,18 @@ namespace Apollo
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
 #if DEBUG
 #if HTTP
-        public static string StagingRSAPrivateKey = "M8ktxoToHE5lH4e3NqrdjqYEmCfPLs5Nh0kdxIpa1cQ=";
+        public static string StagingRSAPrivateKey = "P/x0RNmuo//zlX+IdpUVypA0Oh0sbVtSdyIhL5xR/wI=";
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
-        public static string StagingRSAPrivateKey = "dlBOwdZdnAY1YH/6BZyn/wjkoDZk6IzZ75+p+JZ8V14=";
+        public static string StagingRSAPrivateKey = "LbFpMoimB+aLx1pq0IqXJ1MQ4KIiGdp0LWju5jUhZRg=";
 #endif
 #if HTTP
-        public static string PayloadUUID = "e3f5d18c-0083-4e7b-b459-5bcacf9c6d2c";
+        public static string PayloadUUID = "0c95e7e6-35ba-4fe0-973b-fb6d9ae3a0ac";
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
-        public static string PayloadUUID = "1b79c340-b4ec-4801-b867-172fcb3491e5";
+        public static string PayloadUUID = "a51253f6-7885-4fea-9109-154ecc54060d";
 #endif
 #else
         public static string StagingRSAPrivateKey = "AESPSK_here";
