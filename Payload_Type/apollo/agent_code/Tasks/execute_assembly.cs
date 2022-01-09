@@ -165,7 +165,7 @@ namespace Tasks
                                         client.ConnectionEstablished += Client_ConnectionEstablished;
                                         client.MessageReceived += Client_MessageReceived;
                                         client.Disconnect += Client_Disconnect;
-                                        if (client.Connect(3000))
+                                        if (client.Connect(10000))
                                         {
                                             IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
                                             foreach (IPCChunkedData chunk in chunks)

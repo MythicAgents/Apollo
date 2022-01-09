@@ -3,6 +3,7 @@ using ApolloInterop.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -45,10 +46,27 @@ namespace Apollo.Management.Socks
                 TcpClient client = (TcpClient)c;
                 while(!_cts.IsCancellationRequested && client.Connected)
                 {
-                    WaitHandle.WaitAny(new WaitHandle[] { _requestEvent, _cts.Token.WaitHandle });
+                    try
+                    {
+                        WaitHandle.WaitAny(new WaitHandle[] {_requestEvent, _cts.Token.WaitHandle});
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
                     if (!_cts.IsCancellationRequested && client.Connected && _requestQueue.TryDequeue(out byte[] result))
                     {
-                        client.GetStream().BeginWrite(result, 0, result.Length, OnDataSent, c);
+                        try
+                        {
+                            client.GetStream().BeginWrite(result, 0, result.Length, OnDataSent, c);
+                        }
+                        catch
+                        {
+                            break;
+                        }
+                    } else if (_cts.IsCancellationRequested || !client.Connected)
+                    {
+                        break;
                     }
                 }
                 client.Close();
@@ -82,11 +100,18 @@ namespace Apollo.Management.Socks
             TcpClient client = (TcpClient)result.AsyncState;
             if (client.Connected && !_cts.IsCancellationRequested)
             {
-                client.GetStream().EndWrite(result);
-                // Potentially delete this since theoretically the sender Task does everything
-                if (_requestQueue.TryDequeue(out byte[] data))
+                try
                 {
-                    client.GetStream().BeginWrite(data, 0, data.Length, OnDataSent, client);
+                    client.GetStream().EndWrite(result);
+                    // Potentially delete this since theoretically the sender Task does everything
+                    if (_requestQueue.TryDequeue(out byte[] data))
+                    {
+                        client.GetStream().BeginWrite(data, 0, data.Length, OnDataSent, client);
+                    }
+                }
+                catch (System.IO.IOException)
+                {
+                    
                 }
             }
         }
