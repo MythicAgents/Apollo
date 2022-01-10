@@ -1,7 +1,7 @@
 ﻿#define C2PROFILE_NAME_UPPER
 
 #if DEBUG
-#define TCP
+#define HTTP
 #endif
 
 using HttpTransport;

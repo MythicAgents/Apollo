@@ -1,6 +1,7 @@
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from uuid import uuid4
+from agent_functions.execute_pe import PRINTSPOOFER_FILE_ID
 from sRDI import ShellcodeRDI
 from mythic_payloadtype_container.MythicRPC import *
 from os import path
@@ -9,7 +10,8 @@ import tempfile
 from distutils.dir_util import copy_tree
 import shutil
 
-EXEECUTE_ASSEMBLY_PATH = "/srv/ExecuteAssembly.exe"
+INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
+INTEROP_FILE_ID = ""
 
 class InlineAssemblyArguments(TaskArguments):
 
@@ -81,20 +83,43 @@ class InlineAssemblyCommand(CommandBase):
     argument_class = InlineAssemblyArguments
     attackmapping = ["T1547"]
 
-    async def build_exeasm(self):
-        global EXEECUTE_ASSEMBLY_PATH
+    async def build_interop(self):
+        global INTEROP_ASSEMBLY_PATH
         agent_build_path = tempfile.TemporaryDirectory()
-        outputPath = "{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name)
+        outputPath = "{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name)
         copy_tree(self.agent_code_path, agent_build_path.name)
-        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecuteAssembly/ExecuteAssembly.csproj".format(agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ApolloInterop/ApolloInterop.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
-            raise Exception("Failed to build ExecuteAssembly.exe:\n{}".format(stderr.decode()))
-        shutil.copy(outputPath, EXEECUTE_ASSEMBLY_PATH)
+            raise Exception("Failed to build ApolloInterop.dll:\n{}".format(stderr.decode()))
+        shutil.copy(outputPath, INTEROP_ASSEMBLY_PATH)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        global INTEROP_ASSEMBLY_PATH
+        global INTEROP_FILE_ID
+
+        if not path.exists(INTEROP_ASSEMBLY_PATH):
+            await self.build_interop()
+
+        if INTEROP_FILE_ID == "":
+            with open(INTEROP_ASSEMBLY_PATH, "rb") as f:
+                interop_bytes = f.read()
+            
+            file_resp = await MythicRPC().execute(
+                "create_file",
+                task_id=task.id,
+                file=interop_bytes,
+                delete_after_fetch=False)
+            
+            if file_resp.status == MythicStatus.Success:
+                INTEROP_FILE_ID = file_resp.response["agent_file_id"]
+            else:
+                raise Exception("Failed to register Interop DLL: {}".format(file_resp.error))
+        
+        task.args.add_arg("interop_id", INTEROP_FILE_ID)
+
         task.display_params = "-Assembly {} -Arguments {}".format(
             task.args.get_arg("assembly_name"),
             task.args.get_arg("assembly_arguments")
