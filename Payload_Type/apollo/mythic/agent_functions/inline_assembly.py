@@ -106,11 +106,11 @@ class InlineAssemblyCommand(CommandBase):
         if INTEROP_FILE_ID == "":
             with open(INTEROP_ASSEMBLY_PATH, "rb") as f:
                 interop_bytes = f.read()
-            
+            b64interop = base64.b64encode(interop_bytes).decode()
             file_resp = await MythicRPC().execute(
                 "create_file",
                 task_id=task.id,
-                file=interop_bytes,
+                file=b64interop,
                 delete_after_fetch=False)
             
             if file_resp.status == MythicStatus.Success:

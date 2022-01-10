@@ -186,11 +186,10 @@ namespace Tasks
                     {
                         if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
                         {
-                            byte[] ByteData = assemblyBytes;
                             string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments) ? new string[0] : ParseCommandLine(parameters.AssemblyArguments);
                             _sendTask =
                                 System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
-                            if (LoadAppDomainModule(stringData, ByteData, new byte[][]{ interopBytes }))
+                            if (LoadAppDomainModule(stringData, assemblyBytes, new byte[][]{ interopBytes }))
                             {
                                 resp = CreateTaskResponse("", true);
                             }
