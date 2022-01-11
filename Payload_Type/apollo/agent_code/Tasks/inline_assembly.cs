@@ -244,7 +244,7 @@ namespace Tasks
             {
                 try
                 {
-                    isolationDomain.Load(dependency);   
+                    isolationDomain.Load(dependency);
                 } catch {}
             }
             try
@@ -310,17 +310,66 @@ namespace Tasks
 #region Cross AppDomain Loader
         static void ActivateLoader()
         {
-            string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
-            EventableStringWriter stdoutWriter = new EventableStringWriter();
-            stdoutWriter.BufferWritten += (sender, args) =>
+            void OnWrite(object sender, object args)
             {
-                if (!string.IsNullOrEmpty(args.Data))
+                Assembly interop2 = null;
+                foreach (var asm2 in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    _output += args.Data;
+                    if (asm2.FullName.StartsWith("ApolloInterop"))
+                    {
+                        interop2 = asm2;
+                        break;
+                    }
                 }
-            };
-            Console.SetOut(stdoutWriter);
-            Console.SetError(stdoutWriter);
+                if (interop2 == null)
+                {
+                    return;
+                }
+                Type tStringEventArgs = interop2.GetType("ApolloInterop.Classes.Events.StringDataEventArgs");
+                FieldInfo fiData = tStringEventArgs.GetField("Data");
+                string data = fiData.GetValue(args) as string;
+                if (!string.IsNullOrEmpty(data))
+                {
+                    _output += data;
+                }
+            }
+            Assembly interopAsm = null;
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (asm.FullName.StartsWith("ApolloInterop"))
+                {
+                    interopAsm = asm;
+                }
+            }
+
+            if (interopAsm == null)
+            {
+                throw new Exception("Failed to find interop dll");
+            }
+            string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
+            
+
+            Type tArg = interopAsm.GetType("ApolloInterop.Classes.Events.StringDataEventArgs");
+            
+            Type tEventHandler = typeof(EventHandler<>);
+            Type tEventStringData = tEventHandler.MakeGenericType(new[] {tArg});
+
+            // Func<int> tester = () => { return 1; };
+            // Convert.ChangeType(tester, tEventStringData);
+            var callbackMethod = (EventHandler<EventArgs>)OnWrite;
+            
+            
+            Type tWriter = interopAsm.GetType("ApolloInterop.Classes.IO.EventableStringWriter");
+
+            var writer = Activator.CreateInstance(tWriter);
+            EventInfo eiWrite = tWriter.GetEvent("BufferWritten");
+            Delegate handler = Delegate.CreateDelegate(
+                eiWrite.EventHandlerType,
+                callbackMethod.Method);
+            eiWrite.AddEventHandler(writer, handler);
+            
+            Console.SetOut((StringWriter)writer);
+            Console.SetError((StringWriter)writer);
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (!asm.FullName.Contains("mscor") && !asm.FullName.Contains("Apollo"))

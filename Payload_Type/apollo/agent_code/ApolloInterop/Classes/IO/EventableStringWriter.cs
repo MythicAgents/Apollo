@@ -11,7 +11,7 @@ namespace ApolloInterop.Classes.IO
     public class EventableStringWriter : StringWriter
     {
         public event EventHandler<StringDataEventArgs> BufferWritten;
-
+        
         public override void Write(string value)
         {
             BufferWritten?.Invoke(this, new StringDataEventArgs(value));
