@@ -31,85 +31,80 @@ Once installed, restart Mythic to build a new agent.
 
 Command | Syntax | Description
 ------- | ------ | -----------
-assembly_inject | `assembly_inject [pid] [arch] [assembly] [args]` | Execute .NET assembly in remote process.
-blockdlls | `blockdlls [toggle]` | Block non-Microsoft signed DLLs from loading into post-ex jobs.
-bypassuac | `bypassuac (modal popup)` | Bypass UAC using the trusted mock directory technique.
-cat | `cat [file]` | Retrieve the output of a file.
-cd | `cd [dir]` | Change working directory.
-cp | `cp [source] [destination]` | Copy a file from source to destination. Modal popup.
-download | `download [path]` | Download a file off the target system.
-execute_assembly | `execute_assembly [assembly.exe] [args]` | Execute a .NET assembly registered with `register_assembly`
-exit | `exit` | Exit a callback.
-get_current_injection_technique | `get_current_injection_technique` | Show the current injection technique used in postex jobs.
+assembly_inject | `assembly_inject -PID [pid] -Assembly [assembly] -Arguments [args]` | Execute .NET assembly in remote process.
+blockdlls | `blockdlls -EnableBlock [false]` | Block non-Microsoft signed DLLs from loading into post-ex jobs.
+cat | `cat -Path [file]` | Retrieve the output of a file.
+cd | `cd -Path [dir]` | Change working directory.
+cp | `cp -Path [source] -Destination [destination]` | Copy a file from path to destination.
+download | `download -Path [path] [-Host [hostname]]` | Download a file off the target system.
+execute_assembly | `execute_assembly -Assembly [assembly.exe] -Arguments [args]` | Execute a .NET assembly registered with `register_file`
+execute_pe | `execute_pe -PE [binary.exe] -Arguments [args]` | Execute a statically compiled executable that's been registered with `register_file`
+exit | `exit` | Task agent to exit.
+get_injection_techniques | `get_injection_techniques` | Show currently registered injection techniques as well as the current technique.
 getprivs | `getprivs` | Enable as many privileges as possible for the current access token.
 inject | `inject` | Inject a new payload into a remote process.
-golden_ticket | `golden_ticket` | Forge a golden/silver ticket using Mimikatz.
+inline_assembly | `inline_assembly -Assembly [Assembly.exe] -Arguments [Additional Args]` | Execute a .NET assembly in the currently executing process that's been registered with `register_file`
 jobkill | `jobkill [jid]` | Kill a running job in the agent.
 jobs | `jobs` | List all running jobs.
-keylog | `keylog [pid] [arch]` | Inject a keylogger into a remote process.
-kill | `kill [pid]` | Attempt to kill the process specified by `[pid]`.
-link | `link` | Link to an SMB agent (defunct, modal popup)
-list_assemblies | `list_assemblies` | Show the assemblies currently cached by the agent.
-list_injection_techniques | `list_injection_techniques` | List all injection techniques the agent can potentially use for postex jobs.
-list_scripts | `list_scripts` | List all powershell scripts cached in the agent.
-ls | `ls [path]` | List files and folders in `[path]`. Defaults to current working directory.
+keylog_inject | `keylog_inject -PID [pid]` | Inject a keylogger into a remote process.
+kill | `kill -PID [pid]` | Attempt to kill the process specified by `[pid]`.
+link | `link` | Link to a P2P agent via SMB or TCP. Modal popup only.
+load | `load command1 command2 ...` | Load new commands into the agent.
+ls | `ls [-Path [path]]` | List files and folders in `[path]`. Defaults to current working directory.
 make_token | `make_token` | Impersonate a user using plaintext credentials. Modal popup.
-mimikatz | `mimikatz [args]` | Execute Mimikatz with the specified arguments.
-mkdir | `mkdir [dir]` | Create a directory.
-mv | `mv [source] [destination]` | Move a file from source to destination. Modal popup.
+mimikatz | `mimikatz -Command [args]` | Execute Mimikatz with the specified arguments.
+mkdir | `mkdir -Path [dir]` | Create a directory.
+mv | `mv -Path [source] -Destination [destination]` | Move a file from source to destination. Modal popup.
 net_dclist | `net_dclist [domain.local]` | List all domain controllers for the current or specified domain.
+net_localgroup_member | `net_localgroup_member -Group [groupname] [-Computer [computername]]` | Retrieve membership information from a specified group on a given computer.
 net_localgroup | `net_localgroup [computer]` | Retrieve local groups known by a computer. Default to localhost.
-net_localgroup_member | `net_localgroup_member` | Retrieve membership information from a specified group on a given computer. Modal popup.
-net_shares | `net_shares [computer]` | Show shares of a remote PC.
-powerpick | `powerpick [command]` | Executes PowerShell in a sacrificial process.
-powershell | `powershell [command]` | Executes PowerShell in your currently running process.
-printspoofer | `printspoofer -c [command]` | Execute a command in SYSTEM integrity so long as you have SeImpersonate privileges.
-ps_full | `ps_full` | List verbose process information, including company names, command lines, desktop sessions, window titles, and more.
+net_shares | `net_shares [-Computer [computer]]` | Show shares of a remote PC.
+powerpick | `powerpick -Command [command]` | Executes PowerShell in a sacrificial process.
+powershell | `powershell -Command [command]` | Executes PowerShell in your currently running process.
+ppid | `ppid -PID [pid_integer]` | Set the PPID of sacrificial jobs to the specified PID.
+printspoofer | `printspoofer -Command [command]` | Execute a command in SYSTEM integrity so long as you have SeImpersonate privileges.
 ps | `ps` | List process information.
-psclear | `psclear` | Clears all PowerShell scripts known to the agent that were imported by `psimport`.
-psexec | `psexec` | Pivot to a remote computer by creating a new service. Modal popup.
-psimport | `psimport` | Reigster a powershell script to import on subsequent execution in `powerpick`/`psinject`/`powershell` commands. Can import more than one script (e.g., PowerView and PowerUp can both be loaded simultaneously.) To clear the script imports, use `psclear`.
-psinject | `psinject [pid] [x86/x64] [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
-pth | `pth` | Modal popup. Use Mimikatz to patch LSASS and import credentials into memory.
-ppid | `ppid [pid]` | Set the parent process ID of post-ex jobs to the specified PID.
+psinject | `psinject -PID [pid] -Command [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
 pwd | `pwd` | Print working directory.
-reg_query_subkeys | `reg_query_subkeys` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
-reg_query_values | `reg_query_values` | Query all values of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
-register_assembly | `register_assembly` | Register an assembly with the agent to execute later in `execute_assembly`. Modal popup for file upload.
+reg_query | `reg_query -Hive [HKCU:\\|HKU:\\|HKLM:\\|HKCR:\] [-Key [keyname]]` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
+reg_write_value | `reg_write_value -Hive [HKCU:\|HKU:\|HKLM:\|HKCR:\] -Key [keyname] [-Name [value_name] -Value [value_value]]` | Write specified values to the registry keys.
+register_file | `register_file` | Register a file to the agent's file cache. Used to store assemblies, executables, and PowerShell scripts.
 rev2self | `rev2self` | Revert the access token to the original access token.
-rm | `rm [path]` | Remove a file specified by `[path]`
-rmdir | `rmdir [path]` | Remove a directory specified by `[path]`
-run | `run [binary.exe] [args]` | Runs the binary specified by `[binary.exe]` with passed arguments (if any).
+rm | `rm -Path [path] [-Host [hostname] -File [filename]]` | Remove a file specified by `[path]`. Alternatively, if `-File` is provided, `-Path` will be used as the directory, and `-File` will be the filename.
+run | `run -Executable [binary.exe] -Arguments [args]` | Runs the binary specified by `[binary.exe]` with passed arguments (if any).
+sc | `sc [-Query\|-Start\|-Stop\|-Create\|-Delete] [-Computer [computername] -DisplayName [display_name] -ServiceName [servicename] -BinPath [binpath]]` | .NET implementation of the Service Control Manager.
+screenshot_inject | `screenshot_inject -PID [pid] [-Interval [int] -Count [int]]` | Get a screenshot of the desktop session associated with `PID` every `Interval` seconds for `Count` screenshots.
 screenshot | `screenshot` | Get a screenshot of the current screen.
-set_injection_technique | `set_injection_technique [technique]` | Set the injection technique used in post-ex jobs that require injection. Must be a technique listed in the output of `list_injection_techniques`.
-shell | `shell [command]` | Run a shell command which will translate to a process being spawned with command line: `cmd.exe /C [command]`
-shinject | `shinject` | Inject given shellcode into a specified pid. Modal popup.
+set_injection_technique | `set_injection_technique [technique]` | Set the injection technique used in post-ex jobs that require injection.
+shell | `shell [command]` | Run a shell command which will translate to a process being spawned with command line: `cmd.exe /S /c [command]`
+shinject | `shinject` | Inject given shellcode into a specified pid. Modal popup only.
 sleep | `sleep [seconds]` | Set the callback interval of the agent in seconds.
-socks | `socks [action] [port]` | Standup the socks server to proxy network traffic. Action must be `start` or `stop`. If `start`, require port.
-spawn | `spawn` | Spawn a new callback.
-spawnto_x64 | `spawnto_x64 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`.
-spawnto_x86 | `spawnto_x86 [path]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]`. 
+socks | `socks -Port [port]` | Standup the socks server to proxy network traffic, routable via Mythic on `[port]`.
+spawn | `spawn` | Spawn a new callback in the postex process specified by `spawnto_*`.
+spawnto_x64 | `spawnto_x64 -Application [path] -Arguments [args]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]` with arguments `[args]`.
+spawnto_x86 | `spawnto_x86 -Application [path] -Arguments [args]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]` with arguments `[args]`.
 steal_token | `steal_token [pid]` | Attempts to steal the process's primary token specified by `[pid]` and apply it to our own session.
-unlink | `unlink` | Unlink a callback linked to via the `link` command.
-unload_assembly | `unload_assembly [Assembly.exe]` | Remove an assembly from the list of loaded assemblies.
-upload | `upload` | Upload a file to a remote path on the machine. Modal popup.
+unlink | `unlink` | Unlink a callback linked to via the `link` command. Modal popup only.
+upload | `upload` | Upload a file to a remote path on the machine. Modal popup only.
 whoami | `whoami` | Report access token for local and remote operations.
 
 ## Supported C2 Profiles
 
-Currently, only two C2 profiles are available to use when creating a new Apollo agent: http and SMB.
-
-### HTTP Profile
+### [HTTP Profile](https://github.com/MythicC2Profiles/http)
 
 The HTTP profile calls back to the Mythic server over the basic, non-dynamic profile. When selecting options to be stamped into Apollo at compile time, all options are respected with the exception of those parameters relating to GET requests.
 
-### SMB (Currently Defunct)
+### [SMB Profile](https://github.com/MythicC2Profiles/smb)
 
-The SMB profile only takes a pipe name on compilation. This pipe name can be randomly generated when creating the agent and can be generated based on a provided regex (e.g. `[0-9a-z]{4}\-[0-9a-z]{8}\-[0-9a-z]{8}\-[0-9a-z]{4}`). Currently there's an open issue with SMB messages, so SMB linking is non-functional.
+Establish communications over SMB named pipes. By default, the named pipe name will be a randomly generated GUID.
+
+### [TCP Profile](https://github.com/MythicC2Profiles/tcp)
+
+Establish communications over a specified network socket. Note: If unelevated, the user may receive a prompt to allow communications from the binary to occur over the network.
 
 ## SOCKSv5 Support
 
-SOCKS support is built-in to the agent and dispatched through the SocksManager file. To start the socks server, issue `socks start [port]`, and to stop it issue `socks stop`. You can view active SOCKS proxies by clicking on the dropdown of a callback and clicking "Socks Proxies."
+Apollo can route SOCKS traffic regardless of what other commands are compiled in. To start the socks server, issue `socks -Port [port]`. This starts a SOCKS server on the Mythic server which is `proxychains4` compatible. To stop the SOCKS proxy, navigate to the SOCKS page in the Mythic UI and terminate it.
 
 ## Quality of Life Improvements
 
@@ -118,17 +113,14 @@ SOCKS support is built-in to the agent and dispatched through the SocksManager f
 The `ls` command reports back a wealth of information and allows operators to easily copy file paths and examine permissions of files, in addition to being able to sort and filter files. Clicking the icon under the ACLs column will show all the permissions of a file. Additionally, this hooks into Mythic's native file browser.
 
 This shows typical ls output:
-![ls browserscript](images/ls01.png)
-
-Clicking the ACL icon shows permissions:
-![ls permissions](images/ls02.png)
+![ls browserscript](images/ls02.png)
 
 Interfaces with Mythic's filebrowser and caches data server-side:
 ![ls mythic builtin](images/filebrowser.png)
 
 ### Process Listings
 
-When issuing `ps_full`, additional details are retrieved such as:
+When issuing `ps`, additional details are retrieved such as:
 - Company name of the process executable
 - Description of the process executable
 - Full path of the process
@@ -138,14 +130,13 @@ When issuing `ps_full`, additional details are retrieved such as:
 
 This process listing also interfaces with Mythic's builtin process browser, which allows you to see process trees more easily.
 
-![ps_full](images/ps_full.png)
+Lastly, the associated browser script will do row highlighting based on the process's name (in a one-to-one port of [this script](https://github.com/harleyQu1nn/AggressorScripts/blob/master/ProcessColor.cna))
 
-Clicking the informational icon next to the name displays a popup window with more information.
+![ps](images/ps.png)
 
-![ps_full](images/ps_full02.png)
-### Assembly and PowerShell Script Caching
+### Portable Executable, Assembly, and PowerShell Script Caching
 
-Apollo can cache one or more .NET assemblies as well as one or more PowerShell Scripts with no size limitation on imported files.
+Apollo can cache files for expeditious task execution. In general, control flow follows the `register_file` command followed by whatever command you wish to execute (`execute_assembly`, `powerpick`, `execute_pe`, etc.). These files are cached client side via DPAPI encrypted AES256 blobs, preventing their signatures being exposed outside of task execution.
 
 ### Dynamic Injection Techniques
 
@@ -154,13 +145,7 @@ The agent can change what code injection technique is in use by post-exploitatio
 - CreateRemoteThread
 - QueueUserAPC (Early Bird)
 
-![injection](images/injection01.png)
-
-### Token Manipulation Tracking
-
-Apollo attempts to track the current access token in use by the agent through its own `whoami` command, which will track the impersonated user for local and remote operations.
-
-![whoami](images/whoami.png)
+![injection](images/get_injection_techniques.png)
 
 ### Job Tracking
 
@@ -192,3 +177,9 @@ A big thanks goes to those who have contributed to the project in both major and
 - Hope Walker, [@IceMoonHSV](https://twitter.com/IceMoonHSV)
 - Jack Ullrich, [@winternl_t](https://twitter.com/winternl_t)
 - Elad Shamir, [@elad_shamir](https://twitter.com/elad_shamir)
+- Ben Turner [@benpturner](https://twitter.com/benpturner)
+- Ian Wallace [@strawp](https://twitter.com/strawp)
+- m0rv4i [@m0rv4i](https://twitter.com/m0rv4i)
+- Harley Lebeau [@r3dQu1nn](https://twitter.com/r3dQu1nn)
+- Antonio Quina [@st3r30byt3](https://twitter.com/st3r30byt3)
+- Sean Pierce [@secure_sean](https://twitter.com/secure_sean)
