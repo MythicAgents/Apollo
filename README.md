@@ -156,7 +156,7 @@ Agent jobs are tracked by job ID, by command, and by the arguments passed to the
 
 Commands that manipulate the disk, create new logons, or spawn new processes will document those changes in the Artifact Reporting page as shown below.
 
-![artifacts](documentation-payload/apollo/commands/images/reporting01.png)
+![artifacts](documentation-payload/apollo/commands/images/artifacts.png)
 
 ### And more!
 
