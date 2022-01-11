@@ -1,4 +1,4 @@
-![Apollo](images/ApolloLandscape.svg)
+![Apollo](documentation-payload/apollo/ApolloLandscape.svg)
 
 Apollo is a Windows agent written in C# using the 4.0 .NET Framework designed to be used in SpecterOps training offerings. Apollo lacks some evasive tradecraft provided by other commercial and open-source tools, such as more evasive network communications, PE manipulation, AMSI evasion, and otherwise; however, this project (in tandem with Mythic) is designed to introduce several quality of life improvements for an operator.
 
@@ -20,10 +20,9 @@ sudo -E ./mythic-cli payload install github https://github.com/MythicAgents/Apol
 Once installed, restart Mythic to build a new agent.
 
 ## Notable Features
-- Lateral Movement
-- UAC Bypass
+- P2P Communication
 - Credential Tracking and Manipulation
-- .NET Assembly and PowerShell Script Execution
+- Unmanged PE, .NET Assembly, and PowerShell Script Execution
 - User Exploitation Suite
 - SOCKSv5 Support
 
@@ -113,10 +112,10 @@ Apollo can route SOCKS traffic regardless of what other commands are compiled in
 The `ls` command reports back a wealth of information and allows operators to easily copy file paths and examine permissions of files, in addition to being able to sort and filter files. Clicking the icon under the ACLs column will show all the permissions of a file. Additionally, this hooks into Mythic's native file browser.
 
 This shows typical ls output:
-![ls browserscript](images/ls02.png)
+![ls browserscript](documentation-payload/apollo/commands/images/ls02.png)
 
 Interfaces with Mythic's filebrowser and caches data server-side:
-![ls mythic builtin](images/filebrowser.png)
+![ls mythic builtin](documentation-payload/apollo/commands/images/filebrowser.png)
 
 ### Process Listings
 
@@ -132,7 +131,7 @@ This process listing also interfaces with Mythic's builtin process browser, whic
 
 Lastly, the associated browser script will do row highlighting based on the process's name (in a one-to-one port of [this script](https://github.com/harleyQu1nn/AggressorScripts/blob/master/ProcessColor.cna))
 
-![ps](images/ps.png)
+![ps](documentation-payload/apollo/commands/images/ps.png)
 
 ### Portable Executable, Assembly, and PowerShell Script Caching
 
@@ -145,19 +144,19 @@ The agent can change what code injection technique is in use by post-exploitatio
 - CreateRemoteThread
 - QueueUserAPC (Early Bird)
 
-![injection](images/get_injection_techniques.png)
+![injection](documentation-payload/apollo/commands/images/get_injection_techniques.png)
 
 ### Job Tracking
 
 Agent jobs are tracked by job ID, by command, and by the arguments passed to the command so that you know what job correlates to what tasking.
 
-![jobs](images/jobs.png)
+![jobs](documentation-payload/apollo/commands/images/jobs.png)
 
 ### Artifact Tracking
 
 Commands that manipulate the disk, create new logons, or spawn new processes will document those changes in the Artifact Reporting page as shown below.
 
-![artifacts](images/reporting01.png)
+![artifacts](documentation-payload/apollo/commands/images/reporting01.png)
 
 ### And more!
 
