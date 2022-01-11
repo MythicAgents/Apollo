@@ -123,10 +123,15 @@ class ExecuteAssemblyCommand(CommandBase):
         else:
             raise Exception("Failed to register execute_assembly binary: " + file_resp.error)
 
-        task.display_params = "-Assembly {} -Arguments {}".format(
-            task.args.get_arg("assembly_name"),
-            task.args.get_arg("assembly_arguments")
-        )
+
+        taskargs = task.args.get_arg("assembly_arguments")
+        if taskargs == "" or taskargs == None:
+            task.display_params = "-Assembly {}".format(task.args.get_arg("assembly_name"))
+        else:
+            task.display_params = "-Assembly {} -Arguments {}".format(
+                task.args.get_arg("assembly_name"),
+                taskargs
+            )
 
         return task
 
