@@ -6,29 +6,37 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- Process Inject
+Artifacts Generated: Process Inject
 {{% /notice %}}
 
 ## Summary
 Take a screenshot of the desktop session associated with the target process.
 
+## Arguments
+
+### PID
+
+The process to inject the screenshot assembly into.
+
+### Count
+
+How many screenshots to take. Default: 1
+
+### Interval
+
+Amount of time (in seconds) to wait between screenshots being taken. Default: 0
+
 ## Usage
 ```
-screenshot [pid] [x86|x64]
-
-screenshot (modal popup)
+screenshot_inject -PID [pid] -Count [count] -Interval [interval]
 ```
 
 ## MITRE ATT&CK Mapping
 
 - T1113
 
-## Detailed Summary
-The `screenshot` command injects an unmanaged DLL, converted via sRDI, into the remote process specified in the arguments using the current injection technique. If you have requisite privileges to inject into other desktop sessions, this allows for taking screenshots in desktop sessions you are not currently running in.
-
-## Author Information
-Reznok rewrote this module from the ground up, and it's leagues better from its original implementation. You can find him at the following:
+## Special Thanks
+Reznok wrote the Apollo 1.X version of this module. You can find him at the following:
 
 Social | Handle
 -------|-------

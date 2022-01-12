@@ -5,22 +5,12 @@ weight = 103
 hidden = true
 +++
 
-{{% notice warning %}}
-SMB is currently defunct. This command will not successfully unlink an SMB agent until this profile is fixed.
-{{% /notice %}}
-
 ## Summary
 Unlink a peer-to-peer callback from the current agent.
 
 ### Arguments (modal popup)
-#### Host
+#### Callback
 Drop down menu of hosts with callbacks.
-
-#### Payload
-Drop down menu to select callback to be unlinked.
-
-#### C2 Profile
-Drop down menu to select the C2 Profile in use by the linked agent.
 
 ## Usage
 ```

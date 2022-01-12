@@ -6,34 +6,28 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- File Delete
+Artifacts Generated: File Delete
 {{% /notice %}}
 
 ## Summary
 Delete a specified file.
 
 ### Arguments (Positional)
-#### path
+#### Path
 Path to a the file to be deleted. If this is not a full path, the agent's current working directory will be used. 
 
 ## Usage
 ```
 rm [path]
+rm -Path [path]
 ```
 Example
 ```
 rm C:\config.txt
+rm -Path C:\Program Files\Google Chrome
 ```
 
 ## MITRE ATT&CK Mapping
 
 - T1106
 - T1107
-
-## Detailed Summary
-The `rm` command uses the `System.IO.File.Delete` method to attempt to delete a specified file.
-
-{{% notice info %}}
-A File Delete artifact is generated from this command.
-{{% /notice %}}

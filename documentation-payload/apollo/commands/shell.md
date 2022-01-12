@@ -5,6 +5,10 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts Generated: Process Create
+{{% /notice %}}
+
 ## Summary
 Execute a shell command using `cmd.exe /c`.
 
@@ -28,10 +32,3 @@ shell ipconfig /all
 ## MITRE ATT&CK Mapping
 
 - T1059
-
-## Detailed Summary
-The `shell` command spawns a `cmd.exe` process and executes the given command via the `/c` argument. Any standard output or standard errors are returned to Apollo over an anonymous named pipe to be returned to Mythic.
-
-{{% notice info %}}
-A Process Create artifact is generated for this command.
-{{% /notice %}}

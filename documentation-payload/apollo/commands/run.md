@@ -5,24 +5,28 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts Generated: Process Create
+{{% /notice %}}
+
 ## Summary
 Execute a binary with any specified arguments. Command will use %PATH% without needing to use full paths.
 
-### Arguments (positional)
-#### binary
+### Arguments
+#### Executable
 Executable binary to run.
 
-#### arguments
+#### Arguments
 Any arguments to the binary being executed.
 
 ## Usage
 ```
-run [binary] [arguments]
+run -Executable [binary] -Arguments [arguments]
 ```
 
 Example
 ```
-run ipconfig /all
+run -Executable ipconfig -Arguments /all
 ```
 
 ## MITRE ATT&CK Mapping
@@ -30,10 +34,3 @@ run ipconfig /all
 - T1106
 - T1218
 - T1553
-
-## Detailed Summary
-The `run` command executes the specified binary with any supplied arguments. Any standard output or standard errors are returned to Apollo over an anonymous named pipe to be returned to Mythic.
-
-{{% notice info %}}
-A Process Create artifact is generated for this command.
-{{% /notice %}}

@@ -19,6 +19,3 @@ whoami
 ## MITRE ATT&CK Mapping
 
 - T1033
-
-## Detailed Summary
-The `whoami` command retrieves information about the access tokens in use by the process and current thread. This is tracked within the agent whenever any token manipulation occurs.

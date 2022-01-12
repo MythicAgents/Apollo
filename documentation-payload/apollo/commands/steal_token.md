@@ -6,8 +6,7 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- Process Open
+Artifacts Generated: Process Open
 {{% /notice %}}
 
 ## Summary
@@ -31,6 +30,3 @@ steal_token 1234
 
 - T1134
 - T1528
-
-## Detailed Summary
-The `steal_token` command uses the `DuplicateTokenEx` Windows API to attempt to clone a process's primary access token and use this handle as the current thread's access token.
