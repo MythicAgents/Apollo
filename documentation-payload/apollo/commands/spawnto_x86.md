@@ -2,7 +2,7 @@
 title = "spawnto_x86"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary

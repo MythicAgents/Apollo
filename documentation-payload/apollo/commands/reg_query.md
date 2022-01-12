@@ -2,7 +2,7 @@
 title = "reg_query_subkeys"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 {{% notice info %}}

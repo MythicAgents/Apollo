@@ -2,7 +2,7 @@
 title = "set_injection_technique"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary
