@@ -20,7 +20,7 @@ pre = "<b>2. </b>"
     * [steal_token](/agents/apollo/commands/steal_token/)
     * [mimikatz](/agents/apollo/commands/mimikatz/)
 - User Exploitation
-    * [keylog_inject](/agents/apollo/commands/keylog/)
+    * [keylog_inject](/agents/apollo/commands/keylog_inject/)
     * [screenshot_inject](/agents/apollo/commands/screenshot_inject/)
     * [screenshot](/agents/apollo/commands/screenshot/)
 - .NET Assembly Commands
@@ -75,5 +75,3 @@ pre = "<b>2. </b>"
     * [shinject](/agents/apollo/commands/shinject/)
     * [socks](/agents/apollo/commands/socks/)
     * [execute_pe](/agents/apollo/commands/execute_pe/)
-
-{{% children %}}
