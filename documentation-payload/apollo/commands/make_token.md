@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Plaintext Credential Logon
+{{% /notice %}}
+
 ## Summary
 Create a new logon session for the current thread with supplied credentials.
 
@@ -25,7 +30,3 @@ Select credentials from drop down list.
 
 ## Detailed Summary
 The `make_token` command uses `LogonUserA` Windows API to create a new logon session and apply it to the current thread. This logon session is created with a logon type `9` or new credentials. 
-
-{{% notice info %}}
-A New Logon artifact is generated from this command.
-{{% /notice %}}

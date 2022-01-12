@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- File Open
+{{% /notice %}}
+
 ## Summary
 Download a specified file from the agent's host to the Mythic server.
 

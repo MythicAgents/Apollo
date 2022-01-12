@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Process Open
+{{% /notice %}}
+
 ## Summary
 Steal the primary token from another process. If no target process is specified, `winlogon.exe` will be the default target.
 

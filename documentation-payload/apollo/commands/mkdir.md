@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- File Create
+{{% /notice %}}
+
 ## Summary
 Make a directory at the specified path.
 
@@ -25,9 +30,9 @@ mkdir C:\config
 
 - T1106
 
+## Artifacts
+
+- File Create
+
 ## Detailed Summary
 The `mkdir` command uses the `System.IO.Directory.CreateDirectory` method to attempt to create a directory if the it does not already exist.
-
-{{% notice info %}}
-A Directory Create artifact is generated from this command.
-{{% /notice %}}

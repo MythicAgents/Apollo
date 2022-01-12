@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Process Inject
+{{% /notice %}}
+
 ## Summary
 Inject arbitrary shellcode into a remote process.
 

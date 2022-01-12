@@ -34,4 +34,8 @@ Registry Key: [key name]
 
 - T1012
 
+## Artifacts
+
+- Registry Read
+
 ![subkeys](../images/reg_query_subkeys.png)

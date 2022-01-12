@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- File Write
+{{% /notice %}}
+
 ## Summary
 Upload a file from the Mythic server to the remote host.
 

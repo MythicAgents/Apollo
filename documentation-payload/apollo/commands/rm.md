@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- File Delete
+{{% /notice %}}
+
 ## Summary
 Delete a specified file.
 

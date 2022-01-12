@@ -49,4 +49,8 @@ New Value: [new value]
 - T1112
 - T1003
 
+## Artifacts
+
+- Registry Write
+
 >A Registry Write artifact is generated from this command.

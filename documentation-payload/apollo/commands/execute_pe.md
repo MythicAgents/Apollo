@@ -5,6 +5,13 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Process Create
+- Process Inject
+- Process Kill
+{{% /notice %}}
+
 ## Summary
 
 Execute a statically compiled PE file (e.g., compiled with /MT) with the specified arguments. This PE must first be cached in the agent using the `register_assembly` command before being executed.
@@ -33,6 +40,12 @@ execute_pe SpoolSample.exe 127.0.0.1 127.0.0.1
 ## MITRE ATT&CK Mapping
 
 - T1547
+
+## Artifacts
+
+- Process Create
+- Process Inject
+- Process Kill
 
 ## Detailed Summary
 

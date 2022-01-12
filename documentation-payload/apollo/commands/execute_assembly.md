@@ -5,6 +5,13 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Process Create
+- Process Inject
+- Process Kill
+{{% /notice %}}
+
 ## Summary
 
 Execute a .NET Framework assembly with the specified arguments. This assembly must first be cached in the agent using the `register_assembly` command before being executed.

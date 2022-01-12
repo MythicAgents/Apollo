@@ -5,6 +5,13 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Process Create
+- Process Inject
+- Process Kill
+{{% /notice %}}
+
 ## Summary
 Execute PowerShell commands as post-exploitation job.
 

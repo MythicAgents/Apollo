@@ -5,6 +5,11 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- Network Connection
+{{% /notice %}}
+
 ## Summary
 Link or re-link an agent to callback.
 

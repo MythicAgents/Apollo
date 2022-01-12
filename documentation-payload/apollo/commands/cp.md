@@ -5,6 +5,12 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+### Artifacts
+- File Open
+- File Write
+{{% /notice %}}
+
 ## Summary
 Copy a specified file to another location.
 
@@ -20,11 +26,11 @@ The path to the original file that will be copied and placed in the location spe
 
 ## Usage
 ```
-cp [source] [destination]
+cp -Path [source] -Destination [destination]
 ```
 Example
 ```
-cp test1.txt "C:\Program Files\test2.txt"
+cp -Path test1.txt -Destination "C:\Program Files\test2.txt"
 ```
 
 ## MITRE ATT&CK Mapping
@@ -33,8 +39,3 @@ cp test1.txt "C:\Program Files\test2.txt"
 
 ## Detailed Summary
 The `cp` command uses the `System.IO.File.Copy` method to copy a file from a source path to a destination path. This command accepts UNC paths for file copies. 
-
-
-{{% notice info %}}
-A File Create artifact is generated with the MD5 of the file copied.
-{{% /notice %}}

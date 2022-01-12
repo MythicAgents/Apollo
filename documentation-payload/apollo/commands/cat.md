@@ -5,9 +5,14 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- File Open
+{{% /notice %}}
+
 ## Summary
 
-Print the contents of a file.
+Read the contents of a file 256kb at a time.
 
 ### Arguments
 ![args](../images/cat.png)
@@ -28,6 +33,3 @@ cat C:\config.txt
 
 - T1081
 - T1106
-
-## Detailed Summary
-The `cat` command streams output back to Mythic reading 256kb of a file at a time.

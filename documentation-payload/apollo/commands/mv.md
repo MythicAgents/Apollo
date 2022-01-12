@@ -5,6 +5,13 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts
+- File Open
+- File Write
+- File Delete
+{{% /notice %}}
+
 ## Summary
 Move a specified file to another location.
 
@@ -40,7 +47,3 @@ source: C:\Windows\Temp\config.txt
 
 ## Detailed Summary
 The `mv` command uses the `System.IO.File.Move` method to movey a file from a source path to a destination path. This command accepts UNC paths for file moves.
-
-{{% notice info %}}
-A File Move artifact is generated with the MD5 of the file moved from this command.
-{{% /notice %}}
