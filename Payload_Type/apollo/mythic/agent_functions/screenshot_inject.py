@@ -91,7 +91,7 @@ class ScreenshotInjectCommand(CommandBase):
     async def build_screenshotinject(self):
         global SCREENSHOT_INJECT
         agent_build_path = tempfile.TemporaryDirectory()
-        outputPath = "{}/KeylogInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name)
+        outputPath = "{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name)
             # shutil to copy payload files over
         copy_tree(self.agent_code_path, agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ScreenshotInject/ScreenshotInject.csproj".format(agent_build_path.name)
@@ -99,7 +99,7 @@ class ScreenshotInjectCommand(CommandBase):
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
-            raise Exception("Failed to build ScreenshotInject.exe:\n{}".format(stderr.decode()))
+            raise Exception("Failed to build ScreenshotInject.exe:\n{}".format(stdout.decode() + "\n" + stderr.decode()))
         shutil.copy(outputPath, SCREENSHOT_INJECT)
 
 
