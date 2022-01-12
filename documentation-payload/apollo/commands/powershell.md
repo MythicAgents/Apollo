@@ -9,12 +9,13 @@ hidden = true
 Run PowerShell commands in the current running process.
 
 ### Arguments (Positional)
-#### command
+#### Command
 PowerShell command to be executed.
 
 ## Usage
 ```
 powershell [command]
+powershell -Command [command]
 ```
 
 Example

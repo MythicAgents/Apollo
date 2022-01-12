@@ -6,8 +6,7 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- File Create
+Artifacts Generated: File Create
 {{% /notice %}}
 
 ## Summary
@@ -19,20 +18,14 @@ Path to the directory to create.
 
 ## Usage
 ```
-mkdir [path]
+mkdir -Path [path]
 ```
 Example
 ```
 mkdir C:\config
+mkdir -Path C:\Users\Public\secret
 ```
 
 ## MITRE ATT&CK Mapping
 
 - T1106
-
-## Artifacts
-
-- File Create
-
-## Detailed Summary
-The `mkdir` command uses the `System.IO.Directory.CreateDirectory` method to attempt to create a directory if the it does not already exist.

@@ -6,34 +6,16 @@ hidden = true
 +++
 
 ## Summary
-Loads a .NET assembly into an agent's cache for later use with [`execute_assembly`](/agents/apollo/commands/execute_assembly/) and [`assembly_inject`](/agents/apollo/commands/assembly_inject/) commands.
+Cache a file to be used in other post-exploitation jobs. If the file extension ends in `.ps1`, this file will be used in PowerShell post-exploitation jobs, such as `powershell`, `psinject`, and `powerpick`. Otherwise, these files are used by `assembly_inject`, `execute_assembly`, `inline_assembly`, or `execute_pe`.
+
+By default, these files are cached in the agent using both AES256 and DPAPI encryption at rest, and decrypted only for task execution.
+
+>Note: The type of executable (.NET assembly or unmanaged executable) is not tracked internally, so it's up to the operator to specify a correct executable for their command. e.g., do not provide Seatbelt.exe to `execute_pe`
 
 ### Arguments (Popup)
-#### assembly
-The .NET assembly to be uploaded to the agent for later use.
-
-## Usage
-```
-register_assembly
-```
-In the pop up menu
-```
-assembly: [file]
-```
-Example
-```
-register_assembly
-```
-In the pop up menu
-```
-assembly: SeatBelt.exe
-```
-
+#### File
+The file to cache in the agent for post-ex jobs.
 
 ## MITRE ATT&CK Mapping
 
 - T1547
-
-## Detailed Summary
-The `register_assembly` command allows storing cached versions of .NET assemblies as byte arrays within the agent process's memory. These byte arrays are loaded into the CLR loader when the assembly is called via the [`execute_assembly`](/agents/apollo/commands/execute_assembly/) and [`assembly_inject`](/agents/apollo/commands/assembly_inject/) commands.
-> Assemblies can be removed from the agent's cache using the [`unload_assembly`](/agents/apollo/commands/unload_assembly/) command. To overwrite a cached assembly, simply issue `register_assembly` again.

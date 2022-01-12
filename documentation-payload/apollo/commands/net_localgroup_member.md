@@ -8,12 +8,15 @@ hidden = true
 ## Summary
 Collect membership of local groups on a specified computer.
 
-### Arguments (Positional or Popup)
-#### computer
-Specify the computer to collect group information from. This will default to the localhost if one is not supplied.
+### Arguments
 
-#### group
+#### Group
+
 Name of group to query for membership.
+
+#### Computer (optional)
+
+Specify the computer to collect group information from. This will default to the localhost if one is not supplied.
 
 ## Usage
 ```

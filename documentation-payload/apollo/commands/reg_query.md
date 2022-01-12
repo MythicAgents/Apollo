@@ -5,37 +5,33 @@ weight = 103
 hidden = true
 +++
 
+{{% notice info %}}
+Artifacts Generated: Registry Read
+{{% /notice %}}
+
 ## Summary
 Query subkeys of a specified registry key.
 
-### Arguments (Positional or Popup)
-#### Registry Key
+### Arguments
+#### Hive
 The registry key to retrieve subkeys for. This  must be in the format of `HKLM:\SYSTEM\Setup`, where `HKLM` can be any of the following values:
 
-- `HKLM`
-- `HKCU`
-- `HKCR`
+- HKLM
+- HKCU
+- HKU
+- HKCR
+- HKCC
+
+#### Key (optional)
+Registry key to query in the Hive for.
 
 ## Usage
 ```
-reg_query_subkeys HKLM:\SYSTEM\Setup
-```
-
-Or, using the modal pop up menu...
-```
-reg_query_subkeys
-```
-Then enter the key to interrogate.
-```
-Registry Key: [key name]
+reg_query -Hive HKLM -Key System\\Setup
 ```
 
 ## MITRE ATT&CK Mapping
 
 - T1012
 
-## Artifacts
-
-- Registry Read
-
-![subkeys](../images/reg_query_subkeys.png)
+![subkeys](../images/reg_query.png)
