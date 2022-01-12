@@ -13,7 +13,6 @@ Enable as many privileges as possible for your current access token.
 getprivs
 ```
 
-
 ## MITRE ATT&CK Mapping
 
 - T1078

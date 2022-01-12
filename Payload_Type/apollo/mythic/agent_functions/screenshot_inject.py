@@ -86,6 +86,7 @@ class ScreenshotInjectCommand(CommandBase):
     argument_class = ScreenshotInjectArguments
     browser_script = BrowserScript(script_name="screenshot", author="@djhohnstein", for_new_ui=True)
     attackmapping = ["T1113"]
+    supported_ui_features=["screenshot_inject"]
 
     async def build_screenshotinject(self):
         global SCREENSHOT_INJECT

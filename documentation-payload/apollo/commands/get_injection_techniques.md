@@ -23,5 +23,7 @@ You are encouraged to create your own injection technique and submit a new pull 
 #### CreateRemoteThread
 "Classic" process injection technique that uses the `VirtualAllocEx`, `WriteProcessMemory` and `CreateRemoteThread` Windows APIs to execute shellcode in a specified process.
 
-#### Early bird QueueUserAPC
+#### Early-Bird QueueUserAPC
 Works for all jobs spawning sacrificial processes, but mileage may vary for injection-type commands. Calls `VirtualAllocEx`, `WriteProcessMemory`, `QueueUserAPC` and `ResumeThread` calls.
+
+![get_injection_techniques](../images/get_injection_techniques.png)

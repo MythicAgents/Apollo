@@ -94,6 +94,24 @@ function(task, responses){
                                 "parameters": pinfo["process_id"]
                             },
                             {
+                                "name": "Screenshot",
+                                "type": "task",
+                                "startIcon": "camera",
+                                "ui_feature": "screenshot_inject",
+                                "parameters": JSON.stringify({
+                                    "pid": pinfo["process_id"],
+                                    "count": 1,
+                                    "interval": 0
+                                })
+                            },
+                            {
+                                "name": "Inject Keylogger",
+                                "type": "task",
+                                "startIcon": "inject",
+                                "ui_feature": "keylog_inject",
+                                "parameters": pinfo["process_id"]
+                            },
+                            {
                                 "name": "Kill",
                                 "type": "task",
                                 "startIcon": "kill",

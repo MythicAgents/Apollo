@@ -6,10 +6,7 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- Process Create
-- Process Inject
-- Process Kill
+Artifacts Generated: Process Create, Process Inject, Process Kill
 {{% /notice %}}
 
 ## Summary
@@ -17,9 +14,11 @@ Artifacts
 Execute a .NET Framework assembly with the specified arguments. This assembly must first be cached in the agent using the `register_assembly` command before being executed.
 
 ### Arguments
+
 ![exeasm](../images/execute_assembly.png)
+
 #### Assembly
-The name of the assembly to execute. This must match the file name used with `register_assembly`. 
+The name of the assembly to execute. This must match the file name used with `register_file`. 
 
 #### Arguments (optional)
 Arguments to pass to the assembly.

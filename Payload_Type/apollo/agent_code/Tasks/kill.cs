@@ -45,7 +45,11 @@ namespace Tasks
                 {
                     System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(parameters.PID);
                     proc.Kill();
-                    resp = CreateTaskResponse($"Killed {proc.ProcessName} ({proc.Id})", true);
+                    resp = CreateTaskResponse($"Killed {proc.ProcessName} ({proc.Id})", true, "completed",
+                        new IMythicMessage[]
+                        {
+                            Artifact.ProcessKill(proc.Id)
+                        });
                 } catch (Exception ex)
                 {
                     resp = CreateTaskResponse($"Failed to kill process. Reason: {ex.Message}", true, "error");

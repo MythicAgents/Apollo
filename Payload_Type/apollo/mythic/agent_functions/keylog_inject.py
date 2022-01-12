@@ -50,6 +50,7 @@ class KeylogInjectCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = KeylogInjectArguments
     attackmapping = ["T1056"]
+    supported_ui_features=["keylog_inject"]
 
     async def build_keyloginject(self):
         global KEYLOG_INJECT_PATH

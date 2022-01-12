@@ -6,8 +6,7 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- File Open
+Artifacts Generated: File Open
 {{% /notice %}}
 
 ## Summary

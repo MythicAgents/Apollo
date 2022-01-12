@@ -6,8 +6,7 @@ hidden = true
 +++
 
 {{% notice info %}}
-Artifacts
-- File Write
+Artifacts Generated: File Write
 {{% /notice %}}
 
 ## Summary
