@@ -225,7 +225,7 @@ namespace ApolloInterop.Structs
             {
                 return MessageType.Credential;
             }
-            [DataMember(Name = "credential_type")]
+            [DataMember(Name = "type")]
             public string CredentialType;
             [DataMember(Name = "realm")]
             public string Realm;

@@ -142,7 +142,7 @@ namespace HttpTransport
             request.ContentLength = requestPayload.Length;
             request.UserAgent = UserAgent;
             if (DomainFront != "" && DomainFront != "domain_front")
-                request.Host = DomainFront;
+                request.Proxy = new WebProxy(DomainFront);
             Stream reqStream = request.GetRequestStream();
             reqStream.Write(requestPayload, 0, requestPayload.Length);
             reqStream.Close();
