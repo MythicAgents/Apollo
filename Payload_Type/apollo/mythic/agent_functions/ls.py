@@ -59,9 +59,11 @@ class LsArguments(TaskArguments):
             else:
                 host = ""
                 if self.command_line[0] == "\\" and self.command_line[1] == "\\":
+                    path = self.command_line
                     final = self.command_line.find("\\", 2)
                     if final != -1:
                         host = self.command_line[2:final]
+                        path = path[final+1:]
                 self.add_arg("host", host)
                 self.add_arg("path", self.command_line)
                 self.add_arg("file_browser", "true")
