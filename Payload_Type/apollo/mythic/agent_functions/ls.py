@@ -35,6 +35,15 @@ class LsArguments(TaskArguments):
                 ]),
         ]
 
+    async def strip_host_from_path(self, path):
+        host = ""
+        if path[0] == "\\" and path[1] == "\\":
+            final = path.find("\\", 2)
+            if final != -1:
+                host = path[2:final]
+                path = path[final+1:]
+        return (host, path)
+
     async def parse_arguments(self):
         if len(self.command_line) > 0:
             # We'll never enter this control flow
@@ -57,15 +66,9 @@ class LsArguments(TaskArguments):
                 else:
                     self.load_args_from_json_string(self.command_line)
             else:
-                host = ""
-                path = self.command_line
-                if self.command_line[0] == "\\" and self.command_line[1] == "\\":
-                    final = self.command_line.find("\\", 2)
-                    if final != -1:
-                        host = self.command_line[2:final]
-                        path = path[final+1:]
-                self.add_arg("host", host)
-                self.add_arg("path", path)
+                args = self.strip_host_from_path(self.command_line)
+                self.add_arg("host", args[0])
+                self.add_arg("path", args[1])
                 self.add_arg("file_browser", "true")
         else:
             self.add_arg("host", "")
@@ -73,6 +76,14 @@ class LsArguments(TaskArguments):
             self.add_arg("file_browser", "true")
         if self.get_arg("path") is None:
             self.add_arg("path", ".")
+        if self.get_arg("host") is None or self.get_arg("host") == "":
+            args = self.strip_host_from_path(self.get_arg("path"))
+            self.add_arg("host", args[0])
+            self.add_arg("path", args[1])
+        elif self.get_arg("path")[:2] == "\\\\":
+            args = self.strip_host_from_path(self.get_arg("path"))
+            self.add_arg("host", args[0])
+            self.add_arg("path", args[1])
 
 
 
