@@ -58,8 +58,8 @@ class LsArguments(TaskArguments):
                     self.load_args_from_json_string(self.command_line)
             else:
                 host = ""
+                path = self.command_line
                 if self.command_line[0] == "\\" and self.command_line[1] == "\\":
-                    path = self.command_line
                     final = self.command_line.find("\\", 2)
                     if final != -1:
                         host = self.command_line[2:final]

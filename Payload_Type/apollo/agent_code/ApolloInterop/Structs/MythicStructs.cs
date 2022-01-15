@@ -281,13 +281,13 @@ namespace ApolloInterop.Structs
             public bool Hidden;
             [DataMember(Name = "is_file")]
             public bool IsFile;
-
+            
             public FileInformation(FileInfo finfo, ACE[] perms = null)
             {
                 DateTime unixEpoc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                FullName = finfo.FullName;
-                Name = finfo.Name;
-                Directory = finfo.Directory.FullName;
+                FullName = Utils.PathUtils.StripPathOfHost(finfo.FullName);
+                Name = Utils.PathUtils.StripPathOfHost(finfo.Name);
+                Directory = Utils.PathUtils.StripPathOfHost(finfo.Directory.FullName);
                 CreationDate = (Int64)((TimeSpan)(finfo.CreationTimeUtc - unixEpoc)).TotalSeconds * 1000;
                 ModifyTime = (Int64)((TimeSpan)(finfo.LastWriteTimeUtc - unixEpoc)).TotalSeconds * 1000;
                 AccessTime = (Int64)((TimeSpan)(finfo.LastAccessTime - unixEpoc)).TotalSeconds * 1000;
@@ -304,9 +304,9 @@ namespace ApolloInterop.Structs
             public FileInformation(DirectoryInfo finfo, ACE[] perms = null)
             {
                 DateTime unixEpoc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                FullName = finfo.FullName;
-                Name = finfo.Name;
-                Directory = finfo.Parent == null ? "" : finfo.Parent.ToString();
+                FullName = Utils.PathUtils.StripPathOfHost(finfo.FullName);
+                Name = Utils.PathUtils.StripPathOfHost(finfo.Name);
+                Directory = finfo.Parent == null ? "" : Utils.PathUtils.StripPathOfHost(finfo.Parent.ToString());
                 CreationDate = (Int64)((TimeSpan)(finfo.CreationTimeUtc - unixEpoc)).TotalSeconds * 1000;
                 ModifyTime = (Int64)((TimeSpan)(finfo.LastWriteTimeUtc - unixEpoc)).TotalSeconds * 1000;
                 AccessTime = (Int64)((TimeSpan)(finfo.LastAccessTime - unixEpoc)).TotalSeconds * 1000;

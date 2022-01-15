@@ -61,5 +61,15 @@ namespace ApolloInterop.Utils
 
             return result;
         }
+        
+        
+        public static string StripPathOfHost(string path)
+        {
+            if (path.StartsWith(@"\\"))
+            {
+                return new string(path.Skip(path.IndexOf('\\', 2)+1).ToArray());
+            }
+            return path;
+        }
     }
 }
