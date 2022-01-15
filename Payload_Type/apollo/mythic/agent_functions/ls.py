@@ -65,7 +65,7 @@ class LsArguments(TaskArguments):
                         host = self.command_line[2:final]
                         path = path[final+1:]
                 self.add_arg("host", host)
-                self.add_arg("path", self.command_line)
+                self.add_arg("path", path)
                 self.add_arg("file_browser", "true")
         else:
             self.add_arg("host", "")
