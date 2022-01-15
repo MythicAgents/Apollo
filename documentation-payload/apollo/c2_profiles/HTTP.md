@@ -7,7 +7,7 @@ weight = 102
 ## Summary
 Basic profile to send and receive taskings from Mythic over the hyper text transfer protocol.
 
-### Profile Option Deviations
+### Profile Options
 
 #### GET Requests 
 

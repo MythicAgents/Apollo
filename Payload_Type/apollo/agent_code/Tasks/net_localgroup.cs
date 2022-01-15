@@ -104,28 +104,30 @@ namespace Tasks
                 List<LocalGroupUsersInfo> groups = new List<LocalGroupUsersInfo>();
                 try
                 {
-                    res = _pNetLocalGroupEnum(serverName, level, out buffer, MAX_PREFERRED_LENGTH,
-                        out read, out total, ref handle);
+                    using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                    {
+                        res = _pNetLocalGroupEnum(serverName, level, out buffer, MAX_PREFERRED_LENGTH,
+                            out read, out total, ref handle);
 
-                    if (res != 0)
-                    {
-                        resp = CreateTaskResponse(
-                            $"Error enumuerating local groups: {res}", true, "error");
-                    } else
-                    {
-                        IntPtr ptr = buffer;
-                        for (int i = 0; i < read; i++)
+                        if (res != 0)
                         {
-                            LocalGroupUsersInfo group = (LocalGroupUsersInfo)Marshal.PtrToStructure(ptr, typeof(LocalGroupUsersInfo));
-                            NetLocalGroup result = new NetLocalGroup();
-                            result.ComputerName = serverName;
-                            result.GroupName = Marshal.PtrToStringUni(group.name);
-                            result.Comment = Marshal.PtrToStringUni(group.comment);
-                            results.Add(result);
-                            ptr = (IntPtr)((int)ptr + Marshal.SizeOf(typeof(LocalGroupUsersInfo)));
-                        }
+                            resp = CreateTaskResponse(
+                                $"Error enumuerating local groups: {res}", true, "error");
+                        } else
+                        {
+                            IntPtr ptr = buffer;
+                            for (int i = 0; i < read; i++)
+                            {
+                                LocalGroupUsersInfo group = (LocalGroupUsersInfo)Marshal.PtrToStructure(ptr, typeof(LocalGroupUsersInfo));
+                                NetLocalGroup result = new NetLocalGroup();
+                                result.ComputerName = serverName;
+                                result.GroupName = Marshal.PtrToStringUni(group.name);
+                                result.Comment = Marshal.PtrToStringUni(group.comment);
+                                results.Add(result);
+                                ptr = (IntPtr)((int)ptr + Marshal.SizeOf(typeof(LocalGroupUsersInfo)));
+                            }
+                        }   
                     }
-
                 }
                 finally
                 {

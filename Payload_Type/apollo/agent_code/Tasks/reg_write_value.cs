@@ -59,27 +59,30 @@ namespace Tasks
                 TaskResponse resp;
                 RegWriteParameters parameters = _jsonSerializer.Deserialize<RegWriteParameters>(_data.Parameters);
                 bool bRet;
-                if (int.TryParse(parameters.ValueValue, out int dword))
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword);
-                } else
-                {
-                    bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue);
-                }
-                if (bRet)
-                {
-                    resp = CreateTaskResponse(
-                        $"Successfully set {parameters.ValueName} to {parameters.ValueValue}",
-                        true,
-                        "completed",
-                        new IMythicMessage[1]
-                        {
-                            Artifact.RegistryWrite(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue)
-                        });
-                } else
-                {
-                    resp = CreateTaskResponse(
-                        $"Failed to set {parameters.ValueName}", true, "error");
+                    if (int.TryParse(parameters.ValueValue, out int dword))
+                    {
+                        bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword);
+                    } else
+                    {
+                        bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue);
+                    }
+                    if (bRet)
+                    {
+                        resp = CreateTaskResponse(
+                            $"Successfully set {parameters.ValueName} to {parameters.ValueValue}",
+                            true,
+                            "completed",
+                            new IMythicMessage[1]
+                            {
+                                Artifact.RegistryWrite(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue)
+                            });
+                    } else
+                    {
+                        resp = CreateTaskResponse(
+                            $"Failed to set {parameters.ValueName}", true, "error");
+                    }   
                 }
                 // Your code here..
                 // Then add response to queue

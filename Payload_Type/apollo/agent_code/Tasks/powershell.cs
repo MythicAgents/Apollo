@@ -387,30 +387,32 @@ namespace Tasks
 
                     Console.SetOut(stdoutSw);
                     Console.SetError(stdoutSw);
-
-                    CustomPowerShellHost psHost = new CustomPowerShellHost();
-                    var state = InitialSessionState.CreateDefault();
-                    state.AuthorizationManager = null;
-                    using (Runspace runspace = RunspaceFactory.CreateRunspace(psHost, state))
+                    using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                     {
-                        runspace.Open();
-                        using (Pipeline pipeline = runspace.CreatePipeline())
+                        CustomPowerShellHost psHost = new CustomPowerShellHost();
+                        var state = InitialSessionState.CreateDefault();
+                        state.AuthorizationManager = null;
+                        using (Runspace runspace = RunspaceFactory.CreateRunspace(psHost, state))
                         {
-                            pipeline.Commands.AddScript(cmd);
-                            pipeline.Commands[0].MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
-                            pipeline.Commands.Add("Out-Default");
-                            try
+                            runspace.Open();
+                            using (Pipeline pipeline = runspace.CreatePipeline())
                             {
-                                ST.Task.WaitAny(new ST.Task[]
+                                pipeline.Commands.AddScript(cmd);
+                                pipeline.Commands[0].MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
+                                pipeline.Commands.Add("Out-Default");
+                                try
                                 {
-                                    new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token)
-                                }, _cancellationToken.Token);
-                            }
-                            catch (OperationCanceledException)
-                            {
+                                    ST.Task.WaitAny(new ST.Task[]
+                                    {
+                                        new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token)
+                                    }, _cancellationToken.Token);
+                                }
+                                catch (OperationCanceledException)
+                                {
                                 
+                                }
                             }
-                        }
+                        }   
                     }
                     resp = CreateTaskResponse("", true);
                 }

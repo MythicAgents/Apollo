@@ -117,57 +117,60 @@ namespace Tasks
                 List<RegQueryResult> results = new List<RegQueryResult>();
                 List<IMythicMessage> artifacts = new List<IMythicMessage>();
                 string error = "";
-                try
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
-                    artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
-                    foreach(string subkey in subkeys)
+                    try
                     {
-                        results.Add(new RegQueryResult
+                        string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
+                        artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
+                        foreach(string subkey in subkeys)
                         {
-                            Name = subkey,
-                            FullName = parameters.Key.EndsWith("\\") ? $"{parameters.Key}{subkey}" : $"{parameters.Key}\\{subkey}",
-                            Hive = parameters.Hive,
-                            ResultType = "key"
-                        });
-                    }
-                } catch (Exception ex){ error = ex.Message; }
-                try
-                {
-                    object tmpVal;
-                    string[] subValNames = GetValueNames(parameters.Hive, parameters.Key);
-                    foreach(string valName in subValNames)
-                    {
-                        RegQueryResult res = new RegQueryResult
-                        {
-                            Name = valName,
-                            FullName = parameters.Key,
-                            Hive = parameters.Hive,
-                            ResultType = "value"
-                        };
-                        try
-                        {
-                            tmpVal = GetValue(parameters.Hive, parameters.Key, valName);
-                        } catch (Exception ex)
-                        {
-                            tmpVal = ex.Message;
+                            results.Add(new RegQueryResult
+                            {
+                                Name = subkey,
+                                FullName = parameters.Key.EndsWith("\\") ? $"{parameters.Key}{subkey}" : $"{parameters.Key}\\{subkey}",
+                                Hive = parameters.Hive,
+                                ResultType = "key"
+                            });
                         }
-                        SetValueType(tmpVal, ref res);
-                        results.Add(res);
-                        artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
+                    } catch (Exception ex){ error = ex.Message; }
+                    try
+                    {
+                        object tmpVal;
+                        string[] subValNames = GetValueNames(parameters.Hive, parameters.Key);
+                        foreach(string valName in subValNames)
+                        {
+                            RegQueryResult res = new RegQueryResult
+                            {
+                                Name = valName,
+                                FullName = parameters.Key,
+                                Hive = parameters.Hive,
+                                ResultType = "value"
+                            };
+                            try
+                            {
+                                tmpVal = GetValue(parameters.Hive, parameters.Key, valName);
+                            } catch (Exception ex)
+                            {
+                                tmpVal = ex.Message;
+                            }
+                            SetValueType(tmpVal, ref res);
+                            results.Add(res);
+                            artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
+                        }
+                    } catch (Exception ex)
+                    {
+                        error += $"\n{ex.Message}";
                     }
-                } catch (Exception ex)
-                {
-                    error += $"\n{ex.Message}";
-                }
 
-                if (results.Count == 0)
-                {
-                    resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
-                } else
-                {
-                    resp = CreateTaskResponse(
-                        _jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
+                    if (results.Count == 0)
+                    {
+                        resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
+                    } else
+                    {
+                        resp = CreateTaskResponse(
+                            _jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
+                    }   
                 }
 
                 // Your code here..

@@ -79,10 +79,7 @@ namespace Apollo.Management.Tasks
                                 taskObj.ContinueWith((_) => { OnTaskErrorOrCancel(t, taskObj); },
                                     System.Threading.Tasks.TaskContinuationOptions.OnlyOnCanceled);
                                 _runningTasks.TryAdd(t.ID(), t);
-                                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                                {
-                                    taskObj.Start();
-                                }
+                                taskObj.Start();
                             }
                             catch (Exception ex)
                             {

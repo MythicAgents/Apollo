@@ -7,6 +7,11 @@ weight = 102
 ## Summary
 Peer-to-peer communication over a named pipe. This enables C2 traffic to traverse over SMB within an internal network before egressing traffic through an HTTP Apollo agent to the Mythic server.
 
+Install via:
+```
+mythic-cli install github https://github.com/MythicC2Profiles/smb.git
+```
+
 ### C2 Workflow
 {{<mermaid>}}
 sequenceDiagram
@@ -22,7 +27,7 @@ sequenceDiagram
     Egress Agent->>P2P Agent: send server response over Named Pipe
 {{< /mermaid >}}
 
-### HTTP Egress
+### Profile Options
 The SMB C2 profile is designed to be used for internal network communication, and therefore will need to egress from a network through an agent using the HTTP C2 profile. All HTTP agents have the ability to communicate with SMB agents and manage peer-to-peer connections using the `link` and `unlink` commands.
 
 ### Profile Options

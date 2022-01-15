@@ -49,6 +49,7 @@ namespace Tasks
                 string path = string.IsNullOrEmpty(parameters.File) ? parameters.Path : Path.Combine(new string[] { parameters.Path, parameters.File });
                 string rmFilePath = path;
                 string host = parameters.Host;
+                string realPath = "";
                 if (string.IsNullOrEmpty(host))
                 {
                     host = Environment.GetEnvironmentVariable("COMPUTERNAME");
@@ -67,43 +68,47 @@ namespace Tasks
                         throw new Exception($"Failed to parse UNC path: {rmFilePath}");
                     }
                 }
-                if (ApolloInterop.Utils.PathUtils.TryGetExactPath(path, out string realPath))
+
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    if (Directory.Exists(realPath))
+                    if (ApolloInterop.Utils.PathUtils.TryGetExactPath(path, out realPath))
                     {
-                        try
+                        if (Directory.Exists(realPath))
                         {
-                            Directory.Delete(realPath, true);
-                            resp = CreateTaskResponse(
-                                $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
-                                {
-                                    Artifact.FileDelete(realPath)
-                                });
-                        }
-                        catch (Exception ex)
+                            try
+                            {
+                                Directory.Delete(realPath, true);
+                                resp = CreateTaskResponse(
+                                    $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
+                                    {
+                                        Artifact.FileDelete(realPath)
+                                    });
+                            }
+                            catch (Exception ex)
+                            {
+                                resp = CreateTaskResponse(
+                                    $"Failed to delete {realPath}: {ex.Message}", true, "error");
+                            }
+                        } else
                         {
-                            resp = CreateTaskResponse(
-                                $"Failed to delete {realPath}: {ex.Message}", true, "error");
+                            try
+                            {
+                                File.Delete(realPath);
+                                resp = CreateTaskResponse(
+                                    $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
+                                    {
+                                        Artifact.FileDelete(realPath)
+                                    });
+                            } catch (Exception ex)
+                            {
+                                resp = CreateTaskResponse(
+                                    $"Failed to delete {realPath}: {ex.Message}", true, "error");
+                            }
                         }
                     } else
                     {
-                        try
-                        {
-                            File.Delete(realPath);
-                            resp = CreateTaskResponse(
-                                $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
-                                {
-                                    Artifact.FileDelete(realPath)
-                                });
-                        } catch (Exception ex)
-                        {
-                            resp = CreateTaskResponse(
-                                $"Failed to delete {realPath}: {ex.Message}", true, "error");
-                        }
-                    }
-                } else
-                {
-                    resp = CreateTaskResponse($"Cannot find file or folder: {parameters.Path}", true, "error");
+                        resp = CreateTaskResponse($"Cannot find file or folder: {parameters.Path}", true, "error");
+                    }   
                 }
                 if (resp.Status == "completed")
                 {

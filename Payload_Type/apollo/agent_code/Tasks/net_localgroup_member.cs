@@ -118,32 +118,35 @@ namespace Tasks
                 int entriesRead;
                 int totalEntries;
                 IntPtr resumePtr = IntPtr.Zero;
-                int val = _pNetLocalGroupGetMembers(args.Computer, args.Group, 2, out IntPtr bufPtr, -1, out entriesRead, out totalEntries, ref resumePtr);
-                if (entriesRead > 0)
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    LocalGroupMembersInfo[] groupMembers = new LocalGroupMembersInfo[entriesRead];
-                    IntPtr iter = bufPtr;
-                    for (int i = 0; i < entriesRead; i++)
+                    int val = _pNetLocalGroupGetMembers(args.Computer, args.Group, 2, out IntPtr bufPtr, -1, out entriesRead, out totalEntries, ref resumePtr);
+                    if (entriesRead > 0)
                     {
-                        groupMembers[i] = (LocalGroupMembersInfo)Marshal.PtrToStructure(iter, typeof(LocalGroupMembersInfo));
-                        iter = (IntPtr)((int)iter + Marshal.SizeOf(typeof(LocalGroupMembersInfo)));
-                        //myList.Add(Marshal.PtrToStringUni(Members[i].lgrmi2_domainandname) + "," + Members[i].lgrmi2_sidusage);
-                        string sidString = "";
-                        bool bRet = _pConvertSidToStringSid(groupMembers[i].lgrmi2_sid, out sidString);
-                        if (!bRet)
-                            continue;
-                        var result = new NetLocalGroupMember();
-                        result.ComputerName = args.Computer;
-                        result.GroupName = args.Group;
-                        result.IsGroup = (groupMembers[i].lgrmi2_sidusage == SidNameUse.SidTypeGroup);
-                        result.SID = sidString;
-                        result.MemberName = Marshal.PtrToStringUni(groupMembers[i].lgrmi2_domainandname);
-                        results.Add(result);
-                    }
-                    if (bufPtr != IntPtr.Zero)
-                    {
-                        _pNetApiBufferFree(bufPtr);
-                    }
+                        LocalGroupMembersInfo[] groupMembers = new LocalGroupMembersInfo[entriesRead];
+                        IntPtr iter = bufPtr;
+                        for (int i = 0; i < entriesRead; i++)
+                        {
+                            groupMembers[i] = (LocalGroupMembersInfo)Marshal.PtrToStructure(iter, typeof(LocalGroupMembersInfo));
+                            iter = (IntPtr)((int)iter + Marshal.SizeOf(typeof(LocalGroupMembersInfo)));
+                            //myList.Add(Marshal.PtrToStringUni(Members[i].lgrmi2_domainandname) + "," + Members[i].lgrmi2_sidusage);
+                            string sidString = "";
+                            bool bRet = _pConvertSidToStringSid(groupMembers[i].lgrmi2_sid, out sidString);
+                            if (!bRet)
+                                continue;
+                            var result = new NetLocalGroupMember();
+                            result.ComputerName = args.Computer;
+                            result.GroupName = args.Group;
+                            result.IsGroup = (groupMembers[i].lgrmi2_sidusage == SidNameUse.SidTypeGroup);
+                            result.SID = sidString;
+                            result.MemberName = Marshal.PtrToStringUni(groupMembers[i].lgrmi2_domainandname);
+                            results.Add(result);
+                        }
+                        if (bufPtr != IntPtr.Zero)
+                        {
+                            _pNetApiBufferFree(bufPtr);
+                        }
+                    }   
                 }
                 resp = CreateTaskResponse(
                     _jsonSerializer.Serialize(results.ToArray()), true);

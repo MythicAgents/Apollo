@@ -43,37 +43,71 @@ namespace Tasks
             {
                 TaskResponse resp;
                 MkdirParameters parameters = _jsonSerializer.Deserialize<MkdirParameters>(_data.Parameters);
-                if (System.IO.Directory.Exists(parameters.Path))
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
                 {
-                    resp = CreateTaskResponse(
-                        $"Directory {parameters.Path} already exists.",
-                        true,
-                        "error");
-                }
-                else
-                {
-                    try
-                    {
-                        DirectoryInfo info = Directory.CreateDirectory(parameters.Path);
-                        FileInformation finfo = new FileInformation(info);
-                        IMythicMessage[] artifacts = new IMythicMessage[2]
-                        {
-                            Artifact.FileCreate(info.FullName),
-                            new FileBrowser(finfo),
-                        };
-                        resp = CreateTaskResponse(
-                    $"Created {info.FullName}",
-                    true,
-                        "completed",
-                            artifacts);
-                    }
-                    catch (Exception ex)
+                    if (System.IO.Directory.Exists(parameters.Path))
                     {
                         resp = CreateTaskResponse(
-                            $"Error creating {parameters.Path}: {ex.Message}",
+                            $"Directory {parameters.Path} already exists.",
                             true,
                             "error");
                     }
+                    else
+                    {
+                        try
+                        {
+                            DirectoryInfo info = Directory.CreateDirectory(parameters.Path);
+                            FileInformation finfo = new FileInformation(info);
+                            IMythicMessage[] artifacts = new IMythicMessage[2]
+                            {
+                                Artifact.FileCreate(info.FullName),
+                                new FileBrowser(finfo),
+                            };
+                            resp = CreateTaskResponse(
+                                $"Created {info.FullName}",
+                                true,
+                                "completed",
+                                artifacts);
+                        }
+                        catch (Exception ex)
+                        {
+                            resp = CreateTaskResponse(
+                                $"Error creating {parameters.Path}: {ex.Message}",
+                                true,
+                                "error");
+                        }
+                    }if (System.IO.Directory.Exists(parameters.Path))
+                    {
+                        resp = CreateTaskResponse(
+                            $"Directory {parameters.Path} already exists.",
+                            true,
+                            "error");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            DirectoryInfo info = Directory.CreateDirectory(parameters.Path);
+                            FileInformation finfo = new FileInformation(info);
+                            IMythicMessage[] artifacts = new IMythicMessage[2]
+                            {
+                                Artifact.FileCreate(info.FullName),
+                                new FileBrowser(finfo),
+                            };
+                            resp = CreateTaskResponse(
+                                $"Created {info.FullName}",
+                                true,
+                                "completed",
+                                artifacts);
+                        }
+                        catch (Exception ex)
+                        {
+                            resp = CreateTaskResponse(
+                                $"Error creating {parameters.Path}: {ex.Message}",
+                                true,
+                                "error");
+                        }
+                    }   
                 }
                 // Your code here..
                 // CreateTaskResponse to create a new TaskResposne object
