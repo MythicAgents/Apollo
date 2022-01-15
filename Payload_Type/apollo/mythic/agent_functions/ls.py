@@ -66,7 +66,7 @@ class LsArguments(TaskArguments):
                 else:
                     self.load_args_from_json_string(self.command_line)
             else:
-                args = self.strip_host_from_path(self.command_line)
+                args = await self.strip_host_from_path(self.command_line)
                 self.add_arg("host", args[0])
                 self.add_arg("path", args[1])
                 self.add_arg("file_browser", "true")
@@ -77,11 +77,11 @@ class LsArguments(TaskArguments):
         if self.get_arg("path") is None:
             self.add_arg("path", ".")
         if self.get_arg("host") is None or self.get_arg("host") == "":
-            args = self.strip_host_from_path(self.get_arg("path"))
+            args = await self.strip_host_from_path(self.get_arg("path"))
             self.add_arg("host", args[0])
             self.add_arg("path", args[1])
         elif self.get_arg("path")[:2] == "\\\\":
-            args = self.strip_host_from_path(self.get_arg("path"))
+            args = await self.strip_host_from_path(self.get_arg("path"))
             self.add_arg("host", args[0])
             self.add_arg("path", args[1])
 
