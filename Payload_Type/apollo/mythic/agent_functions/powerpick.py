@@ -1,4 +1,4 @@
-from distutils.dir_util import copytree
+from distutils.dir_util import copy_tree
 import shutil
 import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
@@ -58,7 +58,7 @@ class PowerpickCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name)
             # shutil to copy payload files over
-        copytree(self.agent_code_path, agent_build_path.name)
+        copy_tree(self.agent_code_path, agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/PowerShellHost/PowerShellHost.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
