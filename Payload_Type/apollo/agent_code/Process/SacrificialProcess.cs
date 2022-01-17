@@ -645,7 +645,7 @@ namespace Process
                     out _processInfo
                 );
                 dwError = Marshal.GetLastWin32Error();
-                if (!bRet && dwError == 1314) // ERROR_PRIVILEGE_NOT_HELD
+                if (!bRet && (dwError == 1314 || dwError == 2)) // ERROR_PRIVILEGE_NOT_HELD or FILE_NOT_FOUND
                 {
                     bRet = _pCreateProcessWithTokenW(
                         hToken,
@@ -660,7 +660,7 @@ namespace Process
 
                     dwError = Marshal.GetLastWin32Error();
 
-                    if (!bRet && dwError == 1314)
+                    if (!bRet && (dwError == 1314 || dwError == 2))
                     {
                         if (_agent.GetIdentityManager().GetCurrentLogonInformation(out ApolloLogonInformation cred))
                         {
