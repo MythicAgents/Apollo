@@ -455,10 +455,11 @@ namespace Process
         public override bool Start()
         {
             bool bRet = false;
-            bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
-            if (bRet)
+            
+            if (_agent.GetIdentityManager().IsOriginalIdentity())
             {
-                if (_agent.GetIdentityManager().IsOriginalIdentity())
+                bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
+                if (bRet)
                 {
                     bRet = _pCreateProcessA(
                         null,
@@ -472,17 +473,13 @@ namespace Process
                         ref _startupInfoEx,
                         out _processInfo);   
                 }
-                else
-                {
-                    return StartWithCredentials(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
-                }
-                if (!bRet)
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
             }
             else
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                return StartWithCredentials(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
             }
+            if (!bRet)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
 
             PostStartupInitialize();
 

@@ -23,7 +23,8 @@ namespace Apollo.Management.Identity
         private WindowsIdentity _originalIdentity = WindowsIdentity.GetCurrent();
         private WindowsIdentity _currentPrimaryIdentity = WindowsIdentity.GetCurrent();
         private WindowsIdentity _currentImpersonationIdentity = WindowsIdentity.GetCurrent();
-
+        private bool _isImpersonating = false;
+        
         private IntPtr _executingThread = IntPtr.Zero;
         private IntPtr _originalImpersonationToken = IntPtr.Zero;
         private IntPtr _originalPrimaryToken = IntPtr.Zero;
@@ -128,7 +129,7 @@ namespace Apollo.Management.Identity
 
         public bool IsOriginalIdentity()
         {
-            return _currentImpersonationIdentity.Token == _originalIdentity.Token;
+            return !_isImpersonating;
         }
 
         public IntegrityLevel GetIntegrityLevel()
@@ -273,6 +274,7 @@ namespace Apollo.Management.Identity
                 {
                     _currentImpersonationIdentity = new WindowsIdentity(dupToken);
                     _CloseHandle(dupToken);
+                    _isImpersonating = true;
                 }
                 else
                 {
@@ -285,21 +287,25 @@ namespace Apollo.Management.Identity
         public void SetPrimaryIdentity(WindowsIdentity ident)
         {
             _currentPrimaryIdentity = ident;
+            _isImpersonating = true;
         }
 
         public void SetPrimaryIdentity(IntPtr hToken)
         {
             _currentPrimaryIdentity = new WindowsIdentity(hToken);
+            _isImpersonating = true;
         }
 
         public void SetImpersonationIdentity(WindowsIdentity ident)
         {
             _currentImpersonationIdentity = ident;
+            _isImpersonating = true;
         }
 
         public void SetImpersonationIdentity(IntPtr hToken)
         {
             _currentImpersonationIdentity = new WindowsIdentity(hToken);
+            _isImpersonating = true;
         }
 
         public void Revert()
@@ -308,6 +314,7 @@ namespace Apollo.Management.Identity
             _userCredential = new ApolloLogonInformation();
             _currentImpersonationIdentity = _originalIdentity;
             _currentPrimaryIdentity = _originalIdentity;
+            _isImpersonating = false;
         }
 
         public WindowsIdentity GetCurrentPrimaryIdentity()
