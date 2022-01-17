@@ -126,6 +126,11 @@ namespace Apollo.Management.Identity
                 _originalPrimaryToken = WindowsIdentity.GetCurrent().Token;
         }
 
+        public bool IsOriginalIdentity()
+        {
+            return _currentImpersonationIdentity.Token == _originalIdentity.Token;
+        }
+
         public IntegrityLevel GetIntegrityLevel()
         {
             IntPtr hToken = _currentImpersonationIdentity.Token;

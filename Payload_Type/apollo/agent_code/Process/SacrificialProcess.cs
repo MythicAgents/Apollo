@@ -458,17 +458,24 @@ namespace Process
             bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
             if (bRet)
             {
-                bRet = _pCreateProcessA(
-                    null,
-                    CommandLine,
-                    IntPtr.Zero,
-                    IntPtr.Zero,
-                    true,
-                    _processFlags | CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT,
-                    _unmanagedEnv,
-                    null,
-                    ref _startupInfoEx,
-                    out _processInfo);
+                if (_agent.GetIdentityManager().IsOriginalIdentity())
+                {
+                    bRet = _pCreateProcessA(
+                        null,
+                        CommandLine,
+                        IntPtr.Zero,
+                        IntPtr.Zero,
+                        true,
+                        _processFlags | CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT,
+                        _unmanagedEnv,
+                        null,
+                        ref _startupInfoEx,
+                        out _processInfo);   
+                }
+                else
+                {
+                    return StartWithCredentials(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
+                }
                 if (!bRet)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
             }
