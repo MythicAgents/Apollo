@@ -35,51 +35,44 @@ namespace Tasks
 
         }
 
-        public override void Kill()
-        {
-            _cancellationToken.Cancel();
-        }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
+            CpParameters parameters = _jsonSerializer.Deserialize<CpParameters>(_data.Parameters);
+            TaskResponse resp;
+            List<IMythicMessage> artifacts = new List<IMythicMessage>();
+            try
             {
-                CpParameters parameters = _jsonSerializer.Deserialize<CpParameters>(_data.Parameters);
-                TaskResponse resp;
-                List<IMythicMessage> artifacts = new List<IMythicMessage>();
-                try
+                FileInfo source = new FileInfo(parameters.SourceFile);
+                artifacts.Add(Artifact.FileOpen(source.FullName));
+                if (source.Attributes.HasFlag(FileAttributes.Directory))
                 {
-                    using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                    {
-                        FileInfo source = new FileInfo(parameters.SourceFile);
-                        artifacts.Add(Artifact.FileOpen(source.FullName));
-                        if (source.Attributes.HasFlag(FileAttributes.Directory))
-                        {
-                            resp = CreateTaskResponse(
-                                $"{source.FullName} is a directory.  Please specify a file.",
-                                true,
-                                "error",
-                                artifacts.ToArray());
-                        }
-                        else
-                        {
-                            File.Copy(parameters.SourceFile, parameters.DestinationFile);
-                            FileInfo dest = new FileInfo(parameters.DestinationFile);
-                            artifacts.Add(Artifact.FileWrite(dest.FullName, source.Length));
-                            artifacts.Add(new FileBrowser(dest));
-                            resp = CreateTaskResponse(
-                                $"Copied {source.FullName} to {dest.FullName}",
-                                true,
-                                "completed",
-                                artifacts.ToArray());   
-                        }   
-                    }
-                } catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Failed to copy file: {ex.Message}", true, "error", artifacts.ToArray());
+                    resp = CreateTaskResponse(
+                        $"{source.FullName} is a directory.  Please specify a file.",
+                        true,
+                        "error",
+                        artifacts.ToArray());
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    File.Copy(parameters.SourceFile, parameters.DestinationFile);
+                    FileInfo dest = new FileInfo(parameters.DestinationFile);
+                    artifacts.Add(Artifact.FileWrite(dest.FullName, source.Length));
+                    artifacts.Add(new FileBrowser(dest));
+                    resp = CreateTaskResponse(
+                        $"Copied {source.FullName} to {dest.FullName}",
+                        true,
+                        "completed",
+                        artifacts.ToArray());
+                }
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse($"Failed to copy file: {ex.Message}", true, "error", artifacts.ToArray());
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

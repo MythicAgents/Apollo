@@ -32,33 +32,23 @@ namespace Tasks
 
         }
 
-        public override void Kill()
+        public override void Start()
         {
-            _cancellationToken.Cancel();
-        }
-
-        public override System.Threading.Tasks.Task CreateTasking()
-        {
-            return new System.Threading.Tasks.Task(() =>
+            CdParameters parameters = _jsonSerializer.Deserialize<CdParameters>(_data.Parameters);
+            if (!Directory.Exists(parameters.Path))
             {
-                CdParameters parameters = _jsonSerializer.Deserialize<CdParameters>(_data.Parameters);
-                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                {
-                    if (!Directory.Exists(parameters.Path))
-                    {
-                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                            $"Directory {parameters.Path} does not exist",
-                            true,
-                            "error"));
-                    } else
-                    {
-                        Directory.SetCurrentDirectory(parameters.Path);
-                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                            $"Working directory set to {Directory.GetCurrentDirectory()}",
-                            true));
-                    }   
-                }
-            }, _cancellationToken.Token);
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                    $"Directory {parameters.Path} does not exist",
+                    true,
+                    "error"));
+            }
+            else
+            {
+                Directory.SetCurrentDirectory(parameters.Path);
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                    $"Working directory set to {Directory.GetCurrentDirectory()}",
+                    true));
+            }
         }
     }
 }

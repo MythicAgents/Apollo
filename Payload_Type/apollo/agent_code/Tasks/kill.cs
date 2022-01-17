@@ -30,34 +30,29 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            KillArguments parameters = _jsonSerializer.Deserialize<KillArguments>(_data.Parameters);
+            try
             {
-                TaskResponse resp;
-                KillArguments parameters = _jsonSerializer.Deserialize<KillArguments>(_data.Parameters);
-                try
-                {
-                    System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(parameters.PID);
-                    proc.Kill();
-                    resp = CreateTaskResponse($"Killed {proc.ProcessName} ({proc.Id})", true, "completed",
-                        new IMythicMessage[]
-                        {
-                            Artifact.ProcessKill(proc.Id)
-                        });
-                } catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Failed to kill process. Reason: {ex.Message}", true, "error");
-                }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(parameters.PID);
+                proc.Kill();
+                resp = CreateTaskResponse($"Killed {proc.ProcessName} ({proc.Id})", true, "completed",
+                    new IMythicMessage[]
+                    {
+                        Artifact.ProcessKill(proc.Id)
+                    });
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse($"Failed to kill process. Reason: {ex.Message}", true, "error");
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

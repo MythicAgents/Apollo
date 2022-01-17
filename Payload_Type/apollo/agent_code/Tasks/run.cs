@@ -45,82 +45,81 @@ namespace Tasks
             _pLocalFree = _agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
             _pCommandLineToArgvW = _agent.GetApi().GetLibraryFunction<CommandLineToArgvW>(Library.SHELL32, "CommandLineToArgvW");
         }
-        
-        public override void Kill()
-        {
-            _cancellationToken.Cancel();
-        }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
+            Process proc = null;
+            if (string.IsNullOrEmpty(_data.Parameters))
             {
-                Process proc = null;
-                if (string.IsNullOrEmpty(_data.Parameters))
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse(
+                        "No command line arguments passed.", true, "error"));
+            }
+            else
+            {
+                RunParameters parameters = _jsonSerializer.Deserialize<RunParameters>(_data.Parameters);
+                string mythiccmd = parameters.Executable;
+                if (!string.IsNullOrEmpty(parameters.Arguments))
                 {
-                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                        CreateTaskResponse(
-                            "No command line arguments passed.", true, "error"));
+                    mythiccmd += " " + parameters.Arguments;
+                }
+
+                string[] parts = ParseCommandLine(mythiccmd);
+                if (parts == null)
+                {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                        $"Failed to parse command line: {Marshal.GetLastWin32Error()}",
+                        true,
+                        "error"));
                 }
                 else
                 {
-                    RunParameters parameters = _jsonSerializer.Deserialize<RunParameters>(_data.Parameters);
-                    string mythiccmd = parameters.Executable;
-                    if (!string.IsNullOrEmpty(parameters.Arguments))
+                    string app = parts[0];
+                    string cmdline = null;
+                    if (parts.Length > 1)
                     {
-                        mythiccmd += " " + parameters.Arguments;
+                        cmdline = mythiccmd.Replace(app, "").TrimStart();
                     }
-                    string[] parts = ParseCommandLine(mythiccmd);
-                    if (parts == null)
+
+                    proc = _agent.GetProcessManager().NewProcess(app, cmdline);
+                    proc.OutputDataReceived += DataReceived;
+                    proc.ErrorDataReceieved += DataReceived;
+                    proc.Exit += Proc_Exit;
+                    bool bRet = false;
+                    bRet = proc.Start();
+                    if (!bRet)
                     {
                         _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                            $"Failed to parse command line: {Marshal.GetLastWin32Error()}",
+                            $"Failed to start process. Reason: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}",
                             true,
                             "error"));
-                    } else
+                    }
+                    else
                     {
-                        string app = parts[0];
-                        string cmdline = null;
-                        if (parts.Length > 1)
-                        {
-                            cmdline = mythiccmd.Replace(app, "").TrimStart();
-                        }
-                        proc = _agent.GetProcessManager().NewProcess(app, cmdline);
-                        proc.OutputDataReceived += DataReceived;
-                        proc.ErrorDataReceieved += DataReceived;
-                        proc.Exit += Proc_Exit;
-                        bool bRet = false;
-                        bRet = proc.Start();
-                        if (!bRet)
-                        {
-                            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                $"Failed to start process. Reason: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}",
-                                true,
-                                "error"));
-                        }
-                        else
-                        {
-                            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                "", false, "", new IMythicMessage[]
-                                {
-                                    Artifact.ProcessCreate((int)proc.PID, app, cmdline)
-                                }));
-                            try
+                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                            "", false, "", new IMythicMessage[]
                             {
-                                WaitHandle.WaitAny(new WaitHandle[]
-                                {
-                                    _complete,
-                                    _cancellationToken.Token.WaitHandle
-                                });
-                            } catch (OperationCanceledException) {}
-                            if (!proc.HasExited)
+                                Artifact.ProcessCreate((int) proc.PID, app, cmdline)
+                            }));
+                        try
+                        {
+                            WaitHandle.WaitAny(new WaitHandle[]
                             {
-                                proc.Kill();
-                            }
+                                _complete,
+                                _cancellationToken.Token.WaitHandle
+                            });
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
+
+                        if (!proc.HasExited)
+                        {
+                            proc.Kill();
                         }
                     }
                 }
-            }, _cancellationToken.Token);
+            }
         }
 
         private void Proc_Exit(object sender, EventArgs e)

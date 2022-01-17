@@ -109,12 +109,6 @@ namespace Tasks
             _pNetApiBufferFree = _agent.GetApi().GetLibraryFunction<NetApiBufferFree>(Library.NETUTILS, "NetApiBufferFree");
             _pNetShareEnum = _agent.GetApi().GetLibraryFunction<NetShareEnum>(Library.SRVCLI, "NetShareEnum");
         }
-
-        public override void Kill()
-        {
-            base.Kill();
-        }
-
         private ShareInfo[] EnumerateShares(string computer)
         {
             List<ShareInfo> ShareInfos = new List<ShareInfo>();
@@ -143,84 +137,83 @@ namespace Tasks
             }
         }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            NetSharesParameters parameters = _jsonSerializer.Deserialize<NetSharesParameters>(_data.Parameters);
+            string computer = parameters.Computer;
+            if (string.IsNullOrEmpty(computer))
             {
-                TaskResponse resp;
-                NetSharesParameters parameters = _jsonSerializer.Deserialize<NetSharesParameters>(_data.Parameters);
-                string computer = parameters.Computer;
-                if (string.IsNullOrEmpty(computer))
-                {
-                    computer = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                }
-                string[] errors = { "ERROR=53", "ERROR=5" };
-                List<NetShareInformation> results = new List<NetShareInformation>();
-                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                {
-                    ShareInfo[] computerShares = EnumerateShares(computer);
+                computer = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            }
 
-                    if (computerShares.Length > 0)
+            string[] errors = {"ERROR=53", "ERROR=5"};
+            List<NetShareInformation> results = new List<NetShareInformation>();
+            
+            ShareInfo[] computerShares = EnumerateShares(computer);
+
+            if (computerShares.Length > 0)
+            {
+                foreach (ShareInfo share in computerShares)
+                {
+                    var result = new NetShareInformation();
+                    result.ComputerName = computer;
+                    result.ShareName = share.shi1_netname;
+                    result.Comment = share.shi1_remark;
+                    try
                     {
-                        foreach (ShareInfo share in computerShares)
-                        {
-                            var result = new NetShareInformation();
-                            result.ComputerName = computer;
-                            result.ShareName = share.shi1_netname;
-                            result.Comment = share.shi1_remark;
-                            try
-                            {
-                                string path = String.Format("\\\\{0}\\{1}", computer, share.shi1_netname);
-                                var files = System.IO.Directory.GetFiles(path);
-                                result.Readable = true;
-                            }
-                            catch
-                            {
-                                result.Readable = false;
-                            }
-                            switch (share.shi1_type)
-                            {
-                                case ShareType.STYPE_DISKTREE:
-                                    result.Type = "Disk Drive";
-                                    break;
-                                case ShareType.STYPE_PRINTQ:
-                                    result.Type = "Print Queue";
-                                    break;
-                                case ShareType.STYPE_DEVICE:
-                                    result.Type = "Communication Device";
-                                    break;
-                                case ShareType.STYPE_IPC:
-                                    result.Type = "Interprocess Communication (IPC)";
-                                    break;
-                                case ShareType.STYPE_SPECIAL:
-                                    result.Type = "Special Reserved for IPC.";
-                                    //result.Type = "Special share reserved for interprocess communication (IPC$) or remote administration of the server (ADMIN$). Can also refer to administrative shares such as C$, D$, E$, and so forth.";
-                                    break;
-                                case ShareType.STYPE_CLUSTER_FS:
-                                    result.Type = "Cluster Share";
-                                    break;
-                                case ShareType.STYPE_CLUSTER_SOFS:
-                                    result.Type = "Scale Out Cluster Share";
-                                    break;
-                                case ShareType.STYPE_CLUSTER_DFS:
-                                    result.Type = "DFS Share in Cluster";
-                                    break;
-                                case ShareType.STYPE_TEMPORARY:
-                                    result.Type = "Temporary Share";
-                                    break;
-                                default:
-                                    result.Type = $"Unknown type ({share.shi1_type})";
-                                    break;
+                        string path = String.Format("\\\\{0}\\{1}", computer, share.shi1_netname);
+                        var files = System.IO.Directory.GetFiles(path);
+                        result.Readable = true;
+                    }
+                    catch
+                    {
+                        result.Readable = false;
+                    }
 
-                            }
-                            results.Add(result);
-                        }
-                    }   
+                    switch (share.shi1_type)
+                    {
+                        case ShareType.STYPE_DISKTREE:
+                            result.Type = "Disk Drive";
+                            break;
+                        case ShareType.STYPE_PRINTQ:
+                            result.Type = "Print Queue";
+                            break;
+                        case ShareType.STYPE_DEVICE:
+                            result.Type = "Communication Device";
+                            break;
+                        case ShareType.STYPE_IPC:
+                            result.Type = "Interprocess Communication (IPC)";
+                            break;
+                        case ShareType.STYPE_SPECIAL:
+                            result.Type = "Special Reserved for IPC.";
+                            //result.Type = "Special share reserved for interprocess communication (IPC$) or remote administration of the server (ADMIN$). Can also refer to administrative shares such as C$, D$, E$, and so forth.";
+                            break;
+                        case ShareType.STYPE_CLUSTER_FS:
+                            result.Type = "Cluster Share";
+                            break;
+                        case ShareType.STYPE_CLUSTER_SOFS:
+                            result.Type = "Scale Out Cluster Share";
+                            break;
+                        case ShareType.STYPE_CLUSTER_DFS:
+                            result.Type = "DFS Share in Cluster";
+                            break;
+                        case ShareType.STYPE_TEMPORARY:
+                            result.Type = "Temporary Share";
+                            break;
+                        default:
+                            result.Type = $"Unknown type ({share.shi1_type})";
+                            break;
+                    }
+
+                    results.Add(result);
                 }
-                resp = CreateTaskResponse(
-                    _jsonSerializer.Serialize(results.ToArray()), true);
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+
+            resp = CreateTaskResponse(
+                _jsonSerializer.Serialize(results.ToArray()), true);
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

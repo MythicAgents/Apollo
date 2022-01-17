@@ -30,14 +30,11 @@ namespace Tasks
 
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                BlockDllsParameters parameters = _jsonSerializer.Deserialize<BlockDllsParameters>(_data.Parameters);
-                _agent.GetProcessManager().BlockDLLs(parameters.Value);
-                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true));
-            }, _cancellationToken.Token);
+            BlockDllsParameters parameters = _jsonSerializer.Deserialize<BlockDllsParameters>(_data.Parameters);
+            _agent.GetProcessManager().BlockDLLs(parameters.Value);
+            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true));
         }
     }
 }

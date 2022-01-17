@@ -42,56 +42,51 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
+        public override void Start()
         {
-            base.Kill();
-        }
-
-        public override ST.Task CreateTasking()
-        {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            DirectoryContext ctx;
+            DomainControllerCollection dcCollection;
+            List<NetDomainController> results = new List<NetDomainController>();
+            if (string.IsNullOrEmpty(_data.Parameters))
+                ctx = new DirectoryContext(DirectoryContextType.Domain);
+            else
+                ctx = new DirectoryContext(DirectoryContextType.Domain, _data.Parameters.Trim());
+            dcCollection = DomainController.FindAll(ctx);
+            foreach (DomainController dc in dcCollection)
             {
-                TaskResponse resp;
-                DirectoryContext ctx;
-                DomainControllerCollection dcCollection;
-                List<NetDomainController> results = new List<NetDomainController>();
-                if (string.IsNullOrEmpty(_data.Parameters))
-                    ctx = new DirectoryContext(DirectoryContextType.Domain);
-                else
-                    ctx = new DirectoryContext(DirectoryContextType.Domain, _data.Parameters.Trim());
-                dcCollection = DomainController.FindAll(ctx);
-                foreach (DomainController dc in dcCollection)
+                var result = new NetDomainController();
+                result.ComputerName = dc.Name;
+                result.Domain = dc.Domain.ToString();
+                try
                 {
-                    var result = new NetDomainController();
-                    result.ComputerName = dc.Name;
-                    result.Domain = dc.Domain.ToString();
-                    try
+                    var ips = Dns.GetHostAddresses(result.ComputerName);
+                    string ipList = "";
+                    for (int i = 0; i < ips.Length; i++)
                     {
-                        var ips = Dns.GetHostAddresses(result.ComputerName);
-                        string ipList = "";
-                        for (int i = 0; i < ips.Length; i++)
-                        {
-                            if (i == ips.Length - 1)
-                                ipList += $"{ips[i].ToString()}";
-                            else
-                                ipList += $"{ips[i].ToString()}, ";
-                        }
-                        result.IPAddress = ipList;
+                        if (i == ips.Length - 1)
+                            ipList += $"{ips[i].ToString()}";
+                        else
+                            ipList += $"{ips[i].ToString()}, ";
                     }
-                    catch (Exception ex)
-                    {
-                        result.IPAddress = dc.IPAddress;
-                    }
-                    result.Forest = dc.Forest.ToString();
-                    result.OSVersion = dc.OSVersion;
-                    result.IsGlobalCatalog = dc.IsGlobalCatalog();
-                    results.Add(result);
+
+                    result.IPAddress = ipList;
                 }
-                resp = CreateTaskResponse(
-                    _jsonSerializer.Serialize(results.ToArray()),
-                    true);
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                catch (Exception ex)
+                {
+                    result.IPAddress = dc.IPAddress;
+                }
+
+                result.Forest = dc.Forest.ToString();
+                result.OSVersion = dc.OSVersion;
+                result.IsGlobalCatalog = dc.IsGlobalCatalog();
+                results.Add(result);
+            }
+
+            resp = CreateTaskResponse(
+                _jsonSerializer.Serialize(results.ToArray()),
+                true);
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

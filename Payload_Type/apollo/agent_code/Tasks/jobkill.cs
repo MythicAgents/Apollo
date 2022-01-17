@@ -23,32 +23,32 @@ namespace Tasks
         {
         }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            bool bRet = true;
+            string[] jids = _data.Parameters.Split(' ');
+            foreach (string j in jids)
             {
-                bool bRet = true;
-                string[] jids = _data.Parameters.Split(' ');
-                foreach(string j in jids)
+                if (_agent.GetTaskManager().CancelTask(j))
                 {
-                    if (_agent.GetTaskManager().CancelTask(j))
-                    {
-                        _agent.GetTaskManager().AddTaskResponseToQueue(
-                            CreateTaskResponse(
-                                $"Killed {j}", false, ""));
-                    } else
-                    {
-                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                            $"Failed to kill {j}", false, ""));
-                        bRet = false;
-                    }
+                    _agent.GetTaskManager().AddTaskResponseToQueue(
+                        CreateTaskResponse(
+                            $"Killed {j}", false, ""));
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(
-                    CreateTaskResponse(
-                        "",
-                        true,
-                        bRet ? "completed" : "error"));
-            }, _cancellationToken.Token);
+                else
+                {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                        $"Failed to kill {j}", false, ""));
+                    bRet = false;
+                }
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(
+                CreateTaskResponse(
+                    "",
+                    true,
+                    bRet ? "completed" : "error"));
         }
     }
 }

@@ -102,7 +102,7 @@ function(task, responses){
                             "name": "cat",
                             "type": "task",
                             "ui_feature": "cat",
-                            "parameters": finfo["full_name"],
+                            "parameters": "\\\\" + data["host"] + "\\" + finfo["full_name"],
                         },
                         "cellStyle": {},
                     }
@@ -114,7 +114,7 @@ function(task, responses){
                         "name": "ls",
                         "type": "task",
                         "ui_feature": "file_browser:list",
-                        "parameters": finfo["full_name"],
+                        "parameters": "\\\\" + data["host"] + "\\" + finfo["full_name"],
                         "startIcon": "list",
                         },
                         "cellStyle": {},

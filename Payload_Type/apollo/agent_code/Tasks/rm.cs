@@ -35,96 +35,97 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            RmParameters parameters = _jsonSerializer.Deserialize<RmParameters>(_data.Parameters);
+            string path = string.IsNullOrEmpty(parameters.File)
+                ? parameters.Path
+                : Path.Combine(new string[] {parameters.Path, parameters.File});
+            string rmFilePath = path;
+            string host = parameters.Host;
+            string realPath = "";
+            if (string.IsNullOrEmpty(host))
             {
-                TaskResponse resp;
-                RmParameters parameters = _jsonSerializer.Deserialize<RmParameters>(_data.Parameters);
-                string path = string.IsNullOrEmpty(parameters.File) ? parameters.Path : Path.Combine(new string[] { parameters.Path, parameters.File });
-                string rmFilePath = path;
-                string host = parameters.Host;
-                string realPath = "";
-                if (string.IsNullOrEmpty(host))
+                host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            }
+            else if (host != Environment.GetEnvironmentVariable("COMPUTERNAME"))
+            {
+                if (!path.StartsWith("\\\\"))
                 {
-                    host = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                } else if (host != Environment.GetEnvironmentVariable("COMPUTERNAME"))
-                {
-                    if (!path.StartsWith("\\\\"))
-                    {
-                        path = $"\\\\{host}\\{path}";
-                    }
+                    path = $"\\\\{host}\\{path}";
                 }
-                if (rmFilePath.StartsWith("\\\\"))
-                {
-                    string[] parts = rmFilePath.Split(new char[] { '\\' }, 4);
-                    if (parts.Length != 4)
-                    {
-                        throw new Exception($"Failed to parse UNC path: {rmFilePath}");
-                    }
-                }
+            }
 
-                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+            if (rmFilePath.StartsWith("\\\\"))
+            {
+                string[] parts = rmFilePath.Split(new char[] {'\\'}, 4);
+                if (parts.Length != 4)
                 {
-                    if (ApolloInterop.Utils.PathUtils.TryGetExactPath(path, out realPath))
-                    {
-                        if (Directory.Exists(realPath))
-                        {
-                            try
-                            {
-                                Directory.Delete(realPath, true);
-                                resp = CreateTaskResponse(
-                                    $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
-                                    {
-                                        Artifact.FileDelete(realPath)
-                                    });
-                            }
-                            catch (Exception ex)
-                            {
-                                resp = CreateTaskResponse(
-                                    $"Failed to delete {realPath}: {ex.Message}", true, "error");
-                            }
-                        } else
-                        {
-                            try
-                            {
-                                File.Delete(realPath);
-                                resp = CreateTaskResponse(
-                                    $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
-                                    {
-                                        Artifact.FileDelete(realPath)
-                                    });
-                            } catch (Exception ex)
-                            {
-                                resp = CreateTaskResponse(
-                                    $"Failed to delete {realPath}: {ex.Message}", true, "error");
-                            }
-                        }
-                    } else
-                    {
-                        resp = CreateTaskResponse($"Cannot find file or folder: {parameters.Path}", true, "error");
-                    }   
+                    throw new Exception($"Failed to parse UNC path: {rmFilePath}");
                 }
-                if (resp.Status == "completed")
+            }
+
+            
+            if (ApolloInterop.Utils.PathUtils.TryGetExactPath(path, out realPath))
+            {
+                if (Directory.Exists(realPath))
                 {
-                    resp.RemovedFiles = new RemovedFileInformation[1]
+                    try
                     {
-                        new RemovedFileInformation
-                        {
-                            Host = host,
-                            Path = realPath
-                        }
-                    };
+                        Directory.Delete(realPath, true);
+                        resp = CreateTaskResponse(
+                            $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
+                            {
+                                Artifact.FileDelete(realPath)
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse(
+                            $"Failed to delete {realPath}: {ex.Message}", true, "error");
+                    }
                 }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    try
+                    {
+                        File.Delete(realPath);
+                        resp = CreateTaskResponse(
+                            $"Deleted {realPath}", true, "completed", new IMythicMessage[1]
+                            {
+                                Artifact.FileDelete(realPath)
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        resp = CreateTaskResponse(
+                            $"Failed to delete {realPath}: {ex.Message}", true, "error");
+                    }
+                }
+            }
+            else
+            {
+                resp = CreateTaskResponse($"Cannot find file or folder: {parameters.Path}", true, "error");
+            }
+        
+
+            if (resp.Status == "completed")
+            {
+                resp.RemovedFiles = new RemovedFileInformation[1]
+                {
+                    new RemovedFileInformation
+                    {
+                        Host = host,
+                        Path = realPath
+                    }
+                };
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

@@ -33,84 +33,78 @@ namespace Tasks
 
             return results;
         }
-        
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            HostFileInfo sourceInfo;
+            var parameters = _jsonSerializer.Deserialize<MvParameters>(_data.Parameters);
+
+            if (!PathUtils.TryGetExactPath(parameters.SourceFile, out _))
             {
-                TaskResponse resp;
-                HostFileInfo sourceInfo;
-                var parameters = _jsonSerializer.Deserialize<MvParameters>(_data.Parameters);
-                
-                if (!PathUtils.TryGetExactPath(parameters.SourceFile, out _))
+                resp = CreateTaskResponse(
+                    $"File {parameters.SourceFile} does not exist.",
+                    true, "error");
+            }
+            else
+            {
+                var isDir = false;
+                FileSystemInfo sinfo = null;
+                FileInformation dinfo;
+                if (Directory.Exists(parameters.SourceFile))
                 {
-                    resp = CreateTaskResponse(
-                        $"File {parameters.SourceFile} does not exist.",
-                        true, "error");
+                    sinfo = new DirectoryInfo(parameters.SourceFile);
+                    isDir = true;
                 }
                 else
                 {
-                    using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                    {
-                        var isDir = false;
-                        FileSystemInfo sinfo = null;
-                        FileInformation dinfo;
-                        if (Directory.Exists(parameters.SourceFile))
-                        {
-                            sinfo = new DirectoryInfo(parameters.SourceFile);
-                            isDir = true;
-                        }
-                        else
-                        {
-                            sinfo = new FileInfo(parameters.SourceFile);
-                        }
-
-                        try
-                        {
-                            if (isDir)
-                                Directory.Move(parameters.SourceFile, parameters.DestinationFile);
-                            else
-                                File.Move(parameters.SourceFile, parameters.DestinationFile);
-
-                            dinfo = !isDir
-                                ? new FileInformation(new FileInfo(parameters.DestinationFile))
-                                : new FileInformation(new DirectoryInfo(parameters.DestinationFile));
-                            sourceInfo = ParsePath(parameters.SourceFile);
-                            ParsePath(parameters.DestinationFile);
-                            resp = CreateTaskResponse(
-                                $"Moved {sinfo.FullName} to {dinfo.FullName}",
-                                true,
-                                "completed",
-                                new IMythicMessage[]
-                                {
-                                    Artifact.FileOpen(sinfo.FullName),
-                                    Artifact.FileDelete(sinfo.FullName),
-                                    Artifact.FileOpen(dinfo.FullName),
-                                    Artifact.FileWrite(dinfo.FullName, isDir ? 0 : dinfo.Size),
-                                    new FileBrowser(dinfo)
-                                });
-                            resp.RemovedFiles = new[]
-                            {
-                                new RemovedFileInformation
-                                {
-                                    Host = sourceInfo.Host,
-                                    Path = sinfo.FullName
-                                }
-                            };
-                        }
-                        catch (Exception ex)
-                        {
-                            resp = CreateTaskResponse(
-                                $"Failed to move {parameters.SourceFile}: {ex.Message}", true, "error");
-                        }
-                    }
+                    sinfo = new FileInfo(parameters.SourceFile);
                 }
 
-                // Your code here..
-                // CreateTaskResponse to create a new TaskResposne object
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                try
+                {
+                    if (isDir)
+                        Directory.Move(parameters.SourceFile, parameters.DestinationFile);
+                    else
+                        File.Move(parameters.SourceFile, parameters.DestinationFile);
+
+                    dinfo = !isDir
+                        ? new FileInformation(new FileInfo(parameters.DestinationFile))
+                        : new FileInformation(new DirectoryInfo(parameters.DestinationFile));
+                    sourceInfo = ParsePath(parameters.SourceFile);
+                    ParsePath(parameters.DestinationFile);
+                    resp = CreateTaskResponse(
+                        $"Moved {sinfo.FullName} to {dinfo.FullName}",
+                        true,
+                        "completed",
+                        new IMythicMessage[]
+                        {
+                            Artifact.FileOpen(sinfo.FullName),
+                            Artifact.FileDelete(sinfo.FullName),
+                            Artifact.FileOpen(dinfo.FullName),
+                            Artifact.FileWrite(dinfo.FullName, isDir ? 0 : dinfo.Size),
+                            new FileBrowser(dinfo)
+                        });
+                    resp.RemovedFiles = new[]
+                    {
+                        new RemovedFileInformation
+                        {
+                            Host = sourceInfo.Host,
+                            Path = sinfo.FullName
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
+                    resp = CreateTaskResponse(
+                        $"Failed to move {parameters.SourceFile}: {ex.Message}", true, "error");
+                }
+            }
+
+            // Your code here..
+            // CreateTaskResponse to create a new TaskResposne object
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         [DataContract]

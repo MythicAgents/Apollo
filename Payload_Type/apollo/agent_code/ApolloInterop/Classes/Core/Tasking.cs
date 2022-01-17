@@ -29,7 +29,18 @@ namespace ApolloInterop.Classes
             return _data.ID;
         }
 
-        public abstract System.Threading.Tasks.Task CreateTasking();
+        public abstract void Start();
+
+        public virtual System.Threading.Tasks.Task CreateTasking()
+        {
+            return new System.Threading.Tasks.Task(() =>
+            {
+                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                {
+                    Start();   
+                }
+            }, _cancellationToken.Token);
+        }
 
         public virtual void Kill()
         {

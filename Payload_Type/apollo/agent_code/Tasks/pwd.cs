@@ -31,16 +31,13 @@ namespace Tasks
             throw new NotImplementedException();
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                TaskResponse resp = CreateTaskResponse(
-                        $"{System.IO.Directory.GetCurrentDirectory().ToString()}",
-                        true,
-                        "completed");
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            TaskResponse resp = CreateTaskResponse(
+                $"{System.IO.Directory.GetCurrentDirectory().ToString()}",
+                true,
+                "completed");
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

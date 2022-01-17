@@ -23,27 +23,22 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            if (_agent.GetInjectionManager().SetTechnique(_data.Parameters))
             {
-                TaskResponse resp;
-                if (_agent.GetInjectionManager().SetTechnique(_data.Parameters))
-                {
-                    resp = CreateTaskResponse($"Set injection technique to {_data.Parameters}", true);
-                } else
-                {
-                    resp = CreateTaskResponse($"Unknown technique: {_data.Parameters}", true, "error");
-                }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                resp = CreateTaskResponse($"Set injection technique to {_data.Parameters}", true);
+            }
+            else
+            {
+                resp = CreateTaskResponse($"Unknown technique: {_data.Parameters}", true, "error");
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

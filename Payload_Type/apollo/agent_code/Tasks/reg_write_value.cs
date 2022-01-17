@@ -38,11 +38,6 @@ namespace Tasks
         {
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
-
         private bool SetValue(string hive, string subkey, string valueName, object valueValue)
         {
             using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
@@ -52,42 +47,42 @@ namespace Tasks
             }
         }
 
-        public override ST.Task CreateTasking()
+
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            RegWriteParameters parameters = _jsonSerializer.Deserialize<RegWriteParameters>(_data.Parameters);
+            bool bRet;
+
+            if (int.TryParse(parameters.ValueValue, out int dword))
             {
-                TaskResponse resp;
-                RegWriteParameters parameters = _jsonSerializer.Deserialize<RegWriteParameters>(_data.Parameters);
-                bool bRet;
-                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                {
-                    if (int.TryParse(parameters.ValueValue, out int dword))
+                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword);
+            }
+            else
+            {
+                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue);
+            }
+
+            if (bRet)
+            {
+                resp = CreateTaskResponse(
+                    $"Successfully set {parameters.ValueName} to {parameters.ValueValue}",
+                    true,
+                    "completed",
+                    new IMythicMessage[1]
                     {
-                        bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword);
-                    } else
-                    {
-                        bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue);
-                    }
-                    if (bRet)
-                    {
-                        resp = CreateTaskResponse(
-                            $"Successfully set {parameters.ValueName} to {parameters.ValueValue}",
-                            true,
-                            "completed",
-                            new IMythicMessage[1]
-                            {
-                                Artifact.RegistryWrite(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue)
-                            });
-                    } else
-                    {
-                        resp = CreateTaskResponse(
-                            $"Failed to set {parameters.ValueName}", true, "error");
-                    }   
-                }
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                        Artifact.RegistryWrite(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue)
+                    });
+            }
+            else
+            {
+                resp = CreateTaskResponse(
+                    $"Failed to set {parameters.ValueName}", true, "error");
+            }
+
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

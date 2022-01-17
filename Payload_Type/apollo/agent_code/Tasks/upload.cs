@@ -41,11 +41,6 @@ namespace Tasks
 
         }
 
-        public override void Kill()
-        {
-            _cancellationToken.Cancel();
-        }
-
         internal string ParsePath(UploadParameters p)
         {
             string host = "";
@@ -89,55 +84,55 @@ namespace Tasks
             }
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                TaskResponse resp;
-                UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
-                // some additional upload logic
-                if (_agent.GetFileManager().GetFile(
+            TaskResponse resp;
+            UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
+            // some additional upload logic
+            if (_agent.GetFileManager().GetFile(
                     _cancellationToken.Token,
                     _data.ID,
                     parameters.FileID,
                     out byte[] fileData))
+            {
+                string path = ParsePath(parameters);
+                try
                 {
-                    string path = ParsePath(parameters);
-                    try
-                    {
-                        using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
+                    File.WriteAllBytes(path, fileData);
+
+                    resp = CreateTaskResponse(
+                        $"Uploaded {fileData.Length} bytes to {path}",
+                        true,
+                        "completed",
+                        new IMythicMessage[]
                         {
-                            File.WriteAllBytes(path, fileData);   
-                        }
-                        resp = CreateTaskResponse(
-                            $"Uploaded {fileData.Length} bytes to {path}",
-                            true,
-                            "completed",
-                            new IMythicMessage[]
+                            new UploadMessage()
                             {
-                                new UploadMessage()
-                                {
-                                    FileID = parameters.FileID,
-                                    FullPath = path
-                                },
-                                Artifact.FileWrite(path, fileData.Length)
-                            });
-                    } catch (Exception ex)
-                    {
-                        resp = CreateTaskResponse($"Failed to upload file: {ex.Message}", true, "error");
-                    }
-                } else
-                {
-                    if (_cancellationToken.IsCancellationRequested)
-                    {
-                        resp = CreateTaskResponse($"Task killed.", true, "killed");
-                    } else
-                    {
-                        resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
-                    }
+                                FileID = parameters.FileID,
+                                FullPath = path
+                            },
+                            Artifact.FileWrite(path, fileData.Length)
+                        });
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                catch (Exception ex)
+                {
+                    resp = CreateTaskResponse($"Failed to upload file: {ex.Message}", true, "error");
+                }
+            }
+            else
+            {
+                if (_cancellationToken.IsCancellationRequested)
+                {
+                    resp = CreateTaskResponse($"Task killed.", true, "killed");
+                }
+                else
+                {
+                    resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
+                }
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

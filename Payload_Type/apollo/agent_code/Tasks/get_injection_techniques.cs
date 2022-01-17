@@ -31,34 +31,28 @@ namespace Tasks
         public get_injection_techniques(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
         {
         }
+        
 
-        public override void Kill()
+        public override void Start()
         {
-            base.Kill();
-        }
-
-        public override ST.Task CreateTasking()
-        {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            string[] techniques = _agent.GetInjectionManager().GetTechniques();
+            Type cur = _agent.GetInjectionManager().GetCurrentTechnique();
+            List<InjectionTechniqueResult> results = new List<InjectionTechniqueResult>();
+            foreach (string t in techniques)
             {
-                TaskResponse resp;
-                string[] techniques = _agent.GetInjectionManager().GetTechniques();
-                Type cur = _agent.GetInjectionManager().GetCurrentTechnique();
-                List<InjectionTechniqueResult> results = new List<InjectionTechniqueResult>();
-                foreach(string t in techniques)
+                results.Add(new InjectionTechniqueResult
                 {
-                    results.Add(new InjectionTechniqueResult
-                    {
-                        Name = t,
-                        IsCurrent = t == cur.Name
-                    });
-                }
-                resp = CreateTaskResponse(
-                    _jsonSerializer.Serialize(results.ToArray()), true);
-                // Your code here..
-                // Then add response to queue
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+                    Name = t,
+                    IsCurrent = t == cur.Name
+                });
+            }
+
+            resp = CreateTaskResponse(
+                _jsonSerializer.Serialize(results.ToArray()), true);
+            // Your code here..
+            // Then add response to queue
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

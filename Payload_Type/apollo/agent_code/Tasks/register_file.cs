@@ -37,59 +37,54 @@ namespace Tasks
 
         }
 
-        public override void Kill()
-        {
-            _cancellationToken.Cancel();
-        }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                TaskResponse resp;
-                RegisterFileParameters parameters = _jsonSerializer.Deserialize<RegisterFileParameters>(_data.Parameters);
-                // some additional upload logic
-                if (_agent.GetFileManager().GetFile(
+            TaskResponse resp;
+            RegisterFileParameters parameters = _jsonSerializer.Deserialize<RegisterFileParameters>(_data.Parameters);
+            // some additional upload logic
+            if (_agent.GetFileManager().GetFile(
                     _cancellationToken.Token,
                     _data.ID,
                     parameters.FileID,
                     out byte[] fileData))
+            {
+                if (parameters.FileName.EndsWith(".ps1"))
                 {
-                    if (parameters.FileName.EndsWith(".ps1"))
-                    {
-                        _agent.GetFileManager().SetScript(fileData);
-                        resp = CreateTaskResponse(
-                            $"{parameters.FileName} will now be imported in PowerShell commands.", true);
-                    }
-                    else
-                    {
-                        if (_agent.GetFileManager().AddFileToStore(parameters.FileName, fileData))
-                        {
-                            resp = CreateTaskResponse(
-                                $"{parameters.FileName} has been registered.",
-                                true);
-                        } else
-                        {
-                            resp = CreateTaskResponse(
-                                $"Failed to register {parameters.FileName}",
-                                true,
-                                "error");
-                        }   
-                    }
+                    _agent.GetFileManager().SetScript(fileData);
+                    resp = CreateTaskResponse(
+                        $"{parameters.FileName} will now be imported in PowerShell commands.", true);
                 }
                 else
                 {
-                    if (_cancellationToken.IsCancellationRequested)
+                    if (_agent.GetFileManager().AddFileToStore(parameters.FileName, fileData))
                     {
-                        resp = CreateTaskResponse($"Task killed.", true, "killed");
+                        resp = CreateTaskResponse(
+                            $"{parameters.FileName} has been registered.",
+                            true);
                     }
                     else
                     {
-                        resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
+                        resp = CreateTaskResponse(
+                            $"Failed to register {parameters.FileName}",
+                            true,
+                            "error");
                     }
                 }
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+            }
+            else
+            {
+                if (_cancellationToken.IsCancellationRequested)
+                {
+                    resp = CreateTaskResponse($"Task killed.", true, "killed");
+                }
+                else
+                {
+                    resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
+                }
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

@@ -193,11 +193,6 @@ namespace Tasks
             _pAdjustTokenPrivileges = _agent.GetApi().GetLibraryFunction<AdjustTokenPrivileges>(Library.ADVAPI32, "AdjustTokenPrivileges");
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
-
         private bool SePrivEnable(IntPtr hToken, string priv)
         {
             bool bRet = false;
@@ -217,23 +212,31 @@ namespace Tasks
             return bRet;
         }
 
-        public override ST.Task CreateTasking()
+        public override void Start()
         {
-            return new ST.Task(() =>
+            TaskResponse resp;
+            WindowsIdentity impersonationIdentity = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+            WindowsIdentity primaryIdentity = _agent.GetIdentityManager().GetCurrentPrimaryIdentity();
+            List<string> imperonationPrivs = new List<string>();
+            List<string> primaryPrivs = new List<string>();
+            foreach (string name in _tokenPrivilegeNames)
             {
-                TaskResponse resp;
-                WindowsIdentity curIdent = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                List<string> enabledPrivs = new List<string>();
-                foreach (string name in _tokenPrivilegeNames)
+                if (SePrivEnable(impersonationIdentity.Token, name))
                 {
-                    if (SePrivEnable(curIdent.Token, name))
-                    {
-                        enabledPrivs.Add(name);
-                    }
+                    imperonationPrivs.Add(name);
                 }
-                resp = CreateTaskResponse(string.Join("\n", enabledPrivs.ToArray()), true, "completed");
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }, _cancellationToken.Token);
+
+                if (SePrivEnable(primaryIdentity.Token, name))
+                {
+                    primaryPrivs.Add(name);
+                }
+            }
+
+            resp = CreateTaskResponse("Impersonation identity enabled privileges:\n" + 
+                                      string.Join("\n", imperonationPrivs.ToArray()) + "\n\n" +
+                                      "Primary identity enabled privileges:\n" +
+                                      string.Join("\n", primaryPrivs.ToArray()), true, "completed");
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
     }
 }

