@@ -455,7 +455,7 @@ namespace Process
         public override bool Start()
         {
             bool bRet = false;
-            bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
+            bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
             if (bRet)
             {
                 bRet = _pCreateProcessA(
