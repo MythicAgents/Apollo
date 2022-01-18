@@ -11,6 +11,7 @@ namespace ApolloInterop.Classes.Core
 {
     public abstract class Process : IProcess
     {
+        public string Application { get; protected set; }
         public string CommandLine { get; protected set; }
         protected bool _startSuspended;
         public bool HasExited { get; protected set; }
@@ -50,11 +51,13 @@ namespace ApolloInterop.Classes.Core
             if (string.IsNullOrEmpty(lpArguments))
             {
                 CommandLine = lpApplication;
+                Application = lpApplication;
             } else if (string.IsNullOrEmpty(lpApplication))
             {
                 CommandLine = lpArguments;
             } else
             {
+                Application = lpApplication;
                 CommandLine = $"{lpApplication} {lpArguments}";
             }
             _startSuspended = startSuspended;

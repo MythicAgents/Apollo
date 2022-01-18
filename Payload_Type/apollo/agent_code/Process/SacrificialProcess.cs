@@ -75,25 +75,25 @@ namespace Process
             out ProcessInformation lpProcessInformation
         );
         private delegate bool CreateProcessWithLogonW(
-            string lpUsername,
-            string lpDomain,
-            string lpPassword,
+            String lpUsername,
+            String lpDomain,
+            String lpPassword,
             LogonFlags dwLogonFlags,
-            string lpApplicationName,
-            string lpCommandLine,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpApplicationName,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpCommandLine,
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
-            string lpCurrentDirectory,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
         private delegate bool CreateProcessWithTokenW(
             IntPtr hToken,
             LogonFlags dwLogonFlags,
-            string lpApplicationName,
-            string lpCommandLine,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpApplicationName,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpCommandLine,
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
-            string lpCurrentDirectory,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
 
@@ -183,7 +183,7 @@ namespace Process
             _pInitializeSecurityDescriptor = _agent.GetApi().GetLibraryFunction<InitializeSecurityDescriptor>(Library.ADVAPI32, "InitializeSecurityDescriptor");
             _pSetSecurityDescriptorDacl = _agent.GetApi().GetLibraryFunction<SetSecurityDescriptorDacl>(Library.ADVAPI32, "SetSecurityDescriptorDacl");
             _pLogonUser = _agent.GetApi().GetLibraryFunction<LogonUser>(Library.ADVAPI32, "LogonUserW");
-            _pCreateProcessAsUser = _agent.GetApi().GetLibraryFunction<CreateProcessAsUser>(Library.ADVAPI32, "CreateProcessAsUserW");
+            _pCreateProcessAsUser = _agent.GetApi().GetLibraryFunction<CreateProcessAsUser>(Library.ADVAPI32, "CreateProcessAsUserA");
             _pCreateProcessWithLogonW = _agent.GetApi().GetLibraryFunction<CreateProcessWithLogonW>(Library.ADVAPI32, "CreateProcessWithLogonW");
             _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
 
