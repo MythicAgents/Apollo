@@ -41,19 +41,23 @@ class RegisterFileCommand(CommandBase):
     attackmapping = ["T1547"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['file']
-        resp = await MythicRPC().execute("create_file",
-                                          task_id=task.id,
-                                          file=base64.b64encode(task.args.get_arg("file")).decode(),
-                                          saved_file_name=original_file_name,
-                                          delete_after_fetch=False)
-        if resp.status == MythicStatus.Success:
-            task.args.add_arg("file_id", resp.response['agent_file_id'])
-            task.args.add_arg("file_name", original_file_name)
-            task.args.remove_arg("file")
+        file_resp = await MythicRPC().execute(
+            "get_file",
+            file_id=task.args.get_arg("file"),
+            task_id=task.id,
+            get_contents=False)
+        if file_resp.status == MythicRPCStatus.Success:
+            original_file_name = file_resp.response[0]["filename"]
         else:
-            raise Exception(f"Failed to host assembly: {resp.error}")
+            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
+        
+        task.args.add_arg("file_name", original_file_name)
+
+        task.args.add_arg("file_id", task.args.get_arg("file"))
+        task.args.add_arg("file_name", original_file_name)
+        
         task.display_params = original_file_name
+        
         return task
 
     async def process_response(self, response: AgentResponse):

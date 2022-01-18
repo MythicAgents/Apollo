@@ -72,19 +72,22 @@ class UploadCommand(CommandBase):
     attackmapping = ["T1132", "T1030", "T1105"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['file']
-        sys.stdout.flush()
-        resp = await MythicRPC().execute("create_file", task_id=task.id,
-                                         file=base64.b64encode(task.args.get_arg("file")).decode(),
-                                         saved_file_name=original_file_name, delete_after_fetch=False)
-        if resp.status == MythicStatus.Success:
-            task.args.add_arg("file", resp.response['agent_file_id'])
-            task.args.add_arg("file_name", original_file_name)
+        file_resp = await MythicRPC().execute(
+            "get_file",
+            file_id=task.args.get_arg("file"),
+            task_id=task.id,
+            get_contents=False)
+        if file_resp.status == MythicRPCStatus.Success:
+            original_file_name = file_resp.response[0]["filename"]
         else:
-            raise Exception(f"Failed to host file: {resp.error}")
+            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
+        
+        task.args.add_arg("file_name", original_file_name)
+        
         host = task.args.get_arg("host")
         path = task.args.get_arg("path")
         disp_str = ""
+        
         if path is not None and path != "":
             if host is not None and host != "":
                 disp_str = "-File {} -Host {} -Path {}".format(original_file_name, host, path)

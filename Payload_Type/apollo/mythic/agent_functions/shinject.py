@@ -78,13 +78,17 @@ class ShInjectCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = "-PID {}".format(task.args.get_arg("pid"))
         if task.args.get_arg("shellcode") != None:
-            original_file_name = json.loads(task.original_params)['shellcode']
+            file_resp = await MythicRPC().execute(
+                "get_file",
+                file_id=task.args.get_arg("shellcode"),
+                task_id=task.id,
+                get_contents=False)
+            if file_resp.status == MythicRPCStatus.Success:
+                original_file_name = file_resp.response[0]["filename"]
+            else:
+                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
+            
             task.display_params += " -File {}".format(original_file_name)
-            resp = await MythicRPC().execute("create_file",
-                                            task_id=task.id,
-                                            file=base64.b64encode(task.args.get_arg("shellcode")).decode(),
-                                            delete_after_fetch=False)
-
             if resp.status == MythicStatus.Success:
                 task.args.add_arg("shellcode-file-id", resp.response['agent_file_id'])
                 task.args.remove_arg("shellcode")
