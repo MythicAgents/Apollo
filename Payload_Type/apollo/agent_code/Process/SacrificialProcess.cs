@@ -75,9 +75,9 @@ namespace Process
             out ProcessInformation lpProcessInformation
         );
         private delegate bool CreateProcessWithLogonW(
-            String lpUsername,
-            String lpDomain,
-            String lpPassword,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpUsername,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpDomain,
+            [MarshalAs(UnmanagedType.LPWStr)]String lpPassword,
             LogonFlags dwLogonFlags,
             [MarshalAs(UnmanagedType.LPWStr)]String lpApplicationName,
             [MarshalAs(UnmanagedType.LPWStr)]String lpCommandLine,
@@ -645,7 +645,7 @@ namespace Process
                     out _processInfo
                 );
                 dwError = Marshal.GetLastWin32Error();
-                if (!bRet && (dwError == 1314 || dwError == 2)) // ERROR_PRIVILEGE_NOT_HELD or FILE_NOT_FOUND
+                if (!bRet && (dwError == 1314)) // ERROR_PRIVILEGE_NOT_HELD or FILE_NOT_FOUND
                 {
                     bRet = _pCreateProcessWithTokenW(
                         hToken,
@@ -660,7 +660,7 @@ namespace Process
 
                     dwError = Marshal.GetLastWin32Error();
 
-                    if (!bRet && (dwError == 1314 || dwError == 2))
+                    if (!bRet && (dwError == 1314))
                     {
                         if (_agent.GetIdentityManager().GetCurrentLogonInformation(out ApolloLogonInformation cred))
                         {
