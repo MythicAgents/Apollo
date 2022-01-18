@@ -27,7 +27,7 @@ class NetDCListCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = NetDCListArguments
     attackmapping = ["T1590"]
-    browser_script = BrowserScript(script_name="net_dclist", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="net_dclist", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

@@ -42,6 +42,7 @@ class NetSharesCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = NetSharesArguments
     attackmapping = ["T1590", "T1069"]
+    supported_ui_features = ["net_shares"]
     browser_script = BrowserScript(script_name="net_shares_new", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
