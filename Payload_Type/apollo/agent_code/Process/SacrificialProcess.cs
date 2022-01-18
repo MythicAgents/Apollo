@@ -386,7 +386,7 @@ namespace Process
             var evasionArgs = _agent.GetProcessManager().GetStartupInfo();
             
             // bad things happen if you're medium integrity and do ppid spoofing while under the effects of make_token
-            if (_agent.GetIdentityManager().GetOriginal().Name != _agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name)
+            if (_agent.GetIdentityManager().GetOriginal().Name != _agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name)
             {
                 evasionArgs.ParentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
             }
@@ -458,7 +458,7 @@ namespace Process
             
             if (_agent.GetIdentityManager().IsOriginalIdentity())
             {
-                bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
+                bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
                 if (bRet)
                 {
                     bRet = _pCreateProcessA(
@@ -476,7 +476,7 @@ namespace Process
             }
             else
             {
-                return StartWithCredentials(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
+                return StartWithCredentials(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
             }
             if (!bRet)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
