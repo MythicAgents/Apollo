@@ -113,7 +113,7 @@ namespace Tasks
                         {
                         }
 
-                        if (!proc.HasExited)
+                        if (proc != null && !proc.HasExited)
                         {
                             proc.Kill();
                         }

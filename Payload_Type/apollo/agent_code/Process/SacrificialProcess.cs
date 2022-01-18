@@ -180,6 +180,7 @@ namespace Process
             string lpArguments = null,
             bool startSuspended = false) : base(agent, lpApplication, lpArguments, startSuspended)
         {
+            // delete me
             _pInitializeSecurityDescriptor = _agent.GetApi().GetLibraryFunction<InitializeSecurityDescriptor>(Library.ADVAPI32, "InitializeSecurityDescriptor");
             _pSetSecurityDescriptorDacl = _agent.GetApi().GetLibraryFunction<SetSecurityDescriptorDacl>(Library.ADVAPI32, "SetSecurityDescriptorDacl");
             _pLogonUser = _agent.GetApi().GetLibraryFunction<LogonUser>(Library.ADVAPI32, "LogonUserW");
@@ -212,9 +213,21 @@ namespace Process
                 _pDeleteProcThreadAttributeList(_startupInfoEx.lpAttributeList);
                 Marshal.FreeHGlobal(_startupInfoEx.lpAttributeList);
             }
-            _pDestroyEnvironmentBlock(_unmanagedEnv);
-            _pCloseHandle(Handle);
-            _pCloseHandle(_hParentProc);
+
+            if (_unmanagedEnv != IntPtr.Zero)
+            {
+                _pDestroyEnvironmentBlock(_unmanagedEnv);   
+            }
+
+            if (Handle != IntPtr.Zero)
+            {
+                _pCloseHandle(Handle);
+            }
+
+            if (_hParentProc != IntPtr.Zero)
+            {
+                _pCloseHandle(_hParentProc);
+            }
         }
 
         private void SacrificialProcess_Exit(object sender, EventArgs e)
