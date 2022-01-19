@@ -73,18 +73,24 @@ namespace Apollo.Api
         public T GetLibraryFunction<T>(Library library, string functionName, bool canLoadFromDisk = true) where T : Delegate
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionName, canLoadFromDisk);
+            if (fn == IntPtr.Zero)
+                throw new Exception($"Failed to get address of {functionName} ({library})");
             return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
 
         public T GetLibraryFunction<T>(Library library, short ordinal, bool canLoadFromDisk = true) where T : Delegate
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), ordinal, canLoadFromDisk);
+            if (fn == IntPtr.Zero)
+                throw new Exception($"Failed to get address of function with ordinal {ordinal} ({library})");
             return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
 
         public T GetLibraryFunction<T>(Library library, string functionHash, long key, bool canLoadFromDisk = true) where T : Delegate
         {
             IntPtr fn = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(library.ToString(), functionHash, key, canLoadFromDisk);
+            if (fn == IntPtr.Zero)
+                throw new Exception($"Failed to get address of function hash {functionHash} ({library})");
             return (T)Marshal.GetDelegateForFunctionPointer(fn, typeof(T));
         }
     }
