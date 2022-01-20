@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Apollo.Api.DInvoke.DynamicInvoke
+namespace DInvokeResolver.DInvoke.DynamicInvoke
 {
     /// <summary>
     /// Contains function prototypes and wrapper functions for dynamically invoking Win32 API Calls.
@@ -126,7 +126,7 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
             public delegate Boolean CloseHandle(IntPtr hProcess);
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            delegate IntPtr GetCurrentThread();
+            public delegate IntPtr GetCurrentThread();
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
             public delegate UInt32 SearchPath(String lpPath, String lpFileName, String lpExtension, UInt32 nBufferLength, StringBuilder lpBuffer, ref IntPtr lpFilePart);

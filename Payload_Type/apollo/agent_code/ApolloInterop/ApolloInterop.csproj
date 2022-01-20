@@ -99,6 +99,7 @@
     <Compile Include="Interfaces\ITask.cs" />
     <Compile Include="Interfaces\ITaskManager.cs" />
     <Compile Include="Interfaces\ITcpClientCallback.cs" />
+    <Compile Include="Interfaces\IWin32ApiResolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializers\EncryptedJsonSerializer.cs" />
     <Compile Include="Serializers\JsonSerializer.cs" />

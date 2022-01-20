@@ -9,9 +9,9 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Runtime.InteropServices;
-using ManualMap = Apollo.Api.DInvoke.ManualMap;
+using ManualMap = DInvokeResolver.DInvoke.ManualMap;
 
-namespace Apollo.Api.DInvoke.DynamicInvoke
+namespace DInvokeResolver.DInvoke.DynamicInvoke
 {
     /// <summary>
     /// Generic is a class for dynamically invoking arbitrary API calls from memory or disk. DynamicInvoke avoids suspicious
@@ -166,7 +166,7 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
         /// <returns>IntPtr base address of the loaded module or IntPtr.Zero if the module is not found.</returns>
         public static IntPtr GetLoadedModuleAddress(string DLLName)
         {
-            ProcessModuleCollection ProcModules = System.Diagnostics.Process.GetCurrentProcess().Modules;
+            ProcessModuleCollection ProcModules = Process.GetCurrentProcess().Modules;
             foreach (ProcessModule Mod in ProcModules)
             {
                 if (Mod.FileName.ToLower().EndsWith(DLLName.ToLower()))
@@ -814,7 +814,7 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
 
             // Find the path for ntdll by looking at the currently loaded module
             string NtdllPath = string.Empty;
-            ProcessModuleCollection ProcModules = System.Diagnostics.Process.GetCurrentProcess().Modules;
+            ProcessModuleCollection ProcModules = Process.GetCurrentProcess().Modules;
             foreach (ProcessModule Mod in ProcModules)
             {
                 if (Mod.FileName.EndsWith("ntdll.dll", StringComparison.OrdinalIgnoreCase))

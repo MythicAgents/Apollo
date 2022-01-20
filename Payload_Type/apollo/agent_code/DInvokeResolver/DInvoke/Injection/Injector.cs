@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-using DynamicInvoke = Apollo.Api.DInvoke.DynamicInvoke;
+using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
 
-namespace Apollo.Api.DInvoke.Injection
+namespace DInvokeResolver.DInvoke.Injection
 {
     /// <summary>
     /// Provides static functions for performing injection using a combination of Allocation and Execution components.
@@ -19,7 +19,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="ExecutionTechnique"></param>
         /// <param name="Process"></param>
         /// <returns></returns>
-        public static bool Inject(PayloadType Payload, AllocationTechnique AllocationTechnique, ExecutionTechnique ExecutionTechnique, System.Diagnostics.Process Process)
+        public static bool Inject(PayloadType Payload, AllocationTechnique AllocationTechnique, ExecutionTechnique ExecutionTechnique, Process Process)
         {
             return ExecutionTechnique.Inject(Payload, AllocationTechnique, Process);
         }

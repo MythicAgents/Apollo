@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Apollo.Api.DInvoke.Data
+namespace DInvokeResolver.DInvoke.Data
 {
     /// <summary>
     /// Native is a library of enums and structures for Native (NtDll) API functions.

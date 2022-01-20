@@ -1,8 +1,8 @@
 ﻿using System;
 
-using DynamicInvoke = Apollo.Api.DInvoke.DynamicInvoke;
+using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
 
-namespace Apollo.Api.DInvoke.Injection
+namespace DInvokeResolver.DInvoke.Injection
 {
     /// <summary>
     /// Base class for all types of payloads.

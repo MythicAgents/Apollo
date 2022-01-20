@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Apollo.Api.DInvoke.Data
+namespace DInvokeResolver.DInvoke.Data
 {
     /// <summary>
     /// Holds data structures for using PEs.

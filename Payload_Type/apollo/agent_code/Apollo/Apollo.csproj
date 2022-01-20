@@ -54,20 +54,6 @@
     <Compile Include="Agent\Apollo.cs" />
     <Compile Include="Api\Api.cs" />
     <Compile Include="Api\Cryptography\RSA.cs" />
-    <Compile Include="Api\DInvoke\DynamicInvoke\Generic.cs" />
-    <Compile Include="Api\DInvoke\DynamicInvoke\Native.cs" />
-    <Compile Include="Api\DInvoke\DynamicInvoke\Win32.cs" />
-    <Compile Include="Api\DInvoke\Injection\Allocation.cs" />
-    <Compile Include="Api\DInvoke\Injection\Execution.cs" />
-    <Compile Include="Api\DInvoke\Injection\Injector.cs" />
-    <Compile Include="Api\DInvoke\Injection\Payload.cs" />
-    <Compile Include="Api\DInvoke\ManualMap\Map.cs" />
-    <Compile Include="Api\DInvoke\ManualMap\Overload.cs" />
-    <Compile Include="Api\DInvoke\SharedData\Native.cs" />
-    <Compile Include="Api\DInvoke\SharedData\PE.cs" />
-    <Compile Include="Api\DInvoke\SharedData\Win32.cs" />
-    <Compile Include="Api\DInvoke\SharedUtilities\Utilities.cs" />
-    <Compile Include="Api\IO\Pipes.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Management\C2\C2ProfileManager.cs" />
     <Compile Include="Management\Files\FileManager.cs" />
@@ -85,6 +71,10 @@
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
       <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
       <Name>ApolloInterop</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DInvokeResolver\DInvokeResolver.csproj">
+      <Project>{2c98a07c-f4cd-486c-bbab-eb6b6cde1a35}</Project>
+      <Name>DInvokeResolver</Name>
     </ProjectReference>
     <ProjectReference Include="..\EncryptedFileStore\EncryptedFileStore.csproj">
       <Project>{21b9b3fa-acbf-4ed2-a0bb-2782e708f6f9}</Project>

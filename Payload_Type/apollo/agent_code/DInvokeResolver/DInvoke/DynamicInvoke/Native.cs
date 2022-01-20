@@ -4,11 +4,14 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Apollo.Api.DInvoke.DynamicInvoke;
-using Data = Apollo.Api.DInvoke.Data;
+using DInvokeResolver.DInvoke.DynamicInvoke;
+using Data = DInvokeResolver.DInvoke.Data;
 
-namespace Apollo.Api.DInvoke.DynamicInvoke
+namespace DInvokeResolver.DInvoke.DynamicInvoke
 {
+    /// <summary>
+    /// Contains function prototypes and wrapper functions for dynamically invoking NT API Calls.
+    /// </summary>
     /// <summary>
     /// Contains function prototypes and wrapper functions for dynamically invoking NT API Calls.
     /// </summary>
@@ -784,5 +787,4 @@ namespace Apollo.Api.DInvoke.DynamicInvoke
                 Data.Win32.Kernel32.FileOpenFlags OpenOptions);
         }
     }
-
 }

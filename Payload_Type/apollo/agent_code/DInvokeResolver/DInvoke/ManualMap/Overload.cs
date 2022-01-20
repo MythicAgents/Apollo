@@ -4,11 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-using Data = Apollo.Api.DInvoke.Data;
-using Utilities = Apollo.Api.DInvoke.Utilities;
-using DynamicInvoke = Apollo.Api.DInvoke.DynamicInvoke;
+using Data = DInvokeResolver.DInvoke.Data;
+using Utilities = DInvokeResolver.DInvoke;
+using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
 
-namespace Apollo.Api.DInvoke.ManualMap
+namespace DInvokeResolver.DInvoke.ManualMap
 {
     public class Overload
     {
@@ -25,7 +25,7 @@ namespace Apollo.Api.DInvoke.ManualMap
         {
             string SystemDirectoryPath = Environment.GetEnvironmentVariable("WINDIR") + Path.DirectorySeparatorChar + "System32";
             List<string> files = new List<string>(Directory.GetFiles(SystemDirectoryPath, "*.dll"));
-            foreach (ProcessModule Module in System.Diagnostics.Process.GetCurrentProcess().Modules)
+            foreach (ProcessModule Module in Process.GetCurrentProcess().Modules)
             {
                 if (files.Any(s => s.Equals(Module.FileName, StringComparison.OrdinalIgnoreCase)))
                 {

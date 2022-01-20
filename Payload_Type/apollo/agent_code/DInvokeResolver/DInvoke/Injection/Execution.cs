@@ -3,9 +3,9 @@ using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
 
-using DynamicInvoke = Apollo.Api.DInvoke.DynamicInvoke;
+using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
 
-namespace Apollo.Api.DInvoke.Injection
+namespace DInvokeResolver.DInvoke.Injection
 {
     /// <summary>
     /// Base class for Injection strategies.
@@ -38,7 +38,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="AllocationTechnique">The allocation technique to use.</param>
         /// <param name="Process">The target process.</param>
         /// <returns>bool</returns>
-        public bool Inject(PayloadType Payload, AllocationTechnique AllocationTechnique, System.Diagnostics.Process Process)
+        public bool Inject(PayloadType Payload, AllocationTechnique AllocationTechnique, Process Process)
         {
             Type[] funcPrototype = new Type[] { Payload.GetType(), AllocationTechnique.GetType(), Process.GetType() };
 
@@ -65,7 +65,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="BaseAddress">The base address of the payload.</param>
         /// <param name="Process">The target process.</param>
         /// <returns>bool</returns>
-        public virtual bool Inject(PayloadType Payload, IntPtr BaseAddress, System.Diagnostics.Process Process)
+        public virtual bool Inject(PayloadType Payload, IntPtr BaseAddress, Process Process)
         {
             Type[] funcPrototype = new Type[] { Payload.GetType(), BaseAddress.GetType(), Process.GetType() };
 
@@ -174,7 +174,7 @@ namespace Apollo.Api.DInvoke.Injection
             };
         }
 
-        public bool Inject(PICPayload Payload, AllocationTechnique AllocationTechnique, System.Diagnostics.Process Process)
+        public bool Inject(PICPayload Payload, AllocationTechnique AllocationTechnique, Process Process)
         {
             IntPtr baseAddr = AllocationTechnique.Allocate(Payload, Process);
             return Inject(Payload, baseAddr, Process);
@@ -188,7 +188,7 @@ namespace Apollo.Api.DInvoke.Injection
         /// <param name="BaseAddress">The address of the shellcode in the target process.</param>
         /// <param name="Process">The target process to inject into.</param>
         /// <returns></returns>
-        public bool Inject(PICPayload Payload, IntPtr BaseAddress, System.Diagnostics.Process Process)
+        public bool Inject(PICPayload Payload, IntPtr BaseAddress, Process Process)
         {
             IntPtr threadHandle = new IntPtr();
             Data.Native.NTSTATUS result = Data.Native.NTSTATUS.Unsuccessful;

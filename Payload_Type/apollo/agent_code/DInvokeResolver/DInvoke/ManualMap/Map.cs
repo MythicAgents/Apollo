@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using DynamicInvoke = Apollo.Api.DInvoke.DynamicInvoke;
 
-namespace Apollo.Api.DInvoke.ManualMap
+
+namespace DInvokeResolver.DInvoke.ManualMap
 {
-
     /// <summary>
     /// Class for manually mapping PEs.
     /// </summary>
@@ -553,5 +552,4 @@ namespace Apollo.Api.DInvoke.ManualMap
             }
         }
     }
-
 }
