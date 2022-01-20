@@ -26,7 +26,10 @@ namespace Apollo.Management.Files
                 new ICryptographicRoutine[]
                 {
                     new AesRoutine(),
-                    new DpapiRoutine(System.Guid.NewGuid().ToByteArray()),
+                    // In the future, we should allow composible encryption routines;
+                    // however, due to how impersonation and DPAPI interact,
+                    // we can't use DPAPI to encrypt files.
+                    // new DpapiRoutine(System.Guid.NewGuid().ToByteArray()),
                 });
         }
 
