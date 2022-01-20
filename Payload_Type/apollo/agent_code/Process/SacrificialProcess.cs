@@ -100,14 +100,14 @@ namespace Process
             out ProcessInformation lpProcessInformation);
         #endregion
         #region KERNEL32
-
+#if SERVER2012_COMPATIBLE
         private delegate IntPtr GetModuleHandleA(
             [MarshalAs(UnmanagedType.LPStr)]string lpModuleName);
 
         private delegate IntPtr GetProcAddress(
             IntPtr hModule,
             [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
-
+#endif
         private delegate bool CreatePipe(out SafeFileHandle phReadPipe, out SafeFileHandle phWritePipe, SecurityAttributes lpPipeAttributes, uint nSize);
         private delegate bool SetHandleInformation(SafeFileHandle hObject, int dwMask, uint dwFlags);
         private delegate IntPtr OpenProcess(
@@ -164,10 +164,10 @@ namespace Process
         private delegate bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
         private delegate bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
         #endregion
-
+#if SERVER2012_COMPATIBLE
         private GetModuleHandleA _pGetModuleHandleA;
         private GetProcAddress _pGetProcAddress;
-
+#endif
         private CreateProcessAsUser _pCreateProcessAsUser;
         private CloseHandle _pCloseHandle;
         private InitializeSecurityDescriptor _pInitializeSecurityDescriptor;
