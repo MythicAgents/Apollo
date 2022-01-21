@@ -2,19 +2,20 @@
 title = "powershell"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary
 Run PowerShell commands in the current running process.
 
 ### Arguments (Positional)
-#### command
+#### Command
 PowerShell command to be executed.
 
 ## Usage
 ```
 powershell [command]
+powershell -Command [command]
 ```
 
 Example

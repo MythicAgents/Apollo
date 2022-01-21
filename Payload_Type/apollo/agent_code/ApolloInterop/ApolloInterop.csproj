@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{5B5BD587-7DCA-4306-B1C3-83A70D755F37}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ApolloInterop</RootNamespace>
+    <AssemblyName>ApolloInterop</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Classes\Collections\ThreadSafeList.cs" />
+    <Compile Include="Classes\Core\Agent.cs" />
+    <Compile Include="Classes\Api\Library.cs" />
+    <Compile Include="Classes\Core\ChunkedMessageStore.cs" />
+    <Compile Include="Classes\Core\InjectionTechnique.cs" />
+    <Compile Include="Classes\Core\Process.cs" />
+    <Compile Include="Classes\Cryptography\AesRoutine.cs" />
+    <Compile Include="Classes\Cryptography\DpapiRoutine.cs" />
+    <Compile Include="Classes\Cryptography\XorRoutine.cs" />
+    <Compile Include="Classes\Events\ChunkMessageEventArgs.cs" />
+    <Compile Include="Classes\Events\MythicMessageEventArgs.cs" />
+    <Compile Include="Classes\Events\StringDataEventArgs.cs" />
+    <Compile Include="Classes\IO\EventableStringWriter.cs" />
+    <Compile Include="Classes\Pipes\AsyncNamedPipeClient.cs" />
+    <Compile Include="Classes\Pipes\AsyncNamedPipeServer.cs" />
+    <Compile Include="Classes\Tcp\AsyncTcpClient.cs" />
+    <Compile Include="Classes\Tcp\AsyncTcpServer.cs" />
+    <Compile Include="Classes\Core\C2Profile.cs" />
+    <Compile Include="Classes\Core\C2ProfileManager.cs" />
+    <Compile Include="Classes\Cryptography\CryptographyProvider.cs" />
+    <Compile Include="Classes\Pipes\NamedPipeMessageArgs.cs" />
+    <Compile Include="Classes\P2P\Peer.cs" />
+    <Compile Include="Classes\P2P\PeerManager.cs" />
+    <Compile Include="Classes\Cryptography\RSAKeyGenerator.cs" />
+    <Compile Include="Classes\Core\SocksManager.cs" />
+    <Compile Include="Classes\Core\Tasking.cs" />
+    <Compile Include="Classes\Tcp\TcpMessageEventArgs.cs" />
+    <Compile Include="Classes\Events\UUIDEventArgs.cs" />
+    <Compile Include="Constants\IPC.cs" />
+    <Compile Include="Constants\SOCKS.cs" />
+    <Compile Include="Constants\Win32.cs" />
+    <Compile Include="Enums\ApolloEnums.cs" />
+    <Compile Include="Enums\Win32.cs" />
+    <Compile Include="Interfaces\IAgent.cs" />
+    <Compile Include="Interfaces\IApi.cs" />
+    <Compile Include="Interfaces\IC2Profile.cs" />
+    <Compile Include="Interfaces\IC2ProfileManager.cs" />
+    <Compile Include="Interfaces\ICryptographicRoutine.cs" />
+    <Compile Include="Interfaces\ICryptography.cs" />
+    <Compile Include="Interfaces\ICryptographySerializer.cs" />
+    <Compile Include="Interfaces\IEncryptedFileStore.cs" />
+    <Compile Include="Interfaces\IFileManager.cs" />
+    <Compile Include="Interfaces\IChunkMessage.cs" />
+    <Compile Include="Interfaces\IIdentityManager.cs" />
+    <Compile Include="Interfaces\IInjectionManager.cs" />
+    <Compile Include="Interfaces\IInjectionTechnique.cs" />
+    <Compile Include="Interfaces\IMythicMessage.cs" />
+    <Compile Include="Interfaces\INamedPipeCallback.cs" />
+    <Compile Include="Interfaces\IPeer.cs" />
+    <Compile Include="Interfaces\IPeerManager.cs" />
+    <Compile Include="Interfaces\IProcess.cs" />
+    <Compile Include="Interfaces\IProcessManager.cs" />
+    <Compile Include="Interfaces\ISerializer.cs" />
+    <Compile Include="Interfaces\ISocksManager.cs" />
+    <Compile Include="Interfaces\ITask.cs" />
+    <Compile Include="Interfaces\ITaskManager.cs" />
+    <Compile Include="Interfaces\ITcpClientCallback.cs" />
+    <Compile Include="Interfaces\IWin32ApiResolver.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serializers\EncryptedJsonSerializer.cs" />
+    <Compile Include="Serializers\JsonSerializer.cs" />
+    <Compile Include="Structs\ApolloStructs.cs" />
+    <Compile Include="Structs\MythicStructs.cs" />
+    <Compile Include="Structs\Win32.cs" />
+    <Compile Include="Types\Delegates.cs" />
+    <Compile Include="Types\MythicTypes.cs" />
+    <Compile Include="Utils\PathUtils.cs" />
+    <Compile Include="Utils\RegistryUtils.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

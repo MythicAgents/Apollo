@@ -2,8 +2,12 @@
 title = "steal_token"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
+
+{{% notice info %}}
+Artifacts Generated: Process Open
+{{% /notice %}}
 
 ## Summary
 Steal the primary token from another process. If no target process is specified, `winlogon.exe` will be the default target.
@@ -26,6 +30,3 @@ steal_token 1234
 
 - T1134
 - T1528
-
-## Detailed Summary
-The `steal_token` command uses the `DuplicateTokenEx` Windows API to attempt to clone a process's primary access token and use this handle as the current thread's access token.

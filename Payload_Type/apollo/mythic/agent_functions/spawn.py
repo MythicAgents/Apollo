@@ -6,11 +6,17 @@ from mythic_payloadtype_container.MythicRPC import *
 
 class SpawnArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "template": CommandParameter(name="Payload Template (Shellcode)", type=ParameterType.Payload, supported_agents=["apollo"], supported_agent_build_parameters={"apollo": {"output_type": "Shellcode"}}),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="template",
+                cli_name="Payload",
+                display_name="Payload Template (Shellcode)",
+                type=ParameterType.Payload,
+                supported_agents=["apollo"],
+                supported_agent_build_parameters={"apollo": {"output_type": "Shellcode"}}),
+        ]
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":

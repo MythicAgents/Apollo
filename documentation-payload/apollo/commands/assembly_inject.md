@@ -2,42 +2,39 @@
 title = "assembly_inject"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
+
+{{% notice info %}}
+Artifacts Generated: Process Inject
+{{% /notice %}}
 
 ## Summary
 
-Inject the unmanaged .NET assembly loader into a remote process and execute an assembly registered with `register_assembly` within that process. 
+Inject the .NET assembly loader into a remote process and execute an assembly registered with `register_file`. This assembly is injected into the remote process using the injection technique currently specified by `get_injection_techniques`.
 
 ### Arguments (Positional or Popup)
 
-![args](../images/assembly_inject01.png)
+![args](../images/assembly_inject.png)
 
-#### arch
-Target process architecture. Must be x86 or x64
-
-#### assembly_arguments
+#### Arguments
 Any arguments to be executed with the assembly.
 
-#### assembly_name
-Name used when registering assembly with the `register_assembly` command.
+#### Assembly
+Name used when registering assembly with the `register_file` command (e.g., `Seatbelt.exe`)
 
-#### pid
+#### PID
 Process ID to inject into.
 
 ## Usage
 ```
-assembly_inject [pid] [x86|x64] [assembly] [args]
+assembly_inject -PID 7344 -Assembly Seatbelt.exe -Arguments DotNet
 ```
 
 Example
 
-![ex](../images/assembly_inject02.png)
+![ex](../images/assembly_inject_resp.png)
 
 ## MITRE ATT&CK Mapping
 
 - T1055
-
-## Detailed Summary
-
-The `assembly_inject` command uses the currently set process injection technique to inject into a remote process and execute a .NET assembly in the context of the target process. To see what injection technique is in use, you can use the `get_injection_technique` command.

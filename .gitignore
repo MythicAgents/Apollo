@@ -1,6 +1,7 @@
 **/rabbitmq_config.json
 __pycache__/
 *.py[cod]
+**/*.dll
 # Sphinx documentation
 docs/_build/
 # Environments
@@ -16,7 +17,6 @@ venv.bak/
 # ssl certs
 ssl/
 # downloaded files
-files/
 mythic_access.*
 postgres-docker/database/
 rabbitmq-docker/storage/

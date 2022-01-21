@@ -1,15 +1,16 @@
 +++
-title = "SMB (Currently Defunct)"
+title = "SMB"
 chapter = false
 weight = 102
 +++
 
-{{% notice warning %}}
-The SMB profile is currently defunct and non-operational.
-{{% /notice %}}
-
 ## Summary
-Apollo implents peer-to-peer communications through the use of named pipes. This enables C2 traffic to traverse over SMB within an internal network before egressing traffic through an HTTP Apollo agent to the Mythic server.
+Peer-to-peer communication over a named pipe. This enables C2 traffic to traverse over SMB within an internal network before egressing traffic through an HTTP Apollo agent to the Mythic server.
+
+Install via:
+```
+mythic-cli install github https://github.com/MythicC2Profiles/smb.git
+```
 
 ### C2 Workflow
 {{<mermaid>}}
@@ -26,25 +27,18 @@ sequenceDiagram
     Egress Agent->>P2P Agent: send server response over Named Pipe
 {{< /mermaid >}}
 
-### HTTP Egress
+### Profile Options
 The SMB C2 profile is designed to be used for internal network communication, and therefore will need to egress from a network through an agent using the HTTP C2 profile. All HTTP agents have the ability to communicate with SMB agents and manage peer-to-peer connections using the `link` and `unlink` commands.
 
 ### Profile Options
-#### Base64 of 32-byte AES Key
-The AES PSK used to encrypt agent communication.
+#### Crypto type
+Leave as aes256_hmac.
 
-#### Pipe Name
-The name of the created name pipe to use for agent communication.
+#### Named Pipe
+The name of the created name pipe to use for agent communication. Recommended to use the randomly generated UUID provided.
 
-### Agent Options
-#### Target architecture
-The processor architecture to target, can be `x86`, `x64`, or `AnyCPU`.
+#### Kill Date
+The date at which the agent will stop calling back.
 
-#### Build Target
-Choose whether to build the agent in a debugging build.
-
-#### Output Type
-Choose the payload output type, this can be as `WinEXE`, `DLL`, or `Raw`. If `Raw` is chosen, Mythic will compile the agent as `WinEXE` and pass it through `donut` to create shellcode.
-
-#### .NET Framework Version
-Choose the version of the .NET framework to compile to. Only 4.0 is supported.
+#### Perform Key Exchange
+Perform encrypted key exchange with Mythic. Recommended to leave as T for true.

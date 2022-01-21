@@ -4,11 +4,14 @@ import json
 
 class LinkArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "connection_info": CommandParameter(name="Connection Info", type=ParameterType.ConnectionInfo)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="connection_info",
+                cli_name="NewConnection",
+                type=ParameterType.ConnectionInfo)
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -34,6 +37,7 @@ class LinkCommand(CommandBase):
     attackmapping = ["T1570", "T1572", "T1021"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "{}".format(task.args.get_arg("connection_info")["host"])
         return task
 
     async def process_response(self, response: AgentResponse):

@@ -4,13 +4,25 @@ import json
 
 class PowershellArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="command",
+                cli_name="Command",
+                display_name="Command",
+                type=ParameterType.String,
+                description="Command to run.",
+            ),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
             raise Exception("At least one command on the command line must be passed to PowerShell.")
+        if self.command_line[0] == "{":
+            self.load_args_from_json_string(self.command_line)
+        else:
+            self.add_arg("command", self.command_line)
         pass
 
 
@@ -31,6 +43,7 @@ class PowershellCommand(CommandBase):
     attackmapping = ["T1059"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "-Command {}".format(task.args.get_arg("command"))
         return task
 
     async def process_response(self, response: AgentResponse):

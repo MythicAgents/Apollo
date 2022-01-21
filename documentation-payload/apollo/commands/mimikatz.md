@@ -2,24 +2,29 @@
 title = "mimikatz"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
+
+{{% notice info %}}
+Artifacts Generated: Process Create, Process Inject, Process Kill
+{{% /notice %}}
 
 ## Summary
 Execute one or more mimikatz commands.
 
 ### Arguments (Positional)
-#### command
+#### Command
 The command you would like mimikatz to run. Some commands require certain privileges and may need the `token::elevate` Mimikatz command or the builtin equivalent [`getprivs`](/agents/apollo/commands/getprivs/) to be executed first.
 
 ## Usage
 ```
-mimikatz [command]
+mimikatz -Command [command]
 ```
 
 Example
 ```
 mimikatz sekurlsa::logonpasswords
+mimikatz -Command sekurlsa::logonpasswords
 ```
 
 

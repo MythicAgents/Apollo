@@ -4,11 +4,15 @@ import json
 
 class UnlinkArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "connection_info": CommandParameter(name="Connection to Unlink", type=ParameterType.ConnectionInfo)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="link_info",
+                cli_name="Callback",
+                display_name="Callback to Unlink",
+                type=ParameterType.LinkInfo)
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -36,6 +40,7 @@ class UnlinkCommand(CommandBase):
     attackmapping = []
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        task.display_params = "{}".format(task.args.get_arg("link_info")["host"])
         return task
 
     async def process_response(self, response: AgentResponse):

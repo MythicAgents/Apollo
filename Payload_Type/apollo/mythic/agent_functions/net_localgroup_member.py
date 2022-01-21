@@ -4,12 +4,27 @@ import json
 
 class NetLocalgroupMemberArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "computer": CommandParameter(name="computer", required=False, type=ParameterType.String, description="Computer to enumerate."),
-            "group": CommandParameter(name="group", type=ParameterType.String, description="Group to enumerate.")
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="computer",
+                cli_name="Computer",
+                display_name="Computer",
+                type=ParameterType.String,
+                description="Computer to enumerate.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="group",
+                cli_name="Group",
+                display_name="Group",
+                type=ParameterType.String,
+                description="Group to enumerate.")
+        ]
 
     def split_commandline(self):
         if self.command_line[0] == "{":
@@ -63,15 +78,16 @@ class NetLocalgroupMemberCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = NetLocalgroupMemberArguments
     attackmapping = ["T1590", "T1069"]
-    browser_script = BrowserScript(script_name="net_localgroup_member", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="net_localgroup_member_new", author="@djhohnstein", for_new_ui=True)
+    supported_ui_features = ["net_localgroup_member"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         computer = task.args.get_arg("computer")
         group = task.args.get_arg("group")
         if computer:
-            task.display_params = "{} {}".format(computer, group)
+            task.display_params = "-Computer {} -Group {}".format(computer, group)
         else:
-            task.display_params = group
+            task.display_params = "-Group {}".format(group)
         return task
 
     async def process_response(self, response: AgentResponse):

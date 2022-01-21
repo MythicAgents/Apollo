@@ -4,15 +4,29 @@ import json
 
 class BlockDllsArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "block": CommandParameter(name="Block Non-Microsoft DLLs", type=ParameterType.Boolean, required=True, default_value=True),
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="block",
+                cli_name="EnableBlock",
+                display_name="Block Non-Microsoft DLLs",
+                type=ParameterType.Boolean,
+                default_value=True,
+                description="Block non-Microsoft DLLs from being loaded.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=0,
+                        group_name="Default",
+                    )
+                ]
+            ),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
-            raise Exception("No PPID given on command line.")
+            raise Exception("No action given.")
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:

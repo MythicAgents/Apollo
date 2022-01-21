@@ -2,7 +2,7 @@
 title = "set_injection_technique"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary
@@ -20,6 +20,3 @@ set_injection_technique CreateRemoteThreadInjection
 ## MITRE ATT&CK Mapping
 
 - T1055
-
-## Detailed Summary
-The `set_injection_technique` command sets the process injection technique the agent will use for post-exploitation jobs. You can see the current technique being used by an agent with the [`get_current_injection_technique`](/agents/apollo/commands/get_current_injection_technique/) command.  Available techniques can be viewed using the [`list_injection_techniques`](/agents/apollo/commands/list_injection_techniques/) command.
