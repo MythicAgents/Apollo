@@ -1,4 +1,4 @@
-﻿#define SERVER2012_COMPATIBLE
+﻿//#define SERVER2012_COMPATIBLE
 
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;

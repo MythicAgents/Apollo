@@ -104,6 +104,10 @@
       <Project>{c8fc8d87-30db-4fc5-880a-9cd7d156127a}</Project>
       <Name>PSKCryptography</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SimpleResolver\SimpleResolver.csproj">
+      <Project>{6ca1ff03-8102-41d5-9d57-cc2da346d684}</Project>
+      <Name>SimpleResolver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Tasks\Tasks.csproj">
       <Project>{b9bda393-c258-44d3-8266-d62265008bd4}</Project>
       <Name>Tasks</Name>

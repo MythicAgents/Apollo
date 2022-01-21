@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecutePE", "ExecutePE\Exec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DInvokeResolver", "DInvokeResolver\DInvokeResolver.csproj", "{2C98A07C-F4CD-486C-BBAB-EB6B6CDE1A35}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleResolver", "SimpleResolver\SimpleResolver.csproj", "{6CA1FF03-8102-41D5-9D57-CC2DA346D684}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -251,6 +253,18 @@ Global
 		{2C98A07C-F4CD-486C-BBAB-EB6B6CDE1A35}.Release|x64.Build.0 = Release|Any CPU
 		{2C98A07C-F4CD-486C-BBAB-EB6B6CDE1A35}.Release|x86.ActiveCfg = Release|Any CPU
 		{2C98A07C-F4CD-486C-BBAB-EB6B6CDE1A35}.Release|x86.Build.0 = Release|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Debug|x64.Build.0 = Debug|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Debug|x86.Build.0 = Debug|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Release|x64.ActiveCfg = Release|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Release|x64.Build.0 = Release|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Release|x86.ActiveCfg = Release|Any CPU
+		{6CA1FF03-8102-41D5-9D57-CC2DA346D684}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

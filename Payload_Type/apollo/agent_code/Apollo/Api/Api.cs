@@ -14,7 +14,7 @@ using ApolloInterop.Classes.Api;
 using System.Runtime.InteropServices;
 using ApolloInterop.Classes.Core;
 using DinvokeResolver = DInvokeResolver.DInvokeResolver;
-
+using SimpleResolver;
 namespace Apollo.Api
 {
     public class Api : IApi
@@ -22,7 +22,7 @@ namespace Apollo.Api
         private IWin32ApiResolver _win32ApiResolver;
         public Api()
         {
-            _win32ApiResolver = new DinvokeResolver();
+            _win32ApiResolver = new GetProcResolver();
         }
         
 
