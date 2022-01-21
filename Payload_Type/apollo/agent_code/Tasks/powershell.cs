@@ -392,11 +392,13 @@ namespace Tasks
                         pipeline.Commands.AddScript(cmd);
                         pipeline.Commands[0].MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
                         pipeline.Commands.Add("Out-Default");
+                        ST.Task invokeTask = new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token);
                         try
                         {
+                            invokeTask.Start();
                             ST.Task.WaitAny(new ST.Task[]
                             {
-                                new ST.Task(() => { pipeline.Invoke(); }, _cancellationToken.Token)
+                                invokeTask
                             }, _cancellationToken.Token);
                         }
                         catch (OperationCanceledException)

@@ -17,22 +17,19 @@ class PowerpickArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
         self.args = [
-            CommandParameter(
-                name="powershell_params",
-                cli_name="Command",
-                display_name="Command",
-                type=ParameterType.String,
-                description="PowerShell command to execute.",
-            )
+            # CommandParameter(
+            #     name="powershell_params",
+            #     cli_name="Command",
+            #     display_name="Command",
+            #     type=ParameterType.String,
+            #     description="PowerShell command to execute.",
+            # )
         ]
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
             raise Exception("A command must be passed on the command line to PowerPick.\n\tUsage: {}".format(PowerpickCommand.help_cmd))
-        if self.command_line[0] == "{":
-            self.load_args_from_json_string(self.command_line)
-        else:
-            self.add_arg("powershell_params", self.command_line)
+        self.add_arg("powershell_params", self.command_line)
         self.add_arg("pipe_name", str(uuid4()))
         pass
 
@@ -82,7 +79,6 @@ class PowerpickCommand(CommandBase):
         else:
             raise Exception("Failed to register PowerShellHost.exe: " + file_resp.error)
 
-        task.display_params = "-Command {}".format(task.args.get_arg("powershell_params"))
         return task
 
     async def process_response(self, response: AgentResponse):

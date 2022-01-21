@@ -12,22 +12,17 @@ class PrintSpooferArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
         self.args = [
-            CommandParameter(
-                name="command",
-                cli_name="Command",
-                display_name="Command(s)",
-                type=ParameterType.String,
-                description="PrintSpoofer command to run (can be one or more)."),
+            # CommandParameter(
+            #     name="command",
+            #     cli_name="Command",
+            #     display_name="Command(s)",
+            #     type=ParameterType.String,
+            #     description="PrintSpoofer command to run (can be one or more)."),
         ]
 
     async def parse_arguments(self):
         if len(self.command_line):
-            if self.command_line[0] == "{":
-                self.load_args_from_json_string(self.command_line)
-            else:
-                self.add_arg("command", self.command_line)
-            curArg = self.get_arg("command")
-            self.add_arg("command", "printspoofer.exe {}".format(curArg))
+            self.add_arg("command", "printspoofer.exe {}".format(self.command_line))
         else:
             raise Exception("No PrintSpoofer command given to execute.\n\tUsage: {}".format(PrintSpooferCommand.help_cmd))
 
