@@ -31,6 +31,13 @@ namespace Tasks
             public string Hostname;
         }
 
+        private static string[] localhostAliases = new string[]
+        {
+            "localhost",
+            "127.0.0.1",
+            Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
+        };
+        
         public download(IAgent agent, Task task) : base(agent, task)
         {
 
@@ -51,9 +58,19 @@ namespace Tasks
                 }
                 else
                 {
-                    string path = string.IsNullOrEmpty(parameters.Hostname)
-                        ? parameters.FileName
-                        : $@"\\{parameters.Hostname}\{parameters.FileName}";
+                    string path;
+                    if (string.IsNullOrEmpty(parameters.Hostname))
+                    {
+                        path = parameters.FileName;
+
+                    } else if (localhostAliases.Contains(parameters.Hostname.ToLower()))
+                    {
+                        path = parameters.FileName;
+                    }
+                    else
+                    {
+                        path = $@"\\{parameters.Hostname}\{parameters.FileName}";
+                    }
                     byte[] fileBytes = new byte[0];
                     fileBytes = File.ReadAllBytes(path);
 

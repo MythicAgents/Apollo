@@ -31,6 +31,13 @@ namespace Tasks
             [DataMember(Name = "file")]
             public string File;
         }
+        private static string[] localhostAliases = new string[]
+        {
+            "localhost",
+            "127.0.0.1",
+            Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
+        };
+        
         public rm(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
         {
         }
@@ -50,7 +57,7 @@ namespace Tasks
             {
                 host = Environment.GetEnvironmentVariable("COMPUTERNAME");
             }
-            else if (host != Environment.GetEnvironmentVariable("COMPUTERNAME"))
+            else if (!localhostAliases.Contains(host.ToLower()))
             {
                 if (!path.StartsWith("\\\\"))
                 {

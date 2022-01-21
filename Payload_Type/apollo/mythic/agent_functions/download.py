@@ -77,7 +77,7 @@ class DownloadArguments(TaskArguments):
 class DownloadCommand(CommandBase):
     cmd = "download"
     needs_admin = False
-    help_cmd = "download [path/to/file]"
+    help_cmd = "download -Path [path/to/file] [-Host [hostname]]"
     description = "Download a file off the target system."
     version = 2
     is_exit = False
@@ -93,9 +93,9 @@ class DownloadCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         if task.args.get_arg("host"):
-            task.display_params = "\\\\{}\\{}".format(task.args.get_arg("host"), task.args.get_arg("file"))
+            task.display_params = "-Host {} -Path {}".format(task.args.get_arg("host"), task.args.get_arg("file"))
         else:
-            task.display_params = task.args.get_arg("file")
+            task.display_params = "-Path {}".format(task.args.get_arg("file"))
         return task
 
     async def process_response(self, response: AgentResponse):
