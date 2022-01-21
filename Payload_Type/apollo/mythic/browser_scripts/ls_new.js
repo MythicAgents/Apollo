@@ -163,14 +163,14 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                                 "type": "task",
                                 "disabled": !finfo["is_file"],
                                 "ui_feature": "file_browser:download",
-                                "parameters": finfo["full_name"],
+                                "parameters": "-Host " + data["host"] + " -Path " + finfo["full_name"],
                                 "startIcon": "download"
                             },
                             {
                                 "name": "Delete",
                                 "type": "task",
                                 "ui_feature": "file_browser:remove",
-                                "parameters": finfo["full_name"],
+                                "parameters": "-Host " + data["host"] + " -Path " + finfo["full_name"],
                                 "startIcon": "delete"
                             },
                         ]
