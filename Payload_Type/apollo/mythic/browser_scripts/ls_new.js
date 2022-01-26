@@ -23,7 +23,7 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 110, "disableSort": true},
             {"plaintext": "Task", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "name", "type": "string", "fillWidth": true, "cellStyle": {}},
             {"plaintext": "size", "type": "size", "cellStyle": {}},
@@ -97,12 +97,18 @@ function(task, responses){
                         startIcon = "image";
                         startIconHoverText = "Image File";
                     }
+                    let cat_parameters = "";
+                    if (finfo["full_name"].includes(":")) {
+                        cat_parameters = finfo["full_name"];
+                    } else {
+                        cat_parameters = "\\\\" + data["host"] + "\\" + finfo["full_name"];
+                    }
                     buttonSettings = {
                         "button": {
                             "name": "cat",
                             "type": "task",
                             "ui_feature": "cat",
-                            "parameters": "\\\\" + data["host"] + "\\" + finfo["full_name"],
+                            "parameters": cat_parameters,
                         },
                         "cellStyle": {},
                     }
