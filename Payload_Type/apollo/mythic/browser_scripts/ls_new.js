@@ -132,6 +132,14 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                 let fmt_creation = (creation_date.getMonth() + 1) + "/" + creation_date.getDate() + "/" + creation_date.getFullYear()
                 let fmt_last_modified = (last_modified_date.getMonth() + 1) + "/" + last_modified_date.getDate() + "/" + last_modified_date.getFullYear()
                 let fmt_access = (access_date.getMonth() + 1) + "/" + access_date.getDate() + "/" + access_date.getFullYear()
+                let acl_rows = [];
+                for(let z = 0; z < finfo["permissions"].length; z++) {
+                    acl_rows.push({
+                        "account": {"plaintext": finfo["permissions"][z]["account"]},
+                        "type": {"plaintext": finfo["permissions"][z]["type"]},
+                        "rights": {"plaintext": finfo["permissions"][z]["rights"]},
+                    });
+                }
                 let row = {
                     "rowStyle": {}, //data["files"][j]["is_file"] ? file:  folder,
                     "actions": {
@@ -151,8 +159,15 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                             },
                             {
                                 "name": "Access Control Entries",
-                                "type": "dictionary",
-                                "value": {"acls": finfo["permissions"]},
+                                "type": "table",
+                                "value": {
+                                    "headers": [
+                                        {"plaintext": "account", "width": 400, "type": "string"},
+                                        {"plaintext": "type", "type": "string"},
+                                        {"plaintext": "rights", "type": "string"}
+                                    ],
+                                    "rows": acl_rows
+                                },
                                 "leftColumnTitle": "acls",
                                 "rightColumnTitle": "Values",
                                 "title": "Viewing Acess Control Lists for " + data["files"][j]["name"],
