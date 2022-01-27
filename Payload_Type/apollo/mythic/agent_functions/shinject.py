@@ -89,11 +89,8 @@ class ShInjectCommand(CommandBase):
                 raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
             
             task.display_params += " -File {}".format(original_file_name)
-            if resp.status == MythicStatus.Success:
-                task.args.add_arg("shellcode-file-id", resp.response['agent_file_id'])
-                task.args.remove_arg("shellcode")
-            else:
-                raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
+            task.args.add_arg("shellcode-file-id", file_resp.response['agent_file_id'])
+            task.args.remove_arg("shellcode")
         elif task.args.get_arg("shellcode-file-id") != None and task.args.get_arg("shellcode-file-id") != "":
             task.display_params += " (scripting automation)"
         else:

