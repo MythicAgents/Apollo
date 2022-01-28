@@ -9,6 +9,10 @@ hidden = false
 
 Execute a .NET Framework assembly in-process with the specified arguments. This assembly must first be cached in the agent using the `register_assembly` command before being executed.
 
+{{% notice warning %}}
+This command does not patch Environment.Exit, and as a result, should the assembly call this function, the agent itself will exit.
+{{% /notice %}}
+
 ### Arguments
 
 ![exeasm](../images/inline_assembly.png)
