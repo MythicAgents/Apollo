@@ -23,7 +23,7 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 110, "disableSort": true},
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 120, "disableSort": true},
             {"plaintext": "Task", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "name", "type": "string", "fillWidth": true, "cellStyle": {}},
             {"plaintext": "size", "type": "size", "cellStyle": {}},
@@ -45,7 +45,7 @@ function(task, responses){
                 return {'plaintext': combined};
             }
             let ls_path = "";
-            if(data["parent_path"] === "/"){
+            if(data["parent_path"].endsWith("\\")){
                 ls_path = data["parent_path"] + data["name"];
             }else{
                 ls_path = data["parent_path"] + "\\" + data["name"];
