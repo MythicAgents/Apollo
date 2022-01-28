@@ -1,12 +1,14 @@
 function(task, responses){
   if(responses.length > 0){
     let responseArr = [];
-    responseArr.push({
-        "agent_file_id": responses,
+    for(let i = 0; i < responses.length; i++){
+        responseArr.push(responses[i]);
+    }
+    return {"screenshot": [{
+        "agent_file_id": responseArr,
         "variant": "contained",
-        "name": "View Screenshot"
-    });
-    return {"screenshot": responseArr};
+        "name": "View Screenshots (" + String(responseArr.length) + ")"
+    }]};
   }else{
       return {"plaintext": "No data to display..."}
   }
