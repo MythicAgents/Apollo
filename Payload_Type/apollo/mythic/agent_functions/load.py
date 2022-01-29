@@ -215,7 +215,7 @@ class LoadCommand(CommandBase):
                 if file_resp.status == MythicStatus.Success:
                     task.args.add_arg("file_id", file_resp.response['agent_file_id'])
                     task.args.remove_arg("commands")
-                    task.args.add_arg("commands", to_compile, ParameterType.ChooseMultiple)
+                    task.args.add_arg("commands", list(to_compile), ParameterType.ChooseMultiple)
                 else:
                     raise Exception("Failed to register task dll with Mythic")
             else:
