@@ -71,7 +71,7 @@ namespace Tasks
                         }
 
                         resp = CreateTaskResponse(
-                            $"Loaded {string.Join(", ", parameters.Commands)}",
+                            $"",
                             true,
                             "completed",
                             items);

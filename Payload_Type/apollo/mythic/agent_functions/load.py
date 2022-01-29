@@ -73,153 +73,198 @@ class LoadCommand(CommandBase):
     argument_class = LoadArguments
     attackmapping = []
 
+    async def get_commands(self, callback: dict, loaded_only: bool):
+        cmds = await MythicRPC().execute(
+            "get_commands",
+            callback_id=callback["id"],
+            loaded_only=loaded_only)
+        
+        if cmds.status != MythicStatus.Success:
+            raise Exception("Failed to get commands: {}".format(cmds.status))
+        
+        return cmds.response
+
     def mprint(self, thing):
         print(thing)
         sys.stdout.flush()
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
+        dependency_required = []
+        dependency_not_required = []
+        script_only = []
+        not_script_only = []
+        load_map = {
+            "depdency_required": {
+                "dependency_not_loaded": {
+                    # Each of these should be of the form:
+                    # cmd_name: loaded_status_bool
+                },
+                "dependency_loaded": {
+
+                }
+            },
+            "dependency_not_required": {
+                "script_only": {
+
+                },
+                "not_script_only": {
+                }
+            }
+        }
         requested_cmds = task.args.get_arg("commands")
-        cmd_resp = await MythicRPC().execute(
-            "get_commands",
-            callback_id=task.callback.id,
-            loaded_only=False)
-        if cmd_resp.status != MythicStatus.Success:
-            raise Exception("Failed to get commands for agent: {}".format(cmd_resp.response))
+            
+        loaded_cmds = await self.get_commands(task.callback, True)
+        all_cmds = await self.get_commands(task.callback, False)
+        diff_cmds = set(all_cmds).difference(set(loaded_cmds))
+
+
+        requested_cmd_objects = []
+        for cmd in diff_cmds:
+            if cmd["cmd"] in requested_cmds:
+                requested_cmd_objects.append(cmd)
         
-        agent_cmds = []
-        no_dep_cmds = []
+        if len(requested_cmd_objects) == 0:
+            raise Exception("No commands to load.")
+        
+        for cmd in requested_cmd_objects:
+            if cmd["attributes"].get("dependencies", None) == None:
+                if cmd["script_only"] == True:
+                    script_only.append(cmd)
+                else:
+                    not_script_only.append(cmd)
+            else:
+                dep_list = cmd["attributes"].get("dependencies", None)
+                dep_cmd_objects = []
+                dep_cmd_notloaded = []
+                num_deps = len(dep_list)
+                found_deps = 0
+                all_deps_loaded = False
+                for loaded_cmd in loaded_cmds:
+                    if loaded_cmd["cmd"] in dep_list:
+                        found_deps += 1
+                        dep_cmd_objects.append(loaded_cmd)
+                        if found_deps == num_deps:
+                            all_deps_loaded = True
+                            break
+                if all_deps_loaded:
+                    dependency_not_required.append(cmd)
+                else:
+                    for all_cmd in all_cmds:
+                        if all_cmd["cmd"] in dep_list:
+                            found_deps += 1
+                            dep_cmd_notloaded.append(all_cmd)
+                            if found_deps == num_deps:
+                                break
+                    for dep_cmd in dep_cmd_notloaded:
+                        dependency_required.append(dep_cmd)
 
+        to_compile = set(dependency_required).union(not_script_only)
 
-        all_cmds = cmd_resp.response
-        for requested_cmd in requested_cmds:
-            found = False
-            for all_cmd in all_cmds:
-                if requested_cmd == all_cmd["cmd"]:
-                    found = True
-                    if all_cmd["attributes"].get("dependencies", None) != None:
-                        if all_cmd["script_only"]:
-                            if len(all_cmd["attributes"]["dependencies"]) == 0:
-                                no_dep_cmds.append(requested_cmd)
-                            else:
-                                for dep in all_cmd["attributes"]["dependencies"]:
-                                    agent_cmds.append(dep)
-                        else:
-                            for dep in all_cmd["attributes"]["dependencies"]:
-                                agent_cmds.append(dep)
-                            agent_cmds.append(requested_cmd)
-                    else:
-                        agent_cmds.append(requested_cmd)
-            if not found:
-                raise Exception("Command {} not found".format(requested_cmd))
+        to_load_via_rpc = set(dependency_not_required).union(script_only)
 
-        no_dep_cmds = list(set(no_dep_cmds))
-        if len(no_dep_cmds) > 0:
-            register_resp = await MythicRPC().execute(
+        if len(to_load_via_rpc) > 0:
+            reg_resp = await MythicRPC().execute(
                 "update_loaded_commands",
                 task_id=task.id,
-                commands=no_dep_cmds,
+                commands=[x["cmd"] for x in to_load_via_rpc],
                 add=True)
-            if register_resp.status != MythicStatus.Success:
-                raise Exception("Failed to register commands {} for agent: {}".format(", ".join(no_dep_cmds), register_resp.response))
-            else:
-                addoutput_resp = await MythicRPC().execute(
-                    "create_output",
-                    task_id=task.id,
-                    output="Loaded {}\n".format(", ".join(no_dep_cmds)))
-                if addoutput_resp.status != MythicStatus.Success:
-                    raise Exception("Failed to add output for agent, but registered commands: {}".format(", ".join(no_dep_cmds)))
+            if reg_resp.status != MythicStatus.Success:
+                raise Exception("Failed to register {} commands: {}".format([x["cmd"] for x in to_load_via_rpc], reg_resp.response))
 
-        agent_cmds = list(set(agent_cmds).difference(set(no_dep_cmds)))
-
-        self.mprint("Loading commands: {}".format(agent_cmds))
-
-
-        defines_commands_upper = [f"#define {x.upper()}" for x in agent_cmds]
-        agent_build_path = tempfile.TemporaryDirectory()
-            # shutil to copy payload files over
-        copy_tree(self.agent_code_path, agent_build_path.name)
-        results = []
-        for root, dirs, files in os.walk("{}/Tasks".format(agent_build_path.name)):
-            for file in files:
-                if file.endswith(".cs"):
-                    results.append(os.path.join(root, file))
-        
-        if len(results) == 0:
-            raise ValueError("No .cs files found in task library")
-        for csFile in results:
-            templateFile = open(csFile, "rb").read().decode()
-            templateFile = templateFile.replace("#define COMMAND_NAME_UPPER", "\n".join(defines_commands_upper))
-            if csFile.endswith(".cs"):
-                with open(csFile, "a") as f:
-                    f.write("\n")
-                    f.write("\n".join(defines_commands_upper))
-            with open(csFile, "wb") as f:
-                f.write(templateFile.encode())
-    
-        outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
-        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
-        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
-        stdout, stderr = await proc.communicate()
-        if os.path.exists(outputPath):
-            dllBytes = open(outputPath, "rb").read()
-            file_resp = await MythicRPC().execute("create_file",
-                                                  task_id=task.id,
-                                                  file=base64.b64encode(dllBytes).decode(),
-                                                  delete_after_fetch=True)
-            if file_resp.status == MythicStatus.Success:
-                task.args.add_arg("file_id", file_resp.response['agent_file_id'])
-                task.args.remove_arg("commands")
-                task.args.add_arg("commands", agent_cmds, ParameterType.ChooseMultiple)
-            else:
-                raise Exception("Failed to register task dll with Mythic")
+        if len(to_compile) == 0:
+            task.status = MythicStatus.Completed
         else:
-            raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
-        task.display_params = "-Commands {}".format(" ".join(task.args.get_arg("commands")))
+            compile_cmd_list = [x["cmd"] for x in to_compile]
+            defines_commands_upper = [f"#define {x.upper()}" for x in compile_cmd_list]
+            agent_build_path = tempfile.TemporaryDirectory()
+                # shutil to copy payload files over
+            copy_tree(self.agent_code_path, agent_build_path.name)
+            results = []
+            for root, dirs, files in os.walk("{}/Tasks".format(agent_build_path.name)):
+                for file in files:
+                    if file.endswith(".cs"):
+                        results.append(os.path.join(root, file))
+            
+            if len(results) == 0:
+                raise ValueError("No .cs files found in task library")
+            for csFile in results:
+                templateFile = open(csFile, "rb").read().decode()
+                templateFile = templateFile.replace("#define COMMAND_NAME_UPPER", "\n".join(defines_commands_upper))
+                if csFile.endswith(".cs"):
+                    with open(csFile, "a") as f:
+                        f.write("\n")
+                        f.write("\n".join(defines_commands_upper))
+                with open(csFile, "wb") as f:
+                    f.write(templateFile.encode())
+        
+            outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
+            shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
+            proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
+                                                            stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+            stdout, stderr = await proc.communicate()
+            if os.path.exists(outputPath):
+                dllBytes = open(outputPath, "rb").read()
+                file_resp = await MythicRPC().execute("create_file",
+                                                    task_id=task.id,
+                                                    file=base64.b64encode(dllBytes).decode(),
+                                                    delete_after_fetch=True)
+                if file_resp.status == MythicStatus.Success:
+                    task.args.add_arg("file_id", file_resp.response['agent_file_id'])
+                    task.args.remove_arg("commands")
+                    task.args.add_arg("commands", compile_cmd_list, ParameterType.ChooseMultiple)
+                else:
+                    raise Exception("Failed to register task dll with Mythic")
+            else:
+                raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
+        
+        all_task_cmds = [x["cmd"] for x in to_compile.union(to_load_via_rpc)]
+        task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
         return task
 
     async def process_response(self, response: AgentResponse):
         resp = response.response["commands"]
         self.mprint("Parsing commands from process_response: {}".format(resp))
-        cmd_resp = await MythicRPC().execute(
-            "get_commands",
-            callback_id=response.task.callback.id,
-            loaded_only=False)
-        if cmd_resp.status != MythicStatus.Success:
-            raise Exception("Failed to get commands for agent: {}".format(cmd_resp.response))
-        
-        all_cmds = cmd_resp.response
-        
-        to_register = []
-        self.mprint("Total number of commands: {}".format(len(all_cmds)))
-        for all_cmd in all_cmds:
-            self.mprint("Attributes for {}: {}".format(all_cmd["cmd"], all_cmd["attributes"]))
-            if all_cmd["attributes"].get("dependencies", None) != None:
-                add = True
-                for dep in all_cmd["attributes"]["dependencies"]:
-                    if dep not in resp:
-                        self.mprint("{} not in response, skipping".format(dep))
-                        add = False
-                if add:
-                    to_register.append(all_cmd["cmd"])
-            else:
-                self.mprint("No dependencies for {}".format(all_cmd["cmd"]))
-        
-        self.mprint("To register: {}".format(to_register))
-        if len(to_register) > 0:
-            reg_resp = await MythicRPC().execute(
+
+
+        reg_resp = await MythicRPC().execute(
                 "update_loaded_commands",
                 task_id=response.task.id,
-                commands=to_register,
+                commands=resp,
                 add=True)
-            if reg_resp.status != MythicStatus.Success:
-                raise Exception("Failed to register dependent commands: {}".format(reg_resp.response))
+        if reg_resp.status != MythicStatus.Success:
+            raise Exception("Failed to register commands ({}) from response: {}".format(resp, reg_resp.response))
 
-            for i in range(len(to_register)):
-                to_register[i] = "{} (script only)".format(to_register[i])
-            addoutput_resp = await MythicRPC().execute("create_output",
+        all_cmds = await self.get_commands(response.callback, False)
+        loaded_cmds = await self.get_commands(response.callback, True)
+        loaded_cmd_names = [x["cmd"] for x in loaded_cmds]
+        diff_cmds = set(all_cmds).difference(set(loaded_cmds))
+
+        to_add = []
+
+        if len(diff_cmds) > 0:
+            for cmd in diff_cmds:
+                if cmd["attributes"].get("dependencies", None) is not None:
+                    deps = cmd["attributes"].get("dependencies", None)
+                    found_deps = 0
+                    for d in deps:
+                        if d in loaded_cmd_names:
+                            found_deps += 1
+                            if found_deps == len(deps):
+                                to_add.append(cmd)
+                                break
+            if len(to_add) > 0:
+                reg_resp = await MythicRPC().execute(
+                    "update_loaded_commands",
+                    task_id=response.task.id,
+                    commands=resp,
+                    add=True)
+                if reg_resp.status != MythicStatus.Success:
+                    raise Exception("Failed to register commands ({}) from response: {}".format(to_add, reg_resp.response))
+
+        newly_loaded_cmds = set(resp).union(set(to_add))
+        addoutput_resp = await MythicRPC().execute("create_output",
                                                     task_id=response.task.id,
-                                                    output=", {}".format(", ".join(to_register)))
-            if addoutput_resp.status != MythicStatus.Success:
-                raise Exception("Failed to add output to task")
+                                                    output="{}, ".format(", ".join(newly_loaded_cmds)))
+        if addoutput_resp.status != MythicStatus.Success:
+            raise Exception("Failed to add output to task")
         
