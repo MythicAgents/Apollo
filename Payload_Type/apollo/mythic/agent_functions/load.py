@@ -222,7 +222,10 @@ class LoadCommand(CommandBase):
                 raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
         
         all_task_cmds = [x for x in to_compile.union(to_load_via_rpc)]
-        task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
+        if len(all_task_cmds) == 0:
+            task.display_params = "-Commands {}".format(" ".join(requested_cmds))
+        else:
+            task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
         return task
 
     async def process_response(self, response: AgentResponse):
