@@ -92,7 +92,7 @@ class DcSyncCommand(CommandBase):
     is_remove_file = False
     author = "@djhohnstein"
     argument_class = DcSyncArguments
-    attackmapping = ["T1550"]
+    attackmapping = ["T1003.006"]
     script_only = True
 
     async def parse_credentials(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
