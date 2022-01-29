@@ -73,10 +73,10 @@ class LoadCommand(CommandBase):
     argument_class = LoadArguments
     attackmapping = []
 
-    async def get_commands(self, callback: dict, loaded_only: bool):
+    async def get_commands(self, callback: Callback, loaded_only: bool):
         cmds = await MythicRPC().execute(
             "get_commands",
-            callback_id=callback["id"],
+            callback_id=callback.id,
             loaded_only=loaded_only)
         
         if cmds.status != MythicStatus.Success:
@@ -115,12 +115,16 @@ class LoadCommand(CommandBase):
             
         loaded_cmds = await self.get_commands(task.callback, True)
         all_cmds = await self.get_commands(task.callback, False)
-        diff_cmds = set(all_cmds).difference(set(loaded_cmds))
+
+        loaded_cmds_dict = {r["cmd"]: r for r in loaded_cmds}
+        all_cmds_dict = {r["cmd"]: r for r in all_cmds}
+
+        diff_cmds_dict = {k: all_cmds_dict[k] for k in all_cmds_dict.keys() if k not in loaded_cmds_dict.keys()}
 
 
         requested_cmd_objects = []
-        for cmd in diff_cmds:
-            if cmd["cmd"] in requested_cmds:
+        for cmd in diff_cmds_dict.keys():
+            if cmd in requested_cmds:
                 requested_cmd_objects.append(cmd)
         
         if len(requested_cmd_objects) == 0:
@@ -158,24 +162,24 @@ class LoadCommand(CommandBase):
                     for dep_cmd in dep_cmd_notloaded:
                         dependency_required.append(dep_cmd)
 
-        to_compile = set(dependency_required).union(not_script_only)
 
-        to_load_via_rpc = set(dependency_not_required).union(script_only)
+        to_compile = set([x["cmd"] for x in dependency_required + not_script_only])
+
+        to_load_via_rpc = set([x["cmd"] for x in dependency_not_required + script_only])
 
         if len(to_load_via_rpc) > 0:
             reg_resp = await MythicRPC().execute(
                 "update_loaded_commands",
                 task_id=task.id,
-                commands=[x["cmd"] for x in to_load_via_rpc],
+                commands=to_load_via_rpc,
                 add=True)
             if reg_resp.status != MythicStatus.Success:
-                raise Exception("Failed to register {} commands: {}".format([x["cmd"] for x in to_load_via_rpc], reg_resp.response))
+                raise Exception("Failed to register {} commands: {}".format(to_load_via_rpc, reg_resp.response))
 
         if len(to_compile) == 0:
             task.status = MythicStatus.Completed
         else:
-            compile_cmd_list = [x["cmd"] for x in to_compile]
-            defines_commands_upper = [f"#define {x.upper()}" for x in compile_cmd_list]
+            defines_commands_upper = [f"#define {x.upper()}" for x in to_compile]
             agent_build_path = tempfile.TemporaryDirectory()
                 # shutil to copy payload files over
             copy_tree(self.agent_code_path, agent_build_path.name)
@@ -211,7 +215,7 @@ class LoadCommand(CommandBase):
                 if file_resp.status == MythicStatus.Success:
                     task.args.add_arg("file_id", file_resp.response['agent_file_id'])
                     task.args.remove_arg("commands")
-                    task.args.add_arg("commands", compile_cmd_list, ParameterType.ChooseMultiple)
+                    task.args.add_arg("commands", to_compile, ParameterType.ChooseMultiple)
                 else:
                     raise Exception("Failed to register task dll with Mythic")
             else:
@@ -235,14 +239,17 @@ class LoadCommand(CommandBase):
             raise Exception("Failed to register commands ({}) from response: {}".format(resp, reg_resp.response))
 
         all_cmds = await self.get_commands(response.callback, False)
+        all_cmds_dict = {x["cmd"]: x for x in all_cmds}
         loaded_cmds = await self.get_commands(response.callback, True)
+        loaded_cmds_dict = {x["cmd"]: x for x in loaded_cmds}
         loaded_cmd_names = [x["cmd"] for x in loaded_cmds]
-        diff_cmds = set(all_cmds).difference(set(loaded_cmds))
+
+        diff_cmds_dict = {k: v for k, v in all_cmds_dict.items() if k not in loaded_cmd_names}
 
         to_add = []
 
-        if len(diff_cmds) > 0:
-            for cmd in diff_cmds:
+        if len(diff_cmds_dict.keys()) > 0:
+            for cmd_name, cmd in diff_cmds_dict.items():
                 if cmd["attributes"].get("dependencies", None) is not None:
                     deps = cmd["attributes"].get("dependencies", None)
                     found_deps = 0
@@ -250,13 +257,13 @@ class LoadCommand(CommandBase):
                         if d in loaded_cmd_names:
                             found_deps += 1
                             if found_deps == len(deps):
-                                to_add.append(cmd)
+                                to_add.append(cmd_name)
                                 break
             if len(to_add) > 0:
                 reg_resp = await MythicRPC().execute(
                     "update_loaded_commands",
                     task_id=response.task.id,
-                    commands=resp,
+                    commands=to_add,
                     add=True)
                 if reg_resp.status != MythicStatus.Success:
                     raise Exception("Failed to register commands ({}) from response: {}".format(to_add, reg_resp.response))
