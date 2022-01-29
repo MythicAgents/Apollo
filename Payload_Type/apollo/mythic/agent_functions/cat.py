@@ -42,7 +42,7 @@ class CatCommand(CommandBase):
     supported_ui_features = ["cat"]
     author = "@djhohnstein"
     argument_class = CatArguments
-    attackmapping = ["T1081", "T1106"]
+    attackmapping = ["T1005", "T1039", "T1025"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         task.display_params = task.args.get_arg("path")

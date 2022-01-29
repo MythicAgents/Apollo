@@ -71,40 +71,7 @@ namespace Tasks
                 }
             }
 
-            if (System.IO.Directory.Exists(parameters.Path))
-            {
-                resp = CreateTaskResponse(
-                    $"Directory {parameters.Path} already exists.",
-                    true,
-                    "error");
-            }
-            else
-            {
-                try
-                {
-                    DirectoryInfo info = Directory.CreateDirectory(parameters.Path);
-                    FileInformation finfo = new FileInformation(info);
-                    IMythicMessage[] artifacts = new IMythicMessage[2]
-                    {
-                        Artifact.FileCreate(info.FullName),
-                        new FileBrowser(finfo),
-                    };
-                    resp = CreateTaskResponse(
-                        $"Created {info.FullName}",
-                        true,
-                        "completed",
-                        artifacts);
-                }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse(
-                        $"Error creating {parameters.Path}: {ex.Message}",
-                        true,
-                        "error");
-                }
-            }
-
-                // Your code here..
+            // Your code here..
             // CreateTaskResponse to create a new TaskResposne object
             // Then add response to queue
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
