@@ -123,8 +123,8 @@ class LoadCommand(CommandBase):
 
 
         requested_cmd_objects = []
-        for cmd in diff_cmds_dict.keys():
-            if cmd in requested_cmds:
+        for cmd_name, cmd in diff_cmds_dict.items():
+            if cmd_name in requested_cmds:
                 requested_cmd_objects.append(cmd)
         
         if len(requested_cmd_objects) == 0:
