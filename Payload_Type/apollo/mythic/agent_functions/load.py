@@ -73,12 +73,25 @@ class LoadCommand(CommandBase):
     argument_class = LoadArguments
     attackmapping = []
 
-    async def get_commands(self, callback: Callback, loaded_only: bool):
-        cmds = await MythicRPC().execute(
-            "get_commands",
-            callback_id=callback.id,
-            loaded_only=loaded_only)
-        
+    async def update_output(self, task: MythicTask, output: str):
+        addoutput_resp = await MythicRPC().execute("create_output",
+                                                    task_id=task.id,
+                                                    output=output)
+        if addoutput_resp.status != MythicStatus.Success:
+            raise Exception("Failed to add output to task")
+
+    async def get_commands(self, callback: Callback, loaded_only: bool, cmd_list=None):
+        if cmd_list is None:
+            cmds = await MythicRPC().execute(
+                "get_commands",
+                callback_id=callback.id,
+                loaded_only=loaded_only)
+        else:
+            cmds = await MythicRPC().execute(
+                "get_commands",
+                callback_id=callback.id,
+                loaded_only=loaded_only,
+                commands=cmd_list)
         if cmds.status != MythicStatus.Success:
             raise Exception("Failed to get commands: {}".format(cmds.status))
         
@@ -89,94 +102,54 @@ class LoadCommand(CommandBase):
         sys.stdout.flush()
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        dependency_required = []
-        dependency_not_required = []
-        script_only = []
-        not_script_only = []
-        load_map = {
-            "depdency_required": {
-                "dependency_not_loaded": {
-                    # Each of these should be of the form:
-                    # cmd_name: loaded_status_bool
-                },
-                "dependency_loaded": {
-
-                }
-            },
-            "dependency_not_required": {
-                "script_only": {
-
-                },
-                "not_script_only": {
-                }
-            }
-        }
-        requested_cmds = task.args.get_arg("commands")
-            
+        requested_cmds = await self.get_commands(task.callback, False, task.args.get_arg("commands"))
         loaded_cmds = await self.get_commands(task.callback, True)
-        all_cmds = await self.get_commands(task.callback, False)
 
-        loaded_cmds_dict = {r["cmd"]: r for r in loaded_cmds}
-        all_cmds_dict = {r["cmd"]: r for r in all_cmds}
+        requested_cmds_names = set([r["cmd"] for r in requested_cmds])
+        loaded_cmds_names = set([r["cmd"] for r in loaded_cmds])
+        diff = requested_cmds_names.difference(loaded_cmds_names)
 
-        diff_cmds_dict = {k: all_cmds_dict[k] for k in all_cmds_dict.keys() if k not in loaded_cmds_dict.keys()}
+        load_immediately_rpc = []
+        to_compile = []
 
-
-        requested_cmd_objects = []
-        for cmd_name, cmd in diff_cmds_dict.items():
-            if cmd_name in requested_cmds:
-                requested_cmd_objects.append(cmd)
-        
-        if len(requested_cmd_objects) == 0:
-            raise Exception("No commands to load.")
-        
-        for cmd in requested_cmd_objects:
-            if cmd["attributes"].get("dependencies", None) == None:
-                if cmd["script_only"] == True:
-                    script_only.append(cmd)
+        # This is now the list of commands that need to be loaded
+        requested_cmds = [r for r in requested_cmds if r["cmd"] in diff]
+        for requested_cmd in requested_cmds:
+            dependencies = requested_cmd["attributes"].get("dependencies", [])
+            script_only = requested_cmd["script_only"]
+            if len(dependencies) == 0 and script_only:
+                load_immediately_rpc.append(requested_cmd["cmd"])
+            elif len(dependencies) > 0 and script_only:
+                dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
+                if len(dep_not_loaded) > 0:
+                    to_compile += dep_not_loaded
                 else:
-                    not_script_only.append(cmd)
+                    load_immediately_rpc.append(requested_cmd["cmd"])
+            elif len(dependencies) == 0 and not script_only:
+                to_compile.append(requested_cmd["cmd"])
+            elif len(dependencies) > 0 and not script_only:
+                dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
+                if len(dep_not_loaded) > 0:
+                    to_compile += dep_not_loaded
+                to_compile.append(requested_cmd["cmd"])
             else:
-                dep_list = cmd["attributes"].get("dependencies", None)
-                dep_cmd_objects = []
-                dep_cmd_notloaded = []
-                num_deps = len(dep_list)
-                found_deps = 0
-                all_deps_loaded = False
-                for loaded_cmd in loaded_cmds:
-                    if loaded_cmd["cmd"] in dep_list:
-                        found_deps += 1
-                        dep_cmd_objects.append(loaded_cmd)
-                        if found_deps == num_deps:
-                            all_deps_loaded = True
-                            break
-                if all_deps_loaded:
-                    dependency_not_required.append(cmd)
-                else:
-                    for all_cmd in all_cmds:
-                        if all_cmd["cmd"] in dep_list:
-                            found_deps += 1
-                            dep_cmd_notloaded.append(all_cmd)
-                            if found_deps == num_deps:
-                                break
-                    for dep_cmd in dep_cmd_notloaded:
-                        dependency_required.append(dep_cmd)
+                raise Exception("Unreachable code path.")
 
+        to_compile = set(to_compile)
 
-        to_compile = set([x["cmd"] for x in dependency_required + not_script_only])
+        load_immediately_rpc = set(load_immediately_rpc)
 
-        to_load_via_rpc = set([x["cmd"] for x in dependency_not_required + script_only])
-
-        if len(to_load_via_rpc) > 0:
+        if len(load_immediately_rpc) > 0:
             reg_resp = await MythicRPC().execute(
                 "update_loaded_commands",
                 task_id=task.id,
-                commands=to_load_via_rpc,
+                commands=list(load_immediately_rpc),
                 add=True)
             if reg_resp.status != MythicStatus.Success:
-                raise Exception("Failed to register {} commands: {}".format(to_load_via_rpc, reg_resp.response))
+                raise Exception("Failed to register {} commands: {}".format(load_immediately_rpc, reg_resp.response))
 
         if len(to_compile) == 0:
+            await self.update_output(task, "Loaded {}\n".format(", ".join(load_immediately_rpc)))
             task.status = MythicStatus.Completed
         else:
             defines_commands_upper = [f"#define {x.upper()}" for x in to_compile]
@@ -221,11 +194,8 @@ class LoadCommand(CommandBase):
             else:
                 raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
         
-        all_task_cmds = [x for x in to_compile.union(to_load_via_rpc)]
-        if len(all_task_cmds) == 0:
-            task.display_params = "-Commands {}".format(" ".join(requested_cmds))
-        else:
-            task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
+        all_task_cmds = [x for x in to_compile.union(load_immediately_rpc)]
+        task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
         return task
 
     async def process_response(self, response: AgentResponse):
@@ -253,13 +223,13 @@ class LoadCommand(CommandBase):
 
         if len(diff_cmds_dict.keys()) > 0:
             for cmd_name, cmd in diff_cmds_dict.items():
-                if cmd["attributes"].get("dependencies", None) is not None:
-                    deps = cmd["attributes"].get("dependencies", None)
+                dependencies = cmd["attributes"].get("dependencies", [])
+                if len(dependencies) > 0:
                     found_deps = 0
-                    for d in deps:
+                    for d in dependencies:
                         if d in loaded_cmd_names:
                             found_deps += 1
-                            if found_deps == len(deps):
+                            if found_deps == len(dependencies):
                                 to_add.append(cmd_name)
                                 break
             if len(to_add) > 0:
@@ -272,9 +242,4 @@ class LoadCommand(CommandBase):
                     raise Exception("Failed to register commands ({}) from response: {}".format(to_add, reg_resp.response))
 
         newly_loaded_cmds = set(resp).union(set(to_add))
-        addoutput_resp = await MythicRPC().execute("create_output",
-                                                    task_id=response.task.id,
-                                                    output="{}, ".format(", ".join(newly_loaded_cmds)))
-        if addoutput_resp.status != MythicStatus.Success:
-            raise Exception("Failed to add output to task")
-        
+        await self.update_output(response.task, "Loaded {}\n".format(", ".join(newly_loaded_cmds)))
