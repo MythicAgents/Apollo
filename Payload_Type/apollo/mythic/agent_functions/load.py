@@ -238,9 +238,9 @@ class LoadCommand(CommandBase):
         if reg_resp.status != MythicStatus.Success:
             raise Exception("Failed to register commands ({}) from response: {}".format(resp, reg_resp.response))
 
-        all_cmds = await self.get_commands(response.callback, False)
+        all_cmds = await self.get_commands(response.task.callback, False)
         all_cmds_dict = {x["cmd"]: x for x in all_cmds}
-        loaded_cmds = await self.get_commands(response.callback, True)
+        loaded_cmds = await self.get_commands(response.task.callback, True)
         loaded_cmds_dict = {x["cmd"]: x for x in loaded_cmds}
         loaded_cmd_names = [x["cmd"] for x in loaded_cmds]
 
