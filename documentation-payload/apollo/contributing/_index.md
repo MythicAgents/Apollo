@@ -2,7 +2,7 @@
 title = "Contributing"
 chapter = true
 weight = 20
-pre = "<b>3. </b>"
+pre = "<b>4. </b>"
 +++
 
 {{% notice info %}}

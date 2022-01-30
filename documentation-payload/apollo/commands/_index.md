@@ -19,6 +19,8 @@ pre = "<b>2. </b>"
     * [make_token](/agents/apollo/commands/make_token/)
     * [steal_token](/agents/apollo/commands/steal_token/)
     * [mimikatz](/agents/apollo/commands/mimikatz/)
+    * [pth](/agents/apollo/commands/pth/)
+    * [dcsync](/agents/apollo/commands/dcsync/)
 - User Exploitation
     * [keylog_inject](/agents/apollo/commands/keylog_inject/)
     * [screenshot_inject](/agents/apollo/commands/screenshot_inject/)

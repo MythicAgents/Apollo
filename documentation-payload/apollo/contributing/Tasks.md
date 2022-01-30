@@ -1,6 +1,6 @@
 +++
 title = "Creating a New Task"
-chapter = true
+chapter = false
 weight = 25
 +++
 

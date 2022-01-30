@@ -1,6 +1,6 @@
 ![Apollo](documentation-payload/apollo/ApolloLandscape.svg)
 
-Apollo is a Windows agent written in C# using the 4.0 .NET Framework designed to be used in SpecterOps training offerings. Apollo lacks some evasive tradecraft provided by other commercial and open-source tools, such as more evasive network communications, PE manipulation, AMSI evasion, and otherwise; however, this project (in tandem with Mythic) is designed to introduce several quality of life improvements for an operator.
+Apollo is a Windows agent written in C# using the 4.0 .NET Framework designed to be used in SpecterOps training offerings.
 
 ## Installation
 To install Apollo, you'll need Mythic installed on a remote computer. You can find installation instructions for Mythic at the [Mythic project page](https://github.com/its-a-feature/Mythic/).

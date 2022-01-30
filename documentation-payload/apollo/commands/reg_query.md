@@ -1,5 +1,5 @@
 +++
-title = "reg_query_subkeys"
+title = "reg_query"
 chapter = false
 weight = 103
 hidden = false
@@ -13,6 +13,9 @@ Artifacts Generated: Registry Read
 Query subkeys of a specified registry key.
 
 ### Arguments
+
+![subkeys](../images/reg_query.png)
+
 #### Hive
 The registry key to retrieve subkeys for. This  must be in the format of `HKLM:\SYSTEM\Setup`, where `HKLM` can be any of the following values:
 
@@ -30,8 +33,8 @@ Registry key to query in the Hive for.
 reg_query -Hive HKLM -Key System\\Setup
 ```
 
+![subkeys](../images/reg_query_disp.png)
+
 ## MITRE ATT&CK Mapping
 
 - T1012
-
-![subkeys](../images/reg_query.png)

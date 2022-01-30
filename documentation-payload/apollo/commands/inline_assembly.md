@@ -38,3 +38,13 @@ inline_assembly SeatBelt.exe --groups=all
 ## MITRE ATT&CK Mapping
 
 - T1547
+
+
+## Special Thanks
+Mayllart submitted the initial PR for this module. You can find him on his socials here:
+
+Social | Handle
+-------|-------
+Github|https://github.com/thiagomayllart
+Twitter|[@thiagomayllart](https://twitter.com/thiagomayllart)
+BloodHoundGang Slack|@Mayllart

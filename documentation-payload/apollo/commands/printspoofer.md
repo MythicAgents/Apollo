@@ -15,9 +15,8 @@ Inject a [printspoofer](https://github.com/itm4n/PrintSpoofer) DLL to execute a 
 This DLL is injected with respect to the current injection technique, and spawns a sacrificial process designated by the `spawnto_*` commands.
 
 ## Usage
-Execute `apollo.exe` as `SYSTEM`
 ```
-printspoofer -Command [printspoofer args]
+printspoofer [printspoofer args]
 ```
 
 ## MITRE ATT&CK Mapping
