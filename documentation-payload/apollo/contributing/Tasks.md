@@ -2,7 +2,6 @@
 title = "Creating a New Task"
 chapter = true
 weight = 25
-pre = "<b>4. </b>"
 +++
 
 ## Creating a New Task

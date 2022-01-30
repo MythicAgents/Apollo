@@ -2,7 +2,6 @@
 title = "Creating C2 Profiles"
 chapter = true
 weight = 25
-pre = "<b>4. </b>"
 +++
 
 ## Creating a New Profile
@@ -87,5 +86,8 @@ Lastly, in the `EgressProfiles` dictionary, add a new entry for your C2 profile.
 }
 ```
 To debug your C2 Profile, simply fill in the parameter values in the DEBUG block of your parameters, and add at the top of the file `#define C2CHANNEL` in the `#if DEBUG` block.
+
+
+### Add to Builder.py
 
 Lastly, you'll need to modify the builder.py file under `Payload_Type/apollo/mythic/agent_functions`. In that file, add your new profile to the `c2profiles` attribute under Apollo.
