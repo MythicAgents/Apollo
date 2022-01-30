@@ -14,7 +14,7 @@ As an operator, sometimes one injection technique is more desirable than another
 
 ## Commands Leveraging Injection
 
-All of Apollo's [fork and run commands](/agents/apollo/opsec/fork_and_run_commands/) use injection to inject into a sacrificial process; however, there are additional commands that inject into other processes. Those commands are:
+All of Apollo's [fork and run commands](/agents/apollo/opsec/forkandrun/) use injection to inject into a sacrificial process; however, there are additional commands that inject into other processes. Those commands are:
 
 - [`assembly_inject`](/agents/apollo/commands/assembly_inject/)
 - [`inject`](/agents/apollo/commands/inject/)

@@ -17,7 +17,7 @@ Apollo has several commands to modify post-exploitation parameters when performi
 
 ### SpawnTo Commands
 
-These commands are used to specify what process should be spawned in any [fork and run](/agents/apollo/opsec/fork_and_run_commands) tasking, such as [`execute_assembly`](/agents/apollo/commands/execute_assembly). By default, these values are set to `rundll32.exe`. 
+These commands are used to specify what process should be spawned in any [fork and run](/agents/apollo/opsec/forkandrun) tasking, such as [`execute_assembly`](/agents/apollo/commands/execute_assembly). By default, these values are set to `rundll32.exe`. 
 
 ### Parent Process ID
 
@@ -33,4 +33,4 @@ This prevents non-Microsoft signed DLLs from loading into your child processes. 
 
 ### Injection Technique Management
 
-Apollo has several post-exploitation tasks that leverage process injection. A full discussion of this can be found at the [injection documentation page](/agents/apollo/opsec/process_injection).
+Apollo has several post-exploitation tasks that leverage process injection. A full discussion of this can be found at the [injection documentation page](/agents/apollo/opsec/injection).
