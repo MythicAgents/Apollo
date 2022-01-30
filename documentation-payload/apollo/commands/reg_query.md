@@ -1,5 +1,5 @@
 +++
-title = "reg_query_subkeys"
+title = "reg_query"
 chapter = false
 weight = 103
 hidden = false
