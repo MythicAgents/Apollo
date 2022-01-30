@@ -1,6 +1,6 @@
 +++
 title = "Creating C2 Profiles"
-chapter = true
+chapter = false
 weight = 25
 +++
 
