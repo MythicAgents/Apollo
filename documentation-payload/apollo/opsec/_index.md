@@ -13,4 +13,4 @@ Below are considerations about Apollo's underlying behavior that may affect deci
 
 ## Example Artifacts
 
-![artifacts](../images/artifacts.png)
+![artifacts](images/artifacts.png)
