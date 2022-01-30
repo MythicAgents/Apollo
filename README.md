@@ -35,6 +35,7 @@ blockdlls | `blockdlls -EnableBlock [false]` | Block non-Microsoft signed DLLs f
 cat | `cat -Path [file]` | Retrieve the output of a file.
 cd | `cd -Path [dir]` | Change working directory.
 cp | `cp -Path [source] -Destination [destination]` | Copy a file from path to destination.
+dcsync | `dcsync -Domain contoso.local [-User username -DC dc.ip]` | DCSync one or more user credentials
 download | `download -Path [path] [-Host [hostname]]` | Download a file off the target system.
 execute_assembly | `execute_assembly -Assembly [assembly.exe] -Arguments [args]` | Execute a .NET assembly registered with `register_file`
 execute_pe | `execute_pe -PE [binary.exe] -Arguments [args]` | Execute a statically compiled executable that's been registered with `register_file`
@@ -64,6 +65,7 @@ ppid | `ppid -PID [pid_integer]` | Set the PPID of sacrificial jobs to the speci
 printspoofer | `printspoofer -Command [command]` | Execute a command in SYSTEM integrity so long as you have SeImpersonate privileges.
 ps | `ps` | List process information.
 psinject | `psinject -PID [pid] -Command [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
+pth | `pth -Domain [domain] -User [username] -NTLM [ntlm_hash] [-AES128 [aes128_key] -AES256 [aes256_key] -Run [program.exe]]` | Use `mimikatz`'s pth module to spawn a process with alternate credentials.
 pwd | `pwd` | Print working directory.
 reg_query | `reg_query -Hive [HKCU:\\|HKU:\\|HKLM:\\|HKCR:\] [-Key [keyname]]` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
 reg_write_value | `reg_write_value -Hive [HKCU:\|HKU:\|HKLM:\|HKCR:\] -Key [keyname] [-Name [value_name] -Value [value_value]]` | Write specified values to the registry keys.

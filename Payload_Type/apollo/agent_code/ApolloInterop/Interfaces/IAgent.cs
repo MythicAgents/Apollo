@@ -19,39 +19,46 @@ namespace ApolloInterop.Interfaces
         // Set agent sleep
         void SetSleep(int seconds, double jitter=0);
 
-        // Do sleep
+        // Do sleep until a wait handle triggers
         void Sleep(WaitHandle[] handles = null);
 
-        // Retrieve a file from Mythic server and do something with file contents.
-        bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse);
-
-        // Put a file to Mythic with the specified data, and report back the new
-        // file UUID on response.
-        bool PutFileToMythic(string taskId, byte[] file, OnResponse<string> onResponse);
-
+        // Return if we're connected to Mythic or another peer
         bool IsAlive();
 
+        // Return the current UUID of the agent.
         string GetUUID();
 
+        // Lock standard handles of the agent.
         void AcquireOutputLock();
+
+        // Release the lock on the standard handles of the agent.
         void ReleaseOutputLock();
 
+        // Return the ITaskManager interface. Manages all aspects of tasking.
         ITaskManager GetTaskManager();
+
+        // Return the IPeerManager interface. Manages connected P2P nodes.
         IPeerManager GetPeerManager();
 
+        // Return the ISocksManager interface. Responsible for forwarding SOCKS packets.
         ISocksManager GetSocksManager();
 
+        // Return the IC2ProfileManager interface. Used to add, update, delete, or change C2 rotations.
         IC2ProfileManager GetC2ProfileManager();
 
+        // Return the IFileManager interface. Used to get and push files to Mythic.
         IFileManager GetFileManager();
 
+        // Return the IIdentityManager interface. Used for updating currently executing identity context.
         IIdentityManager GetIdentityManager();
 
+        // Return IProcessManager interface. Used for creating new processes.
         IProcessManager GetProcessManager();
+
+        // Return IInjectionManager interface. Used for managing how injection is performed and injecting into processes
         IInjectionManager GetInjectionManager();
 
-        //ICryptographySerializer GetCryptographySerializer();
-
+        // Return IApi interface. Used for resolving native Win32 API calls, RSA cryptography, and otherwise.
         IApi GetApi();
     }
 }

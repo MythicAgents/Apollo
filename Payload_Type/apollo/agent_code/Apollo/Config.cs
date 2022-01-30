@@ -4,7 +4,9 @@
 #define HTTP
 #endif
 
+#if HTTP
 using HttpTransport;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +14,12 @@ using System.Text;
 using ApolloInterop.Structs.ApolloStructs;
 using PSKCryptography;
 using ApolloInterop.Serializers;
+#if SMB
 using NamedPipeTransport;
+#endif
+#if TCP
 using TcpTransport;
-
+#endif
 namespace Apollo
 {
     public static class Config

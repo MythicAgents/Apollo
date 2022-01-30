@@ -103,8 +103,6 @@ class LoadCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         requested_cmds = await self.get_commands(task.callback, False, task.args.get_arg("commands"))
-        # temp fix
-        requested_cmds = [r for r in requested_cmds if r["cmd"] in task.args.get_arg("commands")]
         loaded_cmds = await self.get_commands(task.callback, True)
 
         requested_cmds_names = set([r["cmd"] for r in requested_cmds])

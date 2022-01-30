@@ -150,16 +150,5 @@ namespace Apollo.Agent
         {
             base.Exit();
         }
-
-        public override bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse)
-        {
-            return true;
-        }
-
-
-        public override bool PutFileToMythic(string taskId, byte[] file, OnResponse<string> onResponse)
-        {
-            return true;
-        }
     }
 }

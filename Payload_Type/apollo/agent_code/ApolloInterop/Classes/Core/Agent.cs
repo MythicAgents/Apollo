@@ -89,11 +89,7 @@ namespace ApolloInterop.Classes
         {
             _outputLock.ReleaseMutex();
         }
-
-        public abstract bool GetFileFromMythic(TaskResponse msg, OnResponse<byte[]> onResponse);
-
-        public abstract bool PutFileToMythic(string taskId, byte[] file, OnResponse<string> onResp);
-
+        
         public virtual bool IsAlive() { return Alive; }
 
         public virtual ITaskManager GetTaskManager() { return TaskManager; }
