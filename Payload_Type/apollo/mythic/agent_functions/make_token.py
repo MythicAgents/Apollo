@@ -4,16 +4,18 @@ import json
 
 class MakeTokenArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "credential": CommandParameter(name="Credential", type=ParameterType.Credential_JSON)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="credential",
+                cli_name="Credential",
+                display_name="Credential",
+                type=ParameterType.Credential_JSON)
+        ]
 
     async def parse_arguments(self):
         self.load_args_from_json_string(self.command_line)
-        if self.args["credential"] is None:
-            raise Exception("make_token requires a cleartext credential.")
 
 
 class MakeTokenCommand(CommandBase):
@@ -34,7 +36,7 @@ class MakeTokenCommand(CommandBase):
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         cred = task.args.get_arg("credential")
-        task.display_params = "{}\\{} {}".format(cred['realm'], cred['account'], cred['credential'])
+        task.display_params = "{}\\{} {}".format(cred.get("realm"), cred.get("account"), cred.get("credential"))
         return task
 
     async def process_response(self, response: AgentResponse):

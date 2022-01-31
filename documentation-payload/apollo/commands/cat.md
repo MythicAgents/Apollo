@@ -2,23 +2,29 @@
 title = "cat"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
+
+{{% notice info %}}
+Artifacts Generated: File Open
+{{% /notice %}}
 
 ## Summary
 
-Print the contents of a file.
+Read the contents of a file 256kb at a time.
 
-### Arguments (Positional)
-#### path
+### Arguments
+![args](../images/cat.png)
+#### Path
 Specify path to file to read contents
 
 ## Usage
 ```
-cat [path]
+cat -Path [path]
 ```
 Example
 ```
+cat -Path C:\config.txt
 cat C:\config.txt
 ```
 
@@ -26,6 +32,3 @@ cat C:\config.txt
 
 - T1081
 - T1106
-
-## Detailed Summary
-The `cat` command uses the `System.IO.File.ReadAllText` method to create a handle to a specified file and read all the file's contents as a string. After reading, the handle to the file is closed and the gathered file contents are sent back to Mythic.

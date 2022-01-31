@@ -2,7 +2,7 @@
 title = "jobkill"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary
@@ -10,12 +10,7 @@ Kill a running job for an agent.
 
 ## Usage (Positional)
 ```
-jobkill [job id]
-```
-Example
-```
-jobkill 1
+jobkill [task_id_guid]
 ```
 
-## Detailed Summary
-The `jobkill` command kills a job first by respecting that job's custom `job.Kill()` method. Once returned, it'll abort the thread and any terminate the associated sacrificial process it's attached to (if any).
+![jobs](../images/jobs.png)

@@ -2,51 +2,54 @@
 title = "pth"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
+{{% notice info %}}
+Artifacts Generated: Process Create, Process Inject, Process Kill
+{{% /notice %}}
+
 ## Summary
-Perform pass-the-hash using an RC4 hash to impersonate a user.
+Use mimikatz's `sekurlsa::pth` module to spawn a new process with a user's Kerberos keys.
 
-### Arguments (Popup)
-#### Credential
-The credential to use for pass-the-hash. This must be from Mythic's credential store.
+### Arguments
+#### Domain
+Domain that the specified user is part of.
 
-#### Program to Spawn
-The application to execute as the user to impersonate the access token.
+#### User
+Username for which you've obtained credential material for.
+
+#### NTLM
+NTLM password hash of the specified user.
+
+#### AES128 (Optional)
+The AES128 key of the user. Used for over pass the hash.
+
+#### AES256 (Optional)
+The AES256 key of the user. Used for over pass the hash.
+
+#### Run (Optional)
+Program to spawn using alternate credentials. Default: cmd.exe.
+
+{{% notice info %}}
+When choosing a program to spawn, consider whether or not you need the process to be long-lived. A process that spawns and exits immediately will not be a good candidate to perform `steal_token` against, for example, as the process will no longer exist when attempting to impersonate the credential material.
+{{% /notice %}}
 
 ## Usage
 ```
-pth
-```
-
-In the pop up menu
-```
-credential: [drop down menu of credentials]
-program: [program to run]
+pth -Domain [domain.local] -User [username] -NTLM [ntlm_hash_val] [-AES128 [aes_128_val] -AES256 [aes_256_val] -Run [cmd.exe]]
 ```
 
 Example
 ```
-pth
+pth -Domain contoso.local -User djhohnstein -NTLM 21BC7DCD88EE195ECF3728677A47815B
+pth -Domain contoso.local -User djhohnstein -NTLM 21BC7DCD88EE195ECF3728677A47815B -Run powershell.exe
 ```
 
-In the pop up menu
-```
-credential: user - hash
-program: cmd.exe
-```
 
 ## MITRE ATT&CK Mapping
 
 - T1550
 
-## Detailed Summary
-The `pth` command is a wrapper around the `sekurlsa::pth` mimikatz command and therefore is using the same method and modified mimikatz dll used with the [`mimikatz`](/agents/apollo/commands/mimikatz/) command. This performs a pass-the-hash attack by starting a program as another user with bogus credentials, then patching `lsass.exe` with the provided hash to authenticate as that user on the network. This is similiar in functionality to using the `runas.exe` command with the `/netonly` argument, ultimately creating a `Logon Type 9` logon event on the system.
-
-{{% notice info %}}
-A Process Create artifact is generated for this command.
-{{% /notice %}}
-
-### Resources
+### Resrouces
 - [mimikatz](https://github.com/gentilkiwi/mimikatz)

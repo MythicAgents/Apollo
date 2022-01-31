@@ -6,12 +6,49 @@ import base64
 
 class ShInjectArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "pid": CommandParameter(name="PID", type=ParameterType.Number),
-            "shellcode": CommandParameter(name="Shellcode File", type=ParameterType.File)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="pid",
+                cli_name="PID",
+                display_name="PID",
+                type=ParameterType.Number,
+                description="Process ID to inject into.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default"
+                    ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Scripted"
+                    ),
+                ]),
+            CommandParameter(
+                name="shellcode",
+                cli_name="Shellcode",
+                display_name="Shellcode File",
+                type=ParameterType.File,
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default"
+                    ),
+                ]),
+            CommandParameter(
+                name="shellcode-file-id",
+                cli_name="FileID",
+                display_name="Shellcode File ID",
+                description="Used for automation. Ignore.",
+                type=ParameterType.String,
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Scripted"
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -39,16 +76,25 @@ class ShInjectCommand(CommandBase):
     attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['Shellcode File']
-        resp = await MythicRPC().execute("create_file",
-                                         task_id=task.id,
-                                         file=base64.b64encode(task.args.get_arg("shellcode")).decode(),
-                                         delete_after_fetch=False)
-        if resp.status == MythicStatus.Success:
-            task.args.add_arg("shellcode", resp.response['agent_file_id'])
+        task.display_params = "-PID {}".format(task.args.get_arg("pid"))
+        if task.args.get_arg("shellcode") != None:
+            file_resp = await MythicRPC().execute(
+                "get_file",
+                file_id=task.args.get_arg("shellcode"),
+                task_id=task.id,
+                get_contents=False)
+            if file_resp.status == MythicRPCStatus.Success:
+                original_file_name = file_resp.response[0]["filename"]
+            else:
+                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
+            
+            task.display_params += " -File {}".format(original_file_name)
+            task.args.add_arg("shellcode-file-id", file_resp.response[0]['agent_file_id'])
+            task.args.remove_arg("shellcode")
+        elif task.args.get_arg("shellcode-file-id") != None and task.args.get_arg("shellcode-file-id") != "":
+            task.display_params += " (scripting automation)"
         else:
-            raise Exception(f"Failed to host sRDI loader stub: {resp.error}")
-        task.display_params = "{} into PID {}".format(original_file_name, task.args.get_arg("pid"))
+            raise Exception("No file provided.")
         return task
 
     async def process_response(self, response: AgentResponse):

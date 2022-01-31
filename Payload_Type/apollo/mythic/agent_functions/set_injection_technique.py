@@ -4,9 +4,9 @@ import json
 
 class SetInjectionTechniqueArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = []
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
@@ -29,6 +29,7 @@ class SetInjectionTechniqueCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = SetInjectionTechniqueArguments
     attackmapping = ["T1055"]
+    supported_ui_features = ["set_injection_technique"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task

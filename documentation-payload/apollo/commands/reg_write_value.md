@@ -2,42 +2,40 @@
 title = "reg_write_value"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
+
+{{% notice info %}}
+Artifacts Generated: Registry Write
+{{% /notice %}}
 
 ## Summary
 Write a new string or integer value to the specified Value Name that's within the specified Registry Key.
 
-### Arguments (Popup or Positional)
+### Arguments
 
-#### Registry Key
-The registry key to retrieve subkeys for. This  must be in the format of `HKLM:\SYSTEM\Setup`, where `HKLM` can be any of the following values:
+#### Hive
+The registry hive in which the `Key` lives. Must be one of:
 
-- `HKLM`
-- `HKCU`
-- `HKCR`
+- HKLM
+- HKCU
+- HKU
+- HKCR
+- HKCC
 
-#### Value Name
-The registry value name to retrieve the value of. Leave blank to retrieve the default value.
+#### Key
+The registry key to write to. Default: `\`
 
-#### New Value
-The new value to store in the designated Value Name. If this is an integer, a DWORD will be written. Otherwise, this will be a string.
+#### Name (optional)
+The name of the value to which you wish to write the new value to. Default will write to the `(Default)` value.
+
+#### Value (optional)
+The new value to store in the designated Name. If this is an integer, a DWORD will be written. Otherwise, this will be a string.
 
 ## Usage
 Set the value of `OsLoaderPath` from the `HKLM:\SYSTEM\Setup` registry key to `\HardDisk4\`.
 ```
-reg_write_value HKLM:\SYSTEM\Setup OsLoaderPath \HardDisk4\
-```
-
-Or, using the modal pop up menu...
-```
-reg_write_value
-```
-Then enter the key to interrogate.
-```
-Registry Key: [key name]
-Value Name: [value name]
-New Value: [new value]
+reg_write_value -Hive HKLM -Key SYSTEM\\Setup -Name OsLoaderPath -Value \\HardDisk4\\
 ```
 
 ## MITRE ATT&CK Mapping
@@ -48,5 +46,3 @@ New Value: [new value]
 - T1574
 - T1112
 - T1003
-
->A Registry Write artifact is generated from this command.

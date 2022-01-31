@@ -7,14 +7,36 @@ import base64
 
 class UploadArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "remote_path": CommandParameter(name="Destination", required=False, type=ParameterType.String,
-                              description="Path to write the file on the target. If empty, defaults to current working directory."),
-            "file": CommandParameter(name="File", type=ParameterType.File),
-            "host": CommandParameter(name="Host", required=False, type=ParameterType.String, description="Computer to upload the file to. If empty, the current computer.")
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="remote_path",
+                cli_name="Destination",
+                display_name="Destination",
+                type=ParameterType.String,
+                description="Path to write the file on the target. If empty, defaults to current working directory.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+            CommandParameter(
+                name="file",
+                cli_name="File",
+                display_name="File",
+                type=ParameterType.File),
+            CommandParameter(
+                name="host",
+                cli_name="Host", 
+                display_name="Host",
+                type=ParameterType.String, description="Computer to upload the file to. If empty, the current computer.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                    ),
+                ]),
+        ]
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -50,26 +72,29 @@ class UploadCommand(CommandBase):
     attackmapping = ["T1132", "T1030", "T1105"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['File']
-        sys.stdout.flush()
-        resp = await MythicRPC().execute("create_file", task_id=task.id,
-                                         file=base64.b64encode(task.args.get_arg("file")).decode(),
-                                         saved_file_name=original_file_name, delete_after_fetch=False)
-        if resp.status == MythicStatus.Success:
-            task.args.add_arg("file", resp.response['agent_file_id'])
-            task.args.add_arg("file_name", original_file_name)
+        file_resp = await MythicRPC().execute(
+            "get_file",
+            file_id=task.args.get_arg("file"),
+            task_id=task.id,
+            get_contents=False)
+        if file_resp.status == MythicRPCStatus.Success:
+            original_file_name = file_resp.response[0]["filename"]
         else:
-            raise Exception(f"Failed to host file: {resp.error}")
+            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
+        
+        task.args.add_arg("file_name", original_file_name)
+        
         host = task.args.get_arg("host")
         path = task.args.get_arg("path")
         disp_str = ""
+        
         if path is not None and path != "":
             if host is not None and host != "":
-                disp_str = "{} to \\\\{}\\{}".format(original_file_name, host, path)
+                disp_str = "-File {} -Host {} -Path {}".format(original_file_name, host, path)
             else:
-                disp_str = "{} to {}".format(original_file_name, path)
+                disp_str = "-File {} -Path {}".format(original_file_name, path)
         else:
-            disp_str = original_file_name
+            disp_str = "-File {}".format(original_file_name)
         task.display_params = disp_str
         return task
 

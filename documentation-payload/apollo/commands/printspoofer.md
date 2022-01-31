@@ -2,8 +2,12 @@
 title = "printspoofer"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
+
+{{% notice info %}}
+Artifacts Generated: Process Create, Process Inject, Process Kill
+{{% /notice %}}
 
 ## Summary
 Inject a [printspoofer](https://github.com/itm4n/PrintSpoofer) DLL to execute a given command as SYSTEM. This will only succeed if the user has `SE_IMPERSONATE` privileges.
@@ -11,15 +15,9 @@ Inject a [printspoofer](https://github.com/itm4n/PrintSpoofer) DLL to execute a 
 This DLL is injected with respect to the current injection technique, and spawns a sacrificial process designated by the `spawnto_*` commands.
 
 ## Usage
-Execute `apollo.exe` as `SYSTEM`
 ```
-printspoofer -c apollo.exe
+printspoofer [printspoofer args]
 ```
-
-{{% notice info %}}
-A Process Create artifact is generated for this command.
-{{% /notice %}}
-
 
 ## MITRE ATT&CK Mapping
 

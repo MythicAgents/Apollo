@@ -2,47 +2,41 @@
 title = "dcsync"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
+{{% notice info %}}
+Artifacts Generated: Process Create, Process Inject, Process Kill
+{{% /notice %}}
+
 ## Summary
-Dump the credentials of a given account from a domain controller using the MS-DRSR protocol,
+Use mimikatz's `lsadump::dcsync` module to retrieve a user's kerberos keys from a Domain Controller.
 
-### Arguments (Popup)
-#### Account Name
-The name of the account that will be dumped.
-Leave blank to dump all accounts.
+### Arguments
+#### Domain
+Domain to query information from.
 
-#### Domain Name
-The name of the domain of the account that will be dumped - must be a Fully Qualified Domain Name (FQDN).
+#### User (Optional)
+Username to sync kerberos keys for. Default is all users.
 
-#### Domain Controller
-The name of the Domain Controller (DC) to target.
+#### DC (Optional)
+Domain controller to sync credential material from.
 
 ## Usage
 ```
-dcsync {"DC":"dc to target","Domain":"fqdn","User":"account name"}
+dcsync -Domain domain.local [-User username -DC dc.domain.local]
 ```
 
 Example
 ```
-dcsync {"DC":"dc.contoso.local","Domain":"contoso.local","User":"krbtgt"}
+dcsync -Domain contoso.local -User djhohnstein -DC 10.120.30.204
+dcsync -Domain contoso.local
 ```
 
-In the pop up menu
-```
-DC: [dc to target]
-Domain: [fqdn]
-User: [account name]
-```
 
-## Detailed Summary
-The `dcsync` command is a wrapper around the `lsadump::dcsync` mimikatz command and therefore is using the same method and modified mimikatz dll used with the [`mimikatz`](/agents/apollo/commands/mimikatz/) command. This performs a dcsync attack by synchronizing account credentials fr>
+## MITRE ATT&CK Mapping
 
-{{% notice info %}}
-A Process Create artifact is generated for this command.
-{{% /notice %}}
+- T1003.006
 
-### Resources
+### Resrouces
 - [mimikatz](https://github.com/gentilkiwi/mimikatz)
-

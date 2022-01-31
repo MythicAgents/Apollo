@@ -2,7 +2,7 @@
 title = "getprivs"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary
@@ -12,7 +12,6 @@ Enable as many privileges as possible for your current access token.
 ```
 getprivs
 ```
-
 
 ## MITRE ATT&CK Mapping
 

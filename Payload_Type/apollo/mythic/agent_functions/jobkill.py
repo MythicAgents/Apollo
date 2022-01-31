@@ -4,17 +4,13 @@ import json
 
 class JobkillArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {}
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = []
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("Require Job ID to terminate as a command line argument.")
-        try:
-            int(self.command_line)
-        except:
-            raise Exception("Error: Job IDs must be integers, received \"{}\"".format(self.command_line))
 
 
 class JobkillCommand(CommandBase):
@@ -24,6 +20,7 @@ class JobkillCommand(CommandBase):
     description = "Kill a job specified by the job identifier (jid)."
     version = 2
     is_exit = False
+    supported_ui_features = ["jobkill"]
     is_file_browse = False
     is_process_list = False
     is_download_file = False

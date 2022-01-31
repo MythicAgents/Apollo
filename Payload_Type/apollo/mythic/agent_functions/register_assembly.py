@@ -2,29 +2,33 @@ from mythic_payloadtype_container.MythicCommandBase import *
 import json
 from mythic_payloadtype_container.MythicRPC import *
 import base64
+import sys
 
 class RegisterAssemblyArguments(TaskArguments):
 
-    def __init__(self, command_line):
-        super().__init__(command_line)
-        self.args = {
-            "assembly": CommandParameter(name="Assembly", type=ParameterType.File)
-        }
+    def __init__(self, command_line, **kwargs):
+        super().__init__(command_line, **kwargs)
+        self.args = [
+            CommandParameter(
+                name="file",
+                cli_name="File", 
+                display_name="File",
+                type=ParameterType.File)
+        ]
 
     async def parse_arguments(self):
-        if len(self.command_line) == 0:
-            raise Exception("No arguments given.")
-        if self.command_line[0] != "{":
-            raise Exception("Require JSON blob, but got raw command line.")
+        if (self.command_line[0] != "{"):
+            raise Exception("Inject requires JSON parameters and not raw command line.")
         self.load_args_from_json_string(self.command_line)
-        pass
-
 
 class RegisterAssemblyCommand(CommandBase):
     cmd = "register_assembly"
+    attributes=CommandAttributes(
+        dependencies=["register_file"]
+    )
     needs_admin = False
     help_cmd = "register_assembly (modal popup)"
-    description = "Register an assembly with the agent to execute later in `execute_assembly`."
+    description = "Import a new Assembly into the agent cache."
     version = 2
     is_exit = False
     is_file_browse = False
@@ -32,24 +36,22 @@ class RegisterAssemblyCommand(CommandBase):
     is_download_file = False
     is_upload_file = False
     is_remove_file = False
+    script_only = True
     author = "@djhohnstein"
     argument_class = RegisterAssemblyArguments
-    attackmapping = ["T1547"]
+    attackmapping = []
+
+
+    async def registerasm_callback(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
+        task.status = MythicStatus.Completed
+        return task
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        original_file_name = json.loads(task.original_params)['Assembly']
-        resp = await MythicRPC().execute("create_file",
-                                          task_id=task.id,
-                                          file=base64.b64encode(task.args.get_arg("assembly")).decode(),
-                                          saved_file_name=original_file_name,
-                                          delete_after_fetch=False)
-        if resp.status == MythicStatus.Success:
-            task.args.add_arg("assembly_id", resp.response['agent_file_id'])
-            task.args.add_arg("assembly_name", original_file_name)
-            task.args.remove_arg("assembly")
-        else:
-            raise Exception(f"Failed to host assembly: {resp.error}")
-        task.display_params = original_file_name
+        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
+                        command="register_file", params_dict={"file": task.args.get_arg("file")},
+                        subtask_callback_function="registerasm_callback")
+        if response.status != MythicStatus.Success:
+            raise Exception("Failed to create subtask: {}".format(response.message))
         return task
 
     async def process_response(self, response: AgentResponse):

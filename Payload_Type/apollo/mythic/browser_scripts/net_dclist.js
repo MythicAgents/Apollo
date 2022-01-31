@@ -1,43 +1,69 @@
-function(task, response){
-  var rows = [];
-  console.log(response);
-  for(var i = 0; i < response.length; i++){
-    try{
-        var data = JSON.parse(response[i]['response'].replace("'", '"'));
-    }catch(error){
-      var msg = "Unhandled exception in net_dclist.js for " + task.command + " (ID: " + task.id + "): " + error;
-      console.error(msg);
-        return response[i]['response'];
-    }
-   var row_style = "";
-   var cell_style = {"hidden": "text-align:center",
-                                                 "type":"text-align:center"};
-   var suffix = "</span>";
-   if (data.length == 0) {
-     return "No domain controllers discovered."
-   }
-    for (var j = 0; j < data.length; j++)
-    {
-        console.log(data[j]);
-        var prefix = "";
-        if (data[j]["IsGlobalCatalog"])
-        {
-          prefix = '<i class="fas fa-book fa-fw" data-toggle="tooltip" title="DC is a Global Catalog"></i>  ';
-        } else {
-          prefix = '<i class="fas fa-fw"></i>  ';
-        }
-        
-        rows.push({"computername": prefix + data[j]['ComputerName'],
-                  "ipaddress": data[j]['IPAddress'],
-                  "domain": data[j]['Domain'],
-                  "forest": data[j]["Forest"],
-                  "os version": data[j]["OSVersion"],
-                //    "type": data['type'],
-                   "row-style": row_style,
-                   "cell-style": cell_style
-                 });
-    }
+function(task, responses){
+  if(task.status.includes("error")){
+      const combined = responses.reduce( (prev, cur) => {
+          return prev + cur;
+      }, "");
+      return {'plaintext': combined};
+  }else if(responses.length > 0){
+      let file = {};
+      let data = "";
+      let rows = [];
+      let tableTitle = "Domain Controllers";
+      
+      let headers = [
+          {"plaintext": "shares", "type": "button", "startIcon": "list", "cellStyle": {}, "width": 100},
+          {"plaintext": "name", "type": "string", "cellStyle": {}, "fillWidth": true},
+          {"plaintext": "domain", "type": "string", "cellStyle": {}, "fillWidth": true},
+          {"plaintext": "forest", "type": "string", "cellStyle": {}, "fillWidth": true},
+          {"plaintext": "ip", "type": "string", "cellStyle": {}, "fillWidth": true},
+          {"plaintext": "os", "type": "string", "cellStyle": {}, "fillWidth": true},
+      ];
+      for(let i = 0; i < responses.length; i++)
+      {
+          try{
+              data = JSON.parse(responses[i]);
+          }catch(error){
+              console.log(error);
+             const combined = responses.reduce( (prev, cur) => {
+                  return prev + cur;
+              }, "");
+              return {'plaintext': combined};
+          }
+          
+          for(let j = 0; j < data.length; j++){
+              let jinfo = data[j];
+              let nameField = {"plaintext": jinfo["computer_name"], "copyIcon": true, "cellStyle": {}};
+              if (jinfo["global_catalog"]) {
+                // "endIcon": "database", "endIconHoverText": "Global Catalog",
+                nameField["endIcon"] = "database";
+                nameField["endIconHoverText"] = "Global Catalog";
+              }
+              let row = {
+                  // If process name is BAD, then highlight red.
+                  "rowStyle": {},
+                  "shares": {"button": {
+                      "name": "shares",
+                      "type": "task",
+                      "ui_feature": "net_shares",
+                      "parameters": jinfo["computer_name"],
+                      "cellStyle": {},
+                  }},
+                  "name": nameField,
+                  "domain": {"plaintext": jinfo["domain"], "cellStyle": {}},
+                  "forest": {"plaintext": jinfo["forest"], "cellStyle": {}},
+                  "ip": {"plaintext": jinfo["ip_address"], "copyIcon": true, "cellStyle": {}},
+                  "os": {"plaintext": jinfo["os_version"], "cellStyle": {}}
+              };
+              rows.push(row);
+          }
+      }
+      return {"table":[{
+          "headers": headers,
+          "rows": rows,
+          "title": tableTitle,
+      }]};
+  }else{
+      // this means we shouldn't have any output
+      return {"plaintext": "Not response yet from agent..."}
   }
-  var output = support_scripts['apollo_create_table']([{"name":"computername", "size":"2em"},{"name":"ipaddress", "size":"2em"},{"name":"domain", "size":"2em"},{"name":"forest", "size":"2em"},{"name":"os version", "size":"2em"}], rows);
-  return output;
 }

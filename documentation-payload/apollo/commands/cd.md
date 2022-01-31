@@ -2,23 +2,27 @@
 title = "cd"
 chapter = false
 weight = 103
-hidden = true
+hidden = false
 +++
 
 ## Summary
 Change the process's current working directory to a specified directory. This command accepts relative paths such as `..\` as well.
 
 ## Arguments
-### path
+
+![args](../images/cd.png)
+
+### Path
 Change to the directory specified by path.
 
 ## Usage
 ```
+cd -Path [path]
 cd [path]
 ```
 Example
 ```
-cd C:\Users
+cd -Path C:\Users
 ```
 Change to the root directory.
 ```
@@ -36,7 +40,3 @@ cd C:\Program Files
 ## MITRE ATT&CK Mapping
 
 - T1083
-
-## Detailed Summary
-The `cd` command uses the `System.IO.Directory.SetCurrentDirectory` method to modify the process's current working directory to a specified directory. This command accepts relative paths, such as `..` or `..\..\Users`. Quotes are not needed when changing to directories with _spaces_ in their path name, such as `C:\Program Files`.
-
