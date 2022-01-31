@@ -62,7 +62,7 @@ class LoadCommand(CommandBase):
     needs_admin = False
     help_cmd = "load [cmd1] [cmd2] [...]"
     description = 'Load one or more new commands into the agent.'
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

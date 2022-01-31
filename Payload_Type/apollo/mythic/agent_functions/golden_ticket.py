@@ -97,7 +97,7 @@
 #     needs_admin = True
 #     help_cmd = "golden_ticket (modal popup)"
 #     description = "Forge a golden/silver ticket using Mimikatz."
-#     version = 1
+#     version = 2
 #     is_exit = False
 #     is_file_browse = False
 #     is_process_list = False

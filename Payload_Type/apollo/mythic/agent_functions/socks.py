@@ -33,7 +33,7 @@ class SocksCommand(CommandBase):
     needs_admin = False
     help_cmd = "socks [port number]"
     description = "Enable SOCKS 5 compliant proxy to send data to the target network. Compatible with proxychains and proxychains4."
-    version = 1
+    version = 2
     script_only = True
     author = "@djhohnstein"
     argument_class = SocksArguments

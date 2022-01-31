@@ -198,7 +198,7 @@ class ScCommand(CommandBase):
     needs_admin = False
     help_cmd = "sc"
     description = "Service control manager wrapper function"
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

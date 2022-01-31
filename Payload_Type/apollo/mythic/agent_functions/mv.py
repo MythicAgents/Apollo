@@ -64,7 +64,7 @@ class MvCommand(CommandBase):
     needs_admin = False
     help_cmd = "mv [source] [dest]"
     description = "Move a file from source to destination."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
