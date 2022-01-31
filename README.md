@@ -61,6 +61,7 @@ net_localgroup | `net_localgroup [computer]` | Retrieve local groups known by a 
 net_shares | `net_shares [-Computer [computer]]` | Show shares of a remote PC.
 powerpick | `powerpick -Command [command]` | Executes PowerShell in a sacrificial process.
 powershell | `powershell -Command [command]` | Executes PowerShell in your currently running process.
+powershell_import | `powershell_import` | Register a new .ps1 file to be used in other PowerShell jobs
 ppid | `ppid -PID [pid_integer]` | Set the PPID of sacrificial jobs to the specified PID.
 printspoofer | `printspoofer -Command [command]` | Execute a command in SYSTEM integrity so long as you have SeImpersonate privileges.
 ps | `ps` | List process information.
@@ -69,6 +70,7 @@ pth | `pth -Domain [domain] -User [username] -NTLM [ntlm_hash] [-AES128 [aes128_
 pwd | `pwd` | Print working directory.
 reg_query | `reg_query -Hive [HKCU:\\|HKU:\\|HKLM:\\|HKCR:\] [-Key [keyname]]` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
 reg_write_value | `reg_write_value -Hive [HKCU:\|HKU:\|HKLM:\|HKCR:\] -Key [keyname] [-Name [value_name] -Value [value_value]]` | Write specified values to the registry keys.
+register_assembly | `register_assembly` | Register a .NET assembly with the agent to be used in .NET post-exploitation activities
 register_file | `register_file` | Register a file to the agent's file cache. Used to store assemblies, executables, and PowerShell scripts.
 rev2self | `rev2self` | Revert the access token to the original access token.
 rm | `rm -Path [path] [-Host [hostname] -File [filename]]` | Remove a file specified by `[path]`. Alternatively, if `-File` is provided, `-Path` will be used as the directory, and `-File` will be the filename.
