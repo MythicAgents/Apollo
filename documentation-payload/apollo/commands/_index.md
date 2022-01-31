@@ -29,10 +29,12 @@ pre = "<b>2. </b>"
     * [inline_assembly](/agents/apollo/commands/inline_assembly/)
     * [execute_assembly](/agents/apollo/commands/execute_assembly/)
     * [assembly_inject](/agents/apollo/commands/assembly_inject/)
+    * [register_assembly](/agents/apollo/commands/register_assembly/)
 - PowerShell Commands
     * [powershell](/agents/apollo/commands/powershell/)
     * [psinject](/agents/apollo/commands/psinject/)
     * [powerpick](/agents/apollo/commands/powerpick/)
+    * [powershell_import](/agents/apollo/commands/powershell_import/)
 - File Operations
     * [upload](/agents/apollo/commands/upload/)
     * [download](/agents/apollo/commands/download/)
