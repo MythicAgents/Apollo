@@ -44,7 +44,7 @@ class BlockDllsCommand(CommandBase):
     needs_admin = False
     help_cmd = "blockdlls [on|off]"
     description = "Block non-Microsoft DLLs from loading into sacrificial processes."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

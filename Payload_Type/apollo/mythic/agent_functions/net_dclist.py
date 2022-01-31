@@ -17,7 +17,7 @@ class NetDCListCommand(CommandBase):
     needs_admin = False
     help_cmd = "net_dclist [domain]"
     description = "Get domain controllers belonging to [domain]. Defaults to current domain."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

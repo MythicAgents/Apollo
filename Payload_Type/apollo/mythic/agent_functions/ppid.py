@@ -35,7 +35,7 @@ class PpidCommand(CommandBase):
     needs_admin = False
     help_cmd = "ppid [pid]"
     description = "Change the parent process for post-ex jobs by the specified pid."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False

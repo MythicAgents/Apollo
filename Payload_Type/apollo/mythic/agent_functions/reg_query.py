@@ -57,7 +57,7 @@ class RegQuery(CommandBase):
     needs_admin = False
     help_cmd = "reg_query [key]"
     description = "Query registry keys and values for an associated registry key [key]."
-    version = 1
+    version = 2
     is_exit = False
     is_file_browse = False
     is_process_list = False
