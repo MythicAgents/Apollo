@@ -63,15 +63,18 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 "proxy_port": "",
                 "proxy_user": "",
                 "proxy_pass": "",
-                "domain_front": "",
+                # "domain_front": "",
                 "killdate": "",
-                "USER_AGENT": "",
+                # "USER_AGENT": "",
                 "pipename": "",
                 "port": "",
                 "encrypted_exchange_check": "",
                 "payload_uuid": self.uuid,
                 "AESPSK": "",
             },
+        }
+        extra_variables = {
+            
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
         stdout_err = ""
@@ -87,12 +90,13 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     for item in val:
                         if not isinstance(item, dict):
                             raise Exception("Expected a list of dictionaries, but got {}".format(type(item)))
-                        if item["key"] == "Host":
-                            special_files_map["Config.cs"]["domain_front"] = item["value"]
-                        elif item["key"] == "User-Agent":
-                            special_files_map["Config.cs"]["USER_AGENT"] = item["value"]
-                        else:
-                            special_files_map["Config.cs"][item["key"]] = item["value"]
+                        extra_variables[item["key"]] = item["value"]
+                        # if item["key"] == "Host":
+                        #     special_files_map["Config.cs"]["domain_front"] = item["value"]
+                        # elif item["key"] == "User-Agent":
+                        #     special_files_map["Config.cs"]["USER_AGENT"] = item["value"]
+                        # else:
+                        #     special_files_map["Config.cs"][item["key"]] = item["value"]
                 elif isinstance(val, str):
                     special_files_map["Config.cs"][key] = val
                 else:
@@ -111,6 +115,14 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     if csFile.endswith(specialFile):
                         for key, val in special_files_map[specialFile].items():
                             templateFile = templateFile.replace(key + "_here", val)
+                        if specialFile == "Config.cs":
+                            if len(extra_variables.keys()) > 0:
+                                extra_data = ""
+                                for key, val in extra_variables.items():
+                                    extra_data += "                        { \"{}\": \"{}\" },\n".format(key, val)
+                                templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", extra_data)
+                            else:
+                                templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
             outputType = self.get_parameter('output_type').lower()

@@ -47,7 +47,7 @@ namespace Apollo
                         { "proxy_pass", "" },
                         { "domain_front", "domain_front" },
                         { "killdate", "-1" },
-                        { "USER_AGENT", "Apollo-Refactor" }
+                        { "USER_AGENT", "Apollo-Refactor" },
 #else
                         { "callback_interval", "callback_interval_here" },
                         { "callback_jitter", "callback_jitter_here" },
@@ -59,9 +59,8 @@ namespace Apollo
                         { "proxy_port", "proxy_port_here" },
                         { "proxy_user", "proxy_user_here" },
                         { "proxy_pass", "proxy_pass_here" },
-                        { "domain_front", "domain_front_here" },
                         { "killdate", "killdate_here" },
-                        { "USER_AGENT", "USER_AGENT_here" }
+                        HTTP_ADDTIONAL_HEADERS_HERE
 #endif
                     }
                 }
