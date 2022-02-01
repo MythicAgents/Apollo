@@ -173,32 +173,6 @@ namespace HttpTransport
             {
                 return false;
             }
-
-
-            // byte[] requestPayload = Encoding.UTF8.GetBytes(sMsg);
-            // HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
-            // request.KeepAlive = false;
-            // request.Method = "Post";
-            // request.ContentType = "text/plain";
-            // request.ContentLength = requestPayload.Length;
-            // request.UserAgent = UserAgent;
-            // if (DomainFront != "" && DomainFront != "domain_front")
-            //     request.Proxy = new WebProxy(DomainFront);
-            // Stream reqStream = request.GetRequestStream();
-            // reqStream.Write(requestPayload, 0, requestPayload.Length);
-            // reqStream.Close();
-            // try
-            // {
-            //     WebResponse response = request.GetResponse();
-            //     using (StreamReader reader = new StreamReader(response.GetResponseStream()))
-            //     {
-            //         onResponse(Serializer.Deserialize<TResult>(reader.ReadToEnd()));
-            //     }
-            //     return true;
-            // } catch
-            // {
-            //     return false;
-            // }
         }
 
         // Only really used for bind servers so this returns empty
