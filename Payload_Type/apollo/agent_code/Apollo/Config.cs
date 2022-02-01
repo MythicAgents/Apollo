@@ -60,7 +60,7 @@ namespace Apollo
                         { "proxy_user", "proxy_user_here" },
                         { "proxy_pass", "proxy_pass_here" },
                         { "killdate", "killdate_here" },
-                        HTTP_ADDTIONAL_HEADERS_HERE
+                        HTTP_ADDITIONAL_HEADERS_HERE
 #endif
                     }
                 }
