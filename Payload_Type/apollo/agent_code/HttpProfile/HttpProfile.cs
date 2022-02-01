@@ -29,9 +29,7 @@ namespace HttpTransport
         private string ProxyPort;
         private string ProxyUser;
         private string ProxyPass;
-        private string DomainFront;
         private string KillDate;
-        private string UserAgent;
         // synthesis of ProxyHost and ProxyPort
         private string ProxyAddress;
         private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
@@ -151,7 +149,7 @@ namespace HttpTransport
             {
                 webClient.Proxy = (IWebProxy) new WebProxy()
                 {
-                    Address = new Uri(ProxyHost),
+                    Address = new Uri(ProxyAddress),
                     Credentials = new NetworkCredential(ProxyUser, ProxyPass),
                     UseDefaultCredentials = false,
                     BypassProxyOnLocal = false
