@@ -119,7 +119,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                             if len(extra_variables.keys()) > 0:
                                 extra_data = ""
                                 for key, val in extra_variables.items():
-                                    extra_data += "                        { \"{}\": \"{}\" },\n".format(key, val)
+                                    extra_data += "                        { \"" + key + "\": \"" + val + "\" },\n"
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", extra_data)
                             else:
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
