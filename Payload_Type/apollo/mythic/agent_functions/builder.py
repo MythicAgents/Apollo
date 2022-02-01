@@ -14,7 +14,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.0.0"
+    version = "2.0.1"
     wrapper = False
     wrapped_payloads = ["service_wrapper"]
     note = """
@@ -119,7 +119,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                             if len(extra_variables.keys()) > 0:
                                 extra_data = ""
                                 for key, val in extra_variables.items():
-                                    extra_data += "                        { \"" + key + "\": \"" + val + "\" },\n"
+                                    extra_data += "                        { \"" + key + "\", \"" + val + "\" },\n"
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", extra_data)
                             else:
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
