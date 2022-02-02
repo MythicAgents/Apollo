@@ -37,8 +37,8 @@ namespace ApolloInterop.Classes
             {
                 _pipeSecurity = new PipeSecurity();
                 PipeAccessRule multipleInstances = new PipeAccessRule(WindowsIdentity.GetCurrent().Name, PipeAccessRights.CreateNewInstance, AccessControlType.Allow);
-                PipeAccessRule everyoneAllowedRule = new PipeAccessRule("Everyone", PipeAccessRights.ReadWrite, AccessControlType.Allow);
-                PipeAccessRule networkAllowRule = new PipeAccessRule("Network", PipeAccessRights.ReadWrite, AccessControlType.Allow);
+                PipeAccessRule everyoneAllowedRule = new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), PipeAccessRights.ReadWrite, AccessControlType.Allow);
+                PipeAccessRule networkAllowRule = new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.ReadWrite, AccessControlType.Allow);
                 _pipeSecurity.AddAccessRule(multipleInstances);
                 _pipeSecurity.AddAccessRule(everyoneAllowedRule);
                 _pipeSecurity.AddAccessRule(networkAllowRule);
