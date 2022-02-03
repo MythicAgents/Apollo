@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using static Injection.Shared.Win32;
 
-namespace Injection.Techniques
+namespace Injection.Techniques.CreateRemoteThread
 {
     public class CreateRemoteThread : InjectionTechnique
     {

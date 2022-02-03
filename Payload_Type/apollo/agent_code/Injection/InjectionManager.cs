@@ -12,14 +12,14 @@ namespace Injection
     public class InjectionManager : IInjectionManager
     {
         private IAgent _agent;
-        private Type _currentTechnique = typeof(Techniques.CreateRemoteThread);
+        private Type _currentTechnique = typeof(Techniques.CreateRemoteThread.CreateRemoteThread);
         private ConcurrentDictionary<string, Type> _loadedTechniques = new ConcurrentDictionary<string, Type>();
         public InjectionManager(IAgent agent)
         {
             _agent = agent;
             foreach (Type t in Assembly.GetExecutingAssembly().GetTypes())
             {
-                if (t.Namespace == "Injection.Techniques" &&
+                if (t.Namespace != null && t.Namespace.StartsWith("Injection.Techniques") &&
                     t.IsPublic &&
                     t.IsClass &&
                     t.IsVisible)

@@ -1,14 +1,11 @@
-﻿using ApolloInterop.Classes.Api;
+﻿using System;
+using System.Diagnostics;
+using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using static Injection.Shared.Win32;
 
-namespace Injection.Techniques
+namespace Injection.Techniques.EarlyBirdQueueUserAPC
 {
     public class QueueUserAPC : InjectionTechnique
     {

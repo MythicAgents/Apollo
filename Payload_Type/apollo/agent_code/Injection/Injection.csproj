@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -43,8 +45,10 @@
     <Compile Include="InjectionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shared\Win32.cs" />
-    <Compile Include="Techniques\CreateRemoteThread.cs" />
-    <Compile Include="Techniques\QueueUserAPC.cs" />
+    <Compile Include="Techniques\CreateRemoteThread\CreateRemoteThread.cs" />
+    <Compile Include="Techniques\EarlyBirdQueueUserAPC\QueueUserAPC.cs" />
+    <Compile Include="Techniques\Syscall_x64\NtCreateThreadEx.cs" />
+    <Compile Include="Techniques\Syscall_x64\USysCall64.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
@@ -52,6 +56,5 @@
       <Name>ApolloInterop</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
