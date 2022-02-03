@@ -59,6 +59,23 @@ namespace Injection.Shared
             WINSTA_ALL_ACCESS = 0x0000037F
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct CLIENT_ID
+        {
+            internal IntPtr UniqueProcess;
+            internal IntPtr UniqueThread;
+        }
+        
+        [StructLayout(LayoutKind.Sequential, Pack = 0)]
+        internal struct OBJECT_ATTRIBUTES
+        {
+            public int Length;
+            public IntPtr RootDirectory;
+            public IntPtr ObjectName;
+            public uint Attributes;
+            public IntPtr SecurityDescriptor;
+            public IntPtr SecurityQualityOfService;
+        }
         
         [StructLayout(LayoutKind.Sequential)]
         internal struct UNICODE_STRING : IDisposable

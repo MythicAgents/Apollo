@@ -5,7 +5,7 @@ using ApolloInterop.Classes.Core;
 using ApolloInterop.Interfaces;
 using static Injection.Shared.Win32;
 
-namespace Injection.Techniques.EarlyBirdQueueUserAPC
+namespace Injection.Techniques.EarlyBird
 {
     public class QueueUserAPC : InjectionTechnique
     {

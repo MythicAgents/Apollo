@@ -24,7 +24,8 @@ namespace Injection
                     t.IsClass &&
                     t.IsVisible)
                 {
-                    _loadedTechniques[t.Name] = t;
+                    string k = t.FullName.Replace("Injection.Techniques.", "");
+                    _loadedTechniques[k] = t;
                 }
             }
         }
