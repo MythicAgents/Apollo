@@ -29,6 +29,14 @@ namespace ApolloInterop.Classes.Core
         protected OpenProcess _pOpenProcess;
         protected DuplicateHandle _pDuplicateHandle;
         protected CloseHandle _pCloseHandle;
+
+        // Dangerous - should only be used when resolving
+        // critical functions _pOpenProcess, _pDuplicateHandle,
+        // and _pCloseHandle.
+        public InjectionTechnique()
+        {
+            
+        }
         public InjectionTechnique(IAgent agent, byte[] code, int pid)
         {
             _code = code;

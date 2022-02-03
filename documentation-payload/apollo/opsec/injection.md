@@ -6,9 +6,10 @@ weight = 102
 
 ## Process Injection in Apollo
 
-Apollo has abstracted process injection into its own project. At the time of writing (1/29/2022) there is only two process injection techniques implemented:
+Apollo has abstracted process injection into its own project and has the following techniques implemented:
 - CreateRemoteThread
 - QueueUserAPC (early bird)
+- NtCreateThreadEx (via Syscalls)
 
 As an operator, sometimes one injection technique is more desirable than another. To facilitate this, the [`get_injection_techniques`](/agents/apollo/commands/get_injection_techniques) command will list all currently loaded injection techniques the agent knows about. Similarly, [`set_injection_technique`](/agents/apollo/commands/set_injection_technique) will update the currently used injection technique throughout all post-exploitation jobs.
 
