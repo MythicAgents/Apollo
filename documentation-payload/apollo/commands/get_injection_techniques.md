@@ -26,4 +26,8 @@ You are encouraged to create your own injection technique and submit a new pull 
 #### Early-Bird QueueUserAPC
 Works for all jobs spawning sacrificial processes, but mileage may vary for injection-type commands. Calls `VirtualAllocEx`, `WriteProcessMemory`, `QueueUserAPC` and `ResumeThread` calls.
 
+#### NtCreateThreadEx
+Leverages syscalls from the NTDLL library to directly invoke shellcode associated with `NtOpenProcess`, `NtClose`, `NtDuplicateObject`, `NtAllocateVirtualMemory`, `NtProtectVirtualMemory`, `NtWriteVirtualMemory`, and `NtCreateThreadEx`
+
+
 ![get_injection_techniques](../images/get_injection_techniques.png)
