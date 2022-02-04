@@ -37,7 +37,7 @@ namespace Apollo
         private static bool _completed;
         private static Action<object> _flushMessages;
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             //_sendAction = (object p) =>
             //{
