@@ -24,7 +24,14 @@ class InlineAssemblyArguments(TaskArguments):
                 display_name = "Assembly",
                 type=ParameterType.ChooseOne,
                 dynamic_query_function=self.get_files,
-                description="Assembly to execute (e.g., Seatbelt.exe).",),
+                description="Assembly to execute (e.g., Seatbelt.exe).",
+                parameter_group_info = [
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default",
+                        ui_position=1
+                    ),
+                ]),
             CommandParameter(
                 name="assembly_arguments",
                 cli_name="Arguments",
@@ -35,6 +42,7 @@ class InlineAssemblyArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=2
                     ),
                 ]),
         ]
@@ -72,7 +80,7 @@ class InlineAssemblyCommand(CommandBase):
     needs_admin = False
     help_cmd = "inline_assembly [Assembly.exe] [args]"
     description = "Executes a .NET assembly with the specified arguments in a disposable AppDomain. This assembly must first be known by the agent using the `register_assembly` command."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False

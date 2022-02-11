@@ -29,6 +29,13 @@ class ExecutePEArguments(TaskArguments):
                 type=ParameterType.ChooseOne,
                 dynamic_query_function=self.get_files,
                 description="PE to execute (e.g., mimikatz.exe).",
+                parameter_group_info = [
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Default",
+                        ui_position=1,
+                    ),
+                ],
             ),
             CommandParameter(
                 name="pe_arguments",
@@ -40,6 +47,7 @@ class ExecutePEArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=2
                     ),
                 ]),
         ]
@@ -77,7 +85,7 @@ class ExecutePECommand(CommandBase):
     needs_admin = False
     help_cmd = "execute_pe [PE.exe] [args]"
     description = "Executes a .NET assembly with the specified arguments. This assembly must first be known by the agent using the `register_assembly` command."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False

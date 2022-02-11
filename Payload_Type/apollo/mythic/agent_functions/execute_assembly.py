@@ -28,7 +28,7 @@ class ExecuteAssemblyArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=True,
                         group_name="Default",
-                        ui_position=0
+                        ui_position=1
                     )
                 ]),
             CommandParameter(
@@ -41,7 +41,7 @@ class ExecuteAssemblyArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
-                        ui_position=1
+                        ui_position=2
                     ),
                 ]),
         ]
@@ -80,7 +80,7 @@ class ExecuteAssemblyCommand(CommandBase):
     needs_admin = False
     help_cmd = "execute_assembly [Assembly.exe] [args]"
     description = "Executes a .NET assembly with the specified arguments. This assembly must first be known by the agent using the `register_assembly` command."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False

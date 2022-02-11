@@ -21,7 +21,7 @@ class PthArguments(TaskArguments):
                 description="Domain associated with user.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=0,
+                        ui_position=1,
                         required=True
                     )
                 ]),
@@ -33,7 +33,7 @@ class PthArguments(TaskArguments):
                 description="Username associated with the NTLM hash.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=1,
+                        ui_position=2,
                         required=True
                     )
                 ]),
@@ -45,7 +45,7 @@ class PthArguments(TaskArguments):
                 description="User's NTLM hash.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=2,
+                        ui_position=3,
                         required=True
                     )
                 ]),
@@ -57,7 +57,7 @@ class PthArguments(TaskArguments):
                 description="AES128 key of user. Used for over pass the hash.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=3,
+                        ui_position=4,
                         required=False
                     )
                 ]),
@@ -69,7 +69,7 @@ class PthArguments(TaskArguments):
                 description="AES256 key of user. Used for over pass the hash.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=4,
+                        ui_position=5,
                         required=False
                     )
                 ]),
@@ -81,13 +81,13 @@ class PthArguments(TaskArguments):
                 description="The process to launch under the specified credentials.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=5,
+                        ui_position=6,
                         required=False
                     ),
                     ParameterGroupInfo(
                         required=False,
                         group_name="SavedCredentials",
-                        ui_position=1
+                        ui_position=2
                     )
                 ]),
         
@@ -99,7 +99,7 @@ class PthArguments(TaskArguments):
                 description="Username and hash of the user to impersonate",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=0,
+                        ui_position=1,
                         required=True,
                         group_name="SavedCredentials"
                     )
@@ -153,7 +153,7 @@ class PthCommand(CommandBase):
     needs_admin = False
     help_cmd = "pth -Domain [domain] -User [user] -NTLM [ntlm] [-AES128 [aes128] -AES256 [aes256] -Run [cmd.exe]]"
     description = "Spawn a new process using the specified domain user's credential material."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False

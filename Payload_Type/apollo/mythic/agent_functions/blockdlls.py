@@ -17,7 +17,7 @@ class BlockDllsArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
-                        ui_position=0,
+                        ui_position=1,
                         group_name="Default",
                     )
                 ]
@@ -44,7 +44,7 @@ class BlockDllsCommand(CommandBase):
     needs_admin = False
     help_cmd = "blockdlls [on|off]"
     description = "Block non-Microsoft DLLs from loading into sacrificial processes."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False
