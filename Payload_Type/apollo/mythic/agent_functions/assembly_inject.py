@@ -25,7 +25,7 @@ class AssemblyInjectArguments(TaskArguments):
                 parameter_group_info = [
                     ParameterGroupInfo(
                         required=True,
-                        ui_position=0,
+                        ui_position=1,
                         group_name="Default",
                     )
                 ]),
@@ -39,7 +39,7 @@ class AssemblyInjectArguments(TaskArguments):
                 parameter_group_info = [
                     ParameterGroupInfo(
                         required=True,
-                        ui_position=1,
+                        ui_position=2,
                         group_name="Default",
                     ),
                 ]),
@@ -52,7 +52,7 @@ class AssemblyInjectArguments(TaskArguments):
                 parameter_group_info = [
                     ParameterGroupInfo(
                         required=False,
-                        ui_position=2,
+                        ui_position=3,
                         group_name="Default",
                     ),
                 ]),
@@ -97,7 +97,7 @@ class AssemblyInjectCommand(CommandBase):
     needs_admin = False
     help_cmd = "assembly_inject [pid] [assembly] [args]"
     description = "Inject the unmanaged assembly loader into a remote process. The loader will then execute the .NET binary in the context of the injected process."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False

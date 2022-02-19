@@ -17,7 +17,7 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=True,
                         group_name="Default",
-                        ui_position=0
+                        ui_position=1
                     )
                 ]),
             CommandParameter(
@@ -30,7 +30,7 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
-                        ui_position=1
+                        ui_position=2
                     ),
                 ]),
         ]
@@ -79,7 +79,7 @@ class DownloadCommand(CommandBase):
     needs_admin = False
     help_cmd = "download -Path [path/to/file] [-Host [hostname]]"
     description = "Download a file off the target system."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False

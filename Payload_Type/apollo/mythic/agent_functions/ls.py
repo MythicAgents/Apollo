@@ -30,7 +30,7 @@ class LsArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
-                        ui_position=0
+                        ui_position=2
                     ),
                 ]),
         ]
@@ -92,7 +92,7 @@ class LsCommand(CommandBase):
     needs_admin = False
     help_cmd = "ls [path]"
     description = "List files and folders in a specified directory (defaults to your current working directory.)"
-    version = 2
+    version = 3
     is_exit = False
     supported_ui_features = ["file_browser:list"]
     is_process_list = False

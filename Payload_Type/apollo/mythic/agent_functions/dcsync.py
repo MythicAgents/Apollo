@@ -21,7 +21,7 @@ class DcSyncArguments(TaskArguments):
                 description="Domain to sync credentials from.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=0,
+                        ui_position=1,
                         required=True
                     )
                 ]),
@@ -34,7 +34,7 @@ class DcSyncArguments(TaskArguments):
                 description="Username to sync. Defaults to all.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=1,
+                        ui_position=2,
                         required=False
                     )
                 ]),
@@ -46,7 +46,7 @@ class DcSyncArguments(TaskArguments):
                 description="Domain controller to sync credential material from.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=2,
+                        ui_position=3,
                         required=False
                     )
                 ]),
@@ -83,7 +83,7 @@ class DcSyncCommand(CommandBase):
     needs_admin = False
     help_cmd = "dcsync -Domain [domain] -User [user]"
     description = "Sync a user's Kerberos keys to the local machine."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     is_process_list = False
