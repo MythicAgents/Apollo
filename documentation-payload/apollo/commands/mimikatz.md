@@ -33,6 +33,9 @@ mimikatz -Command sekurlsa::logonpasswords
 mimikatz -Command \"privilege::debug\" \"sekurlsa::pth /domain:DOMAIN /user:USERNAME /ntlm:HASH\" exit
 ```
 
+## See Also
+- [dcsync](/agents/apollo/commands/dcsync/)
+- [pth](/agents/apollo/commands/dcsync/)
 
 ## MITRE ATT&CK Mapping
 
