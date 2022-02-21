@@ -8,13 +8,13 @@ To install Apollo, you'll need Mythic installed on a remote computer. You can fi
 From the Mythic install directory, use the following command to install Apollo as the **root** user:
 
 ```
-./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git
+./mythic-cli install github https://github.com/MythicAgents/Apollo.git
 ```
 
 From the Mythic install directory, use the following command to install Apollo as a **non-root** user:
 
 ```
-sudo -E ./mythic-cli payload install github https://github.com/MythicAgents/Apollo.git
+sudo -E ./mythic-cli install github https://github.com/MythicAgents/Apollo.git
 ```
 
 Once installed, restart Mythic to build a new agent.
