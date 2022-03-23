@@ -107,10 +107,10 @@ function(task, responses){
                                     "Run As": jinfo["run_as"],
                                     "Start Type": jinfo["start_type"],
                                     "Status": jinfo["status"],
-                                    "PID": jinfo["pid"],
+                                    "PID": jinfo["pid"] === "0" ? "":jinfo["pid"],
                                     "Dependencies": jinfo["dependencies"].toString(),
                                     "Service Type": jinfo["service_type"],
-                                    "Accepted Control": jinfo["accepted_controls"].toString(),
+                                    "Accepted Control": jinfo["accepted_controls"][0] === "0" ? "":jinfo["accepted_controls"].toString(),
                                     "Error Control": jinfo["error_control"],
                                     "Load Order Group": jinfo["load_order_group"],
                                     "Computer": jinfo["computer"]
