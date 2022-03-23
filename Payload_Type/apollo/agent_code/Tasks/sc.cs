@@ -20,18 +20,13 @@ using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
-using System.Text;
 using ST = System.Threading.Tasks;
 using System.ServiceProcess;
-using System.Threading;
-using System.Windows.Forms;
 
 namespace Tasks
 {
     public class sc : Tasking
     {
-        #region typedefs
-
         [DataContract]
         internal struct ScParameters
         {
@@ -55,6 +50,18 @@ namespace Tasks
             public string DisplayName;
             [DataMember(Name = "binpath")]
             public string Binpath;
+            [DataMember(Name = "run_as")]
+            public string RunAs;
+            [DataMember(Name = "password")]
+            public string Password;
+            [DataMember(Name = "service_type")]
+            public string ServiceTypeParam;
+            [DataMember(Name = "start_type")]
+            public string StartType;
+            [DataMember(Name = "dependencies")]
+            public string[] Dependencies;
+            [DataMember(Name = "description")]
+            public string Description;
         }
 
         [DataContract]
@@ -71,7 +78,7 @@ namespace Tasks
             [DataMember(Name = "dependencies")]
             public string[] Dependencies;
             [DataMember(Name = "service_type")]
-            public string ServiceType;
+            public string SvcType;
             [DataMember(Name = "start_type")]
             public string StartType;
             [DataMember(Name = "description")]
@@ -84,29 +91,17 @@ namespace Tasks
             public string LoadOrderGroup;
             [DataMember(Name = "run_as")] 
             public string RunAs;
-            [DataMember(Name = "tag_id")] 
+            [DataMember(Name = "error_control")] 
             public string ErrorControl;
             [DataMember(Name = "pid")] 
             public string PID;
             [DataMember(Name = "accepted_controls")] 
             public string[] AcceptedControls;
-            
+            [DataMember(Name = "action")] 
+            public string Action;
         }
 
-        public struct ServiceInfo
-        {
-            public uint ServiceType;
-            public uint StartType;
-            public uint ErrorControl;
-            public string BinaryPathName;
-            public string LoadOrderGroup;
-            public int TagId;
-            public string Dependencies;
-            public string StartName;
-            public string DisplayName;
-            public IntPtr ServiceHandle;
-        }
-        
+        #region typedefs
         [StructLayout(LayoutKind.Sequential)]
         private struct QUERY_SERVICE_CONFIG
         {
@@ -147,8 +142,7 @@ namespace Tasks
             public int processId;
             public int serviceFlags;
         }
-        
-        
+
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         public struct ENUM_SERVICE_STATUS_PROCESS
         {
@@ -360,13 +354,14 @@ namespace Tasks
 
             SERVICE_USER_DEFINED_CONTROL = 0x00100,
 
-            SERVICE_ALL_ACCESS =
-                (STANDARD_RIGHTS_REQUIRED | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_QUERY_STATUS | SERVICE_ENUMERATE_DEPENDENTS | SERVICE_START | SERVICE_STOP | SERVICE_PAUSE_CONTINUE
-                 | SERVICE_INTERROGATE | SERVICE_USER_DEFINED_CONTROL)
+            SERVICE_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG 
+                                  | SERVICE_QUERY_STATUS | SERVICE_ENUMERATE_DEPENDENTS | SERVICE_START | SERVICE_STOP 
+                                  | SERVICE_PAUSE_CONTINUE | SERVICE_INTERROGATE | SERVICE_USER_DEFINED_CONTROL)
         }
         
         [Flags]
-        public enum ServiceType {
+        public enum ServiceType : uint 
+        {
             SERVICE_KERNEL_DRIVER = 0x1, 
             SERVICE_FILE_SYSTEM_DRIVER = 0x2, 
             SERVICE_WIN32_OWN_PROCESS = 0x10, 
@@ -399,7 +394,7 @@ namespace Tasks
             SERVICE_ERROR_SEVERE = 0x00000002,
         }
 
-        public enum ServiceStartType : int
+        public enum ServiceStartType : uint
         {
             /// <summary>
             /// A service started automatically by the service control manager during system startup. For more information, see Automatically Starting Services.
@@ -506,11 +501,11 @@ namespace Tasks
         private delegate bool CloseServiceHandle(IntPtr hService);
         private static CloseServiceHandle _pCloseServiceHandle = null;
 
-        private delegate IntPtr OpenSCManager(string lpMachineName, string lpSCDB, SCMAccess scParameter);
+        private delegate ServiceControlHandle OpenSCManager(string lpMachineName, string lpSCDB, SCMAccess scParameter);
         private static OpenSCManager _pOpenSCManager = null;
         
-        private delegate IntPtr CreateService(
-            IntPtr serviceControlManagerHandle,
+        private delegate ServiceControlHandle CreateService(
+            ServiceControlHandle serviceControlManagerHandle,
             string lpSvcName,
             string lpDisplayName,
             ServiceAccess dwDesiredAccess,
@@ -525,20 +520,20 @@ namespace Tasks
             string lpPassword);
         private static CreateService _pCreateService = null;
 
-        private delegate bool ControlService(IntPtr hService, ServiceControl dwControl, ref ServiceStatus lpServiceStatus);
+        private delegate bool ControlService(ServiceControlHandle hService, ServiceControl dwControl, ref ServiceStatus lpServiceStatus);
         private static ControlService _pControlService = null;
 
         private delegate int StartService(ServiceControlHandle serviceHandle, int dwNumServiceArgs, string lpServiceArgVectors);
         private static StartService _pStartService = null;
         
-        private delegate IntPtr OpenService(IntPtr hSCManager, string lpServiceName, ServiceAccess dwDesiredAccess);
+        private delegate ServiceControlHandle OpenService(ServiceControlHandle hSCManager, string lpServiceName, ServiceAccess dwDesiredAccess);
         private static OpenService _pOpenService = null;
         
-        private delegate int DeleteService(IntPtr hServiceControl);
+        private delegate int DeleteService(ServiceControlHandle hServiceControl);
         private static DeleteService _pDeleteService = null;
         
         private delegate bool QueryServiceConfig2(
-            IntPtr hService, 
+            ServiceControlHandle hService, 
             ConfigInfoLevel dwInfoLevel, 
             IntPtr buffer, 
             uint cbBufSize, 
@@ -546,14 +541,14 @@ namespace Tasks
         private static QueryServiceConfig2 _pQueryServiceConfig2 = null;
         
         private delegate bool QueryServiceConfig(
-            IntPtr hService,
+            ServiceControlHandle hService,
             IntPtr intPtrQueryConfig,
             uint cbBufSize,
             out uint pcbBytesNeeded);
         private static QueryServiceConfig _pQueryServiceConfig = null;
 
         private delegate bool EnumServicesStatusEx(
-            IntPtr hSCManager,
+            ServiceControlHandle hSCManager,
             ServiceInfoLevel infoLevel, 
             int dwServiceType,
             int dwServiceState, 
@@ -565,65 +560,24 @@ namespace Tasks
             string pszGroupName);
         private static EnumServicesStatusEx _pEnumServicesStatusEx = null;
         
+        private delegate bool ChangeServiceConfig(
+            ServiceControlHandle hService,
+            uint nServiceType,
+            uint nStartType,
+            uint nErrorControl,
+            string lpBinaryPathName,
+            string lpLoadOrderGroup,
+            IntPtr lpdwTagId,
+            string lpDependencies,
+            string lpServiceStartName,
+            string lpPassword,
+            string lpDisplayName);
+        private static ChangeServiceConfig _pChangeServiceConfig = null;
+
+        private delegate bool ChangeServiceConfig2(ServiceControlHandle hService, ConfigInfoLevel dwInfoLevel, IntPtr lpInfo);
+        private static ChangeServiceConfig2 _pChangeServiceConfig2 = null;
+        
         #endregion
-
-        private static bool InstallService(string hostname, string ServiceName, string ServiceDisplayName, string ServiceEXE)
-        {
-            try
-            {
-                UninstallService(hostname, ServiceName);
-            }
-            catch (Exception ex) { }
-            // Console.WriteLine("[*] Attempting to create service {0} on {1}...", ServiceName, hostname);
-            IntPtr scmHandle = _pOpenSCManager(hostname, null, SCMAccess.SC_MANAGER_CREATE_SERVICE);
-            if (scmHandle == IntPtr.Zero)
-            {
-                throw new Exception($"Failed to open SCM: {new Win32Exception().Message}");
-            }
-
-            IntPtr serviceHandle = _pCreateService(
-                scmHandle,
-                ServiceName,
-                ServiceDisplayName,
-                ServiceAccess.SERVICE_ALL_ACCESS,
-                ServiceType.SERVICE_WIN32_OWN_PROCESS,
-                ServiceStartType.SERVICE_AUTO_START,
-                ServiceErrorControl.SERVICE_ERROR_NORMAL,
-                ServiceEXE,
-                null,
-                IntPtr.Zero,
-                null,
-                null,
-                null);
-            
-            if (serviceHandle == IntPtr.Zero)
-            {
-                throw new Exception($"ServiceHandle is invalid: {new Win32Exception().Message}");
-            }
-            
-            _pCloseServiceHandle(scmHandle);
-            _pCloseServiceHandle(serviceHandle);
-            return true;
-        }
-        private static bool UninstallService(string hostname, string ServiceName) {
-            IntPtr scmHandle = _pOpenSCManager(hostname, null, SCMAccess.SC_MANAGER_CREATE_SERVICE);
-            
-            if (scmHandle == IntPtr.Zero)
-            {
-                throw new Exception($"Failed to open SCM: {new Win32Exception().Message}");
-            }
-
-            IntPtr serviceHandle = _pOpenService(scmHandle, ServiceName, ServiceAccess.SERVICE_ALL_ACCESS);
-            if (serviceHandle == IntPtr.Zero)
-            {
-                throw new Exception($"ServiceHandle is invalid: {new Win32Exception().Message}");
-            }
-
-            _pDeleteService(serviceHandle);
-            _pCloseServiceHandle(scmHandle);
-            _pCloseServiceHandle(serviceHandle);
-            return true;
-        }
         
         public sc(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
         {
@@ -670,6 +624,14 @@ namespace Tasks
             if (_pQueryServiceConfig2 == null) 
             {
                 _pQueryServiceConfig2 = _agent.GetApi().GetLibraryFunction<QueryServiceConfig2>(Library.ADVAPI32, "QueryServiceConfig2W");
+            }
+            if (_pChangeServiceConfig == null) 
+            {
+                _pChangeServiceConfig = _agent.GetApi().GetLibraryFunction<ChangeServiceConfig>(Library.ADVAPI32, "ChangeServiceConfigA");
+            }
+            if (_pChangeServiceConfig2 == null) 
+            {
+                _pChangeServiceConfig2 = _agent.GetApi().GetLibraryFunction<ChangeServiceConfig2>(Library.ADVAPI32, "ChangeServiceConfig2W");
             }
         }
         
@@ -738,9 +700,13 @@ namespace Tasks
                 if (string.IsNullOrEmpty(args.Service))
                 {
                     throw new Exception("Modify action requires service name to create.");
-                } else if (string.IsNullOrEmpty(args.Binpath) && string.IsNullOrEmpty(args.DisplayName))
+                } else if (string.IsNullOrEmpty(args.Binpath) && string.IsNullOrEmpty(args.DisplayName) && string.IsNullOrEmpty(args.RunAs) && string.IsNullOrEmpty(args.ServiceTypeParam) && string.IsNullOrEmpty(args.StartType))
                 {
-                    throw new Exception("Modify action requires parameter to modify.");
+                    Console.WriteLine("all fill ins empty");
+                    if (args.ServiceTypeParam == "SERVICE_NO_CHANGE" && args.StartType == "SERVICE_NO_CHANGE") {
+                        Console.WriteLine("all default");
+                        throw new Exception("Modify action requires parameter to modify.");
+                    }
                 }
             } 
             else
@@ -749,6 +715,62 @@ namespace Tasks
             }
         }
 
+        private static bool InstallService(string hostname, string ServiceName, string ServiceDisplayName, string ServiceEXE)
+        {
+            Console.WriteLine(hostname);
+            try
+            {
+                UninstallService(hostname, ServiceName);
+            }
+            catch (Exception) { }
+            // Console.WriteLine("[*] Attempting to create service {0} on {1}...", ServiceName, hostname);
+            ServiceControlHandle scmHandle = _pOpenSCManager(hostname, null, SCMAccess.SC_MANAGER_CREATE_SERVICE);
+            if (scmHandle.IsInvalid)
+            {
+                throw new Exception($"Failed to open SCM: {new Win32Exception().Message}");
+            }
+
+            ServiceControlHandle serviceHandle = _pCreateService(
+                scmHandle,
+                ServiceName,
+                ServiceDisplayName,
+                ServiceAccess.SERVICE_ALL_ACCESS,
+                ServiceType.SERVICE_WIN32_OWN_PROCESS,
+                ServiceStartType.SERVICE_AUTO_START,
+                ServiceErrorControl.SERVICE_ERROR_NORMAL,
+                ServiceEXE,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null);
+            
+            if (serviceHandle.IsInvalid)
+            {
+                throw new Exception($"ServiceHandle is invalid: {new Win32Exception().Message}");
+            }
+            
+            return true;
+        }
+        
+        private static bool UninstallService(string hostname, string ServiceName) {
+            ServiceControlHandle scmHandle = _pOpenSCManager(hostname, null, SCMAccess.SC_MANAGER_CREATE_SERVICE);
+            
+            if (scmHandle.IsInvalid)
+            {
+                throw new Exception($"Failed to open SCM: {new Win32Exception().Message}");
+            }
+
+            ServiceControlHandle serviceHandle = _pOpenService(scmHandle, ServiceName, ServiceAccess.SERVICE_ALL_ACCESS);
+            if (serviceHandle.IsInvalid)
+            {
+                throw new Exception($"ServiceHandle is invalid: {new Win32Exception().Message}");
+            }
+
+            _pDeleteService(serviceHandle);
+            return true;
+        }
+        
         private static ENUM_SERVICE_STATUS_PROCESS[] GetServiceStatuses(IntPtr buf, uint iServicesReturned) {
             ENUM_SERVICE_STATUS_PROCESS serviceStatus;
             List<ENUM_SERVICE_STATUS_PROCESS> services = new List<ENUM_SERVICE_STATUS_PROCESS>();
@@ -782,7 +804,7 @@ namespace Tasks
             return services.ToArray();
         }
                 
-        private static string ReportDescription(IntPtr serviceHandle)
+        private static string GetServiceDescription(ServiceControlHandle serviceHandle)
         {
             // Determine the buffer size needed
             _pQueryServiceConfig2(serviceHandle, ConfigInfoLevel.SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, out uint dwBytesNeeded);
@@ -793,16 +815,28 @@ namespace Tasks
                 return null;
             }
 
-            SERVICE_DESCRIPTION descriptionStruct = new SERVICE_DESCRIPTION();
-            Marshal.PtrToStructure( ptr, descriptionStruct );
+            SERVICE_DESCRIPTION sd = new SERVICE_DESCRIPTION();
+            Marshal.PtrToStructure( ptr, sd );
             
             if (ptr != IntPtr.Zero)
                 Marshal.FreeHGlobal( ptr );
 
-            return descriptionStruct.lpDescription;
+            return sd.lpDescription;
+        }
+
+        private static bool SetServiceDescription(ServiceControlHandle serviceHandle, string description) {
+            SERVICE_DESCRIPTION sd = new SERVICE_DESCRIPTION {
+                lpDescription = description
+            };
+            IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(sd));
+            Marshal.StructureToPtr(sd, ptr, false);
+            bool result = _pChangeServiceConfig2(serviceHandle, ConfigInfoLevel.SERVICE_CONFIG_DESCRIPTION, ptr);
+            if (ptr != IntPtr.Zero)
+                Marshal.FreeHGlobal( ptr );
+            return result;
         }
         
-        private static QUERY_SERVICE_CONFIG GetServiceConfig(IntPtr serviceHandle) {
+        private static QUERY_SERVICE_CONFIG GetServiceConfig(ServiceControlHandle serviceHandle) {
             IntPtr qscPtr = IntPtr.Zero;
 
             bool retCode = _pQueryServiceConfig(serviceHandle, qscPtr, 0, out uint bytesNeeded);
@@ -822,6 +856,183 @@ namespace Tasks
             return (QUERY_SERVICE_CONFIG)Marshal.PtrToStructure(qscPtr, typeof(QUERY_SERVICE_CONFIG));
         }
 
+        private static List<ServiceResult> QueryServies(ScParameters parameters, string action) 
+        {
+            IntPtr buf = IntPtr.Zero;
+            uint iResumeHandle = 0;
+            List<ServiceResult> results = new List<ServiceResult>();
+            
+            ServiceControlHandle serviceMangerHandle = _pOpenSCManager(parameters.Computer, null, SCMAccess.SC_MANAGER_ENUMERATE_SERVICE);
+
+            if (serviceMangerHandle.IsInvalid)
+                throw new Exception($"Failed to open SCM: {new Win32Exception().Message}");
+
+            bool result = _pEnumServicesStatusEx(
+                serviceMangerHandle,
+                ServiceInfoLevel.SC_ENUM_PROCESS_INFO,
+                (int) ServiceType.SERVICE_WIN32,
+                (int) ServiceStateRequest.SERVICE_STATE_ALL,
+                IntPtr.Zero,
+                0,
+                out uint iBytesNeeded,
+                out uint iServicesReturned,
+                ref iResumeHandle, 
+                null);
+
+            if (!result) {
+                // allocate our memory to receive the data for all the services (including the names)
+                buf = Marshal.AllocHGlobal((int) iBytesNeeded);
+
+                result = _pEnumServicesStatusEx(
+                    serviceMangerHandle,
+                    ServiceInfoLevel.SC_ENUM_PROCESS_INFO,
+                    (int) ServiceType.SERVICE_WIN32,
+                    (int) ServiceStateRequest.SERVICE_STATE_ALL,
+                    buf,
+                    iBytesNeeded,
+                    out iBytesNeeded,
+                    out iServicesReturned,
+                    ref iResumeHandle,
+                    null);
+            }
+
+            if (!result) 
+            {
+                if (buf != IntPtr.Zero) 
+                    Marshal.FreeHGlobal(buf);
+                throw new Exception($"Unable to enumerate services: {new Win32Exception().Message}");
+            }
+
+            ENUM_SERVICE_STATUS_PROCESS[] serviceArray = GetServiceStatuses(buf, iServicesReturned);
+
+            if (buf != IntPtr.Zero) 
+                Marshal.FreeHGlobal(buf);
+            
+            foreach (ENUM_SERVICE_STATUS_PROCESS service in serviceArray) 
+            {
+
+                if (!string.IsNullOrEmpty(parameters.Service)) 
+                {
+                    if (!string.Equals(service.pServiceName, parameters.Service, StringComparison.CurrentCultureIgnoreCase))
+                        continue;
+                }
+                
+                ServiceControlHandle serviceHandle = _pOpenService( serviceMangerHandle, service.pServiceName, ServiceAccess.SERVICE_QUERY_CONFIG );
+                if (serviceHandle.IsInvalid)
+                    throw new ExternalException( $"Error OpenService: {new Win32Exception()}" );
+                
+                QUERY_SERVICE_CONFIG qsc = GetServiceConfig(serviceHandle);
+                TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+                
+                ServiceResult svc = new ServiceResult 
+                {
+                    Computer = parameters.Computer,
+                    Description = GetServiceDescription(serviceHandle),
+                    Service = service.pServiceName,
+                    DisplayName = service.pDisplayName,
+                    BinaryPath = Marshal.PtrToStringAuto(qsc.BinaryPathName),
+                    LoadOrderGroup = Marshal.PtrToStringAuto(qsc.LoadOrderGroup),
+                    RunAs = Marshal.PtrToStringAuto(qsc.StartName),
+                    Dependencies = Marshal.PtrToStringAuto(qsc.Dependencies)?.Split(','),
+                    SvcType = Convert.ToString((ServiceType)service.ServiceStatus.serviceType),
+                    Status = textInfo.ToTitleCase(Convert.ToString((ServiceState)service.ServiceStatus.currentState).Replace("SERVICE_", "").ToLower()).Replace("_", ""),
+                    PID = Convert.ToString(service.ServiceStatus.processId),
+                    AcceptedControls = Convert.ToString((CONTROLS_ACCEPTED)service.ServiceStatus.controlsAccepted).Split(','),
+                    CanStop = false,
+                    StartType = Convert.ToString((ServiceStartMode)qsc.StartType),
+                    ErrorControl = qsc.ErrorControl.ToString(),
+                    Action = action
+                };
+
+                if (svc.AcceptedControls.Contains("SERVICE_ACCEPT_STOP"))
+                    svc.CanStop = true;
+
+                results.Add(svc);
+            }
+                    
+            return results;
+        }
+
+        private static void ModifyService(ScParameters parameters) 
+        {
+            const uint SERVICE_NO_CHANGE = 0xFFFFFFFF;
+            
+            ServiceControlHandle serviceMangerHandle = _pOpenSCManager(parameters.Computer, null, SCMAccess.GENERIC_WRITE);
+            ServiceStatus status = new ServiceStatus();
+            
+            if (serviceMangerHandle.IsInvalid)
+                throw new ExternalException($"Error OpenServiceManager: {new Win32Exception().Message}");
+
+            ServiceControlHandle serviceHandle = _pOpenService(serviceMangerHandle, parameters.Service, ServiceAccess.SERVICE_CHANGE_CONFIG);
+            
+            if (serviceHandle.IsInvalid)
+                throw new ExternalException($"Error OpenService: {new Win32Exception().Message}");
+            
+            uint newServiceType = SERVICE_NO_CHANGE;
+            uint newStartType = SERVICE_NO_CHANGE;
+            string newBinPath = null;
+            string newServiceStartName = null;
+            string newPassword = null;
+            string newDisplayName = null;
+            string newDepends = null;
+            
+            if (parameters.Dependencies != null) 
+            {
+                if (parameters.Dependencies.Length == 1 && parameters.Dependencies[0] == "\"")
+                    // clearing dependencies if -Dependencies "" is passed
+                    newDepends = ""; 
+                else 
+                {
+                    foreach (string depend in parameters.Dependencies) 
+                    {
+                        newDepends += depend + "\0";
+                    }
+                    newDepends += "\0";
+                }
+            }
+            
+            if (!string.IsNullOrEmpty(parameters.Binpath))
+                newBinPath = parameters.Binpath;
+            
+            if (!string.IsNullOrEmpty(parameters.RunAs))
+                newServiceStartName = parameters.RunAs;
+            
+            if (!string.IsNullOrEmpty(parameters.Password)) 
+            {
+                newPassword = parameters.Password;
+                // Specify an empty string if the account has no password or if the service runs in the
+                // LocalService, NetworkService, or LocalSystem account.
+                if (newPassword == "\"")
+                    newPassword = "\"\"";
+            }
+            
+            if (!string.IsNullOrEmpty(parameters.DisplayName))
+                newDisplayName = parameters.DisplayName;
+            
+            if (!string.IsNullOrEmpty(parameters.ServiceTypeParam) && parameters.ServiceTypeParam != "SERVICE_NO_CHANGE")
+                newServiceType = (uint) Enum.Parse(typeof(ServiceType), parameters.ServiceTypeParam);
+            
+            if (!string.IsNullOrEmpty(parameters.StartType) && parameters.StartType != "SERVICE_NO_CHANGE")
+                newStartType = (uint) Enum.Parse(typeof(ServiceStartType), parameters.StartType);
+            
+            bool changeServiceSuccess = _pChangeServiceConfig(serviceHandle,
+                newServiceType,
+                newStartType,
+                SERVICE_NO_CHANGE,
+                newBinPath,
+                null,
+                IntPtr.Zero,
+                newDepends,
+                newServiceStartName,
+                newPassword,
+                newDisplayName);
+            
+            if (!string.IsNullOrEmpty(parameters.Description))
+                SetServiceDescription(serviceHandle, parameters.Description);
+            
+            if (!changeServiceSuccess)
+                throw new ExternalException($"Failed to update {parameters.Service}: {new Win32Exception().Message}");    
+        }
         public override void Start()
         {
             TaskResponse resp;
@@ -830,106 +1041,20 @@ namespace Tasks
             {
                 parameters.Computer = Environment.GetEnvironmentVariable("COMPUTERNAME");
             }
-
+ 
             ValidateParameters(parameters);
             List<ServiceResult> results = new List<ServiceResult>();
             
             if (parameters.Query)
             {
-                IntPtr buf = IntPtr.Zero;
-                IntPtr serviceHandle = IntPtr.Zero;
-                IntPtr serviceMangerHandle = IntPtr.Zero;
-                uint iResumeHandle = 0;
-                
                 try {
-                    serviceMangerHandle = _pOpenSCManager(null, null, SCMAccess.SC_MANAGER_ALL_ACCESS);
-
-                    if (serviceMangerHandle == IntPtr.Zero)
-                        throw new Exception($"Failed to open SCM: {new Win32Exception().Message}");
-
-                    bool result = _pEnumServicesStatusEx(
-                        serviceMangerHandle,
-                        ServiceInfoLevel.SC_ENUM_PROCESS_INFO,
-                        (int) ServiceType.SERVICE_WIN32,
-                        (int) ServiceStateRequest.SERVICE_STATE_ALL,
-                        IntPtr.Zero,
-                        0,
-                        out uint iBytesNeeded,
-                        out uint iServicesReturned,
-                        ref iResumeHandle, 
-                        null);
-
-                    if (!result) {
-                        // allocate our memory to receive the data for all the services (including the names)
-                        buf = Marshal.AllocHGlobal((int) iBytesNeeded);
-
-                        result = _pEnumServicesStatusEx(
-                            serviceMangerHandle,
-                            ServiceInfoLevel.SC_ENUM_PROCESS_INFO,
-                            (int) ServiceType.SERVICE_WIN32,
-                            (int) ServiceStateRequest.SERVICE_STATE_ALL,
-                            buf,
-                            iBytesNeeded,
-                            out iBytesNeeded,
-                            out iServicesReturned,
-                            ref iResumeHandle,
-                            null);
-                    }
-
-                    if (!result)
-                        throw new Exception($"Unable to enumerate services: {new Win32Exception().Message}");
-
-                    ENUM_SERVICE_STATUS_PROCESS[] serviceArray = GetServiceStatuses(buf, iServicesReturned);
-
-                    foreach (ENUM_SERVICE_STATUS_PROCESS service in serviceArray) {
-
-                        serviceHandle = _pOpenService( serviceMangerHandle, service.pServiceName, ServiceAccess.SERVICE_QUERY_CONFIG );
-                        if (serviceHandle == IntPtr.Zero)
-                            throw new ExternalException( $"Error OpenService: {new Win32Exception()}" );
-                        
-                        QUERY_SERVICE_CONFIG qsc = GetServiceConfig(serviceHandle);
-                        TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-                        
-                        ServiceResult svc = new ServiceResult {
-                            Computer = parameters.Computer,
-                            Description = ReportDescription(serviceHandle),
-                            Service = service.pServiceName,
-                            DisplayName = service.pDisplayName,
-                            BinaryPath = Marshal.PtrToStringAuto(qsc.BinaryPathName),
-                            LoadOrderGroup = Marshal.PtrToStringAuto(qsc.LoadOrderGroup),
-                            RunAs = Marshal.PtrToStringAuto(qsc.StartName),
-                            Dependencies = Marshal.PtrToStringAuto(qsc.Dependencies)?.Split(','),
-                            ServiceType = Convert.ToString((ServiceType)service.ServiceStatus.serviceType),
-                            Status = textInfo.ToTitleCase(Convert.ToString((ServiceState)service.ServiceStatus.currentState).Replace("SERVICE_", "").ToLower()).Replace("_", ""),
-                            PID = Convert.ToString(service.ServiceStatus.processId),
-                            AcceptedControls = Convert.ToString((CONTROLS_ACCEPTED)service.ServiceStatus.controlsAccepted).Split(','),
-                            CanStop = false,
-                            StartType = Convert.ToString((ServiceStartMode)qsc.StartType),
-                            ErrorControl = qsc.ErrorControl.ToString(),
-                        };
-
-                        if (svc.AcceptedControls.Contains("SERVICE_ACCEPT_STOP"))
-                            svc.CanStop = true;
-
-                        results.Add(svc);
-                        
-                        if (serviceHandle != IntPtr.Zero)
-                            _pCloseServiceHandle(serviceHandle);
-                    }
+                    results = QueryServies(parameters, "query");
                     resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
-
                 }
                 catch(Exception ex) 
                 {
                     resp = CreateTaskResponse($"Failed to enumerate services on {parameters.Computer}. Reason: {ex.Message}",
                         true, "error");
-                }
-                finally 
-                { 
-                    if (serviceMangerHandle != IntPtr.Zero) 
-                        _pCloseServiceHandle(serviceMangerHandle);
-                    if (buf != IntPtr.Zero) 
-                        Marshal.FreeHGlobal(buf);
                 }
             }
             else if (parameters.Create)
@@ -939,14 +1064,9 @@ namespace Tasks
                     if (InstallService(parameters.Computer, parameters.Service, parameters.DisplayName, parameters.Binpath))
                     {
                         ServiceController createdService = new ServiceController(parameters.Service, parameters.Computer);
-                        results.Add(new ServiceResult
-                        {
-                            DisplayName = createdService.DisplayName,
-                            Service = createdService.ServiceName,
-                            Status = createdService.Status.ToString(),
-                            CanStop = createdService.CanStop,
-                            Computer = parameters.Computer
-                        });
+
+                        results = QueryServies(parameters, "create");
+                        
                         resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                     }
                     else
@@ -1000,14 +1120,9 @@ namespace Tasks
                         waitForServiceAsync.Start();
                         ST.Task.WaitAny(new ST.Task[] {waitForServiceAsync}, _cancellationToken.Token);
                         _cancellationToken.Token.ThrowIfCancellationRequested();
-                        results.Add(new ServiceResult
-                        {
-                            DisplayName = instance.DisplayName,
-                            Service = instance.ServiceName,
-                            CanStop = instance.CanStop,
-                            Status = instance.Status.ToString(),
-                            Computer = parameters.Computer
-                        });
+                        
+                        results = QueryServies(parameters, "start");
+                        
                         resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                     }
                 }
@@ -1038,14 +1153,9 @@ namespace Tasks
                             stopTask
                         }, _cancellationToken.Token);
                         _cancellationToken.Token.ThrowIfCancellationRequested();
-                        results.Add(new ServiceResult
-                        {
-                            DisplayName = stopInstance.DisplayName,
-                            Service = stopInstance.ServiceName,
-                            CanStop = stopInstance.CanStop,
-                            Status = stopInstance.Status.ToString(),
-                            Computer = parameters.Computer
-                        });
+
+                        results = QueryServies(parameters, "stop");
+                        
                         resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
                     }
                 }
@@ -1054,15 +1164,28 @@ namespace Tasks
                     resp = CreateTaskResponse($"Failed to stop service. Reason: {ex.Message}", true, "error");
                 }
             }
+            else if (parameters.Modify) 
+            {
+                try 
+                {
+                    ModifyService(parameters);
+
+                    results = QueryServies(parameters, "modify");
+
+                    resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true);
+                }
+                catch (Exception ex) {
+                    resp = CreateTaskResponse($"Failed to modify service. Reason: {ex.Message}", true, "error");
+                }
+            }
             else
             {
                 resp = CreateTaskResponse($"No valid action given.", true, "error");
             }
 
-                // Your code here..
-            // Then add response to queue
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
+        
     }
 }
 
