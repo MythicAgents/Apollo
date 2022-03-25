@@ -28,5 +28,6 @@ namespace ApolloInterop.Classes.Api
         public static Library NETUTILS { get { return new Library("netutils.dll"); } }
         public static Library NETAPI32 { get { return new Library("Netapi32.dll"); } }
         public static Library SRVCLI { get { return new Library("srvcli.dll"); } }
+        public static Library IPHLPAPI { get { return new Library("iphlpapi.dll"); } }
     }
 }
