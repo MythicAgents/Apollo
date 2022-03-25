@@ -17,6 +17,7 @@ The `sc` command has several different parameter groups based on the type of tas
 - `-Stop`
 - `-Create`
 - `-Delete`
+- `-Modify`
 
 ### Query
 
@@ -89,6 +90,50 @@ The name of the service to stop.
 #### Computer (optional)
 
 The computer to stop the specified `ServiceName` service.
+
+### Modify
+
+![delete](../images/sc_modify.png)
+
+#### ServiceName
+
+The name of the service to modify.
+
+#### Computer (optional)
+
+The computer to modify the specified `ServiceName` service.
+
+#### BinPath (optional)
+
+Path to service executable.
+
+#### DisplayName (optional)
+
+The display name of the service to query.
+
+#### Description (optional) 
+Set the service description.
+
+#### StartType (optional)
+Set the user the service will run as. Defaults to SERVICE_NO_CHANGE.
+
+Valid options: SERVICE_NO_CHANGE, SERVICE_AUTO_START, SERVICE_BOOT_START, SERVICE_DEMAND_START, SERVICE_DISABLED, SERVICE_SYSTEM_START
+
+#### Dependencies (optional) 
+Set the dependencies for a service. Values can be a comma separated list or an empty string ("") to remove dependencies.
+
+#### ServiceType (optional)
+Set the service type.
+
+Valid Options: SERVICE_NO_CHANGE, SERVICE_KERNEL_DRIVER, SERVICE_FILE_SYSTEM_DRIVER, SERVICE_WIN32_OWN_PROCESS, SERVICE_WIN32_SHARE_PROCESS, SERVICE_INTERACTIVE_PROCESS, SERVICETYPE_NO_CHANGE, SERVICE_WIN32
+
+#### RunAs (optional)
+
+Set the user the service will run as.
+
+#### Password (optional)
+Set the service account password.
+
 
 ## Usage
 ```
