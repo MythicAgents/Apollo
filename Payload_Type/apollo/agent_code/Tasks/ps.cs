@@ -50,14 +50,52 @@ namespace Tasks
             IntPtr TokenInformation,
             int TokenInformationLength,
             out int ReturnLength);
-        private delegate bool IsWow64Process(IntPtr hProcess, out bool Wow64Process);
+        private delegate bool IsWow64Process2(IntPtr hProcess, out IMAGE_FILE_MACHINE_ pProcessMachine, out IMAGE_FILE_MACHINE_ pNativeMachine);
         private delegate bool ConvertSidToStringSid(IntPtr pSid, out string strSid);
 
-        private IsWow64Process _pIsWow64Process;
+        private IsWow64Process2 _pIsWow64Process2;
         private OpenProcessToken _pOpenProcessToken;
         private NtQueryInformationProcess _pNtQueryInformationProcess;
         private GetTokenInformation _pGetTokenInformation;
         private ConvertSidToStringSid _pConvertSidToStringSid;
+
+        enum IMAGE_FILE_MACHINE_
+        {
+            IMAGE_FILE_MACHINE_UNKNOWN = 0,
+            IMAGE_FILE_MACHINE_TARGET_HOST = 0x001,
+            IMAGE_FILE_MACHINE_I386 = 0x014c,
+            IMAGE_FILE_MACHINE_R3000_LE = 0x0162,
+            IMAGE_FILE_MACHINE_R3000_BE = 0x160,
+            IMAGE_FILE_MACHINE_R4000_LE = 0x0166,
+            IMAGE_FILE_MACHINE_R10000_LE = 0x0168,
+            IMAGE_FILE_MACHINE_WCEMIPSV2_LE = 0x0169,
+            IMAGE_FILE_MACHINE_ALPHA = 0x0184,
+            IMAGE_FILE_MACHINE_SH3_LE = 0x01a2,
+            IMAGE_FILE_MACHINE_SH3DSP = 0x01a3,
+            IMAGE_FILE_MACHINE_SH3E_LE = 0x01a4,
+            IMAGE_FILE_MACHINE_SH4_LE = 0x01a6,
+            IMAGE_FILE_MACHINE_SH5 = 0x01a8,
+            IMAGE_FILE_MACHINE_ARM_LE = 0x01c0,
+            IMAGE_FILE_MACHINE_THUMB_LE = 0x01c2,
+            IMAGE_FILE_MACHINE_ARMNT_LE = 0x01c4,
+            IMAGE_FILE_MACHINE_AM33 = 0x01d3,
+            IMAGE_FILE_MACHINE_POWERPC = 0x01F0,
+            IMAGE_FILE_MACHINE_POWERPCFP = 0x01f1,
+            IMAGE_FILE_MACHINE_IA64 = 0x0200,
+            IMAGE_FILE_MACHINE_MIPS16 = 0x0266,
+            IMAGE_FILE_MACHINE_ALPHA64 = 0x0284,
+            IMAGE_FILE_MACHINE_MIPSFPU = 0x0366,
+            IMAGE_FILE_MACHINE_MIPSFPU16 = 0x0466,
+            IMAGE_FILE_MACHINE_AXP64 = 0x0284,
+            IMAGE_FILE_MACHINE_TRICORE = 0x0520,
+            IMAGE_FILE_MACHINE_CEF = 0x0CEF,
+            IMAGE_FILE_MACHINE_EBC = 0x0EBC,
+            IMAGE_FILE_MACHINE_AMD64 = 0x8664,
+            IMAGE_FILE_MACHINE_M32R_LE = 0x9041,
+            IMAGE_FILE_MACHINE_ARM64_LE = 0xAA64,
+            IMAGE_FILE_MACHINE_CEE = 0xC0EE,
+        };
+        
         #endregion
 
         private Action<object> _flushMessages;
@@ -66,7 +104,7 @@ namespace Tasks
         private bool _complete = false;
         public ps(IAgent agent, Task task) : base(agent, task)
         {
-            _pIsWow64Process = _agent.GetApi().GetLibraryFunction<IsWow64Process>(Library.KERNEL32, "IsWow64Process");
+            _pIsWow64Process2 = _agent.GetApi().GetLibraryFunction<IsWow64Process2>(Library.KERNEL32, "IsWow64Process2");
             _pOpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
             _pNtQueryInformationProcess = _agent.GetApi().GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
             _pGetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
@@ -303,8 +341,19 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
 
                     try
                     {
-                        _pIsWow64Process(proc.Handle, out bool is64);
-                        current.Architecture = is64 ? "x64" : "x86";
+                        _pIsWow64Process2(proc.Handle, out IMAGE_FILE_MACHINE_ processMachine, out _);
+                        switch (processMachine)
+                        {
+                            case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_UNKNOWN:
+                                current.Architecture = "x64";
+                                break;
+                            case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_I386:
+                                current.Architecture = "x86";
+                                break;
+                            default:
+                                current.Architecture = "x86";
+                                break;
+                        }
                     }
                     catch
                     {
