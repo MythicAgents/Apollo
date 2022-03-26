@@ -74,6 +74,7 @@
     <Compile Include="make_token.cs" />
     <Compile Include="mkdir.cs" />
     <Compile Include="mv.cs" />
+    <Compile Include="netstat.cs" />
     <Compile Include="net_dclist.cs" />
     <Compile Include="net_localgroup.cs" />
     <Compile Include="net_localgroup_member.cs" />
