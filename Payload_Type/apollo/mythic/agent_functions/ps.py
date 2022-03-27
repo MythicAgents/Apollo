@@ -19,7 +19,7 @@ class PsCommand(CommandBase):
     needs_admin = False
     help_cmd = "ps"
     description = "Get a brief process listing with basic information."
-    version = 2
+    version = 3
     is_exit = False
     is_file_browse = False
     supported_ui_features = ["process_browser:list"]

@@ -107,6 +107,7 @@ namespace Apollo.Agent
                 User = Environment.UserName,
                 Host = Dns.GetHostName(),
                 PID = System.Diagnostics.Process.GetCurrentProcess().Id,
+                ProcessName = System.Diagnostics.Process.GetCurrentProcess().ProcessName,
                 IP = GetIP(),
                 UUID = UUID,
                 Architecture = IntPtr.Size == 8 ? "x64" : "x86",

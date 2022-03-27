@@ -984,6 +984,8 @@ namespace ApolloInterop.Structs
             public string Host;
             [DataMember(Name = "pid")]
             public int PID;
+
+            [DataMember(Name = "process_name")] public string ProcessName;
             [DataMember(Name = "ip")]
             public string IP;
             [DataMember(Name = "uuid")]
