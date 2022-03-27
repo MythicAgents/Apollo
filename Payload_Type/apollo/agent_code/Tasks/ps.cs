@@ -50,10 +50,13 @@ namespace Tasks
             IntPtr TokenInformation,
             int TokenInformationLength,
             out int ReturnLength);
+
+        private delegate bool IsWow64Process(IntPtr hProcess, out bool Wow64Process);
         private delegate bool IsWow64Process2(IntPtr hProcess, out IMAGE_FILE_MACHINE_ pProcessMachine, out IMAGE_FILE_MACHINE_ pNativeMachine);
         private delegate bool ConvertSidToStringSid(IntPtr pSid, out string strSid);
 
-        private IsWow64Process2 _pIsWow64Process2;
+        private IsWow64Process2 _pIsWow64Process2 = null;
+        private IsWow64Process _pIsWow64Process = null;
         private OpenProcessToken _pOpenProcessToken;
         private NtQueryInformationProcess _pNtQueryInformationProcess;
         private GetTokenInformation _pGetTokenInformation;
@@ -104,7 +107,13 @@ namespace Tasks
         private bool _complete = false;
         public ps(IAgent agent, Task task) : base(agent, task)
         {
-            _pIsWow64Process2 = _agent.GetApi().GetLibraryFunction<IsWow64Process2>(Library.KERNEL32, "IsWow64Process2");
+            try
+            {
+                _pIsWow64Process2 = _agent.GetApi().GetLibraryFunction<IsWow64Process2>(Library.KERNEL32, "IsWow64Process2");   
+            } catch
+            {
+                _pIsWow64Process = _agent.GetApi().GetLibraryFunction<IsWow64Process>(Library.KERNEL32, "IsWow64Process");
+            }
             _pOpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
             _pNtQueryInformationProcess = _agent.GetApi().GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
             _pGetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
@@ -341,18 +350,51 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
 
                     try
                     {
-                        _pIsWow64Process2(proc.Handle, out IMAGE_FILE_MACHINE_ processMachine, out _);
-                        switch (processMachine)
+                        if (_pIsWow64Process2 != null)
                         {
-                            case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_UNKNOWN:
-                                current.Architecture = "x64";
-                                break;
-                            case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_I386:
-                                current.Architecture = "x86";
-                                break;
-                            default:
-                                current.Architecture = "x86";
-                                break;
+                            if (_pIsWow64Process2(proc.Handle, out IMAGE_FILE_MACHINE_ processMachine, out _))
+                            {
+                                switch (processMachine)
+                                {
+                                    case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_UNKNOWN:
+                                        current.Architecture = "x64";
+                                        break;
+                                    case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_I386:
+                                        current.Architecture = "x86";
+                                        break;
+                                    default:
+                                        current.Architecture = "x86";
+                                        break;
+                                }   
+                            }
+                            else
+                            {
+                                current.Architecture = "";
+                            }
+                        }
+                        else
+                        {
+                            if (_pIsWow64Process(proc.Handle, out bool IsWow64))
+                            {
+                                if (IsWow64 && IntPtr.Size == 8)
+                                {
+                                    current.Architecture = "x64";
+                                } else if (!IsWow64 && IntPtr.Size == 4)
+                                {
+                                    current.Architecture = "x86";
+                                } else if (!IsWow64 && IntPtr.Size == 8)
+                                {
+                                    current.Architecture = "x64";
+                                }
+                                else
+                                {
+                                    current.Architecture = "";
+                                }
+                            }
+                            else
+                            {
+                                current.Architecture = "";
+                            }
                         }
                     }
                     catch
