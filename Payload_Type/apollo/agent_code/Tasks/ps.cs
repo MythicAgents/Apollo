@@ -376,20 +376,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                         {
                             if (_pIsWow64Process(proc.Handle, out bool IsWow64))
                             {
-                                if (IsWow64 && IntPtr.Size == 8)
-                                {
-                                    current.Architecture = "x64";
-                                } else if (!IsWow64 && IntPtr.Size == 4)
-                                {
-                                    current.Architecture = "x86";
-                                } else if (!IsWow64 && IntPtr.Size == 8)
-                                {
-                                    current.Architecture = "x64";
-                                }
-                                else
-                                {
-                                    current.Architecture = "";
-                                }
+                                current.Architecture = IsWow64 ? "x86" : "x64";
                             }
                             else
                             {
