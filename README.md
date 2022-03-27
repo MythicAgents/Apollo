@@ -28,68 +28,70 @@ Once installed, restart Mythic to build a new agent.
 
 ## Commands Manual Quick Reference
 
-Command | Syntax | Description
-------- | ------ | -----------
-assembly_inject | `assembly_inject -PID [pid] -Assembly [assembly] -Arguments [args]` | Execute .NET assembly in remote process.
-blockdlls | `blockdlls -EnableBlock [false]` | Block non-Microsoft signed DLLs from loading into post-ex jobs.
-cat | `cat -Path [file]` | Retrieve the output of a file.
-cd | `cd -Path [dir]` | Change working directory.
-cp | `cp -Path [source] -Destination [destination]` | Copy a file from path to destination.
-dcsync | `dcsync -Domain contoso.local [-User username -DC dc.ip]` | DCSync one or more user credentials
-download | `download -Path [path] [-Host [hostname]]` | Download a file off the target system.
-execute_assembly | `execute_assembly -Assembly [assembly.exe] -Arguments [args]` | Execute a .NET assembly registered with `register_file`
-execute_pe | `execute_pe -PE [binary.exe] -Arguments [args]` | Execute a statically compiled executable that's been registered with `register_file`
-exit | `exit` | Task agent to exit.
-get_injection_techniques | `get_injection_techniques` | Show currently registered injection techniques as well as the current technique.
-getprivs | `getprivs` | Enable as many privileges as possible for the current access token.
-inject | `inject` | Inject a new payload into a remote process.
-inline_assembly | `inline_assembly -Assembly [Assembly.exe] -Arguments [Additional Args]` | Execute a .NET assembly in the currently executing process that's been registered with `register_file`
-jobkill | `jobkill [jid]` | Kill a running job in the agent.
-jobs | `jobs` | List all running jobs.
-keylog_inject | `keylog_inject -PID [pid]` | Inject a keylogger into a remote process.
-kill | `kill -PID [pid]` | Attempt to kill the process specified by `[pid]`.
-link | `link` | Link to a P2P agent via SMB or TCP. Modal popup only.
-load | `load command1 command2 ...` | Load new commands into the agent.
-ls | `ls [-Path [path]]` | List files and folders in `[path]`. Defaults to current working directory.
-make_token | `make_token` | Impersonate a user using plaintext credentials. Modal popup.
-mimikatz | `mimikatz -Command [args]` | Execute Mimikatz with the specified arguments.
-mkdir | `mkdir -Path [dir]` | Create a directory.
-mv | `mv -Path [source] -Destination [destination]` | Move a file from source to destination. Modal popup.
-net_dclist | `net_dclist [domain.local]` | List all domain controllers for the current or specified domain.
-net_localgroup_member | `net_localgroup_member -Group [groupname] [-Computer [computername]]` | Retrieve membership information from a specified group on a given computer.
-net_localgroup | `net_localgroup [computer]` | Retrieve local groups known by a computer. Default to localhost.
-net_shares | `net_shares [-Computer [computer]]` | Show shares of a remote PC.
-powerpick | `powerpick -Command [command]` | Executes PowerShell in a sacrificial process.
-powershell | `powershell -Command [command]` | Executes PowerShell in your currently running process.
-powershell_import | `powershell_import` | Register a new .ps1 file to be used in other PowerShell jobs
-ppid | `ppid -PID [pid_integer]` | Set the PPID of sacrificial jobs to the specified PID.
-printspoofer | `printspoofer -Command [command]` | Execute a command in SYSTEM integrity so long as you have SeImpersonate privileges.
-ps | `ps` | List process information.
-psinject | `psinject -PID [pid] -Command [command]` | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
+Command | Syntax                                                                                                                   | Description
+------- |--------------------------------------------------------------------------------------------------------------------------| -----------
+assembly_inject | `assembly_inject -PID [pid] -Assembly [assembly] -Arguments [args]`                                                      | Execute .NET assembly in remote process.
+blockdlls | `blockdlls -EnableBlock [false]`                                                                                         | Block non-Microsoft signed DLLs from loading into post-ex jobs.
+cat | `cat -Path [file]`                                                                                                       | Retrieve the output of a file.
+cd | `cd -Path [dir]`                                                                                                         | Change working directory.
+cp | `cp -Path [source] -Destination [destination]`                                                                           | Copy a file from path to destination.
+dcsync | `dcsync -Domain contoso.local [-User username -DC dc.ip]`                                                                | DCSync one or more user credentials
+download | `download -Path [path] [-Host [hostname]]`                                                                               | Download a file off the target system.
+execute_assembly | `execute_assembly -Assembly [assembly.exe] -Arguments [args]`                                                            | Execute a .NET assembly registered with `register_file`
+execute_pe | `execute_pe -PE [binary.exe] -Arguments [args]`                                                                          | Execute a statically compiled executable that's been registered with `register_file`
+exit | `exit`                                                                                                                   | Task agent to exit.
+get_injection_techniques | `get_injection_techniques`                                                                                               | Show currently registered injection techniques as well as the current technique.
+getprivs | `getprivs`                                                                                                               | Enable as many privileges as possible for the current access token.
+ifconfig | `ifconfig` | Get Network Adapters and Interfaces
+inject | `inject`                                                                                                                 | Inject a new payload into a remote process.
+inline_assembly | `inline_assembly -Assembly [Assembly.exe] -Arguments [Additional Args]`                                                  | Execute a .NET assembly in the currently executing process that's been registered with `register_file`
+jobkill | `jobkill [jid]`                                                                                                          | Kill a running job in the agent.
+jobs | `jobs`                                                                                                                   | List all running jobs.
+keylog_inject | `keylog_inject -PID [pid]`                                                                                               | Inject a keylogger into a remote process.
+kill | `kill -PID [pid]`                                                                                                        | Attempt to kill the process specified by `[pid]`.
+link | `link`                                                                                                                   | Link to a P2P agent via SMB or TCP. Modal popup only.
+load | `load command1 command2 ...`                                                                                             | Load new commands into the agent.
+ls | `ls [-Path [path]]`                                                                                                      | List files and folders in `[path]`. Defaults to current working directory.
+make_token | `make_token`                                                                                                             | Impersonate a user using plaintext credentials. Modal popup.
+mimikatz | `mimikatz -Command [args]`                                                                                               | Execute Mimikatz with the specified arguments.
+mkdir | `mkdir -Path [dir]`                                                                                                      | Create a directory.
+mv | `mv -Path [source] -Destination [destination]`                                                                           | Move a file from source to destination. Modal popup.
+net_dclist | `net_dclist [domain.local]`                                                                                              | List all domain controllers for the current or specified domain.
+net_localgroup_member | `net_localgroup_member -Group [groupname] [-Computer [computername]]`                                                    | Retrieve membership information from a specified group on a given computer.
+net_localgroup | `net_localgroup [computer]`                                                                                              | Retrieve local groups known by a computer. Default to localhost.
+net_shares | `net_shares [-Computer [computer]]`                                                                                      | Show shares of a remote PC.
+netstat | `netstat [-Tcp -Udp -Established -Listen]`                                                                               | Get TCP and UDP connections
+powerpick | `powerpick -Command [command]`                                                                                           | Executes PowerShell in a sacrificial process.
+powershell | `powershell -Command [command]`                                                                                          | Executes PowerShell in your currently running process.
+powershell_import | `powershell_import`                                                                                                      | Register a new .ps1 file to be used in other PowerShell jobs
+ppid | `ppid -PID [pid_integer]`                                                                                                | Set the PPID of sacrificial jobs to the specified PID.
+printspoofer | `printspoofer -Command [command]`                                                                                        | Execute a command in SYSTEM integrity so long as you have SeImpersonate privileges.
+ps | `ps`                                                                                                                     | List process information.
+psinject | `psinject -PID [pid] -Command [command]`                                                                                 | Executes PowerShell in the process specified by `[pid]`. Note: Currently stdout is not captured of child processes if not explicitly captured into a variable or via inline execution (such as `$(whoami)`).
 pth | `pth -Domain [domain] -User [username] -NTLM [ntlm_hash] [-AES128 [aes128_key] -AES256 [aes256_key] -Run [program.exe]]` | Use `mimikatz`'s pth module to spawn a process with alternate credentials.
-pwd | `pwd` | Print working directory.
-reg_query | `reg_query -Hive [HKCU:\\|HKU:\\|HKLM:\\|HKCR:\] [-Key [keyname]]` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
-reg_write_value | `reg_write_value -Hive [HKCU:\|HKU:\|HKLM:\|HKCR:\] -Key [keyname] [-Name [value_name] -Value [value_value]]` | Write specified values to the registry keys.
-register_assembly | `register_assembly` | Register a .NET assembly with the agent to be used in .NET post-exploitation activities
-register_file | `register_file` | Register a file to the agent's file cache. Used to store assemblies, executables, and PowerShell scripts.
-rev2self | `rev2self` | Revert the access token to the original access token.
-rm | `rm -Path [path] [-Host [hostname] -File [filename]]` | Remove a file specified by `[path]`. Alternatively, if `-File` is provided, `-Path` will be used as the directory, and `-File` will be the filename.
-run | `run -Executable [binary.exe] -Arguments [args]` | Runs the binary specified by `[binary.exe]` with passed arguments (if any).
-sc | `sc [-Query\|-Start\|-Stop\|-Create\|-Delete] [-Computer [computername] -DisplayName [display_name] -ServiceName [servicename] -BinPath [binpath]]` | .NET implementation of the Service Control Manager.
-screenshot_inject | `screenshot_inject -PID [pid] [-Interval [int] -Count [int]]` | Get a screenshot of the desktop session associated with `PID` every `Interval` seconds for `Count` screenshots.
-screenshot | `screenshot` | Get a screenshot of the current screen.
-set_injection_technique | `set_injection_technique [technique]` | Set the injection technique used in post-ex jobs that require injection.
-shell | `shell [command]` | Run a shell command which will translate to a process being spawned with command line: `cmd.exe /S /c [command]`
-shinject | `shinject` | Inject given shellcode into a specified pid. Modal popup only.
-sleep | `sleep [seconds]` | Set the callback interval of the agent in seconds.
-socks | `socks -Port [port]` | Standup the socks server to proxy network traffic, routable via Mythic on `[port]`.
-spawn | `spawn` | Spawn a new callback in the postex process specified by `spawnto_*`.
-spawnto_x64 | `spawnto_x64 -Application [path] -Arguments [args]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]` with arguments `[args]`.
-spawnto_x86 | `spawnto_x86 -Application [path] -Arguments [args]` | Sets the process used in jobs requiring sacrificial processes to the specified `[path]` with arguments `[args]`.
-steal_token | `steal_token [pid]` | Attempts to steal the process's primary token specified by `[pid]` and apply it to our own session.
-unlink | `unlink` | Unlink a callback linked to via the `link` command. Modal popup only.
-upload | `upload` | Upload a file to a remote path on the machine. Modal popup only.
-whoami | `whoami` | Report access token for local and remote operations.
+pwd | `pwd`                                                                                                                    | Print working directory.
+reg_query | `reg_query -Hive [HKCU:\\                                                                                                |HKU:\\|HKLM:\\|HKCR:\] [-Key [keyname]]` | Query all subkeys of the specified registry path. Needs to be of the format `HKCU:\`, `HKLM:\`, or `HKCR:\`.
+reg_write_value | `reg_write_value -Hive [HKCU:\                                                                                           |HKU:\|HKLM:\|HKCR:\] -Key [keyname] [-Name [value_name] -Value [value_value]]` | Write specified values to the registry keys.
+register_assembly | `register_assembly`                                                                                                      | Register a .NET assembly with the agent to be used in .NET post-exploitation activities
+register_file | `register_file`                                                                                                          | Register a file to the agent's file cache. Used to store assemblies, executables, and PowerShell scripts.
+rev2self | `rev2self`                                                                                                               | Revert the access token to the original access token.
+rm | `rm -Path [path] [-Host [hostname] -File [filename]]`                                                                    | Remove a file specified by `[path]`. Alternatively, if `-File` is provided, `-Path` will be used as the directory, and `-File` will be the filename.
+run | `run -Executable [binary.exe] -Arguments [args]`                                                                         | Runs the binary specified by `[binary.exe]` with passed arguments (if any).
+sc | `sc [-Query\                                                                                                             |-Start\|-Stop\|-Create\|-Delete] [-Computer [computername] -DisplayName [display_name] -ServiceName [servicename] -BinPath [binpath]]` | .NET implementation of the Service Control Manager.
+screenshot_inject | `screenshot_inject -PID [pid] [-Interval [int] -Count [int]]`                                                            | Get a screenshot of the desktop session associated with `PID` every `Interval` seconds for `Count` screenshots.
+screenshot | `screenshot`                                                                                                             | Get a screenshot of the current screen.
+set_injection_technique | `set_injection_technique [technique]`                                                                                    | Set the injection technique used in post-ex jobs that require injection.
+shell | `shell [command]`                                                                                                        | Run a shell command which will translate to a process being spawned with command line: `cmd.exe /S /c [command]`
+shinject | `shinject`                                                                                                               | Inject given shellcode into a specified pid. Modal popup only.
+sleep | `sleep [seconds]`                                                                                                        | Set the callback interval of the agent in seconds.
+socks | `socks -Port [port]`                                                                                                     | Standup the socks server to proxy network traffic, routable via Mythic on `[port]`.
+spawn | `spawn`                                                                                                                  | Spawn a new callback in the postex process specified by `spawnto_*`.
+spawnto_x64 | `spawnto_x64 -Application [path] -Arguments [args]`                                                                      | Sets the process used in jobs requiring sacrificial processes to the specified `[path]` with arguments `[args]`.
+spawnto_x86 | `spawnto_x86 -Application [path] -Arguments [args]`                                                                      | Sets the process used in jobs requiring sacrificial processes to the specified `[path]` with arguments `[args]`.
+steal_token | `steal_token [pid]`                                                                                                      | Attempts to steal the process's primary token specified by `[pid]` and apply it to our own session.
+unlink | `unlink`                                                                                                                 | Unlink a callback linked to via the `link` command. Modal popup only.
+upload | `upload`                                                                                                                 | Upload a file to a remote path on the machine. Modal popup only.
+whoami | `whoami`                                                                                                                 | Report access token for local and remote operations.
 
 ## Supported C2 Profiles
 

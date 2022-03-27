@@ -63,6 +63,7 @@
     <Compile Include="exit.cs" />
     <Compile Include="getprivs.cs" />
     <Compile Include="get_injection_techniques.cs" />
+    <Compile Include="ifconfig.cs" />
     <Compile Include="inline_assembly.cs" />
     <Compile Include="jobkill.cs" />
     <Compile Include="jobs.cs" />
