@@ -74,6 +74,9 @@ pre = "<b>2. </b>"
     * [inject](/agents/apollo/commands/inject/)
     * [exit](/agents/apollo/commands/exit/)
     * [sleep](/agents/apollo/commands/sleep/)
+- Host Enumeration
+    * [ifconfig](/agents/apollo/commands/ifconfig)
+    * [netstat](/agents/apollo/commands/netstat)
 - Miscellaneous
     * [printspoofer](/agents/apollo/commands/printspoofer/)
     * [shinject](/agents/apollo/commands/shinject/)

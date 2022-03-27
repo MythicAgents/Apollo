@@ -59,7 +59,7 @@ class UploadCommand(CommandBase):
     cmd = "upload"
     needs_admin = False
     help_cmd = "upload (modal popup)"
-    description = "Upload a file from the Apfell server to the remote host."
+    description = "Upload a file from the Mythic server to the remote host."
     version = 2
     is_exit = False
     is_file_browse = False
