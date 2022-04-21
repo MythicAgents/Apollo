@@ -328,7 +328,7 @@ class ScCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = ScArguments
     attackmapping = ["T1106"]
-    supported_ui_features = ["sc:start", "sc:stop", "sc:delete"]
+    supported_ui_features = ["sc:start", "sc:stop", "sc:delete", "sc:modify"]
     browser_script = BrowserScript(script_name="sc", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
