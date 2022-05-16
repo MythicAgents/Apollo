@@ -72,6 +72,19 @@ class ScArguments(TaskArguments):
                     ),
             ]),
             CommandParameter(
+                name="modify",
+                cli_name="Modify",
+                display_name="Modify",
+                type=ParameterType.Boolean, 
+                default_value=False, 
+                description="Service controller action to perform.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Modify"
+                    ),
+            ]),
+            CommandParameter(
                 name="computer",
                 cli_name="Computer",
                 display_name="Computer",
@@ -97,6 +110,10 @@ class ScArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Delete"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
                     ),
                 ]),
             CommandParameter(
@@ -126,6 +143,10 @@ class ScArguments(TaskArguments):
                         required=True,
                         group_name="Delete"
                     ),
+                    ParameterGroupInfo(
+                        required=True,
+                        group_name="Modify"
+                    ),
                 ]),
             CommandParameter(
                 name="display_name",
@@ -142,6 +163,10 @@ class ScArguments(TaskArguments):
                         required=True,
                         group_name="Create"
                     ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
                 ]),
             CommandParameter(
                 name="binpath",
@@ -153,6 +178,101 @@ class ScArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=True,
                         group_name="Create"
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
+                ]),
+            CommandParameter(
+                name="run_as",
+                cli_name="RunAs",
+                display_name="Run As",
+                type=ParameterType.String,
+                description="Specify the user the service will run as.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
+                ]),
+            CommandParameter(
+                name="password",
+                cli_name="Password",
+                display_name="Password",
+                type=ParameterType.String,
+                description="Plaintext password for service.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
+                ]),
+            CommandParameter(
+                name="service_type",
+                cli_name="ServiceType",
+                display_name="Service Type",
+                type=ParameterType.ChooseOne,
+                choices= [
+                    "SERVICE_NO_CHANGE",
+                    "SERVICE_KERNEL_DRIVER",
+                    "SERVICE_FILE_SYSTEM_DRIVER",
+                    "SERVICE_WIN32_OWN_PROCESS",
+                    "SERVICE_WIN32_SHARE_PROCESS",
+                    "SERVICE_INTERACTIVE_PROCESS",
+                    "SERVICE_WIN32",
+                ],
+                default_value="SERVICE_NO_CHANGE",
+                description="Set the service type.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
+                ]),
+            CommandParameter(
+                name="start_type",
+                cli_name="StartType",
+                display_name="Start Type",
+                type=ParameterType.ChooseOne,
+                choices= [
+                    "SERVICE_NO_CHANGE",
+                    "SERVICE_AUTO_START",
+                    "SERVICE_BOOT_START",
+                    "SERVICE_DEMAND_START",
+                    "SERVICE_DISABLED",
+                    "SERVICE_SYSTEM_START"
+                ],
+                default_value="SERVICE_NO_CHANGE",
+                description="Set the service start type.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
+                ]),
+            CommandParameter(
+                name="dependencies",
+                cli_name="Dependencies",
+                display_name="Dependencies",
+                type=ParameterType.Array,
+                description="Set a list of dependencies.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
+                    ),
+                ]),
+            CommandParameter(
+                name="description",
+                cli_name="Description",
+                display_name="Description",
+                type=ParameterType.String,
+                description="Set the description of a service.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="Modify"
                     ),
                 ]),
         ]
@@ -208,7 +328,7 @@ class ScCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = ScArguments
     attackmapping = ["T1106"]
-    supported_ui_features = ["sc:start", "sc:stop", "sc:delete"]
+    supported_ui_features = ["sc:start", "sc:stop", "sc:delete", "sc:modify"]
     browser_script = BrowserScript(script_name="sc", author="@djhohnstein", for_new_ui=True)
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
@@ -216,7 +336,12 @@ class ScCommand(CommandBase):
         service_name = task.args.get_arg("service")
         display_name = task.args.get_arg("display_name")
         binpath = task.args.get_arg("binpath")
-        
+        run_as = task.args.get_arg("run_as")
+        password = task.args.get_arg("password")
+        service_type = task.args.get_arg("service_type")
+        start_type = task.args.get_arg("start_type")
+        dependencies = task.args.get_arg("dependencies")
+        description = task.args.get_arg("description")
         
         query = task.args.get_arg("query")
         if query:
@@ -233,8 +358,11 @@ class ScCommand(CommandBase):
         delete = task.args.get_arg("delete")
         if delete:
             task.display_params = "-Delete"
+        modify = task.args.get_arg("modify")
+        if modify:
+            task.display_params = "-Modify"
 
-        if not any([query, start, stop, create, delete]):
+        if not any([query, start, stop, create, delete, modify]):
             raise Exception("Failed to get a valid action to perform.")
         if computer is not None and computer is not "":
             task.display_params += " -Computer {}".format(computer)
@@ -247,6 +375,22 @@ class ScCommand(CommandBase):
 
         if binpath is not None and binpath is not "":
             task.display_params += " -BinPath '{}'".format(binpath)
+
+        if run_as is not None and run_as is not "":
+            task.display_params += " -RunAs '{}'".format(run_as)
+
+        if password is not None and password is not "":
+            task.display_params += " -Password '{}'".format(password)
+
+        if modify:
+            task.display_params += " -ServiceType '{}'".format(service_type)
+            task.display_params += " -StartType '{}'".format(start_type)
+
+        if dependencies is not None and not dependencies:
+            task.display_params += " -Dependencies '{}'".format(",".join(dependencies))
+
+        if description is not None and description is not "":
+            task.display_params += " -Description '{}'".format(description)
 
         return task
 
