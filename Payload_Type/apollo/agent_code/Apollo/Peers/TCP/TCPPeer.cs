@@ -39,6 +39,7 @@ namespace Apollo.Peers.TCP
             _tcpClient.ConnectionEstablished += OnConnect;
             _tcpClient.MessageReceived += OnMessageReceived;
             _tcpClient.Disconnect += OnDisconnect;
+            _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
             _sendAction = (object p) =>
             {
                 TcpClient c = (TcpClient)p;
@@ -190,7 +191,6 @@ namespace Apollo.Peers.TCP
         public override void Stop()
         {
             _cts.Cancel();
-            _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
             _pCloseHandle(_socketHandle);
             _sendTask.Wait();
         }
