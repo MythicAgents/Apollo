@@ -702,9 +702,7 @@ namespace Tasks
                     throw new Exception("Modify action requires service name to create.");
                 } else if (string.IsNullOrEmpty(args.Binpath) && string.IsNullOrEmpty(args.DisplayName) && string.IsNullOrEmpty(args.RunAs) && string.IsNullOrEmpty(args.ServiceTypeParam) && string.IsNullOrEmpty(args.StartType))
                 {
-                    Console.WriteLine("all fill ins empty");
                     if (args.ServiceTypeParam == "SERVICE_NO_CHANGE" && args.StartType == "SERVICE_NO_CHANGE") {
-                        Console.WriteLine("all default");
                         throw new Exception("Modify action requires parameter to modify.");
                     }
                 }
@@ -717,7 +715,6 @@ namespace Tasks
 
         private static bool InstallService(string hostname, string ServiceName, string ServiceDisplayName, string ServiceEXE)
         {
-            Console.WriteLine(hostname);
             try
             {
                 UninstallService(hostname, ServiceName);

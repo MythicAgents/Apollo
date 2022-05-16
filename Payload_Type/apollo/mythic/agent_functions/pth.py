@@ -140,7 +140,7 @@ class PthArguments(TaskArguments):
                 cmd += " /run:{}".format(run)
             cmd = "\\\"{}\\\"".format(cmd)
 
-            self.add_arg("command", "mimikatz.exe {}".format(cmd))
+            self.add_arg("command", "mimikatz.exe {}".format(cmd), parameter_group_info=[ParameterGroupInfo(group_name=self.get_parameter_group_name())])
         else:
             raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(PthCommand.help_cmd))
 

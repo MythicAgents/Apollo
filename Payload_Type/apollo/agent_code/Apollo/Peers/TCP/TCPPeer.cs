@@ -16,6 +16,7 @@ using System.Threading;
 using TTasks = System.Threading.Tasks;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Net.Sockets;
+using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;
 
 namespace Apollo.Peers.TCP
@@ -27,6 +28,10 @@ namespace Apollo.Peers.TCP
         private TTasks.Task _sendTask;
         private bool _connected = false;
         private string _partialData = "";
+        private IntPtr _socketHandle = IntPtr.Zero;
+        private delegate void CloseHandle(IntPtr handle);
+        private CloseHandle _pCloseHandle;
+        
         public TCPPeer(IAgent agent, PeerInformation info) : base(agent, info)
         {
             C2ProfileName = "tcp";
@@ -34,6 +39,7 @@ namespace Apollo.Peers.TCP
             _tcpClient.ConnectionEstablished += OnConnect;
             _tcpClient.MessageReceived += OnMessageReceived;
             _tcpClient.Disconnect += OnDisconnect;
+            _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
             _sendAction = (object p) =>
             {
                 TcpClient c = (TcpClient)p;
@@ -80,6 +86,7 @@ namespace Apollo.Peers.TCP
             _sendTask.Start();
             _connected = true;
             _previouslyConnected = true;
+            _socketHandle = args.Client.Client.Handle;
         }
 
         public void OnDisconnect(object sender, TcpMessageEventArgs args)
@@ -184,6 +191,7 @@ namespace Apollo.Peers.TCP
         public override void Stop()
         {
             _cts.Cancel();
+            _pCloseHandle(_socketHandle);
             _sendTask.Wait();
         }
     }
