@@ -94,6 +94,10 @@ namespace Apollo.Management.Tasks
                         }
 
                     }
+                    else
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
             };
             _mainworker = new ThreadingTask(_taskConsumerAction);
