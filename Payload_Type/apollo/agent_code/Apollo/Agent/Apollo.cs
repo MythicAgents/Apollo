@@ -82,6 +82,7 @@ namespace Apollo.Agent
                         c2.Start();
                     }
                 }
+                System.Threading.Thread.Sleep(1000);
             }
         }
 
