@@ -13,6 +13,12 @@ class RunArguments(TaskArguments):
                 display_name="Executable",
                 type=ParameterType.String,
                 description="Path to an executable to run.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True,
+                        ui_position=0
+                    )
+                ]
             ),
             CommandParameter(
                 name="arguments",
@@ -23,6 +29,7 @@ class RunArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
+                        ui_position=1
                     )
                 ]),
         ]
