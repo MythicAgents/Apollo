@@ -12,13 +12,23 @@ class CpArguments(TaskArguments):
                 cli_name = "Path",
                 display_name = "Source file to copy.",
                 type=ParameterType.String,
-                description='Source file to copy.'),
+                description='Source file to copy.',
+                parameter_group_info=[
+                    ParaMeterGroupInfo(
+                        required=True,
+                        ui_position=0)
+                    ]),
             CommandParameter(
                 name="destination",
                 cli_name="Destination",
                 display_name="Destination path.",
                 type=ParameterType.String,
-                description="Where the new file will be created.")
+                description="Where the new file will be created.",
+                parameter_group_info=[
+                    ParaMeterGroupInfo(
+                        required=True,
+                        ui_position=1)
+                    ]))
         ]
 
     def split_commandline(self):
