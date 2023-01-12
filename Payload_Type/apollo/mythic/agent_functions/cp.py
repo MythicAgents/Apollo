@@ -28,7 +28,7 @@ class CpArguments(TaskArguments):
                     ParaMeterGroupInfo(
                         required=True,
                         ui_position=1)
-                    ]))
+                    ])
         ]
 
     def split_commandline(self):
