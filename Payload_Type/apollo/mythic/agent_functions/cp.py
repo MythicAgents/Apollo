@@ -14,7 +14,7 @@ class CpArguments(TaskArguments):
                 type=ParameterType.String,
                 description='Source file to copy.',
                 parameter_group_info=[
-                    ParaMeterGroupInfo(
+                    ParameterGroupInfo(
                         required=True,
                         ui_position=0)
                     ]),
@@ -25,7 +25,7 @@ class CpArguments(TaskArguments):
                 type=ParameterType.String,
                 description="Where the new file will be created.",
                 parameter_group_info=[
-                    ParaMeterGroupInfo(
+                    ParameterGroupInfo(
                         required=True,
                         ui_position=1)
                     ])
