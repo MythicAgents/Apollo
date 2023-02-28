@@ -89,7 +89,7 @@ namespace Apollo.Agent
         {
             return Dns.GetHostEntry(
                 Dns.GetHostName()).AddressList.FirstOrDefault(
-                    ip => ip.AddressFamily == AddressFamily.InterNetwork
+                    ip => ip.AddressFamily == AddressFamily.InterNetwork & !(ip.ToString().Contains("169.254."))
                 ).ToString();
         }
 
