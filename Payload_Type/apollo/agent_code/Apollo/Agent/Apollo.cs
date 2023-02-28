@@ -87,20 +87,14 @@ namespace Apollo.Agent
 
         private static string GetIP()
         {
-            try
-            {
-                return Dns.GetHostEntry(
-                    Dns.GetHostName()).AddressList.FirstOrDefault(
-                        ip => (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) &
-                        // omit link local address
-                        !(ip.ToString().Contains("169.254."))
-                    ).ToString();
-            }
-            // catch null when link local was the only available address
-            catch (System.NullReferenceException e)
-            {
-                return "-";
-            }
+            var addrs = Dns.GetHostEntry(Dns.GetHostName())
+                .AddressList
+                .Where(
+                    ip => (ip.AddressFamily == AddressFamily.InterNetwork) &
+                    !(ip.ToString().Contains("169.254."))
+                );
+            if (addrs.Count() == 0) { return "-"; }
+            else return addrs.First().ToString();
         }
 
         private static string GetOSVersion()
