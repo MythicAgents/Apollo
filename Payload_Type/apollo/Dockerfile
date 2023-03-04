@@ -1,6 +1,6 @@
 FROM itsafeaturemythic/mythic_base_image:0.0.1
 
-RUN python3 -m pip install --index-url https://test.pypi.org/simple/ mythic-container==0.0.1rc23
+RUN python3 -m pip install mythic-container==0.2.0rc1
 
 WORKDIR /Mythic/
 
