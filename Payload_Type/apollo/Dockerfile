@@ -1,3 +1,7 @@
-from itsafeaturemythic/csharp_payload:0.1.1
-RUN apt install -y python3-pip
-RUN python3.8 -m pip install donut-shellcode
+FROM itsafeaturemythic/mythic_base_image:0.0.1
+
+RUN python3 -m pip install --index-url https://test.pypi.org/simple/ mythic-container==0.0.1rc23
+
+WORKDIR /Mythic/
+
+CMD ["python3", "main.py"]
