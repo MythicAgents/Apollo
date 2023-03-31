@@ -8,6 +8,8 @@ import base64
 import tempfile
 from distutils.dir_util import copy_tree
 import shutil
+import os
+import asyncio
 
 SCREENSHOT_INJECT = "/srv/ScreenshotInject.exe"
 
@@ -100,7 +102,7 @@ class ScreenshotInjectCommand(CommandBase):
         global SCREENSHOT_INJECT
         if not path.exists(SCREENSHOT_INJECT):
             await self.build_screenshotinject()
-        donutPath = "/Mythic/agent_code/donut"
+        donutPath = os.path.abspath(self.agent_code_path / "donut")
         if not path.exists(donutPath):
             raise Exception("Could not find {}".format(donutPath))
         command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
