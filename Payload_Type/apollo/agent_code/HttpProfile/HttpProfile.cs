@@ -158,7 +158,7 @@ namespace HttpTransport
                 };
             } else {
                 // Use Default Proxy and Cached Credentials for Internet Access
-                webClient.Proxy = WebRequest.GetSystemProxy();
+                webClient.Proxy = WebRequest.GetSystemWebProxy();
                 webClient.Proxy.Credentials = CredentialCache.DefaultCredentials;
             }
             
