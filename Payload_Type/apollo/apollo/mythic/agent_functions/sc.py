@@ -230,16 +230,16 @@ class ScCommand(CommandBase):
 
         if not any([query, start, stop, create, delete]):
             raise Exception("Failed to get a valid action to perform.")
-        if computer is not None and computer is not "":
+        if computer is not None and computer != "":
             task.display_params += " -Computer {}".format(computer)
 
-        if service_name is not None and service_name is not "":
+        if service_name is not None and service_name != "":
             task.display_params += " -Service {}".format(service_name)
 
-        if display_name is not None and display_name is not "":
+        if display_name is not None and display_name != "":
             task.display_params += " -DisplayName '{}'".format(display_name)
 
-        if binpath is not None and binpath is not "":
+        if binpath is not None and binpath != "":
             task.display_params += " -BinPath '{}'".format(binpath)
 
         return task

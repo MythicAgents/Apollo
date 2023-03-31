@@ -116,9 +116,6 @@ class ExecutePECommand(CommandBase):
         printspoofer_path = os.path.abspath(self.agent_code_path / "PrintSpoofer_x64.exe")
         shellcode_path = "/tmp/loader.bin"
 
-
-        
-        
         donutPath = os.path.abspath(self.agent_code_path / "donut")
         command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
