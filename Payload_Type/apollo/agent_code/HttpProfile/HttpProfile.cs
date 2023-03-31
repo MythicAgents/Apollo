@@ -154,6 +154,10 @@ namespace HttpTransport
                     UseDefaultCredentials = false,
                     BypassProxyOnLocal = false
                 };
+            } else {
+                // Use Default Proxy and Cached Credentials for Internet Access
+                webClient.Proxy = WebRequest.GetSystemProxy();
+                webClient.Proxy.Credentials = CredentialCache.DefaultCredentials;
             }
             
             foreach(string k in _additionalHeaders.Keys)
