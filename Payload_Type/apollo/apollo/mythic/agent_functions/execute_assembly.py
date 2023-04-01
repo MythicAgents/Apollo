@@ -125,7 +125,7 @@ class ExecuteAssemblyCommand(CommandBase):
 
 
         taskargs = task.args.get_arg("assembly_arguments")
-        if taskargs == "" or taskargs == None:
+        if taskargs == "" or taskargs is None:
             task.display_params = "-Assembly {}".format(task.args.get_arg("assembly_name"))
         else:
             task.display_params = "-Assembly {} -Arguments {}".format(

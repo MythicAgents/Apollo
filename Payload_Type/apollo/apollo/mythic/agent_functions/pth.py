@@ -148,7 +148,7 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskComp
     response = PTTaskCompletionFunctionMessageResponse(Success=True, TaskStatus="success", Completed=True)
     responses = await SendMythicRPCResponseSearch(MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID))
     for output in responses.Responses:
-        mimikatz_out = output.Response
+        mimikatz_out = str(output.Response)
         comment = "task {}".format(output.TaskID)
         if mimikatz_out != "":
             lines = mimikatz_out.split("\r\n")
