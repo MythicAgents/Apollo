@@ -23,25 +23,29 @@ class LoadArguments(TaskArguments):
         ]
 
 
-    async def get_remaining_commands(self, callback: dict):
-        all_cmds = await MythicRPC().execute(
-            "get_commands",
-            callback_id=callback["id"],
-            loaded_only=False)
+    async def get_remaining_commands(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
+        fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
+        all_cmds = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
+            SearchPayloadTypeName="apollo"
+        ))
         loaded_cmds = await MythicRPC().execute(
             "get_commands",
-            callback_id=callback["id"],
+            callback_id=inputMsg.Callback,
             loaded_only=True)
 
-        if all_cmds.status != MythicStatus.Success:
-            raise Exception("Failed to get commands for apollo agent: {}".format(all_cmds.status))
+        if not all_cmds.Success:
+            raise Exception("Failed to get commands for apollo agent: {}".format(all_cmds.Error))
         if loaded_cmds.status != MythicStatus.Success:
-            raise Exception("Failed to fetch loaded commands from callback {}: {}".format(callback["id"], loaded_cmds.status))
+            raise Exception("Failed to fetch loaded commands from callback {}: {}".format(inputMsg.Callback, loaded_cmds.status))
         
-        all_cmds_names = set([r["cmd"] for r in all_cmds.response])
+        all_cmds_names = set([r.Name for r in all_cmds.Commands])
         loaded_cmds_names = set([r["cmd"] for r in loaded_cmds.response])
+        logger.info(all_cmds_names)
+        logger.info(loaded_cmds_names)
         diff = all_cmds_names.difference(loaded_cmds_names)
-        return sorted(diff)
+        fileResponse.Success = True
+        fileResponse.Choices = sorted(diff)
+        return fileResponse
 
 
     async def parse_arguments(self):
@@ -74,58 +78,44 @@ class LoadCommand(CommandBase):
         if addoutput_resp.status != MythicStatus.Success:
             raise Exception("Failed to add output to task")
 
-    async def get_commands(self, callback: Callback, loaded_only: bool, cmd_list=None):
-        if cmd_list is None:
-            cmds = await MythicRPC().execute(
-                "get_commands",
-                callback_id=callback.id,
-                loaded_only=loaded_only)
-        else:
-            cmds = await MythicRPC().execute(
-                "get_commands",
-                callback_id=callback.id,
-                loaded_only=loaded_only,
-                commands=cmd_list)
-        if cmds.status != MythicStatus.Success:
-            raise Exception("Failed to get commands: {}".format(cmds.status))
-        
-        return cmds.response
-
-    def mprint(self, thing):
-        print(thing)
-        sys.stdout.flush()
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        requested_cmds = await self.get_commands(task.callback, False, task.args.get_arg("commands"))
-        loaded_cmds = await self.get_commands(task.callback, True)
+        requested_cmds = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
+            SearchPayloadTypeName="apollo",
+            SearchCommandNames=task.args.get_arg("commands"),
+        ))
+        loaded_cmds = await MythicRPC().execute(
+            "get_commands",
+            callback_id=task.callback.id,
+            loaded_only=True)
 
-        requested_cmds_names = set([r["cmd"] for r in requested_cmds])
-        loaded_cmds_names = set([r["cmd"] for r in loaded_cmds])
+        requested_cmds_names = set([r.Name for r in requested_cmds.Commands])
+        loaded_cmds_names = set([r["cmd"] for r in loaded_cmds.response])
         diff = requested_cmds_names.difference(loaded_cmds_names)
 
         load_immediately_rpc = []
         to_compile = []
 
         # This is now the list of commands that need to be loaded
-        requested_cmds = [r for r in requested_cmds if r["cmd"] in diff]
+        requested_cmds = [r for r in requested_cmds.Commands if r.Name in diff]
         for requested_cmd in requested_cmds:
-            dependencies = requested_cmd["attributes"].get("dependencies", [])
-            script_only = requested_cmd["script_only"]
+            dependencies = requested_cmd.Attributes.get("dependencies", [])
+            script_only = requested_cmd.ScriptOnly
             if len(dependencies) == 0 and script_only:
-                load_immediately_rpc.append(requested_cmd["cmd"])
+                load_immediately_rpc.append(requested_cmd.Name)
             elif len(dependencies) > 0 and script_only:
                 dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
                 if len(dep_not_loaded) > 0:
                     to_compile += dep_not_loaded
                 else:
-                    load_immediately_rpc.append(requested_cmd["cmd"])
+                    load_immediately_rpc.append(requested_cmd.Name)
             elif len(dependencies) == 0 and not script_only:
-                to_compile.append(requested_cmd["cmd"])
+                to_compile.append(requested_cmd.Name)
             elif len(dependencies) > 0 and not script_only:
                 dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
                 if len(dep_not_loaded) > 0:
                     to_compile += dep_not_loaded
-                to_compile.append(requested_cmd["cmd"])
+                to_compile.append(requested_cmd.Name)
             else:
                 raise Exception("Unreachable code path.")
 
@@ -149,7 +139,7 @@ class LoadCommand(CommandBase):
             defines_commands_upper = [f"#define {x.upper()}" for x in to_compile]
             agent_build_path = tempfile.TemporaryDirectory()
                 # shutil to copy payload files over
-            copy_tree(self.agent_code_path, agent_build_path.name)
+            copy_tree(str(self.agent_code_path), agent_build_path.name)
             results = []
             for root, dirs, files in os.walk("{}/Tasks".format(agent_build_path.name)):
                 for file in files:
@@ -192,10 +182,10 @@ class LoadCommand(CommandBase):
         task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
         return task
 
-    async def process_response(self, response: AgentResponse):
-        resp = response.response["commands"]
-        self.mprint("Parsing commands from process_response: {}".format(resp))
-
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        result = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        resp = response["commands"]
+        logger.info("process_response loaded data", response)
 
         reg_resp = await MythicRPC().execute(
                 "update_loaded_commands",
@@ -205,11 +195,16 @@ class LoadCommand(CommandBase):
         if reg_resp.status != MythicStatus.Success:
             raise Exception("Failed to register commands ({}) from response: {}".format(resp, reg_resp.response))
 
-        all_cmds = await self.get_commands(response.task.callback, False)
-        all_cmds_dict = {x["cmd"]: x for x in all_cmds}
-        loaded_cmds = await self.get_commands(response.task.callback, True)
-        loaded_cmds_dict = {x["cmd"]: x for x in loaded_cmds}
-        loaded_cmd_names = [x["cmd"] for x in loaded_cmds]
+        all_cmds = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
+            SearchPayloadTypeName="apollo",
+            SearchCommandNames=task.args.get_arg("commands"),
+        ))
+        loaded_cmds = await MythicRPC().execute(
+            "get_commands",
+            callback_id=task.Task.CallbackID,
+            loaded_only=True)
+        all_cmds_dict = {x.Name: x for x in all_cmds.Commands}
+        loaded_cmd_names = [x["cmd"] for x in loaded_cmds.response]
 
         diff_cmds_dict = {k: v for k, v in all_cmds_dict.items() if k not in loaded_cmd_names}
 
@@ -237,3 +232,4 @@ class LoadCommand(CommandBase):
 
         newly_loaded_cmds = set(resp).union(set(to_add))
         await self.update_output(response.task, "Loaded {}\n".format(", ".join(newly_loaded_cmds)))
+        return result

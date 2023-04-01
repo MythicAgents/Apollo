@@ -31,8 +31,9 @@ class ScreenshotCommand(CommandBase):
         # task.completed_callback_function = self.screenshot_completed
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp
 
     async def screenshot_completed(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
         if task.completed and task.status != MythicStatus.Error:

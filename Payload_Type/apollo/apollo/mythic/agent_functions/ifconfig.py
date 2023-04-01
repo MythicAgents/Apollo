@@ -28,5 +28,6 @@ class IfconfigCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp

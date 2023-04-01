@@ -7,6 +7,8 @@ from uuid import uuid4
 from os import path
 from mythic_container.MythicRPC import *
 import base64
+import asyncio
+import donut
 
 EXEECUTE_ASSEMBLY_PATH = "/srv/ExecuteAssembly.exe"
 
@@ -57,8 +59,9 @@ class AssemblyInjectArguments(TaskArguments):
                 ]),
         ]
 
-    async def get_files(self, callback: dict):
-        file_resp = await MythicRPC().execute("get_file", callback_id=callback["id"],
+    async def get_files(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
+        fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
+        file_resp = await MythicRPC().execute("get_file", callback_id=inputMsg.Callback,
                                               limit_by_callback=False,
                                               get_contents=False,
                                               filename="",
@@ -68,9 +71,12 @@ class AssemblyInjectArguments(TaskArguments):
             for f in file_resp.response:
                 if f["filename"] not in file_names and f["filename"].endswith(".exe"):
                     file_names.append(f["filename"])
-            return file_names
+            fileResponse.Success = True
+            fileResponse.Choices = file_names
+            return fileResponse
         else:
-            return []
+            fileResponse.Error = file_resp.error
+            return fileResponse
 
     async def parse_arguments(self):
         if self.command_line[0] == "{":
@@ -105,7 +111,7 @@ class AssemblyInjectCommand(CommandBase):
         global EXEECUTE_ASSEMBLY_PATH
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name)
-        copy_tree(self.agent_code_path, agent_build_path.name)
+        copy_tree(str(self.agent_code_path), agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecuteAssembly/ExecuteAssembly.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -138,5 +144,6 @@ class AssemblyInjectCommand(CommandBase):
         )
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp

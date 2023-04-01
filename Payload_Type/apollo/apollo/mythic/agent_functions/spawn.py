@@ -2,7 +2,7 @@ from mythic_container.MythicCommandBase import *
 import json
 from uuid import uuid4
 from mythic_container.MythicRPC import *
-
+import asyncio
 
 class SpawnArguments(TaskArguments):
 
@@ -37,39 +37,35 @@ class SpawnCommand(CommandBase):
     attackmapping = ["T1055"]
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        temp = await MythicRPC().execute("get_payload", payload_uuid=task.args.get_arg("template"))
-        gen_resp = await MythicRPC().execute("create_payload_from_uuid",
-                                             task_id=task.id,
-                                             payload_uuid=task.args.get_arg('template'),
-                                             new_description="{}'s spawned session from task {}".format(task.operator, str(task.id)))
-        if gen_resp.status == MythicStatus.Success:
+        payload_search = await SendMythicRPCPayloadSearch(MythicRPCPayloadSearchMessage(
+            CallbackID=task.callback.id,
+            PayloadUUID=task.args.get_arg("template")))
+        newPayloadResp = await SendMythicRPCPayloadCreateFromUUID(MythicRPCPayloadCreateFromUUIDMessage(
+            TaskID=task.id, PayloadUUID=task.args.get_arg("template"), NewDescription="{}'s spawned session from task {}".format(task.operator, str(task.id)))
+        )
+        if newPayloadResp.Success:
             # we know a payload is building, now we want it
             while True:
-                resp = await MythicRPC().execute("get_payload", payload_uuid=gen_resp.response["uuid"])
-                if resp.status == MythicStatus.Success:
-                    if resp.response["build_phase"] == 'success':
-                        base64contents = resp.response["contents"]
-                        pe = base64.b64decode(base64contents)
-                        if len(pe) > 1 and pe[:2] == b"\x4d\x5a":
-                            raise Exception("spawn requires a payload of Raw output, but got an executable.")
-                        # it's done, so we can register a file for it
-                        task.args.add_arg("template", resp.response["file"]["agent_file_id"])
-                        task.display_params = "Spawning new payload from '{}'".format(temp.response['tag'])
+                resp = await SendMythicRPCPayloadSearch(MythicRPCPayloadSearchMessage(
+                    PayloadUUID=newPayloadResp.NewPayloadUUID
+                ))
+                if resp.Success:
+                    if resp.Payloads[0].BuildPhase == 'success':
+                        task.args.add_arg("template", resp.Payloads[0].AgentFileId)
+                        task.display_params = "Spawning new payload from '{}'".format(payload_search.Payloads[0].Description)
                         break
-                    elif resp.response["build_phase"] == 'error':
-                        raise Exception("Failed to build new payload: {}".format(resp.response["error_message"]))
-                    elif resp.response["build_phase"] == "building":
+                    elif resp.Payloads[0].BuildPhase == 'error':
+                        raise Exception("Failed to build new payload")
+                    elif resp.Payloads[0].BuildPhase == "building":
                         await asyncio.sleep(2)
                     else:
-                        raise Exception(resp.response["build_phase"])
+                        raise Exception(resp.Payloads[0].BuildPhase)
                 else:
-                    raise Exception(resp.response["error_message"])
+                    raise Exception(resp.Error)
         else:
             raise Exception("Failed to start build process")
-
-
-
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp

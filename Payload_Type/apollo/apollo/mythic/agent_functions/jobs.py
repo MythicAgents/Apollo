@@ -28,12 +28,14 @@ class JobsCommand(CommandBase):
     async def create_tasking(self, task: MythicTask) -> MythicTask:
         return task
 
-    async def process_response(self, response: AgentResponse):
-        resp = response.response["jobs"]
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        result = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+
+        resp = response["jobs"]
         jobs = []
         for job in resp:
             job_resp = await MythicRPC().execute("get_task_for_id",
-                                              task_id=response.task.id,
+                                              task_id=task.Task.ID,
                                               requested_uuid=job)
             if job_resp.status == MythicStatus.Success:
                 jobs.append(job_resp.response)
@@ -41,8 +43,9 @@ class JobsCommand(CommandBase):
                 raise Exception("Failed to get job info for job {}".format(job))
             
         addoutput_resp = await MythicRPC().execute("create_output",
-                                                task_id=response.task.id,
+                                                task_id=task.Task.ID,
                                                 output=json.dumps(jobs))
         if addoutput_resp.status != MythicStatus.Success:
             raise Exception("Failed to add output to task")
+        return result
         

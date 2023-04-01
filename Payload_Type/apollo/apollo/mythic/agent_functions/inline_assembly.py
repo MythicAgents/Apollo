@@ -9,6 +9,7 @@ import base64
 import tempfile
 from distutils.dir_util import copy_tree
 import shutil
+import asyncio
 
 INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
 INTEROP_FILE_ID = ""
@@ -59,8 +60,9 @@ class InlineAssemblyArguments(TaskArguments):
             if len(parts) == 2:
                 self.add_arg("assembly_arguments", parts[1])
 
-    async def get_files(self, callback: dict):
-        file_resp = await MythicRPC().execute("get_file", callback_id=callback["id"],
+    async def get_files(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
+        fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
+        file_resp = await MythicRPC().execute("get_file", callback_id=inputMsg.Callback,
                                               limit_by_callback=True,
                                               get_contents=False,
                                               filename="",
@@ -70,9 +72,12 @@ class InlineAssemblyArguments(TaskArguments):
             for f in file_resp.response:
                 if f["filename"] not in file_names and f["filename"].endswith(".exe"):
                     file_names.append(f["filename"])
-            return file_names
+            fileResponse.Success = True
+            fileResponse.Choices = file_names
+            return fileResponse
         else:
-            return []
+            fileResponse.Error = file_resp.error
+            return fileResponse
 
 
 class InlineAssemblyCommand(CommandBase):
@@ -89,7 +94,7 @@ class InlineAssemblyCommand(CommandBase):
         global INTEROP_ASSEMBLY_PATH
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name)
-        copy_tree(self.agent_code_path, agent_build_path.name)
+        copy_tree(str(self.agent_code_path), agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ApolloInterop/ApolloInterop.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -129,5 +134,6 @@ class InlineAssemblyCommand(CommandBase):
 
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp

