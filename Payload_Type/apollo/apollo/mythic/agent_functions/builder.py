@@ -6,6 +6,8 @@ import traceback
 import shutil
 import json
 import pathlib
+from mythic_container.MythicRPC import *
+
 
 class Apollo(PayloadType):
     name = "apollo"
@@ -35,6 +37,11 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     agent_path = pathlib.Path(".") / "apollo" / "mythic"
     agent_code_path = pathlib.Path(".") / "apollo" / "agent_code"
     agent_icon_path = agent_path / "agent_functions" / "apollo.svg"
+    build_steps = [
+        BuildStep(step_name="Gathering Files", step_description="Copying files to temp location"),
+        BuildStep(step_name="Compiling", step_description="Compiling with nuget and msbuild"),
+        BuildStep(step_name="Donut", step_description="Converting to Shellcode"),
+    ]
 
     async def build(self) -> BuildResponse:
         # this function gets called to create an instance of your payload
@@ -97,7 +104,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
             # shutil to copy payload files over
-            copy_tree(self.agent_code_path, agent_build_path.name)
+            copy_tree(str(self.agent_code_path), agent_build_path.name)
             # first replace everything in the c2 profiles
             for csFile in get_csharp_files(agent_build_path.name):
                 templateFile = open(csFile, "rb").read().decode()
@@ -117,15 +124,13 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
-            outputType = self.get_parameter('output_type').lower()
-            file_ext = "exe"
-            if self.get_parameter('output_type') == "Shellcode":
-                outputType = "WinExe"
-                file_ext = "exe"
-            elif self.get_parameter('output_type') == "DLL":
-                outputType = "library"
-                file_ext = "dll"
             command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
+            await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                PayloadUUID=self.uuid,
+                StepName="Gathering Files",
+                StepStdout="Found all files for payload",
+                StepSuccess=True
+            ))
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
@@ -136,6 +141,12 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
             
             if os.path.exists(output_path):
+                await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                    PayloadUUID=self.uuid,
+                    StepName="Compiling",
+                    StepStdout="Successfully compiled payload",
+                    StepSuccess=True
+                ))
                 resp.status = BuildStatus.Success
                 targetExeAsmPath = "/srv/ExecuteAssembly.exe"
                 targetPowerPickPath = "/srv/PowerShellHost.exe"
@@ -150,6 +161,12 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 shutil.move("{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
                 shutil.move("{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
                 if self.get_parameter('output_type') != "Shellcode":
+                    await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                        PayloadUUID=self.uuid,
+                        StepName="Donut",
+                        StepStdout="Not converting to Shellcode through donut, passing through.",
+                        StepSuccess=True
+                    ))
                     resp.payload = open(output_path, 'rb').read()
                     resp.build_message = success_message
                     resp.status = BuildStatus.Success
@@ -171,18 +188,36 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     stdout_err += f'[stdout]\n{stdout.decode()}\n'
                     stdout_err += f'[stderr]\n{stderr.decode()}'
 
-                    if (not os.path.exists(shellcode_path)):
+                    if not os.path.exists(shellcode_path):
+                        await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                            PayloadUUID=self.uuid,
+                            StepName="Donut",
+                            StepStdout=f"Failed to pass through donut:\n{command}\n{stdout_err}",
+                            StepSuccess=False
+                        ))
                         resp.build_message = "Failed to create shellcode"
                         resp.status = BuildStatus.Error
                         resp.payload = b""
                         resp.build_stderr = stdout_err
                     else:
+                        await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                            PayloadUUID=self.uuid,
+                            StepName="Donut",
+                            StepStdout=f"Successfully passed through donut:\n{command}",
+                            StepSuccess=True
+                        ))
                         resp.payload = open(shellcode_path, 'rb').read()
                         resp.build_message = success_message
                         resp.status = BuildStatus.Success
                         resp.build_stdout = stdout_err
             else:
                 # something went wrong, return our errors
+                await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                    PayloadUUID=self.uuid,
+                    StepName="Compiling",
+                    StepStdout=stdout_err,
+                    StepSuccess=False
+                ))
                 resp.status = BuildStatus.Error
                 resp.payload = b""
                 resp.build_message = "Unknown error while building payload. Check the stderr for this build."
