@@ -36,12 +36,16 @@ class SpawnCommand(CommandBase):
     argument_class = SpawnArguments
     attackmapping = ["T1055"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         payload_search = await SendMythicRPCPayloadSearch(MythicRPCPayloadSearchMessage(
-            CallbackID=task.callback.id,
-            PayloadUUID=task.args.get_arg("template")))
+            CallbackID=taskData.Callback.ID,
+            PayloadUUID=taskData.args.get_arg("template")))
         newPayloadResp = await SendMythicRPCPayloadCreateFromUUID(MythicRPCPayloadCreateFromUUIDMessage(
-            TaskID=task.id, PayloadUUID=task.args.get_arg("template"), NewDescription="{}'s spawned session from task {}".format(task.operator, str(task.id)))
+            TaskID=taskData.Task.ID, PayloadUUID=taskData.args.get_arg("template"), NewDescription="{}'s spawned session from task {}".format(taskData.Task.OperatorUsername, str(taskData.Task.DisplayID)))
         )
         if newPayloadResp.Success:
             # we know a payload is building, now we want it
@@ -51,8 +55,8 @@ class SpawnCommand(CommandBase):
                 ))
                 if resp.Success:
                     if resp.Payloads[0].BuildPhase == 'success':
-                        task.args.add_arg("template", resp.Payloads[0].AgentFileId)
-                        task.display_params = "Spawning new payload from '{}'".format(payload_search.Payloads[0].Description)
+                        taskData.args.add_arg("template", resp.Payloads[0].AgentFileId)
+                        response.DisplayParams = "Spawning new payload from '{}'".format(payload_search.Payloads[0].Description)
                         break
                     elif resp.Payloads[0].BuildPhase == 'error':
                         raise Exception("Failed to build new payload")
@@ -64,7 +68,7 @@ class SpawnCommand(CommandBase):
                     raise Exception(resp.Error)
         else:
             raise Exception("Failed to start build process")
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

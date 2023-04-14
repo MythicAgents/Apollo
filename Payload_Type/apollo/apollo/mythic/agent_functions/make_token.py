@@ -28,10 +28,14 @@ class MakeTokenCommand(CommandBase):
     argument_class = MakeTokenArguments
     attackmapping = ["T1134"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        cred = task.args.get_arg("credential")
-        task.display_params = "{}\\{} {}".format(cred.get("realm"), cred.get("account"), cred.get("credential"))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        cred = taskData.args.get_arg("credential")
+        response.DisplayParams = "{}\\{} {}".format(cred.get("realm"), cred.get("account"), cred.get("credential"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

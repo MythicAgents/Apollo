@@ -74,13 +74,17 @@ class InjectCommand(CommandBase):
     attackmapping = ["T1055"]
     completion_functions = {"inject_callback": inject_callback}
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
 
-        string_payload = [x.strip() for x in task.args.get_arg("template").split(" - ")]
+        string_payload = [x.strip() for x in taskData.args.get_arg("template").split(" - ")]
         filename = string_payload[0]
         desc = string_payload[1]
         payload_search = await SendMythicRPCPayloadSearch(MythicRPCPayloadSearchMessage(
-            CallbackID=task.callback.id,
+            CallbackID=taskData.Callback.ID,
             PayloadTypes=["apollo"],
             Filename=filename,
             Description=desc,
@@ -89,13 +93,13 @@ class InjectCommand(CommandBase):
         ))
 
         if not payload_search.Success:
-            raise Exception("Failed to find payload: {}".format(task.args.get_arg("template")))
+            raise Exception("Failed to find payload: {}".format(taskData.args.get_arg("template")))
 
         if len(payload_search.Payloads) == 0:
-            raise Exception("No payloads found matching {}".format(task.args.get_arg("template")))
+            raise Exception("No payloads found matching {}".format(taskData.args.get_arg("template")))
         str_uuid = payload_search.Payloads[0].UUID
         newPayloadResp = await SendMythicRPCPayloadCreateFromUUID(MythicRPCPayloadCreateFromUUIDMessage(
-            TaskID=task.id, PayloadUUID=str_uuid, NewDescription="{}'s injection into PID {}".format(task.operator, str(task.args.get_arg("pid")))
+            TaskID=taskData.Task.ID, PayloadUUID=str_uuid, NewDescription="{}'s injection into PID {}".format(taskData.Task.OperatorUsername, str(taskData.args.get_arg("pid")))
         ))
         if newPayloadResp.Success:
             # we know a payload is building, now we want it
@@ -106,36 +110,40 @@ class InjectCommand(CommandBase):
                 if resp.Success:
                     if resp.Payloads[0].BuildPhase == 'success':
                         # it's done, so we can register a file for it
-                        task.display_params = "payload '{}' into PID {}".format(payload_search.Payloads[0].Description, task.args.get_arg("pid"))
-                        task.status = MythicStatus.Processed
-                        sys.stdout.flush()
+                        response.DisplayParams = "payload '{}' into PID {}".format(payload_search.Payloads[0].Description, taskData.args.get_arg("pid"))
+                        response.TaskStatus = MythicStatus.Processed
                         c2_info = resp.Payloads[0].C2Profiles[0]
-                        logger.info(c2_info)
                         is_p2p = c2_info.Name == "smb" or c2_info.Name == "tcp"
                         if not is_p2p:
-                            response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                                         command="shinject", params_dict={"pid": task.args.get_arg("pid"), "shellcode-file-id": resp.Payloads[0].AgentFileId},
-                                         subtask_callback_function="inject_callback")
+                            subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                                TaskID=taskData.Task.ID,
+                                SubtaskCallbackFunction="inject_callback",
+                                CommandName="shinject",
+                                Params=json.dumps({"pid": taskData.args.get_arg("pid"), "shellcode-file-id": resp.Payloads[0].AgentFileId})
+                            ))
                         else:
-                            response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                                         command="shinject", params_dict={"pid": task.args.get_arg("pid"), "shellcode-file-id": resp.Payloads[0].AgentFileId})
-                            if response.status == MythicStatus.Success:
+                            subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                                TaskID=taskData.Task.ID,
+                                CommandName="shinject",
+                                Params=json.dumps({"pid": taskData.args.get_arg("pid"), "shellcode-file-id": resp.Payloads[0].AgentFileId})
+                            ))
+                            if subtask.Success:
                                 connection_info = {
                                     "host": "127.0.0.1",
                                     "agent_uuid": newPayloadResp.NewPayloadUUID,
                                     "c2_profile": c2_info
                                 }
-                                print(connection_info)
-                                sys.stdout.flush()
-                                response = await MythicRPC().execute("create_subtask",
-                                    parent_task_id=task.id,
-                                    command="link",
-                                    params_dict={
+                                subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                                    TaskID=taskData.Task.ID,
+                                    CommandName="link",
+                                    SubtaskCallbackFunction="inject_callback",
+                                    Params=json.dumps({
                                         "connection_info": connection_info
-                                    }, subtask_callback_function="inject_callback")
-                                task.status = response.status
+                                    })
+                                ))
                             else:
-                                task.status = MythicStatus.Error
+                                response.Success = False
+                                response.Error = subtask.Error
                             
                         break
                     elif resp.Payloads[0].BuildPhase == 'error':
@@ -145,8 +153,8 @@ class InjectCommand(CommandBase):
                         await asyncio.sleep(1)
         else:
             logger.exception("Failed to build new payload")
-            raise Exception("Failed to build payload from template {}".format(task.args.get_arg("template")))
-        return task
+            raise Exception("Failed to build payload from template {}".format(taskData.args.get_arg("template")))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

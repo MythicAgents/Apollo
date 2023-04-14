@@ -30,9 +30,13 @@ class LinkCommand(CommandBase):
     argument_class = LinkArguments
     attackmapping = ["T1570", "T1572", "T1021"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "{}".format(task.args.get_arg("connection_info")["host"])
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        response.DisplayParams = "{}".format(taskData.args.get_arg("connection_info")["host"])
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

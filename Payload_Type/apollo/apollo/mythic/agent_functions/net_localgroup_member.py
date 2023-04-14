@@ -75,14 +75,18 @@ class NetLocalgroupMemberCommand(CommandBase):
     browser_script = BrowserScript(script_name="net_localgroup_member_new", author="@djhohnstein", for_new_ui=True)
     supported_ui_features = ["net_localgroup_member"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        computer = task.args.get_arg("computer")
-        group = task.args.get_arg("group")
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        computer = taskData.args.get_arg("computer")
+        group = taskData.args.get_arg("group")
         if computer:
-            task.display_params = "-Computer {} -Group {}".format(computer, group)
+            response.DisplayParams = "-Computer {} -Group {}".format(computer, group)
         else:
-            task.display_params = "-Group {}".format(group)
-        return task
+            response.DisplayParams = "-Group {}".format(group)
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

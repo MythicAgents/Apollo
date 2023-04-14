@@ -24,11 +24,14 @@ class PsCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PsArguments
     attackmapping = ["T1106"]
-    browser_script = BrowserScript(script_name="ps_new", author="@djhohnstein", for_new_ui=True)
-    # browser_script = BrowserScript(script_name="ps", author="@djhohnstein")
+    browser_script = BrowserScript(script_name="ps_new", author="@djhohnstein")
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

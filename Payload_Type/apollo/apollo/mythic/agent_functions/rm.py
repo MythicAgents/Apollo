@@ -66,12 +66,16 @@ class RmCommand(CommandBase):
     argument_class = RmArguments
     attackmapping = ["T1070.004", "T1565"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        host = task.args.get_arg("host")
-        task.display_params = "-Path {}".format(task.args.get_arg("path"))
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        host = taskData.args.get_arg("host")
+        response.DisplayParams = "-Path {}".format(taskData.args.get_arg("path"))
         if host:
-            task.display_params += " -Host {}".format(host)
-        return task
+            response.DisplayParams += " -Host {}".format(host)
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

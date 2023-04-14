@@ -71,26 +71,30 @@ class LoadCommand(CommandBase):
     argument_class = LoadArguments
     attackmapping = []
 
-    async def update_output(self, task: MythicTask, output: str):
-        addoutput_resp = await MythicRPC().execute("create_output",
-                                                    task_id=task.id,
-                                                    output=output)
-        if addoutput_resp.status != MythicStatus.Success:
+    async def update_output(self, taskData: PTTaskMessageAllData, output: str):
+        addoutput_resp = await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+            TaskID=taskData.Task.ID,
+            Response=output.encode()
+        ))
+        if addoutput_resp.Success:
             raise Exception("Failed to add output to task")
 
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         requested_cmds = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
             SearchPayloadTypeName="apollo",
-            SearchCommandNames=task.args.get_arg("commands"),
+            SearchCommandNames=taskData.args.get_arg("commands"),
         ))
-        loaded_cmds = await MythicRPC().execute(
-            "get_commands",
-            callback_id=task.callback.id,
-            loaded_only=True)
+        loaded_cmds = await SendMythicRPCCallbackSearchCommand(MythicRPCCallbackSearchCommandMessage(
+            CallbackID=taskData.Callback.ID,
+        ))
 
         requested_cmds_names = set([r.Name for r in requested_cmds.Commands])
-        loaded_cmds_names = set([r["cmd"] for r in loaded_cmds.response])
+        loaded_cmds_names = set([r.Name for r in loaded_cmds.Commands])
         diff = requested_cmds_names.difference(loaded_cmds_names)
 
         load_immediately_rpc = []
@@ -124,17 +128,17 @@ class LoadCommand(CommandBase):
         load_immediately_rpc = set(load_immediately_rpc)
 
         if len(load_immediately_rpc) > 0:
-            reg_resp = await MythicRPC().execute(
-                "update_loaded_commands",
-                task_id=task.id,
-                commands=list(load_immediately_rpc),
-                add=True)
-            if reg_resp.status != MythicStatus.Success:
-                raise Exception("Failed to register {} commands: {}".format(load_immediately_rpc, reg_resp.response))
+            reg_resp = await SendMythicRPCCallbackAddCommand(MythicRPCCallbackAddCommandMessage(
+                TaskID=taskData.Task.ID,
+                Commands=list(load_immediately_rpc),
+            ))
+            if reg_resp.Success:
+                raise Exception("Failed to register {} commands: {}".format(load_immediately_rpc, reg_resp.Error))
 
         if len(to_compile) == 0:
-            await self.update_output(task, "Loaded {}\n".format(", ".join(load_immediately_rpc)))
-            task.status = MythicStatus.Completed
+            await self.update_output(taskData, "Loaded {}\n".format(", ".join(load_immediately_rpc)))
+            response.TaskStatus = MythicStatus.Completed
+            response.Completed = True
         else:
             defines_commands_upper = [f"#define {x.upper()}" for x in to_compile]
             agent_build_path = tempfile.TemporaryDirectory()
@@ -165,46 +169,45 @@ class LoadCommand(CommandBase):
             stdout, stderr = await proc.communicate()
             if os.path.exists(outputPath):
                 dllBytes = open(outputPath, "rb").read()
-                file_resp = await MythicRPC().execute("create_file",
-                                                    task_id=task.id,
-                                                    file=base64.b64encode(dllBytes).decode(),
-                                                    delete_after_fetch=True)
-                if file_resp.status == MythicStatus.Success:
-                    task.args.add_arg("file_id", file_resp.response['agent_file_id'])
-                    task.args.remove_arg("commands")
-                    task.args.add_arg("commands", list(to_compile), ParameterType.ChooseMultiple)
+                file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+                    TaskID=taskData.Task.ID,
+                    FileContents=dllBytes,
+                    DeleteAfterFetch=True
+                ))
+                if file_resp.Success:
+                    taskData.args.add_arg("file_id", file_resp.AgentFileId)
+                    taskData.args.remove_arg("commands")
+                    taskData.args.add_arg("commands", list(to_compile), ParameterType.ChooseMultiple)
                 else:
                     raise Exception("Failed to register task dll with Mythic")
             else:
                 raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
         
         all_task_cmds = [x for x in to_compile.union(load_immediately_rpc)]
-        task.display_params = "-Commands {}".format(" ".join(all_task_cmds))
-        return task
+        response.DisplayParams = "-Commands {}".format(" ".join(all_task_cmds))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         result = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
         resp = response["commands"]
         logger.info("process_response loaded data", response)
-
-        reg_resp = await MythicRPC().execute(
-                "update_loaded_commands",
-                task_id=response.task.id,
-                commands=resp,
-                add=True)
-        if reg_resp.status != MythicStatus.Success:
-            raise Exception("Failed to register commands ({}) from response: {}".format(resp, reg_resp.response))
+        reg_resp = await SendMythicRPCCallbackAddCommand(MythicRPCCallbackAddCommandMessage(
+            TaskID=task.Task.ID,
+            Commands=resp
+        ))
+        if not reg_resp.Success:
+            raise Exception("Failed to register commands ({}) from response: {}".format(resp, reg_resp.Error))
 
         all_cmds = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
             SearchPayloadTypeName="apollo",
             SearchCommandNames=task.args.get_arg("commands"),
         ))
-        loaded_cmds = await MythicRPC().execute(
-            "get_commands",
-            callback_id=task.Task.CallbackID,
-            loaded_only=True)
+        loaded_cmds = await SendMythicRPCCallbackSearchCommand(MythicRPCCallbackSearchCommandMessage(
+            TaskID=task.Task.CallbackID,
+            CallbackID=task.Task.ID
+        ))
         all_cmds_dict = {x.Name: x for x in all_cmds.Commands}
-        loaded_cmd_names = [x["cmd"] for x in loaded_cmds.response]
+        loaded_cmd_names = [x.Name for x in loaded_cmds.Commands]
 
         diff_cmds_dict = {k: v for k, v in all_cmds_dict.items() if k not in loaded_cmd_names}
 
@@ -222,14 +225,13 @@ class LoadCommand(CommandBase):
                                 to_add.append(cmd_name)
                                 break
             if len(to_add) > 0:
-                reg_resp = await MythicRPC().execute(
-                    "update_loaded_commands",
-                    task_id=response.task.id,
-                    commands=to_add,
-                    add=True)
-                if reg_resp.status != MythicStatus.Success:
-                    raise Exception("Failed to register commands ({}) from response: {}".format(to_add, reg_resp.response))
+                reg_resp = await SendMythicRPCCallbackAddCommand(MythicRPCCallbackAddCommandMessage(
+                    TaskID=task.Task.ID,
+                    Commands=to_add
+                ))
+                if reg_resp.Success:
+                    raise Exception("Failed to register commands ({}) from response: {}".format(to_add, reg_resp.Error))
 
         newly_loaded_cmds = set(resp).union(set(to_add))
-        await self.update_output(response.task, "Loaded {}\n".format(", ".join(newly_loaded_cmds)))
+        await self.update_output(task, "Loaded {}\n".format(", ".join(newly_loaded_cmds)))
         return result

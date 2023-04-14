@@ -62,21 +62,21 @@ class InlineAssemblyArguments(TaskArguments):
 
     async def get_files(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
         fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
-        file_resp = await MythicRPC().execute("get_file", callback_id=inputMsg.Callback,
-                                              limit_by_callback=True,
-                                              get_contents=False,
-                                              filename="",
-                                              max_results=-1)
-        if file_resp.status == MythicRPCStatus.Success:
+        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+            CallbackID=inputMsg.Callback,
+            LimitByCallback=True,
+            Filename="",
+        ))
+        if file_resp.Success:
             file_names = []
-            for f in file_resp.response:
-                if f["filename"] not in file_names and f["filename"].endswith(".exe"):
-                    file_names.append(f["filename"])
+            for f in file_resp.Files:
+                if f.Filename not in file_names and f.Filename.endswith(".exe"):
+                    file_names.append(f.Filename)
             fileResponse.Success = True
             fileResponse.Choices = file_names
             return fileResponse
         else:
-            fileResponse.Error = file_resp.error
+            fileResponse.Error = file_resp.Error
             return fileResponse
 
 
@@ -103,7 +103,11 @@ class InlineAssemblyCommand(CommandBase):
             raise Exception("Failed to build ApolloInterop.dll:\n{}".format(stderr.decode()))
         shutil.copy(outputPath, INTEROP_ASSEMBLY_PATH)
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         global INTEROP_ASSEMBLY_PATH
         global INTEROP_FILE_ID
 
@@ -113,26 +117,25 @@ class InlineAssemblyCommand(CommandBase):
         if INTEROP_FILE_ID == "":
             with open(INTEROP_ASSEMBLY_PATH, "rb") as f:
                 interop_bytes = f.read()
-            b64interop = base64.b64encode(interop_bytes).decode()
-            file_resp = await MythicRPC().execute(
-                "create_file",
-                task_id=task.id,
-                file=b64interop,
-                delete_after_fetch=False)
+            file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+                TaskID=taskData.Task.ID,
+                FileContents=interop_bytes,
+                DeleteAfterFetch=False,
+            ))
             
-            if file_resp.status == MythicStatus.Success:
-                INTEROP_FILE_ID = file_resp.response["agent_file_id"]
+            if file_resp.Success:
+                INTEROP_FILE_ID = file_resp.AgentFileId
             else:
-                raise Exception("Failed to register Interop DLL: {}".format(file_resp.error))
+                raise Exception("Failed to register Interop DLL: {}".format(file_resp.Error))
         
-        task.args.add_arg("interop_id", INTEROP_FILE_ID)
+        taskData.args.add_arg("interop_id", INTEROP_FILE_ID)
 
-        task.display_params = "-Assembly {} -Arguments {}".format(
-            task.args.get_arg("assembly_name"),
-            task.args.get_arg("assembly_arguments")
+        response.DisplayParams = "-Assembly {} -Arguments {}".format(
+            taskData.args.get_arg("assembly_name"),
+            taskData.args.get_arg("assembly_arguments")
         )
 
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

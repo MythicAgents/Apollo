@@ -69,27 +69,30 @@ class ShInjectCommand(CommandBase):
     argument_class = ShInjectArguments
     attackmapping = ["T1055"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "-PID {}".format(task.args.get_arg("pid"))
-        if task.args.get_arg("shellcode") != None:
-            file_resp = await MythicRPC().execute(
-                "get_file",
-                file_id=task.args.get_arg("shellcode"),
-                task_id=task.id,
-                get_contents=False)
-            if file_resp.status == MythicRPCStatus.Success:
-                original_file_name = file_resp.response[0]["filename"]
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        response.DisplayParams = "-PID {}".format(taskData.args.get_arg("pid"))
+        if taskData.args.get_arg("shellcode") is not None:
+            file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                AgentFileID=taskData.args.get_arg("shellcode"),
+                TaskID=taskData.Task.ID,
+            ))
+            if file_resp.Success:
+                original_file_name = file_resp.Files[0].Filename
             else:
-                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
+                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
             
-            task.display_params += " -File {}".format(original_file_name)
-            task.args.add_arg("shellcode-file-id", file_resp.response[0]['agent_file_id'])
-            task.args.remove_arg("shellcode")
-        elif task.args.get_arg("shellcode-file-id") != None and task.args.get_arg("shellcode-file-id") != "":
-            task.display_params += " (scripting automation)"
+            response.DisplayParams += " -File {}".format(original_file_name)
+            taskData.args.add_arg("shellcode-file-id", file_resp.Files[0].Filename)
+            taskData.args.remove_arg("shellcode")
+        elif taskData.args.get_arg("shellcode-file-id") is not None and taskData.args.get_arg("shellcode-file-id") != "":
+            response.DisplayParams += " (scripting automation)"
         else:
             raise Exception("No file provided.")
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

@@ -64,12 +64,16 @@ class RegQuery(CommandBase):
     supported_ui_features = ["reg_query"]
     browser_script = BrowserScript(script_name="reg_query", author="@djhohnstein", for_new_ui=True)
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.args.get_arg("key"):
-            task.display_params = "-Hive {} -Key {}".format(task.args.get_arg("hive"), task.args.get_arg("key"))
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        if taskData.args.get_arg("key"):
+            response.DisplayParams = "-Hive {} -Key {}".format(taskData.args.get_arg("hive"), taskData.args.get_arg("key"))
         else:
-            task.display_params = "-Hive {}".format(task.args.get_arg("hive"))
-        return task
+            response.DisplayParams = "-Hive {}".format(taskData.args.get_arg("hive"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

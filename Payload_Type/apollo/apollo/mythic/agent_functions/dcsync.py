@@ -76,16 +76,6 @@ class DcSyncArguments(TaskArguments):
 
 
 async def parse_credentials_dcsync(task: PTTaskCompletionFunctionMessage) -> PTTaskCompletionFunctionMessageResponse:
-    #     get_responses(task_id: int) -> dict
-    # For a given Task, get all of the user_output, artifacts, files, and credentials that task as created within Mythic
-    # :param task_id: The TaskID you're interested in (i.e. task.id)
-    # :return: A dictionary of the following format:
-    # {
-    #   "user_output": array of dictionaries where each dictionary is user_output message for the task,
-    #   "artifacts": array of dictionaries where each dictionary is an artifact created for the task,
-    #   "files": array of dictionaries where each dictionary is a file registered as part of the task,
-    #   "credentials": array of dictionaries where each dictionary is a credential created as part of the task.
-    # }
     response = PTTaskCompletionFunctionMessageResponse(Success=True, TaskStatus="success", Completed=True)
     responses = await SendMythicRPCResponseSearch(MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID))
     for output in responses.Responses:
@@ -133,11 +123,20 @@ class DcSyncCommand(CommandBase):
     script_only = True
     completion_functions = {"parse_credentials_dcsync": parse_credentials_dcsync}
 
-
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                        command="execute_pe", params_string=task.args.get_arg("command"), subtask_callback_function="parse_credentials_dcsync")
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        sub = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+            TaskID=taskData.Task.ID,
+            SubtaskCallbackFunction="parse_credentials_dcsync",
+            CommandName="execute_pe",
+            Params=taskData.args.get_arg("command")
+        ))
+        if not sub.Success:
+            response.Stderr = f"Failed to run subtask: {sub.Error}"
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

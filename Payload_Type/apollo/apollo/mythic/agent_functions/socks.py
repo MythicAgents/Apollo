@@ -41,24 +41,29 @@ class SocksCommand(CommandBase):
     attributes=CommandAttributes(
         dependencies=[]
     )
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        resp = await SendMythicRPCProxyStartCommand(MythicRPCProxyStartMessage(
+            TaskID=taskData.Task.ID,
+            PortType="socks",
+            Port=taskData.args.get_arg("port")
+        ))
 
-        resp = await MythicRPC().execute("control_socks",
-                                         task_id=task.id,
-                                         start=True,
-                                         port=task.args.get_arg("port"))
-
-        
-        if resp.status != MythicStatus.Success:
-            task.status = MythicStatus.Error
-            task.stderr = resp.error
-            await MythicRPC().execute("create_output",
-                    task_id=task.id,
-                    output=resp.error)
+        if not resp.Success:
+            response.TaskStatus = MythicStatus.Error
+            response.Stderr = resp.Error
+            await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                TaskID=taskData.Task.ID,
+                Response=resp.Error.encode()
+            ))
         else:
-            task.display_params = "Started SOCKS5 server on port {}".format(task.args.get_arg("port"))
-            task.status = MythicStatus.Success
-        return task
+            response.DisplayParams = "Started SOCKS5 server on port {}".format(taskData.args.get_arg("port"))
+            response.TaskStatus = MythicStatus.Success
+            response.Completed = True
+        return response
 
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

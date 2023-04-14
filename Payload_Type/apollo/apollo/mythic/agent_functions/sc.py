@@ -205,44 +205,48 @@ class ScCommand(CommandBase):
     supported_ui_features = ["sc:start", "sc:stop", "sc:delete"]
     browser_script = BrowserScript(script_name="sc", author="@djhohnstein", for_new_ui=True)
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        computer = task.args.get_arg("computer")
-        service_name = task.args.get_arg("service")
-        display_name = task.args.get_arg("display_name")
-        binpath = task.args.get_arg("binpath")
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        computer = taskData.args.get_arg("computer")
+        service_name = taskData.args.get_arg("service")
+        display_name = taskData.args.get_arg("display_name")
+        binpath = taskData.args.get_arg("binpath")
         
         
-        query = task.args.get_arg("query")
+        query = taskData.args.get_arg("query")
         if query:
-            task.display_params = "-Query"
-        start = task.args.get_arg("start")
+            response.DisplayParams = "-Query"
+        start = taskData.args.get_arg("start")
         if start:
-            task.display_params = "-Start"
-        stop = task.args.get_arg("stop")
+            response.DisplayParams = "-Start"
+        stop = taskData.args.get_arg("stop")
         if stop:
-            task.display_params = "-Stop"
-        create = task.args.get_arg("create")
+            response.DisplayParams = "-Stop"
+        create = taskData.args.get_arg("create")
         if create:
-            task.display_params = "-Create"
-        delete = task.args.get_arg("delete")
+            response.DisplayParams = "-Create"
+        delete = taskData.args.get_arg("delete")
         if delete:
-            task.display_params = "-Delete"
+            response.DisplayParams = "-Delete"
 
         if not any([query, start, stop, create, delete]):
             raise Exception("Failed to get a valid action to perform.")
         if computer is not None and computer != "":
-            task.display_params += " -Computer {}".format(computer)
+            response.DisplayParams += " -Computer {}".format(computer)
 
         if service_name is not None and service_name != "":
-            task.display_params += " -Service {}".format(service_name)
+            response.DisplayParams += " -Service {}".format(service_name)
 
         if display_name is not None and display_name != "":
-            task.display_params += " -DisplayName '{}'".format(display_name)
+            response.DisplayParams += " -DisplayName '{}'".format(display_name)
 
         if binpath is not None and binpath != "":
-            task.display_params += " -BinPath '{}'".format(binpath)
+            response.DisplayParams += " -BinPath '{}'".format(binpath)
 
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

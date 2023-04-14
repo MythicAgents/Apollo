@@ -115,13 +115,17 @@ class RegWriteValueBase(CommandBase):
     argument_class = RegWriteValueArguments
     attackmapping = ["T1547", "T1037", "T1546", "T1574", "T1112", "T1003"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        key = task.args.get_arg("key")
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        key = taskData.args.get_arg("key")
         if key[0] == "\\":
-            task.display_params = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(task.args.get_arg("hive"), key, task.args.get_arg("value_name"), task.args.get_arg("value_value"))
+            response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(taskData.args.get_arg("hive"), key, taskData.args.get_arg("value_name"), taskData.args.get_arg("value_value"))
         else:
-            task.display_params = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(task.args.get_arg("hive"), key, task.args.get_arg("value_name"), task.args.get_arg("value_value"))
-        return task
+            response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(taskData.args.get_arg("hive"), key, taskData.args.get_arg("value_name"), taskData.args.get_arg("value_value"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

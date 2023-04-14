@@ -28,10 +28,17 @@ class ShellCommand(CommandBase):
     script_only = True
     attackmapping = ["T1059"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                        command="run", params_string="cmd.exe /S /c {}".format(task.args.command_line))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+            TaskID=taskData.Task.ID,
+            CommandName="run",
+            Params="cmd.exe /S /c {}".format(taskData.args.command_line)
+        ))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

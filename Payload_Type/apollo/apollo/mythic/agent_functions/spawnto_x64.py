@@ -69,12 +69,16 @@ class Spawntox64Command(CommandBase):
     argument_class = Spawntox64Arguments
     attackmapping = ["T1055"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        args = task.args.get_arg("arguments")
-        task.display_params = "-Application {}".format(task.args.get_arg("application"))
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        args = taskData.args.get_arg("arguments")
+        response.DisplayParams = "-Application {}".format(taskData.args.get_arg("application"))
         if args:
-            task.display_params += " -Arguments {}".format(args)
-        return task
+            response.DisplayParams += " -Arguments {}".format(args)
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

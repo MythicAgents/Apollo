@@ -41,11 +41,18 @@ class PrintSpooferCommand(CommandBase):
     attackmapping = ["T1547"]
     script_only = True
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                        command="execute_pe", params_string=task.args.get_arg("command"))
-        task.display_params = "-Command {}".format(task.args.get_arg("command"))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+            TaskID=taskData.Task.ID,
+            CommandName="execute_pe",
+            Params=taskData.args.get_arg("command")
+        ))
+        response.DisplayParams = "-Command {}".format(taskData.args.get_arg("command"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

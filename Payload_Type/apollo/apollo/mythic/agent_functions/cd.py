@@ -41,9 +41,13 @@ class CdCommand(CommandBase):
     argument_class = CdArguments
     attackmapping = ["T1083"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = task.args.get_arg("path")
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        response.DisplayParams = taskData.args.get_arg("path")
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

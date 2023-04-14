@@ -163,16 +163,17 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskComp
                     realm = lines[i+1].split(" : ")[1].strip()
                     passwd = lines[i+2].split(" : ")[1].strip()
                     if passwd != "(null)":
-                        cred_resp = await MythicRPC().execute(
-                            "create_credential",
-                            task_id=task.SubtaskData.Task.ID,
-                            credential_type="plaintext",
-                            account=uname,
-                            realm=realm,
-                            credential=passwd,
-                            comment=comment
-                        )
-                        if cred_resp.status != MythicStatus.Success:
+                        cred_resp = await SendMythicRPCCredentialCreate(MythicRPCCredentialCreateMessage(
+                            TaskID=task.SubtaskData.Task.ID,
+                            Credentials=[MythicRPCCredentialData(
+                                credential_type="plaintext",
+                                account=uname,
+                                realm=realm,
+                                credential=passwd,
+                                comment=comment
+                            )]
+                        ))
+                        if not cred_resp.Success:
                             raise Exception("Failed to register credential")
     return response
 
@@ -193,10 +194,18 @@ class PthCommand(CommandBase):
     completion_functions = {"parse_credentials": parse_credentials}
 
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                        command="execute_pe", params_string=task.args.get_arg("command"), subtask_callback_function="parse_credentials")
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+            TaskID=taskData.Task.ID,
+            CommandName="execute_pe",
+            Params=taskData.args.get_arg("command"),
+            SubtaskCallbackFunction="parse_credentials"
+        ))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

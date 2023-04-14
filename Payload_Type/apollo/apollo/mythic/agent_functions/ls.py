@@ -99,14 +99,18 @@ class LsCommand(CommandBase):
     attackmapping = ["T1106", "T1083"]
     browser_script = BrowserScript(script_name="ls_new", author="@djhohnstein", for_new_ui=True)
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        host = task.args.get_arg("host")
-        path = task.args.get_arg("path")
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        host = taskData.args.get_arg("host")
+        path = taskData.args.get_arg("path")
         if host:
-            task.display_params = "{} on {}".format(path, host)
+            response.DisplayParams = "{} on {}".format(path, host)
         else:
-            task.display_params = path
-        return task
+            response.DisplayParams = path
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

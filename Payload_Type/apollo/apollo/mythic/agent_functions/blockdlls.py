@@ -49,13 +49,17 @@ class BlockDllsCommand(CommandBase):
     argument_class = BlockDllsArguments
     attackmapping = ["T1055"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        block = task.args.get_arg("block")
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        block = taskData.args.get_arg("block")
         if block:
-            task.display_params = "on"
+            response.DisplayParams = "on"
         else:
-            task.display_params = "off"
-        return task
+            response.DisplayParams = "off"
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

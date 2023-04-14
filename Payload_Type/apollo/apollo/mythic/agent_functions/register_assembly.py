@@ -43,13 +43,20 @@ class RegisterAssemblyCommand(CommandBase):
     completion_functions = {"registerasm_callback": registerasm_callback}
 
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        response = await MythicRPC().execute("create_subtask", parent_task_id=task.id,
-                        command="register_file", params_dict={"file": task.args.get_arg("file")},
-                        subtask_callback_function="registerasm_callback")
-        if response.status != MythicStatus.Success:
-            raise Exception("Failed to create subtask: {}".format(response.error))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+            TaskID=taskData.Task.ID,
+            CommandName="register_file",
+            SubtaskCallbackFunction="registerasm_callback",
+            Params=json.dumps({"file": taskData.args.get_arg("file")})
+        ))
+        if not response.Success:
+            raise Exception("Failed to create subtask: {}".format(response.Error))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

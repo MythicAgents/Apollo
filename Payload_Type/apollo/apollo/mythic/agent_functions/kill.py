@@ -38,9 +38,13 @@ class killCommand(CommandBase):
     attackmapping = ["T1106"]
     supported_ui_features = ["kill"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "-PID {}".format(task.args.get_arg("pid"))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        response.DisplayParams = "-PID {}".format(taskData.args.get_arg("pid"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

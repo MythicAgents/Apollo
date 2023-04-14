@@ -53,11 +53,15 @@ class RunCommand(CommandBase):
     argument_class = RunArguments
     attackmapping = ["T1106", "T1218", "T1553"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "-Executable {} -Arguments {}".format(
-            task.args.get_arg("executable"), task.args.get_arg("arguments")
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
         )
-        return task
+        response.DisplayParams = "-Executable {} -Arguments {}".format(
+            taskData.args.get_arg("executable"), taskData.args.get_arg("arguments")
+        )
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)

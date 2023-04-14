@@ -69,9 +69,13 @@ class MvCommand(CommandBase):
     argument_class = MvArguments
     attackmapping = ["T1106"]
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "-Path {} -Destination {}".format(task.args.get_arg("source"), task.args.get_arg("destination"))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        response.DisplayParams = "-Path {} -Destination {}".format(taskData.args.get_arg("source"), taskData.args.get_arg("destination"))
+        return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
