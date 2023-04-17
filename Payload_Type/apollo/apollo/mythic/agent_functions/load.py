@@ -16,9 +16,9 @@ class LoadArguments(TaskArguments):
             CommandParameter(
                 name="commands",
                 cli_name="Commands",
-                display_name="Commands", 
+                display_name="Commands",
                 type=ParameterType.ChooseMultiple,
-                description="One or more commands to load into the agent", 
+                description="One or more commands to load into the agent",
                 dynamic_query_function=self.get_remaining_commands,),
         ]
 
@@ -37,7 +37,7 @@ class LoadArguments(TaskArguments):
             raise Exception("Failed to get commands for apollo agent: {}".format(all_cmds.Error))
         if loaded_cmds.status != MythicStatus.Success:
             raise Exception("Failed to fetch loaded commands from callback {}: {}".format(inputMsg.Callback, loaded_cmds.status))
-        
+
         all_cmds_names = set([r.Name for r in all_cmds.Commands])
         loaded_cmds_names = set([r["cmd"] for r in loaded_cmds.response])
         logger.info(all_cmds_names)
@@ -54,7 +54,7 @@ class LoadArguments(TaskArguments):
             if tmpjson.get("Commands") is not None and type(tmpjson.get("Commands")) is not list:
                 cmds = tmpjson.get("Commands").split(" ")
                 tmpjson["Commands"] = cmds
-                self.load_args_from_json_string(json.dumps(tmpjson)) 
+                self.load_args_from_json_string(json.dumps(tmpjson))
             else:
                 self.load_args_from_json_string(self.command_line)
         else:
@@ -76,7 +76,7 @@ class LoadCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Response=output.encode()
         ))
-        if addoutput_resp.Success:
+        if not addoutput_resp.Success:
             raise Exception("Failed to add output to task")
 
 
@@ -136,20 +136,20 @@ class LoadCommand(CommandBase):
                 raise Exception("Failed to register {} commands: {}".format(load_immediately_rpc, reg_resp.Error))
 
         if len(to_compile) == 0:
-            await self.update_output(taskData, "Loaded {}\n".format(", ".join(load_immediately_rpc)))
+            await self.update_output(taskData, "Loaded {}\n".format(", ".join(list(load_immediately_rpc))))
             response.TaskStatus = MythicStatus.Completed
             response.Completed = True
         else:
             defines_commands_upper = [f"#define {x.upper()}" for x in to_compile]
             agent_build_path = tempfile.TemporaryDirectory()
-                # shutil to copy payload files over
+            # shutil to copy payload files over
             copy_tree(str(self.agent_code_path), agent_build_path.name)
             results = []
             for root, dirs, files in os.walk("{}/Tasks".format(agent_build_path.name)):
                 for file in files:
                     if file.endswith(".cs"):
                         results.append(os.path.join(root, file))
-            
+
             if len(results) == 0:
                 raise ValueError("No .cs files found in task library")
             for csFile in results:
@@ -161,11 +161,11 @@ class LoadCommand(CommandBase):
                         f.write("\n".join(defines_commands_upper))
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
-        
+
             outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
             shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
             proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                            stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
             if os.path.exists(outputPath):
                 dllBytes = open(outputPath, "rb").read()
@@ -182,7 +182,7 @@ class LoadCommand(CommandBase):
                     raise Exception("Failed to register task dll with Mythic")
             else:
                 raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
-        
+
         all_task_cmds = [x for x in to_compile.union(load_immediately_rpc)]
         response.DisplayParams = "-Commands {}".format(" ".join(all_task_cmds))
         return response
@@ -190,7 +190,6 @@ class LoadCommand(CommandBase):
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         result = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
         resp = response["commands"]
-        logger.info("process_response loaded data", response)
         reg_resp = await SendMythicRPCCallbackAddCommand(MythicRPCCallbackAddCommandMessage(
             TaskID=task.Task.ID,
             Commands=resp
@@ -215,7 +214,7 @@ class LoadCommand(CommandBase):
 
         if len(diff_cmds_dict.keys()) > 0:
             for cmd_name, cmd in diff_cmds_dict.items():
-                dependencies = cmd["attributes"].get("dependencies", [])
+                dependencies = cmd.Attributes.get("dependencies", [])
                 if len(dependencies) > 0:
                     found_deps = 0
                     for d in dependencies:
