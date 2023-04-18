@@ -28,18 +28,17 @@ class LoadArguments(TaskArguments):
         all_cmds = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
             SearchPayloadTypeName="apollo"
         ))
-        loaded_cmds = await MythicRPC().execute(
-            "get_commands",
-            callback_id=inputMsg.Callback,
-            loaded_only=True)
+        loaded_cmds = await SendMythicRPCCallbackSearchCommand(MythicRPCCallbackSearchCommandMessage(
+            CallbackID=inputMsg.Callback
+        ))
 
         if not all_cmds.Success:
             raise Exception("Failed to get commands for apollo agent: {}".format(all_cmds.Error))
-        if loaded_cmds.status != MythicStatus.Success:
-            raise Exception("Failed to fetch loaded commands from callback {}: {}".format(inputMsg.Callback, loaded_cmds.status))
+        if not loaded_cmds.Success:
+            raise Exception("Failed to fetch loaded commands from callback {}: {}".format(inputMsg.Callback, loaded_cmds.Error))
 
         all_cmds_names = set([r.Name for r in all_cmds.Commands])
-        loaded_cmds_names = set([r["cmd"] for r in loaded_cmds.response])
+        loaded_cmds_names = set([r.Name for r in loaded_cmds.Commands])
         logger.info(all_cmds_names)
         logger.info(loaded_cmds_names)
         diff = all_cmds_names.difference(loaded_cmds_names)
@@ -132,7 +131,7 @@ class LoadCommand(CommandBase):
                 TaskID=taskData.Task.ID,
                 Commands=list(load_immediately_rpc),
             ))
-            if reg_resp.Success:
+            if not reg_resp.Success:
                 raise Exception("Failed to register {} commands: {}".format(load_immediately_rpc, reg_resp.Error))
 
         if len(to_compile) == 0:
@@ -228,7 +227,7 @@ class LoadCommand(CommandBase):
                     TaskID=task.Task.ID,
                     Commands=to_add
                 ))
-                if reg_resp.Success:
+                if not reg_resp.Success:
                     raise Exception("Failed to register commands ({}) from response: {}".format(to_add, reg_resp.Error))
 
         newly_loaded_cmds = set(resp).union(set(to_add))
