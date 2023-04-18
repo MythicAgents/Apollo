@@ -94,7 +94,7 @@ class AssemblyInjectArguments(TaskArguments):
             self.args["pid"].value = pid
             self.args["assembly_name"].value = assembly_name
             self.args["assembly_arguments"].value = assembly_args
-        
+
 
 
 class AssemblyInjectCommand(CommandBase):
@@ -114,7 +114,7 @@ class AssemblyInjectCommand(CommandBase):
         copy_tree(str(self.agent_code_path), agent_build_path.name)
         shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ExecuteAssembly/ExecuteAssembly.csproj".format(agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
             raise Exception("Failed to build ExecuteAssembly.exe:\n{}".format(stderr.decode()))
@@ -130,18 +130,18 @@ class AssemblyInjectCommand(CommandBase):
         taskData.args.add_arg("pipe_name",  str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
             await self.build_exeasm()
-        
+
         donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=taskData.args.get_arg("pipe_name"))
         file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
             TaskID=taskData.Task.ID,
-            FileContents=donutPic,
-            DeleteAfterFetch=True
+            DeleteAfterFetch=True,
+            FileContents=donutPic
         ))
         if file_resp.Success:
             taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
             raise Exception("Failed to register execute-assembly DLL: " + file_resp.Error)
-        
+
         response.DisplayParams = "-PID {} -Assembly {} -Arguments {}".format(
             taskData.args.get_arg("pid"),
             taskData.args.get_arg("assembly_name"),

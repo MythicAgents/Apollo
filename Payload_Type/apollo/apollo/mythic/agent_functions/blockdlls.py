@@ -37,7 +37,7 @@ class BlockDllsArguments(TaskArguments):
                 self.add_arg("block", False, ParameterType.Boolean)
             else:
                 raise Exception("Invalid command line arguments for blockdlls.")
-            
+
 
 class BlockDllsCommand(CommandBase):
     cmd = "blockdlls"

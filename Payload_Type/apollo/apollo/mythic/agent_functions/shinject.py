@@ -84,9 +84,9 @@ class ShInjectCommand(CommandBase):
                 original_file_name = file_resp.Files[0].Filename
             else:
                 raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
-            
+
             response.DisplayParams += " -File {}".format(original_file_name)
-            taskData.args.add_arg("shellcode-file-id", file_resp.Files[0].Filename)
+            taskData.args.add_arg("shellcode-file-id", file_resp.Files[0].AgentFileId)
             taskData.args.remove_arg("shellcode")
         elif taskData.args.get_arg("shellcode-file-id") is not None and taskData.args.get_arg("shellcode-file-id") != "":
             response.DisplayParams += " (scripting automation)"
