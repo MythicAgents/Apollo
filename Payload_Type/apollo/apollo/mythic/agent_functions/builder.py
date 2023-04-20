@@ -17,7 +17,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.2.3"
+    version = "2.2.4"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -73,7 +73,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             },
         }
         extra_variables = {
-            
+
         }
         success_message = f"Apollo {self.uuid} Successfully Built"
         stdout_err = ""
@@ -85,21 +85,13 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 if isinstance(val, dict) and 'enc_key' in val:
                     stdout_err += "Setting {} to {}".format(key, val["enc_key"] if val["enc_key"] is not None else "")
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
-                elif isinstance(val, list):
-                    for item in val:
-                        if not isinstance(item, dict):
-                            raise Exception("Expected a list of dictionaries, but got {}".format(type(item)))
-                        extra_variables[item["key"]] = item["value"]
-                        # if item["key"] == "Host":
-                        #     special_files_map["Config.cs"]["domain_front"] = item["value"]
-                        # elif item["key"] == "User-Agent":
-                        #     special_files_map["Config.cs"]["USER_AGENT"] = item["value"]
-                        # else:
-                        #     special_files_map["Config.cs"][item["key"]] = item["value"]
                 elif isinstance(val, str):
                     special_files_map["Config.cs"][key] = val
+                elif isinstance(val, dict):
+                    extra_variables = {**extra_variables, **val}
                 else:
                     special_files_map["Config.cs"][key] = json.dumps(val)
+        logger.info(special_files_map)
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
@@ -122,6 +114,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", extra_data)
                             else:
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
+                            logger.info(templateFile)
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
             command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
@@ -139,7 +132,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
             output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
-            
+
             if os.path.exists(output_path):
                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                     PayloadUUID=self.uuid,
@@ -172,19 +165,19 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     resp.status = BuildStatus.Success
                     resp.build_stdout = stdout_err
                 else:
-                    
+
                     shellcode_path = "{}/loader.bin".format(agent_build_path.name)
                     donutPath = os.path.abspath(self.agent_code_path / "donut")
                     command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
-                    
+
                     command = "{} -f 1 {}".format(donutPath, output_path)
                     # need to go through one more step to turn our exe into shellcode
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
-                                                    stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                                 stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
                     stdout, stderr = await proc.communicate()
-                    
+
                     stdout_err += f'[stdout]\n{stdout.decode()}\n'
                     stdout_err += f'[stderr]\n{stderr.decode()}'
 
