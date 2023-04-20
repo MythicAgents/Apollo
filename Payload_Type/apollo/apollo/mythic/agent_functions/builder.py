@@ -91,7 +91,6 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     extra_variables = {**extra_variables, **val}
                 else:
                     special_files_map["Config.cs"][key] = json.dumps(val)
-        logger.info(special_files_map)
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
@@ -114,7 +113,6 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", extra_data)
                             else:
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
-                            logger.info(templateFile)
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
             command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
