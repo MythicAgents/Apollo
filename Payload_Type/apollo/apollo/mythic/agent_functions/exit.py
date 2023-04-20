@@ -22,6 +22,10 @@ class ExitCommand(CommandBase):
     supported_ui_features = ["callback_table:exit"]
     author = "@djhohnstein"
     argument_class = ExitArguments
+    attributes = CommandAttributes(
+        builtin=True,
+        suggested_command=True
+    )
     attackmapping = []
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:

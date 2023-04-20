@@ -25,6 +25,9 @@ class PsCommand(CommandBase):
     argument_class = PsArguments
     attackmapping = ["T1106"]
     browser_script = BrowserScript(script_name="ps_new", author="@djhohnstein")
+    attributes = CommandAttributes(
+        suggested_command=True
+    )
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(

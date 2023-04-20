@@ -66,6 +66,9 @@ class UploadCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = UploadArguments
     attackmapping = ["T1132", "T1030", "T1105"]
+    attributes = CommandAttributes(
+        suggested_command=True
+    )
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(

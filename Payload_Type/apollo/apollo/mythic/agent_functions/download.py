@@ -84,6 +84,9 @@ class DownloadCommand(CommandBase):
     argument_class = DownloadArguments
     attackmapping = ["T1020", "T1030", "T1041"]
     browser_script = BrowserScript(script_name="download", author="@djhohnstein", for_new_ui=True)
+    attributes = CommandAttributes(
+        suggested_command=True
+    )
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(

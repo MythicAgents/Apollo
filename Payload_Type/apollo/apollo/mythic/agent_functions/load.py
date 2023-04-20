@@ -68,6 +68,9 @@ class LoadCommand(CommandBase):
     version = 2
     author = "@djhohnstein"
     argument_class = LoadArguments
+    attributes = CommandAttributes(
+        suggested_command=True
+    )
     attackmapping = []
 
     async def update_output(self, taskData: PTTaskMessageAllData, output: str):

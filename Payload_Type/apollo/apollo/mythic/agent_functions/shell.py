@@ -2,6 +2,7 @@ from mythic_container.MythicCommandBase import *
 import json
 from mythic_container.MythicRPC import *
 
+
 class ShellArguments(TaskArguments):
 
     def __init__(self, command_line, **kwargs):
@@ -10,14 +11,16 @@ class ShellArguments(TaskArguments):
 
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
-            raise Exception("shell requires at least one command-line parameter.\n\tUsage: {}".format(ShellCommand.help_cmd))
+            raise Exception(
+                "shell requires at least one command-line parameter.\n\tUsage: {}".format(ShellCommand.help_cmd))
         pass
 
 
 class ShellCommand(CommandBase):
     cmd = "shell"
-    attributes=CommandAttributes(
-        dependencies=["run"]
+    attributes = CommandAttributes(
+        dependencies=["run"],
+        suggested_command=True
     )
     needs_admin = False
     help_cmd = "shell [command] [arguments]"
