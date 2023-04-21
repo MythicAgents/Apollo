@@ -87,6 +87,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
                 elif isinstance(val, str):
                     special_files_map["Config.cs"][key] = val
+                elif isinstance(val, bool):
+                    special_files_map["Config.cs"][key] = "T" if val else "F"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
                 else:
