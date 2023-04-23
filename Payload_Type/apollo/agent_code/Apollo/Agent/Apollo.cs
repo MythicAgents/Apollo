@@ -88,10 +88,14 @@ namespace Apollo.Agent
 
         private static string GetIP()
         {
-            return Dns.GetHostEntry(
-                Dns.GetHostName()).AddressList.FirstOrDefault(
-                    ip => ip.AddressFamily == AddressFamily.InterNetwork
-                ).ToString();
+            var addrs = Dns.GetHostEntry(Dns.GetHostName())
+                .AddressList
+                .Where(
+                    ip => (ip.AddressFamily == AddressFamily.InterNetwork) &
+                    !(ip.ToString().Contains("169.254."))
+                );
+            if (addrs.Count() == 0) { return "-"; }
+            else return addrs.First().ToString();
         }
 
         private static string GetOSVersion()
