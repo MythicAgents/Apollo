@@ -51,103 +51,73 @@ function(task, responses){
                 ls_path = data["parent_path"] + "\\" + data["name"];
             }
             tableHeader = "Contents of " + ls_path;
-            for(let j = 0; j < data["files"].length; j++){
-                let finfo = data["files"][j];
-                let buttonSettings = {};
-                let startIcon = "";
-                let startIconHoverText = "";
-                let startIconColor = "";
-                if (finfo["is_file"]) {
-                    var fileExt = "." + finfo['name'].split(".").slice(-1)[0].toLowerCase();
-                    if (archiveFormats.includes(fileExt)) {
-                        startIcon = 'archive';
-                        startIconHoverText = "Archive File";
-                        startIconColor = "goldenrod";
-                    } else if (diskImages.includes(fileExt)) {
-                        startIcon = 'diskimage';
-                        startIconHoverText = "Disk Image";
-                        startIconColor = "goldenrod";
-                    } else if (wordDocs.includes(fileExt)) {
-                        startIcon = 'word';
-                        startIconHoverText = "Microsoft Word Document";
-                        startIconColor = "cornflowerblue";
-                    } else if (excelDocs.includes(fileExt)){
-                        startIcon = 'excel';
-                        startIconHoverText = "Microsoft Excel Document";
-                        startIconColor = "darkseagreen";
-                    } else if (powerPoint.includes(fileExt)) {
-                        startIcon = 'powerpoint';
-                        startIconHoverText = "Microsoft PowerPoint Document";
-                        startIconColor = "indianred";
-                    } else if (pdfExt.includes(fileExt)){
-                        startIcon = 'pdf';
-                        startIconHoverText = "Adobe Acrobat PDF";
-                        startIconColor = "orangered";
-                    } else if (dbExt.includes(fileExt)) {
-                        startIcon = 'database';
-                        startIconHoverText = "Database File Format";
-                    } else if (keyFiles.includes(fileExt)) {
-                        startIcon = 'key';
-                        startIconHoverText = "Key Credential Material";
-                    } else if (codeFiles.includes(fileExt)) {
-                        startIcon = 'code';
-                        startIconHoverText = "Source Code";
-                        startIconColor = "rgb(25,142,117)";
-                    } else if (imageFiles.includes(fileExt)) {
-                        startIcon = "image";
-                        startIconHoverText = "Image File";
-                    }
-                    let cat_parameters = "";
-                    if (finfo["full_name"].includes(":")) {
-                        cat_parameters = finfo["full_name"];
-                    } else {
-                        cat_parameters = "\\\\" + data["host"] + "\\" + finfo["full_name"];
-                    }
-                    buttonSettings = {
-                        "button": {
-                            "name": "cat",
-                            "type": "task",
-                            "ui_feature": "cat",
-                            "parameters": cat_parameters,
-                        },
-                        "cellStyle": {},
-                    }
-                } else {
-                    startIcon = "openFolder";
-                    startIconHoverText = "Directory";
-                    startIconColor = "rgb(241,226,0)";
-                    buttonSettings = {"button": {
-                        "name": "ls",
-                        "type": "task",
-                        "ui_feature": "file_browser:list",
-                        "parameters": "\\\\" + data["host"] + "\\" + finfo["full_name"],
-                        "startIcon": "list",
-                        },
-                        "cellStyle": {},
-                    }
+            if(data["is_file"])
+            {
+                 let buttonSettings = {};
+                    let startIcon = "";
+                    let startIconHoverText = "";
+                    let startIconColor = "";
+                var fileExt = "." + data['name'].split(".").slice(-1)[0].toLowerCase();
+                console.log(fileExt);
+                if (archiveFormats.includes(fileExt)) {
+                    startIcon = 'archive';
+                    startIconHoverText = "Archive File";
+                    startIconColor = "goldenrod";
+                } else if (diskImages.includes(fileExt)) {
+                    startIcon = 'diskimage';
+                    startIconHoverText = "Disk Image";
+                    startIconColor = "goldenrod";
+                } else if (wordDocs.includes(fileExt)) {
+                    startIcon = 'word';
+                    startIconHoverText = "Microsoft Word Document";
+                    startIconColor = "cornflowerblue";
+                } else if (excelDocs.includes(fileExt)){
+                    startIcon = 'excel';
+                    startIconHoverText = "Microsoft Excel Document";
+                    startIconColor = "darkseagreen";
+                } else if (powerPoint.includes(fileExt)) {
+                    startIcon = 'powerpoint';
+                    startIconHoverText = "Microsoft PowerPoint Document";
+                    startIconColor = "indianred";
+                } else if (pdfExt.includes(fileExt)){
+                    startIcon = 'pdf';
+                    startIconHoverText = "Adobe Acrobat PDF";
+                    startIconColor = "orangered";
+                } else if (dbExt.includes(fileExt)) {
+                    startIcon = 'database';
+                    startIconHoverText = "Database File Format";
+                } else if (keyFiles.includes(fileExt)) {
+                    startIcon = 'key';
+                    startIconHoverText = "Key Credential Material";
+                } else if (codeFiles.includes(fileExt)) {
+                    startIcon = 'code';
+                    startIconHoverText = "Source Code";
+                    startIconColor = "rgb(25,142,117)";
+                } else if (imageFiles.includes(fileExt)) {
+                    startIcon = "image";
+                    startIconHoverText = "Image File";
                 }
-                /*
-                
-data["files"][j]["creation_date"], "cellStyle": {}},
-                    "last modified": {"plaintext": data["files"][j]["modify_time"], "cellStyle": {}},
-                    "last accessed": {"plaintext": data["files"][j]["access_time"]                */
-                let creation_date = new Date(data["files"][j]["creation_date"]);
-                let last_modified_date = new Date(data["files"][j]["modify_time"]);
-                let access_date = new Date(data["files"][j]["access_time"]);
+                let cat_parameters = "";
+                buttonSettings = {
+                    "button": {
+                        "name": "cat",
+                        "type": "task",
+                        "ui_feature": "cat",
+                        "parameters": cat_parameters,
+                    },
+                    "cellStyle": {},
+                }
+                let creation_date = new Date(data["creation_time"]);
+                let last_modified_date = new Date(data["modify_time"]);
+                let access_date = new Date(data["access_time"]);
 
                 let fmt_creation = (creation_date.getMonth() + 1) + "/" + creation_date.getDate() + "/" + creation_date.getFullYear()
                 let fmt_last_modified = (last_modified_date.getMonth() + 1) + "/" + last_modified_date.getDate() + "/" + last_modified_date.getFullYear()
                 let fmt_access = (access_date.getMonth() + 1) + "/" + access_date.getDate() + "/" + access_date.getFullYear()
                 let acl_rows = [];
-                for(let z = 0; z < finfo["permissions"].length; z++) {
-                    acl_rows.push({
-                        "account": {"plaintext": finfo["permissions"][z]["account"]},
-                        "type": {"plaintext": finfo["permissions"][z]["type"]},
-                        "rights": {"plaintext": finfo["permissions"][z]["rights"]},
-                    });
-                }
+
                 let row = {
-                    "rowStyle": {}, //data["files"][j]["is_file"] ? file:  folder,
+                    "rowStyle": {}, //data["is_file"] ? file:  folder,
                     "actions": {
                         "button": {
                         "startIcon": "list",
@@ -157,10 +127,10 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                             {
                                 "name": "Extended Attributes",
                                 "type": "dictionary",
-                                "value": {"Extended Attributes": finfo["extended_attributes"]},
+                                "value": {"Extended Attributes": data["extended_attributes"]},
                                 "leftColumnTitle": "Extended Attributes",
                                 "rightColumnTitle": "Values",
-                                "title": "Viewing Extended Attributes for " + finfo["name"],
+                                "title": "Viewing Extended Attributes for " + data["name"],
                                 "startIcon": "list"
                             },
                             {
@@ -176,18 +146,18 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                                 },
                                 "leftColumnTitle": "acls",
                                 "rightColumnTitle": "Values",
-                                "title": "Viewing Acess Control Lists for " + data["files"][j]["name"],
+                                "title": "Viewing Acess Control Lists for " + data["name"],
                                 "startIcon": "list",
                             },
                             {
                                 "name": "Download",
                                 "type": "task",
-                                "disabled": !finfo["is_file"],
+                                "disabled": !data["is_file"],
                                 "ui_feature": "file_browser:download",
                                 "parameters": JSON.stringify(
                                     {
                                         "host": data["host"],
-                                        "file": finfo["full_name"],
+                                        "file": data["full_name"],
                                     }
                                 ),
                                 "startIcon": "download"
@@ -199,7 +169,7 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                                 "parameters": JSON.stringify(
                                     {
                                         "host": data["host"],
-                                        "path": finfo["full_name"]
+                                        "path": data["full_name"]
                                     }
                                 ),
                                 "startIcon": "delete"
@@ -208,19 +178,194 @@ data["files"][j]["creation_date"], "cellStyle": {}},
                     }},
                     "Task": buttonSettings,
                     "name": {
-                        "plaintext": data["files"][j]["name"],
+                        "plaintext": data["name"],
                         "cellStyle": {},
                         "startIcon": startIcon,
                         "startIconHoverText": startIconHoverText,
                         "startIconColor": startIconColor
                     },
-                    "size": {"plaintext": data["files"][j]["size"], "cellStyle": {}},
-                    "owner": {"plaintext": data["files"][j]["owner"], "cellStyle": {}},
+                    "size": {"plaintext": data["size"], "cellStyle": {}},
+                    "owner": {"plaintext": data["owner"], "cellStyle": {}},
                     "creation date": {"plaintext": fmt_creation, "cellStyle": {}},
                     "last modified": {"plaintext": fmt_last_modified, "cellStyle": {}},
                     "last accessed": {"plaintext": fmt_access, "cellStyle": {}},
                 };
                 rows.push(row);
+
+            }
+            else
+            {
+                for(let j = 0; j < data["files"].length; j++){
+                    let finfo = data["files"][j];
+                    let buttonSettings = {};
+                    let startIcon = "";
+                    let startIconHoverText = "";
+                    let startIconColor = "";
+                    if (finfo["is_file"]) {
+                        var fileExt = "." + finfo['name'].split(".").slice(-1)[0].toLowerCase();
+                        if (archiveFormats.includes(fileExt)) {
+                            startIcon = 'archive';
+                            startIconHoverText = "Archive File";
+                            startIconColor = "goldenrod";
+                        } else if (diskImages.includes(fileExt)) {
+                            startIcon = 'diskimage';
+                            startIconHoverText = "Disk Image";
+                            startIconColor = "goldenrod";
+                        } else if (wordDocs.includes(fileExt)) {
+                            startIcon = 'word';
+                            startIconHoverText = "Microsoft Word Document";
+                            startIconColor = "cornflowerblue";
+                        } else if (excelDocs.includes(fileExt)){
+                            startIcon = 'excel';
+                            startIconHoverText = "Microsoft Excel Document";
+                            startIconColor = "darkseagreen";
+                        } else if (powerPoint.includes(fileExt)) {
+                            startIcon = 'powerpoint';
+                            startIconHoverText = "Microsoft PowerPoint Document";
+                            startIconColor = "indianred";
+                        } else if (pdfExt.includes(fileExt)){
+                            startIcon = 'pdf';
+                            startIconHoverText = "Adobe Acrobat PDF";
+                            startIconColor = "orangered";
+                        } else if (dbExt.includes(fileExt)) {
+                            startIcon = 'database';
+                            startIconHoverText = "Database File Format";
+                        } else if (keyFiles.includes(fileExt)) {
+                            startIcon = 'key';
+                            startIconHoverText = "Key Credential Material";
+                        } else if (codeFiles.includes(fileExt)) {
+                            startIcon = 'code';
+                            startIconHoverText = "Source Code";
+                            startIconColor = "rgb(25,142,117)";
+                        } else if (imageFiles.includes(fileExt)) {
+                            startIcon = "image";
+                            startIconHoverText = "Image File";
+                        }
+                        let cat_parameters = "";
+                        if (finfo["full_name"].includes(":")) {
+                            cat_parameters = finfo["full_name"];
+                        } else {
+                            cat_parameters = "\\\\" + data["host"] + "\\" + finfo["full_name"];
+                        }
+                        buttonSettings = {
+                            "button": {
+                                "name": "cat",
+                                "type": "task",
+                                "ui_feature": "cat",
+                                "parameters": cat_parameters,
+                            },
+                            "cellStyle": {},
+                        }
+                    } else {
+                        startIcon = "openFolder";
+                        startIconHoverText = "Directory";
+                        startIconColor = "rgb(241,226,0)";
+                        buttonSettings = {"button": {
+                            "name": "ls",
+                            "type": "task",
+                            "ui_feature": "file_browser:list",
+                            "parameters": "\\\\" + data["host"] + "\\" + finfo["full_name"],
+                            "startIcon": "list",
+                            },
+                            "cellStyle": {},
+                        }
+                    }
+                    /*
+
+    data["files"][j]["creation_date"], "cellStyle": {}},
+                        "last modified": {"plaintext": data["files"][j]["modify_time"], "cellStyle": {}},
+                        "last accessed": {"plaintext": data["files"][j]["access_time"]                */
+                    let creation_date = new Date(data["files"][j]["creation_date"]);
+                    let last_modified_date = new Date(data["files"][j]["modify_time"]);
+                    let access_date = new Date(data["files"][j]["access_time"]);
+
+                    let fmt_creation = (creation_date.getMonth() + 1) + "/" + creation_date.getDate() + "/" + creation_date.getFullYear()
+                    let fmt_last_modified = (last_modified_date.getMonth() + 1) + "/" + last_modified_date.getDate() + "/" + last_modified_date.getFullYear()
+                    let fmt_access = (access_date.getMonth() + 1) + "/" + access_date.getDate() + "/" + access_date.getFullYear()
+                    let acl_rows = [];
+                    for(let z = 0; z < finfo["permissions"].length; z++) {
+                        acl_rows.push({
+                            "account": {"plaintext": finfo["permissions"][z]["account"]},
+                            "type": {"plaintext": finfo["permissions"][z]["type"]},
+                            "rights": {"plaintext": finfo["permissions"][z]["rights"]},
+                        });
+                    }
+                    let row = {
+                        "rowStyle": {}, //data["files"][j]["is_file"] ? file:  folder,
+                        "actions": {
+                            "button": {
+                            "startIcon": "list",
+                            "name": "Actions",
+                            "type": "menu",
+                            "value": [
+                                {
+                                    "name": "Extended Attributes",
+                                    "type": "dictionary",
+                                    "value": {"Extended Attributes": finfo["extended_attributes"]},
+                                    "leftColumnTitle": "Extended Attributes",
+                                    "rightColumnTitle": "Values",
+                                    "title": "Viewing Extended Attributes for " + finfo["name"],
+                                    "startIcon": "list"
+                                },
+                                {
+                                    "name": "Access Control Entries",
+                                    "type": "table",
+                                    "value": {
+                                        "headers": [
+                                            {"plaintext": "account", "width": 400, "type": "string"},
+                                            {"plaintext": "type", "type": "string"},
+                                            {"plaintext": "rights", "type": "string"}
+                                        ],
+                                        "rows": acl_rows
+                                    },
+                                    "leftColumnTitle": "acls",
+                                    "rightColumnTitle": "Values",
+                                    "title": "Viewing Acess Control Lists for " + data["files"][j]["name"],
+                                    "startIcon": "list",
+                                },
+                                {
+                                    "name": "Download",
+                                    "type": "task",
+                                    "disabled": !finfo["is_file"],
+                                    "ui_feature": "file_browser:download",
+                                    "parameters": JSON.stringify(
+                                        {
+                                            "host": data["host"],
+                                            "file": finfo["full_name"],
+                                        }
+                                    ),
+                                    "startIcon": "download"
+                                },
+                                {
+                                    "name": "Delete",
+                                    "type": "task",
+                                    "ui_feature": "file_browser:remove",
+                                    "parameters": JSON.stringify(
+                                        {
+                                            "host": data["host"],
+                                            "path": finfo["full_name"]
+                                        }
+                                    ),
+                                    "startIcon": "delete"
+                                },
+                            ]
+                        }},
+                        "Task": buttonSettings,
+                        "name": {
+                            "plaintext": data["files"][j]["name"],
+                            "cellStyle": {},
+                            "startIcon": startIcon,
+                            "startIconHoverText": startIconHoverText,
+                            "startIconColor": startIconColor
+                        },
+                        "size": {"plaintext": data["files"][j]["size"], "cellStyle": {}},
+                        "owner": {"plaintext": data["files"][j]["owner"], "cellStyle": {}},
+                        "creation date": {"plaintext": fmt_creation, "cellStyle": {}},
+                        "last modified": {"plaintext": fmt_last_modified, "cellStyle": {}},
+                        "last accessed": {"plaintext": fmt_access, "cellStyle": {}},
+                    };
+                    rows.push(row);
+                }
             }
         }
         return {"table":[{
