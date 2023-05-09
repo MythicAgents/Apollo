@@ -1,4 +1,4 @@
-FROM itsafeaturemythic/mythic_dotnet:latest
+FROM itsafeaturemythic/mythic_python_dotnet:latest
 
 RUN python3 -m pip install donut-shellcode
 
