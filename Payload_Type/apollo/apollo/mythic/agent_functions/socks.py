@@ -49,7 +49,7 @@ class SocksCommand(CommandBase):
         resp = await SendMythicRPCProxyStartCommand(MythicRPCProxyStartMessage(
             TaskID=taskData.Task.ID,
             PortType="socks",
-            Port=taskData.args.get_arg("port")
+            LocalPort=taskData.args.get_arg("port")
         ))
 
         if not resp.Success:
