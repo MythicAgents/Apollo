@@ -1,3 +1,7 @@
-from itsafeaturemythic/csharp_payload:0.1.1
-RUN apt install -y python3-pip
-RUN python3.8 -m pip install donut-shellcode
+FROM itsafeaturemythic/mythic_python_dotnet:latest
+
+RUN python3 -m pip install donut-shellcode
+
+WORKDIR /Mythic/
+
+CMD ["python3", "main.py"]
