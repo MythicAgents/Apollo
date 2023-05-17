@@ -14,19 +14,19 @@ namespace ApolloInterop.Utils
             switch (hive)
             {
                 case "HKU":
-                    regKey = Registry.Users.OpenSubKey(subkey);
+                    regKey = Registry.Users.OpenSubKey(subkey, true);
                     break;
                 case "HKCC":
-                    regKey = Registry.CurrentConfig.OpenSubKey(subkey);
+                    regKey = Registry.CurrentConfig.OpenSubKey(subkey, true);
                     break;
                 case "HKCU":
-                    regKey = Registry.CurrentUser.OpenSubKey(subkey);
+                    regKey = Registry.CurrentUser.OpenSubKey(subkey, true);
                     break;
                 case "HKLM":
-                    regKey = Registry.LocalMachine.OpenSubKey(subkey);
+                    regKey = Registry.LocalMachine.OpenSubKey(subkey, true);
                     break;
                 case "HKCR":
-                    regKey = Registry.ClassesRoot.OpenSubKey(subkey);
+                    regKey = Registry.ClassesRoot.OpenSubKey(subkey, true);
                     break;
                 default:
                     throw new Exception($"Unknown registry hive: {hive}");
