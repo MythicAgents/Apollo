@@ -53,7 +53,7 @@ namespace Tasks
 
         private static string[] GetValueNames(string hive, string subkey)
         {
-            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey, false))
             {
                 return regKey.GetValueNames();
             }
@@ -61,7 +61,7 @@ namespace Tasks
 
         private static object GetValue(string hive, string subkey, string key)
         {
-            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey, false))
             {
                 return regKey.GetValue(key);
             }
@@ -69,7 +69,7 @@ namespace Tasks
 
         private static string[] GetSubKeys(string hive, string subkey)
         {
-            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey, false))
             {
                 return regKey.GetSubKeyNames();
             }

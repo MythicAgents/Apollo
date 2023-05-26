@@ -40,7 +40,7 @@ namespace Tasks
 
         private bool SetValue(string hive, string subkey, string valueName, object valueValue)
         {
-            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey))
+            using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey, true))
             {
                 regKey.SetValue(valueName, valueValue);
                 return true;
