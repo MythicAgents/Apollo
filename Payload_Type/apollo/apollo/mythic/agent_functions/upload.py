@@ -86,7 +86,7 @@ class UploadCommand(CommandBase):
 
         taskData.args.add_arg("file_name", original_file_name, type=ParameterType.String)
         host = taskData.args.get_arg("host")
-        path = taskData.args.get_arg("path")
+        path = taskData.args.get_arg("remote_path")
         if path is not None and path != "":
             if host is not None and host != "":
                 disp_str = "-File {} -Host {} -Path {}".format(original_file_name, host, path)
