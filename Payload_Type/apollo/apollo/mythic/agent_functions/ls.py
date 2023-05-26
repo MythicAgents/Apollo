@@ -30,7 +30,7 @@ class LsArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
-                        ui_position=0
+                        ui_position=2
                     ),
                 ]),
         ]
@@ -65,6 +65,12 @@ class LsArguments(TaskArguments):
                     self.add_arg("file_browser", "true")
                 else:
                     self.load_args_from_json_string(self.command_line)
+                    if ":" in self.get_arg("host"):
+                        if self.get_arg("path") is None:
+                            self.add_arg("path", self.get_arg("host"))
+                        else:
+                            self.add_arg("path", self.get_arg("host") + " " + self.get_arg("path"))
+                        self.remove_arg("host")
             else:
                 args = await self.strip_host_from_path(self.command_line)
                 self.add_arg("host", args[0])
@@ -84,6 +90,8 @@ class LsArguments(TaskArguments):
             args = await self.strip_host_from_path(self.get_arg("path"))
             self.add_arg("host", args[0])
             self.add_arg("path", args[1])
+        if self.get_arg("path") is not None and self.get_arg("path")[-1] == "\\":
+            self.add_arg("path", self.get_arg("path")[:-1])
 
 
 

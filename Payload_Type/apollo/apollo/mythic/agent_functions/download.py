@@ -17,7 +17,7 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=True,
                         group_name="Default",
-                        ui_position=1
+                        ui_position=2
                     )
                 ]),
             CommandParameter(
@@ -30,7 +30,7 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
-                        ui_position=2
+                        ui_position=1
                     ),
                 ]),
         ]
@@ -47,7 +47,7 @@ class DownloadArguments(TaskArguments):
             filename = self.command_line
         elif self.command_line[0] == "{":
             args = json.loads(self.command_line)
-            if args.get("path") != None and args.get("file") != None:
+            if args.get("path") is not None and args.get("file") is not None:
                 # Then this is a filebrowser thing
                 if args["path"][-1] == "\\":
                     self.add_arg("file", args["path"] + args["file"])
@@ -55,8 +55,11 @@ class DownloadArguments(TaskArguments):
                     self.add_arg("file", args["path"] + "\\" + args["file"])
                 self.add_arg("host", args["host"])
             else:
-                # got a modal popup
+                # got a modal popup or parsed-cli
                 self.load_args_from_json_string(self.command_line)
+                if ":" in self.get_arg("host"):
+                    self.add_arg("file", self.get_arg("host") + " " + self.get_arg("file"))
+                    self.remove_arg("host")
         else:
             filename = self.command_line
 
