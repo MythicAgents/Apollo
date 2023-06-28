@@ -65,12 +65,15 @@ class LsArguments(TaskArguments):
                     self.add_arg("file_browser", "true")
                 else:
                     self.load_args_from_json_string(self.command_line)
-                    if ":" in self.get_arg("host"):
+                    if self.get_arg("host") is not None and ":" in self.get_arg("host"):
                         if self.get_arg("path") is None:
                             self.add_arg("path", self.get_arg("host"))
                         else:
                             self.add_arg("path", self.get_arg("host") + " " + self.get_arg("path"))
                         self.remove_arg("host")
+                    if self.get_arg("host") is not None and self.get_arg("path") is None:
+                        self.add_arg("path", self.get_arg("host"))
+                        self.set_arg("host", "")
             else:
                 args = await self.strip_host_from_path(self.command_line)
                 self.add_arg("host", args[0])
