@@ -83,7 +83,7 @@ class ShInjectCommand(CommandBase):
             if file_resp.Success:
                 original_file_name = file_resp.Files[0].Filename
             else:
-                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
+                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("shellcode")))
 
             response.DisplayParams += " -File {}".format(original_file_name)
             taskData.args.add_arg("shellcode-file-id", file_resp.Files[0].AgentFileId)
