@@ -57,9 +57,13 @@ class DownloadArguments(TaskArguments):
             else:
                 # got a modal popup or parsed-cli
                 self.load_args_from_json_string(self.command_line)
-                if ":" in self.get_arg("host"):
-                    self.add_arg("file", self.get_arg("host") + " " + self.get_arg("file"))
-                    self.remove_arg("host")
+                if self.get_arg("host"):
+                    if ":" in self.get_arg("host"):
+                        if self.get_arg("file"):
+                            self.add_arg("file", self.get_arg("host") + " " + self.get_arg("file"))
+                        else:
+                            self.add_arg("file", self.get_arg("host"))
+                        self.remove_arg("host")
         else:
             filename = self.command_line
 
