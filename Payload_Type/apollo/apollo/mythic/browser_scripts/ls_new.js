@@ -230,6 +230,6 @@ data["files"][j]["creation_date"], "cellStyle": {}},
         }]};
     }else{
         // this means we shouldn't have any output
-        return {"plaintext": "Not response yet from agent..."}
+        return {"plaintext": "No response yet from agent..."}
     }
 }
