@@ -2,7 +2,7 @@
   "os": ["Windows"],
   "languages": [".NET Framework"] ,
   "features": {
-    "mythic": ["artifacts", "browser scripts", "docker", "file chunking", "file browser",
+    "mythic": ["artifacts", "browser scripts", "docker", "dynamic loading", "file chunking", "file browser",
       "keylogging", "p2p", "process browser", "screenshots", "socks"],
     "custom": ["key exchange", "killdate", "execute pe", "execute assembly", "inline assembly","mimikatz", "powerpick",
     "donut", "sRDI"]
