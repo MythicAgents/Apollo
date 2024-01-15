@@ -31,7 +31,7 @@ namespace RunOF.Internals
             byte[] beacon_funcs;
             string [] resource_names = Assembly.GetExecutingAssembly().GetManifestResourceNames();
 
-            string resource_name = Environment.Is64BitProcess ? "RunOF.beacon_funcs.x64.o" : "RunOF.beacon_funcs.x64.o";
+            string resource_name = Environment.Is64BitProcess ? "RunOF.beacon_funcs.x64.o" : "RunOF.beacon_funcs.x86.o";
 
             if (resource_names.Contains(resource_name))
             {
