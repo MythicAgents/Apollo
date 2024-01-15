@@ -28,12 +28,10 @@ namespace RunOF
             {
                 ParsedArgs = new ParsedArgs(args);
 
-            }
-            catch (ArgumentNullException)
+            } catch (ArgumentNullException)
             {
                 return 0;
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 Logger.Error($"Unable to parse application arguments: \n {e}");
                 return -1;
@@ -54,10 +52,10 @@ namespace RunOF
 #if DEBUG
                 if (ParsedArgs.debug)
                 {
-
+                
                     Logger.Debug("Press enter to start it (✂️ attach debugger here...)");
                     Console.ReadLine();
-                }
+            }
 #endif
 
 
@@ -71,7 +69,7 @@ namespace RunOF
                 {
                     Logger.Debug("Press enter to continue...");
                     Console.ReadLine();
-                }
+            }
 #endif
                 Logger.Info("Thanks for playing!");
 
@@ -79,8 +77,7 @@ namespace RunOF
                 return Result.ExitCode;
 
 
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 Logger.Error($"Error! {e}");
                 return -1;
@@ -88,7 +85,7 @@ namespace RunOF
 
         }
 
-
+       
     }
     public static class Logger
     {

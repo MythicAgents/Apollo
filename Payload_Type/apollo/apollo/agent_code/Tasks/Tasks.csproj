@@ -114,7 +114,7 @@
       <Name>ApolloInterop</Name>
     </ProjectReference>
     <ProjectReference Include="..\RunOF\RunOF.csproj">
-      <Project>{bf5ced69-97fe-41b1-b79b-2255f89d7431}</Project>
+      <Project>{3a190f78-b02a-489d-b681-12d82730465d}</Project>
       <Name>RunOF</Name>
     </ProjectReference>
   </ItemGroup>

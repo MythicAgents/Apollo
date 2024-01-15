@@ -74,8 +74,7 @@ namespace RunOF.Internals
             this.iat_count++;
             return this.iat_entries[dll_name + "$" + func_name]; 
 
-#else
-            throw new Exception("Unsupported architecture");
+
 #endif
 
 
