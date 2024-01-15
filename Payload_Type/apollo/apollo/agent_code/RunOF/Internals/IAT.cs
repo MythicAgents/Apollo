@@ -72,8 +72,10 @@ namespace RunOF.Internals
             Marshal.WriteInt64(this.iat_addr + (this.iat_count * 8), func_address.ToInt64());
             this.iat_entries.Add(dll_name + "$" + func_name, this.iat_addr + (this.iat_count * 8));
             this.iat_count++;
-            return this.iat_entries[dll_name + "$" + func_name]; 
+            return this.iat_entries[dll_name + "$" + func_name];
+#else
 
+            throw new Exception("Unsupported architecture.");
 
 #endif
 
