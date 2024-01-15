@@ -57,7 +57,7 @@
     <EmbeddedResource Include="beacon_funcs.x86.o" />
   </ItemGroup>
   <Choose>
-    <When Condition="'$(Platform)'=='x86' Or '$(Platform)'=='AnyCPU'" >
+    <When Condition="'$(Platform)'=='x86'" >
       <ItemGroup>
         <EmbeddedResource Include="beacon_funcs.x86.o">
           <Link>beacon_funcs</Link>
