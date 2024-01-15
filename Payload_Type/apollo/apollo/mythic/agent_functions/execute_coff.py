@@ -123,7 +123,7 @@ class ExecuteCoffArguments(TaskArguments):
 class ExecuteCoffCommand(CommandBase):
     cmd = "execute_coff"
     needs_admin = False
-    help_cmd = "execute_coff [-Coff COFF.o] [-Function function name] [-Timeout timeout in seconds] (-Arguments optional arguments)"
+    help_cmd = "execute_coff -Coff [COFF.o] -Function [go] -Timeout [30] [-Arguments [optional arguments]]"
     description = "Execute a COFF file in memory. This COFF must first be known by the agent using the `register_coff` command."
     version = 3
     author = "@__Retrospect"
