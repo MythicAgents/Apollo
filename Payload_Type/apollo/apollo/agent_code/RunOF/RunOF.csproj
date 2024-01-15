@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BF5CED69-97FE-41B1-B79B-2255F89D7431}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>RunOF</RootNamespace>
+    <AssemblyName>RunOF</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Internals\BofRunner.cs" />
+    <Compile Include="Internals\Coff.cs" />
+    <Compile Include="Internals\FileDescriptorRedirector.cs" />
+    <Compile Include="Internals\IAT.cs" />
+    <Compile Include="Internals\ImageParts.cs" />
+    <Compile Include="Internals\NativeDeclarations.cs" />
+    <Compile Include="Internals\ParsedArgs.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="beacon_funcs.x64.o" />
+    <EmbeddedResource Include="beacon_funcs.x86.o" />
+  </ItemGroup>
+  <Choose>
+    <When Condition="'$(Platform)'=='x86' Or '$(Platform)'=='AnyCPU'" >
+      <ItemGroup>
+        <EmbeddedResource Include="beacon_funcs.x86.o">
+          <Link>beacon_funcs</Link>
+        </EmbeddedResource>
+      </ItemGroup>
+	  </When>
+  </Choose>
+  <Choose>
+    <When Condition="'$(Platform)'=='x64' Or '$(Platform)'=='AnyCPU'" >
+      <ItemGroup>
+        <EmbeddedResource Include="beacon_funcs.x64.o">
+          <Link>beacon_funcs</Link>
+        </EmbeddedResource>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
