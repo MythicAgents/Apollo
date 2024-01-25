@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace WebsocketProfile.Models
+namespace WebsocketTransport.Models
 {
     [DataContract]
     public class WebSocketMessage

