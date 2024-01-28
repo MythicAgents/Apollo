@@ -240,7 +240,7 @@ namespace WebsocketTransport
                 Client.OnClose += OnAsyncDisconnect;
             }
 
-            if (EncryptedExchangeCheck && !_uuidNegotiated)
+            /*if (EncryptedExchangeCheck && !_uuidNegotiated)
             {
                 EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
                 {
@@ -260,7 +260,7 @@ namespace WebsocketTransport
                 {
                     return false;
                 }
-            }
+            }*/
 
             AddToSenderQueue(checkinMsg);
             if (agentProcessorTask == null || agentProcessorTask.IsCompleted)
@@ -286,11 +286,15 @@ namespace WebsocketTransport
 
         private bool AddToSenderQueue(IMythicMessage msg)
         {
-            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, IPC.SEND_SIZE / 2);
-            foreach (IPCChunkedData part in parts)
+            WebSocketMessage m = new WebSocketMessage()
             {
-                senderQueue.Enqueue(Encoding.UTF8.GetBytes(jsonSerializer.Serialize(part)));
-            }
+                client = true,
+                data = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonSerializer.Serialize(msg))),
+                tag = String.Empty
+            };
+            string message = jsonSerializer.Serialize(m);
+            senderQueue.Enqueue(Encoding.UTF8.GetBytes(message));
+
             senderEvent.Set();
             return true;
         }
