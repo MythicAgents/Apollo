@@ -1,21 +1,24 @@
-﻿using System.Runtime.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace WebsocketTransport.Models
 {
-    [DataContract]
     public class WebSocketMessage
     {
-        [DataMember]
         public bool client { get; set; }
-
-        [DataMember]
         public string data { get; set; }
-
-        [DataMember]
         public string tag { get; set; }
     }
 
-    public partial class WebsocketJsonContext
+    public class WebsocketJsonContext
     {
+        public static string Serialize(object obj)
+        {
+            return JsonConvert.SerializeObject(obj);
+        }
+
+        public static T Deserialize<T>(string json)
+        {
+            return JsonConvert.DeserializeObject<T>(json);
+        }
     }
 }

