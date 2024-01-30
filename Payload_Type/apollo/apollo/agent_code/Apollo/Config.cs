@@ -83,7 +83,7 @@ namespace Apollo
                         { "callback_port", "8081" },
                         { "callback_host", "ws://mythic" },
                         { "post_uri", "socket" },
-                        { "encrypted_exchange_check", "T" },
+                        { "encrypted_exchange_check", "F" },
                         { "proxy_host", "" },
                         { "proxy_port", "" },
                         { "proxy_user", "" },
@@ -154,7 +154,7 @@ namespace Apollo
 #if HTTP
         public static string StagingRSAPrivateKey = "wO+CTvxcnsOclJ18n4rBilEc9NlhirkiITjwlWDaPRI=";
 #elif WEBSOCKET
-        public static string StagingRSAPrivateKey = "c1R20l2Ga0VLgS1OHcXaiV/Eu40vLoWfQJuThzddAes=";
+        public static string StagingRSAPrivateKey = "nl6HZUDEgbYB3ncqC4mWM6mVPq7tyiahq9dmcgmhEqw=";
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
@@ -163,7 +163,10 @@ namespace Apollo
 #if HTTP
         public static string PayloadUUID = "89d28526-e957-4142-b0fe-b672b397179f";
 #elif WEBSOCKET
-        public static string PayloadUUID = "8034791f-6a9f-4d3c-98a1-e1ec6dce651a";
+        public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // no encryption and no keyx 
+        //public static string PayloadUUID = "09db8fec-be7b-4e33-8fe1-fb0c84d591e5"; // no encryption but yes keyx
+        //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // yes encryption but no keyx
+        //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // yes encryption and yes keyx
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP

