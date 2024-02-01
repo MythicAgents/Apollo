@@ -78,6 +78,7 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
 #if DEBUG
+                        { "tasking_type", "Poll" },
                         { "callback_interval", "5" },
                         { "callback_jitter", "0" },
                         { "callback_port", "8081" },
@@ -154,7 +155,9 @@ namespace Apollo
 #if HTTP
         public static string StagingRSAPrivateKey = "wO+CTvxcnsOclJ18n4rBilEc9NlhirkiITjwlWDaPRI=";
 #elif WEBSOCKET
-        public static string StagingRSAPrivateKey = "nl6HZUDEgbYB3ncqC4mWM6mVPq7tyiahq9dmcgmhEqw=";
+        public static string StagingRSAPrivateKey = "TYSeN+dDzfg+pJoziRsxgMQrkmura3cGAB84Jwyv4xY="; // yes encryption and yes keyx
+        //public static string StagingRSAPrivateKey = "5cuJwKmb46fpuN5LKjqSG9hi8LX7YVa1oTsq4pyO9co="; // yes encryption and no keyx
+        //public static string StagingRSAPrivateKey = "guyLutje7rMlKDsp2FXfNSiCagEUL8FXxJhsgdHsLWU="; // yes encrypt and yes keyx and Poll
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
@@ -163,10 +166,9 @@ namespace Apollo
 #if HTTP
         public static string PayloadUUID = "89d28526-e957-4142-b0fe-b672b397179f";
 #elif WEBSOCKET
-        //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // no encryption and no keyx 
-        public static string PayloadUUID = "09db8fec-be7b-4e33-8fe1-fb0c84d591e5"; // no encryption but yes keyx
-        //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // yes encryption but no keyx
-        //public static string PayloadUUID = "02ec9661-5b31-41fb-982d-3626906dd4b6"; // yes encryption and yes keyx
+        public static string PayloadUUID = "f4d26e36-b6e6-4c3d-a82a-856750a7f681"; // yes encryption and yes keyx
+        //public static string PayloadUUID = "b2c25db8-a2f5-41e2-84d8-e733afe02abd"; // yes encryption but no keyx
+        //public static string PayloadUUID = "23597ba9-3519-4253-bf5b-f2c6f3c63945"; // yes encryption and yes keyx and Poll
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP

