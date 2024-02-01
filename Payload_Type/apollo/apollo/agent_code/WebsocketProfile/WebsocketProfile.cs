@@ -62,8 +62,8 @@ namespace WebsocketTransport
             Uuid = agent.GetUUID();
             PostUri = data["post_uri"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
-            ProxyHost = data["proxy_host"];
-            ProxyPort = data["proxy_port"];
+            //ProxyHost = data["proxy_host"];
+            //ProxyPort = data["proxy_port"];
             rsa = agent.GetApi().NewRSAKeyPair(4096);
             if (!string.IsNullOrEmpty(ProxyPort))
             {
@@ -79,8 +79,8 @@ namespace WebsocketTransport
                 PostUri = $"/{PostUri}";
             }
             Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
-            ProxyUser = data["proxy_user"];
-            ProxyPass = data["proxy_pass"];
+            //ProxyUser = data["proxy_user"];
+            //ProxyPass = data["proxy_pass"];
             KillDate = data["killdate"];
 
             string[] reservedStrings = new[]
