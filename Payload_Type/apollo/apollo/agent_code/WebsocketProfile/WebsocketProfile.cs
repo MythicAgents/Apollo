@@ -52,6 +52,10 @@ namespace WebsocketTransport
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
+            foreach (string s in data.Keys)
+            {
+                Console.WriteLine(s);
+            }
             CallbackInterval = int.Parse(data["callback_interval"]);
             CallbackJitter = double.Parse(data["callback_jitter"]);
             CallbackPort = int.Parse(data["callback_port"]);
