@@ -78,7 +78,7 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
 #if DEBUG
-                        { "tasking_type", "Poll" },
+                        { "tasking_type", "Push" },
                         { "callback_interval", "5" },
                         { "callback_jitter", "0" },
                         { "callback_port", "8081" },

