@@ -1,0 +1,126 @@
+<Project>
+
+  <!-- Get the analyzer from the PolySharp NuGet package -->
+  <Target Name="_PolySharpGatherAnalyzers">
+    <ItemGroup>
+      <_PolySharpAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'PolySharp'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Remove the analyzer if using Roslyn < 4.3 (PolySharp's generators require Roslyn 4.3) -->
+  <Target Name="_PolySharpRemoveAnalyzersForRoslyn3"
+          Condition="'$(CSharpCoreTargetsPath)' != ''"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          DependsOnTargets="_PolySharpGatherAnalyzers">
+
+    <!--
+      Use the CSharpCoreTargetsPath property to find the version of the compiler we are using. This is the same mechanism
+      MSBuild uses to find the compiler. We could check the assembly version for any compiler assembly (since they all have
+      the same version) but Microsoft.Build.Tasks.CodeAnalysis.dll is where MSBuild loads the compiler tasks from so if
+      someone is getting creative with msbuild tasks/targets this is the "most correct" assembly to check.
+    -->
+    <GetAssemblyIdentity AssemblyFiles="$([System.IO.Path]::Combine(`$([System.IO.Path]::GetDirectoryName($(CSharpCoreTargetsPath)))`,`Microsoft.Build.Tasks.CodeAnalysis.dll`))">
+      <Output TaskParameter="Assemblies" ItemName="PolySharpCurrentCompilerAssemblyIdentity"/>
+    </GetAssemblyIdentity>
+
+    <PropertyGroup>
+
+      <!-- Transform the resulting item from GetAssemblyIdentity into a property representing its assembly version -->
+      <PolySharpCurrentCompilerVersion>@(PolySharpCurrentCompilerAssemblyIdentity->'%(Version)')</PolySharpCurrentCompilerVersion>
+
+      <!-- The CurrentCompilerVersionIsNotNewEnough property can now be defined based on the Roslyn assembly version -->
+      <PolySharpCurrentCompilerVersionIsNotNewEnough Condition="$([MSBuild]::VersionLessThan($(PolySharpCurrentCompilerVersion), 4.3))">true</PolySharpCurrentCompilerVersionIsNotNewEnough>
+    </PropertyGroup>
+
+    <!-- If the Roslyn version is < 4.3, disable the source generators -->
+    <ItemGroup Condition ="'$(PolySharpCurrentCompilerVersionIsNotNewEnough)' == 'true'">
+      <Analyzer Remove="@(_PolySharpAnalyzer)"/>
+    </ItemGroup>
+
+    <!--
+      If the source generators are disabled, also emit an error. This would've been produced by MSBuild itself as well, but
+      emitting this manually lets us customize the message to inform developers as to why exactly the generators have been
+      disabled, and that PolySharp will not work at all unless a more up to date IDE or compiler version are used.
+    -->
+    <Error Condition ="'$(PolySharpCurrentCompilerVersionIsNotNewEnough)' == 'true'"
+           Code="POLYSPCFG0001"
+           Text="The PolySharp source generators have been disabled on the current configuration, as they need Roslyn 4.3 in order to work. PolySharp requires the source generators to run in order to generate polyfills, so the library cannot be used without a more up to date IDE (eg. VS 2022 17.3 or greater) or .NET SDK version (.NET 6.0.400 SDK or greater)."/>  
+  </Target>
+  
+  <!-- Remove the analyzer if Roslyn is missing -->
+  <Target Name="_PolySharpRemoveAnalyzersForRosynNotFound"
+          Condition="'$(CSharpCoreTargetsPath)' == ''"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          DependsOnTargets="_PolySharpGatherAnalyzers">
+
+    <!-- If no Roslyn assembly could be found, just remove the analyzer without emitting a warning -->
+    <ItemGroup>
+      <Analyzer Remove="@(_PolySharpAnalyzer)"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Inform the user if packages.config is used (as the analyzers and the source generators
+    won't work at all). Since packages.config can only be used with legacy-style projects,
+    the entire package can be skipped if an SDK-style project is used.
+  -->
+  <Target Name="_PolySharpWarnForPackagesConfigUse"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          Condition="'$(UsingMicrosoftNetSDK)' != 'true'">
+
+    <!--
+      Check whether packages are being restored via packages.config, by reading the associated MSBuild property.
+      This happens when either the project style is using packages.config, or when explicitly requested.
+      See https://learn.microsoft.com/nuget/reference/msbuild-targets#restoring-packagereference-and-packagesconfig-projects-with-msbuild.
+    -->
+    <PropertyGroup>
+      <PolySharpIsTargetProjectUsingPackagesConfig Condition ="'$(RestorePackagesConfig)' == 'true' OR '$(RestoreProjectStyle)' == 'PackagesConfig'">true</PolySharpIsTargetProjectUsingPackagesConfig>
+    </PropertyGroup>
+
+    <!--
+      If no packages.config properties are set, also try to manually find the packages.config file.
+      This will be in the @(None) elements, if present. Doing so makes sure this works in builds as
+      well, since the implicit targets populating the properties above only run when restoring.
+      Since the packages.config file will always be in the root of the project, if present, we will
+      match with the full item spec (see https://learn.microsoft.com/nuget/reference/packages-config).
+    -->
+    <FindInList ItemSpecToFind="packages.config"
+                List="@(None)"
+                MatchFileNameOnly="false"
+                Condition="'$(PolySharpIsTargetProjectUsingPackagesConfig)' != 'true'">
+      <Output TaskParameter="ItemFound" PropertyName="PolySharpPackagesConfigFile"/>
+    </FindInList>
+
+    <!-- Make sure to update the MSBuild property if the above task did find something -->
+    <PropertyGroup>
+      <PolySharpIsTargetProjectUsingPackagesConfig Condition ="'$(PolySharpPackagesConfigFile)' == 'packages.config'">true</PolySharpIsTargetProjectUsingPackagesConfig>
+    </PropertyGroup>
+
+    <!-- Emit a warning in case packages.config is used -->
+    <Warning Condition ="'$(PolySharpIsTargetProjectUsingPackagesConfig)' == 'true'"
+             Code="POLYSPCFG0002"
+             Text="The PolySharp source generators might not be loaded correctly, as the current project is using the packages.config setup to restore NuGet packages. Source generators require PackageReference to be used (either in a legacy-style or SDK-style .csproj project, both are supported as long as PackageReference is used)."/>
+  </Target>
+
+  <!-- Configure the MSBuild properties used to control PolySharp's generator -->
+  <Target Name="ConfigurePolySharpMSBuildProperties"
+          BeforeTargets="PrepareForBuild">
+
+    <!-- Mark the MSBuild properties to configure the generator visible for the compiler, so the analyzer can see them -->
+    <ItemGroup>
+      <CompilerVisibleProperty Include="PolySharpUsePublicAccessibilityForGeneratedTypes"/>
+      <CompilerVisibleProperty Include="PolySharpIncludeRuntimeSupportedAttributes"/>
+      <CompilerVisibleProperty Include="PolySharpUseInteropServices2NamespaceForUnmanagedCallersOnlyAttribute"/>
+      <CompilerVisibleProperty Include="PolySharpExcludeGeneratedTypes"/>
+      <CompilerVisibleProperty Include="PolySharpIncludeGeneratedTypes"/>
+      <CompilerVisibleProperty Include="PolySharpExcludeTypeForwardedToDeclarations"/>
+    </ItemGroup>
+
+    <!-- Adds necessary fixups for multiline properties (replaces ';' characters with ',' and strip new lines) -->
+    <PropertyGroup>
+      <PolySharpExcludeGeneratedTypes>$([System.Text.RegularExpressions.Regex]::Replace($(PolySharpExcludeGeneratedTypes.Replace(';', ',')), '[\r\n]', ''))</PolySharpExcludeGeneratedTypes>
+      <PolySharpIncludeGeneratedTypes>$([System.Text.RegularExpressions.Regex]::Replace($(PolySharpIncludeGeneratedTypes.Replace(';', ',')), '[\r\n]', ''))</PolySharpIncludeGeneratedTypes>
+    </PropertyGroup>
+  </Target>
+
+</Project>

@@ -198,7 +198,8 @@ namespace Tasks
                                     };
                                     WaitHandle.WaitAny(waiters);
                                     ST.Task.WaitAll(uploadTasks.ToArray());
-                                    bool bRet = uploadTasks.Where(t => t.Result == false).ToArray().Length == 0;
+                                    //bool bRet = uploadTasks.Where(t => t.Result == false).ToArray().Length == 0;
+                                    bool bRet = uploadTasks.All(t => t.Result is true);
                                     if (bRet)
                                     {
                                         resp = CreateTaskResponse("", true, "completed");
