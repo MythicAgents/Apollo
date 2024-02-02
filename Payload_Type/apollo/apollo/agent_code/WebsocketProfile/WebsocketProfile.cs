@@ -52,10 +52,6 @@ namespace WebsocketTransport
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
-            foreach (string s in data.Keys)
-            {
-                Console.WriteLine(s);
-            }
             CallbackInterval = int.Parse(data["callback_interval"]);
             CallbackJitter = double.Parse(data["callback_jitter"]);
             CallbackPort = int.Parse(data["callback_port"]);
@@ -107,8 +103,6 @@ namespace WebsocketTransport
                     senderEvent.WaitOne();
                     if (senderQueue.TryDequeue(out byte[] result))
                     {
-                        Console.WriteLine("Sending:");
-                        Console.WriteLine(Encoding.UTF8.GetString(result));
                         Client.Send(result);
                     }
                 }
@@ -330,14 +324,11 @@ namespace WebsocketTransport
 
         private void OnAsyncDisconnect(object sender, CloseEventArgs args)
         {
-            Console.WriteLine("OnAsyncDisconnect");
+            // No action needed
         }
 
         private void OnAsyncMessageReceived(object sender, MessageEventArgs args)
         {
-            Console.WriteLine("Received:");
-            Console.WriteLine(args.Data);
-
             WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
 
             if (EncryptedExchangeCheck)
