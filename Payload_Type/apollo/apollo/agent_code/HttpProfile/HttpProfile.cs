@@ -110,7 +110,7 @@ namespace HttpTransport
                     break;
                 }
 
-                    Agent.Sleep();
+                Agent.Sleep();
             }
         }
 
