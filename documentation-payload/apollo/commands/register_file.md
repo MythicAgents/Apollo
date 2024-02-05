@@ -6,7 +6,7 @@ hidden = false
 +++
 
 ## Summary
-Cache a file to be used in other post-exploitation jobs. If the file extension ends in `.ps1`, this file will be used in PowerShell post-exploitation jobs, such as `powershell`, `psinject`, and `powerpick`. Otherwise, these files are used by `assembly_inject`, `execute_assembly`, `inline_assembly`, or `execute_pe`.
+Cache a file to be used in other post-exploitation jobs. If the file extension ends in `.ps1`, this file will be used in PowerShell post-exploitation jobs, such as `powershell`, `psinject`, and `powerpick`. Otherwise, these files are used by `assembly_inject`, `execute_assembly`, `inline_assembly`, `execute_pe` or `execute_coff`.
 
 By default, these files are cached in the agent using both AES256 and DPAPI encryption at rest, and decrypted only for task execution.
 
