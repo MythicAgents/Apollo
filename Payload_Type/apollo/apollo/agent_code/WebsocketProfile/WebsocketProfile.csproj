@@ -43,8 +43,8 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="websocket-sharp-customheaders, Version=1.0.2.31869, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
-      <HintPath>..\packages\websocket-sharp-customheaders.1.0.2.31869\lib\net35\websocket-sharp-customheaders.dll</HintPath>
+    <Reference Include="websocket-sharp, Version=1.0.3.0, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
+      <HintPath>..\packages\WebSocketSharp-netstandard-customheaders.1.0.3\lib\net35\websocket-sharp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

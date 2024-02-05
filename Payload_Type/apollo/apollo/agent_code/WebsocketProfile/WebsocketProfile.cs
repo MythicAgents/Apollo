@@ -277,13 +277,12 @@ namespace WebsocketTransport
                 };
             }
 
-            //TODO TEST
-            // Use Default Proxy and Cached Credentials for Internet Access
+            IWebProxy proxy = WebRequest.GetSystemWebProxy();
 
-            IWebProxy wr = WebRequest.GetSystemWebProxy();
-            wr.Credentials = CredentialCache.DefaultCredentials;
-            //Client.Proxy = wr;
-            //Client.SetProxy("http://localhost:8080", "", "");
+            if (!proxy.IsBypassed(new Uri(Endpoint))) {
+                NetworkCredential credential = CredentialCache.DefaultCredentials as NetworkCredential;
+                Client.SetProxy(proxy.GetProxy(new Uri(Endpoint)).AbsoluteUri, credential.UserName, credential.Password);
+            }
 
             Client.OnOpen += OnAsyncConnect;
             Client.OnMessage += OnAsyncMessageReceived;
