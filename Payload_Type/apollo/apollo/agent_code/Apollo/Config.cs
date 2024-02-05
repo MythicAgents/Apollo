@@ -1,7 +1,7 @@
 ﻿#define C2PROFILE_NAME_UPPER
 
 #if DEBUG
-#define WEBSOCKET
+#define HTTP
 #endif
 
 #if HTTP
@@ -148,22 +148,18 @@ namespace Apollo
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
 #if DEBUG
 #if HTTP
-        public static string StagingRSAPrivateKey = "wO+CTvxcnsOclJ18n4rBilEc9NlhirkiITjwlWDaPRI=";
+        public static string StagingRSAPrivateKey = "ejezYqXCDzFUWbgyJ7BMVqCKfi02jOGUx4ZtAc1rllM=";
 #elif WEBSOCKET
-        public static string StagingRSAPrivateKey = "TYSeN+dDzfg+pJoziRsxgMQrkmura3cGAB84Jwyv4xY="; // yes encryption and yes keyx
-        //public static string StagingRSAPrivateKey = "5cuJwKmb46fpuN5LKjqSG9hi8LX7YVa1oTsq4pyO9co="; // yes encryption and no keyx
-        //public static string StagingRSAPrivateKey = "guyLutje7rMlKDsp2FXfNSiCagEUL8FXxJhsgdHsLWU="; // yes encrypt and yes keyx and Poll
+        public static string StagingRSAPrivateKey = "TYSeN+dDzfg+pJoziRsxgMQrkmura3cGAB84Jwyv4xY=";
 #elif SMB
         public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
 #elif TCP
         public static string StagingRSAPrivateKey = "LbFpMoimB+aLx1pq0IqXJ1MQ4KIiGdp0LWju5jUhZRg=";
 #endif
 #if HTTP
-        public static string PayloadUUID = "89d28526-e957-4142-b0fe-b672b397179f";
+        public static string PayloadUUID = "084ece5f-7130-4a5a-81af-55e332802751";
 #elif WEBSOCKET
-        public static string PayloadUUID = "f4d26e36-b6e6-4c3d-a82a-856750a7f681"; // yes encryption and yes keyx
-        //public static string PayloadUUID = "b2c25db8-a2f5-41e2-84d8-e733afe02abd"; // yes encryption but no keyx
-        //public static string PayloadUUID = "23597ba9-3519-4253-bf5b-f2c6f3c63945"; // yes encryption and yes keyx and Poll
+        public static string PayloadUUID = "f4d26e36-b6e6-4c3d-a82a-856750a7f681";
 #elif SMB
         public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
 #elif TCP
