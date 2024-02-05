@@ -59,6 +59,7 @@
     <Compile Include="cp.cs" />
     <Compile Include="download.cs" />
     <Compile Include="execute_assembly.cs" />
+    <Compile Include="execute_coff.cs" />
     <Compile Include="execute_pe.cs" />
     <Compile Include="exit.cs" />
     <Compile Include="getprivs.cs" />
@@ -111,6 +112,10 @@
     <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
       <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
       <Name>ApolloInterop</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RunOF\RunOF.csproj">
+      <Project>{3a190f78-b02a-489d-b681-12d82730465d}</Project>
+      <Name>RunOF</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
