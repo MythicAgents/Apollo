@@ -8,6 +8,7 @@ using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
 using System.Security.Principal;
+using ApolloInterop.Utils;
 
 namespace ApolloInterop.Classes
 {
@@ -21,7 +22,7 @@ namespace ApolloInterop.Classes
         private readonly int _BUF_OUT;
         private readonly int _maxInstances;
 
-        private ConcurrentDictionary<PipeStream, IPCData> _connections = new ConcurrentDictionary<PipeStream, IPCData>();
+        private ConcurrentDictionary<PipeStream, IPCData> _connections = new();
 
         public event EventHandler<NamedPipeMessageArgs> ConnectionEstablished;
         public event EventHandler<NamedPipeMessageArgs> MessageReceived;

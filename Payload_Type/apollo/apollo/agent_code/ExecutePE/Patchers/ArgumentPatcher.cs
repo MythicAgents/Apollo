@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using ApolloInterop.Utils;
 using ExecutePE.Helpers;
 using ExecutePE.Internals;
 
@@ -55,6 +56,7 @@ namespace ExecutePE.Patchers
             var commandLineString = Marshal.PtrToStringUni(_pOriginalCommandLineString);
             var imageString = Marshal.PtrToStringUni(_pOriginalImageString);
             var newCommandLineString = $"\"{filename}\" {string.Join(" ", args)}";
+            DebugHelp.DebugWriteLine($"Command Line String: {newCommandLineString}");
             var pNewCommandLineString = Marshal.StringToHGlobalUni(newCommandLineString);
             var pNewImageString = Marshal.StringToHGlobalUni(filename);
             if (!Utils.PatchAddress(_ppCommandLineString, pNewCommandLineString))
@@ -62,46 +64,18 @@ namespace ExecutePE.Patchers
 
                 return false;
             }
-#if DEBUG
-
-
-#endif
             if (!Utils.PatchAddress(_ppImageString, pNewImageString))
             {
-#if DEBUG
-
-
-#endif
                 return false;
             }
-#if DEBUG
-
-
-#endif
             Marshal.WriteInt16(_pLength, 0, (short)newCommandLineString.Length);
-#if DEBUG
-
-
-#endif
             Marshal.WriteInt16(_pMaxLength, 0, (short)newCommandLineString.Length);
 
 #if DEBUG
             GetPebCommandLineAndImagePointers(pPEB, out _, out var pCommandLineStringCheck, out _,
                 out var pImageStringCheck, out _, out var lengthCheck, out _, out var maxLengthCheck);
             var commandLineStringCheck = Marshal.PtrToStringUni(pCommandLineStringCheck);
-
-
             var imageStringCheck = Marshal.PtrToStringUni(pImageStringCheck);
-
-
-
-
-
-
-
-
-
-
 #endif
 
             if (!PatchGetCommandLineFunc(newCommandLineString))
@@ -111,9 +85,6 @@ namespace ExecutePE.Patchers
 
 #if DEBUG
             var getCommandLineAPIString = Marshal.PtrToStringUni(NativeDeclarations.GetCommandLine());
-
-
-
 #endif
             return true;
         }

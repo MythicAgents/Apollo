@@ -10,8 +10,12 @@ import tempfile
 from distutils.dir_util import copy_tree
 import shutil
 import asyncio
+import platform
 
-INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
+if platform.system() == 'Windows':  
+    INTEROP_ASSEMBLY_PATH = "C:\\Mythic\\Apollo\\srv\\ApolloInterop.dll"
+else:
+    INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
 INTEROP_FILE_ID = ""
 
 class InlineAssemblyArguments(TaskArguments):

