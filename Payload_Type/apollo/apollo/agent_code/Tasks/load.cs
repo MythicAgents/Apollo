@@ -52,11 +52,7 @@ namespace Tasks
             }
             else
             {
-                if (_agent.GetFileManager().GetFile(
-                        _cancellationToken.Token,
-                        _data.ID,
-                        parameters.FileId,
-                        out byte[] taskLib))
+                if (_agent.GetFileManager().GetFile(_cancellationToken.Token,_data.ID, parameters.FileId,out byte[] taskLib))
                 {
                     if (_agent.GetTaskManager().LoadTaskModule(taskLib, parameters.Commands))
                     {
