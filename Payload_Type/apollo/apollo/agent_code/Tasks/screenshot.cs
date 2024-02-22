@@ -63,7 +63,7 @@ namespace Tasks
 
         private byte[] GetBytesFromScreen(Screen screen)
         {
-            using Bitmap bmpScreenCapture = new(screen.Bounds.Width, screen.Bounds.Height,PixelFormat.DontCare);
+            using Bitmap bmpScreenCapture = new(screen.Bounds.Width, screen.Bounds.Height);
             using Graphics g = Graphics.FromImage(bmpScreenCapture);
             using MemoryStream ms = new();
 
