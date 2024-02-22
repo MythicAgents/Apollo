@@ -34,6 +34,7 @@ class ShellCommand(CommandBase):
         response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
             Success=True,
+            CommandName="run"
         )
         taskData.args.add_arg("executable", "cmd.exe")
         taskData.args.add_arg("arguments", f" /S /c {taskData.args.command_line}")
