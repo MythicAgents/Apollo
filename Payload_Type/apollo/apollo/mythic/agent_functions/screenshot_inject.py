@@ -53,22 +53,8 @@ class ScreenshotInjectArguments(TaskArguments):
     async def parse_arguments(self):
         if not len(self.command_line):
             raise Exception("Usage: {}".format(ScreenshotInjectCommand.help_cmd))
-
-        if self.command_line[0] == "{":
-            self.load_args_from_json_string(self.command_line)
-        else:
-            parts = self.command_line.strip().split(" ")
-            if len(parts) > 0:
-                self.args["pid"].value = int(parts[0])
-            else:
-                raise Exception("Usage: {}".format(ScreenshotInjectCommand.help_cmd))
-            if len(parts) >= 1:
-                self.args["count"].value = int(parts[1])
-            if len(parts) >= 2:
-                self.args["interval"].value = int(parts[2])
-            
+        self.load_args_from_json_string(self.command_line)
         self.add_arg("pipe_name", str(uuid4()))
-        pass
 
 
 class ScreenshotInjectCommand(CommandBase):
@@ -89,7 +75,7 @@ class ScreenshotInjectCommand(CommandBase):
         outputPath = "{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name)
             # shutil to copy payload files over
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ScreenshotInject/ScreenshotInject.csproj".format(agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ScreenshotInject/ScreenshotInject.csproj -o {}/ScreenshotInject/ScreenshotInject.exe".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()

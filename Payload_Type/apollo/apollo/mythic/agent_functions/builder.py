@@ -117,7 +117,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
-            command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
+            command = f"dotnet build -c release -p:Platform=\"Any CPU\" -o {agent_build_path.name}/Release/"
+            #command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
             await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                 PayloadUUID=self.uuid,
                 StepName="Gathering Files",
@@ -131,7 +132,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 stdout_err += f'\n[stdout]\n{stdout.decode()}\n'
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
-            output_path = "{}/Apollo/bin/Release/Apollo.exe".format(agent_build_path.name)
+            output_path = f"{agent_build_path.name}/Release/Apollo.exe"
 
             if os.path.exists(output_path):
                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
@@ -147,12 +148,14 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 targetKeylogInjectPath = "/srv/KeylogInject.exe"
                 targetExecutePEPath = "/srv/ExecutePE.exe"
                 targetInteropPath = "/srv/ApolloInterop.dll"
-                shutil.move("{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
-                shutil.move("{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
-                shutil.move("{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
-                shutil.move("{}/KeylogInject/bin/Release/KeylogInject.exe".format(agent_build_path.name), targetKeylogInjectPath)
-                shutil.move("{}/ExecutePE/bin/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
-                shutil.move("{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
+                targetRunOfPath = "/srv/RunOF.dll"
+                shutil.move("{}/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
+                shutil.move("{}/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
+                shutil.move("{}/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
+                shutil.move("{}/Release/KeylogInject.exe".format(agent_build_path.name), targetKeylogInjectPath)
+                shutil.move("{}/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
+                shutil.move("{}/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
+                shutil.move("{}/Release/RunOF.dll".format(agent_build_path.name), targetRunOfPath)
                 if self.get_parameter('output_type') != "Shellcode":
                     await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                         PayloadUUID=self.uuid,

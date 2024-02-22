@@ -1,7 +1,16 @@
-FROM itsafeaturemythic/mythic_python_dotnet:latest
+#FROM itsafeaturemythic/mythic_python_dotnet:latest
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+RUN apt-get update && apt-get install python3 python3-pip python3.11-venv -y
 
-RUN python3 -m pip install donut-shellcode
 
 WORKDIR /Mythic/
+RUN python3 -m venv /venv
+RUN /venv/bin/python -m pip install mythic-container==0.4.10
+RUN /venv/bin/python -m pip install donut-shellcode
 
-CMD ["python3", "main.py"]
+COPY [".", "."]
+
+# fetch all dependencies
+RUN cd apollo/agent_code && dotnet restore
+
+CMD ["/venv/bin/python", "main.py"]

@@ -3,6 +3,13 @@ from mythic_container.MythicCommandBase import *
 from uuid import uuid4
 from mythic_container.MythicRPC import *
 from os import path
+import shutil
+import tempfile
+import asyncio
+
+RUNOF_HOST_PATH="/srv/RunOF.dll"
+RUNOF_FILE_ID=""
+
 
 class ExecuteCoffArguments(TaskArguments):
 
@@ -28,10 +35,11 @@ class ExecuteCoffArguments(TaskArguments):
                 cli_name="Function",
                 display_name="Function",
                 type=ParameterType.String,
+                default_value="go",
                 description="Entry function name.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=True,
+                        required=False,
                         group_name="Default",
                         ui_position=2
                     ),
@@ -41,10 +49,11 @@ class ExecuteCoffArguments(TaskArguments):
                 cli_name="Timeout",
                 display_name="Timeout",
                 type=ParameterType.String,
+                default_value="30",
                 description="Set thread timeout (in seconds).",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=True,
+                        required=False,
                         group_name="Default",
                         ui_position=3
                     ),
@@ -70,7 +79,7 @@ class ExecuteCoffArguments(TaskArguments):
                     ),
                 ]),
         ]
-    
+
     async def get_arguments(self, arguments: PTRPCTypedArrayParseFunctionMessage) -> PTRPCTypedArrayParseFunctionMessageResponse:
         argumentResponse = PTRPCTypedArrayParseFunctionMessageResponse(Success=True)
         argumentSplitArray = []
@@ -96,7 +105,7 @@ class ExecuteCoffArguments(TaskArguments):
                 coff_arguments.append(["base64",value])
             else:
                 return PTRPCTypedArrayParseFunctionMessageResponse(Success=False, Error=f"Failed to parse argument: {argument}: Unknown value type.")
-        
+
         argumentResponse = PTRPCTypedArrayParseFunctionMessageResponse(Success=True, TypedArray=coff_arguments)
         return argumentResponse
 
@@ -142,10 +151,52 @@ class ExecuteCoffCommand(CommandBase):
         suggested_command=False
     )
 
+    async def build_runof(self):
+        global RUNOF_HOST_PATH
+        agent_build_path = tempfile.TemporaryDirectory()
+        outputPath = "{}/RunOF/bin/Release/RunOF.dll".format(agent_build_path.name)
+        # shutil to copy payload files over
+        copy_tree(str(self.agent_code_path), agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/RunOF/RunOF.csproj -o {}/RunOF/bin/Release/".format(agent_build_path.name, agent_build_path.name)
+        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
+                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+        stdout, stderr = await proc.communicate()
+        if not path.exists(outputPath):
+            raise Exception("Failed to build RunOF.dll:\n{}".format(stderr.decode() + "\n" + stdout.decode()))
+        shutil.copy(outputPath, RUNOF_HOST_PATH)
+
+    async def registered_runof(self, taskData: PTTaskMessageAllData) -> str:
+        global RUNOF_HOST_PATH
+        if not path.exists(RUNOF_HOST_PATH):
+            await self.build_runof()
+        fileSearch = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+            TaskID=taskData.Task.ID,
+            Filename="RunOF.dll",
+            LimitByCallback=True,
+            MaxResults=1
+        ))
+        if not fileSearch.Success:
+            raise Exception(fileSearch.Error)
+        if len(fileSearch.Files) == 0:
+            fileRegister = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
+                TaskID=taskData.Task.ID,
+                FileContents=open(RUNOF_HOST_PATH, 'rb').read(),
+                DeleteAfterFetch=False,
+                Filename="RunOF.dll",
+                IsScreenshot=False,
+                IsDownloadFromAgent=False,
+                Comment=f"Shared RunOF.dll for all execute_coff tasks within Callback {taskData.Callback.DisplayID}"
+            ))
+            if fileRegister.Success:
+                return fileRegister.AgentFileId
+            raise Exception(fileRegister.Error)
+        return fileSearch.Files[0].AgentFileId
+
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID, Success=True)
+        registered_runof_id = await self.registered_runof(taskData)
+        taskData.args.add_arg("runof_id", registered_runof_id)
         file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(TaskID=taskData.Task.ID, Filename=taskData.args.get_arg("coff_name")))
-        
         if file_resp.Success and len(file_resp.Files) > 0:
             taskData.args.add_arg("loader_stub_id", file_resp.Files[0].AgentFileId)
         else:
@@ -154,7 +205,7 @@ class ExecuteCoffCommand(CommandBase):
         timeout = taskData.args.get_arg("timeout")
         if timeout is None or timeout == "":
             taskData.args.set_arg("timeout", "30")
-        
+
         taskargs = taskData.args.get_arg("coff_arguments")
         if taskargs == "" or taskargs is None:
             response.DisplayParams = "-Coff {} -Function {} -Timeout {}".format(

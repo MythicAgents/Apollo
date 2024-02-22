@@ -44,19 +44,19 @@ class PowerpickCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PowerpickArguments
     attackmapping = ["T1059", "T1562"]
-    
+
     async def build_powershell(self):
         global POWERSHELL_HOST_PATH
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name)
-            # shutil to copy payload files over
+        # shutil to copy payload files over
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/PowerShellHost/PowerShellHost.csproj".format(agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/PowerShellHost/PowerShellHost.csproj -o {}/PowerShellHost/bin/Release/".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
-            raise Exception("Failed to build PowerShellHost.exe:\n{}".format(stderr.decode()))
+            raise Exception("Failed to build PowerShellHost.exe:\n{}".format(stderr.decode() + "\n" + stdout.decode()))
         shutil.copy(outputPath, POWERSHELL_HOST_PATH)
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
@@ -64,7 +64,7 @@ class PowerpickCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        global POWERSHELL_HOST_PATH 
+        global POWERSHELL_HOST_PATH
         if not path.exists(POWERSHELL_HOST_PATH):
             await self.build_powershell()
 
