@@ -165,7 +165,7 @@ class LoadCommand(CommandBase):
                     f.write(templateFile.encode())
 
             outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
-            shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
+            shell_cmd = "dotnet build -c release -p:Platform=x64 {}/Tasks/Tasks.csproj -o {}/Tasks/bin/Release/".format(agent_build_path.name, agent_build_path.name)
             proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
