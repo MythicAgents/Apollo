@@ -8,7 +8,8 @@ from apollo.mythic.agent_functions.register_file import *
 class RegisterAssemblyAlias(RegisterFileCommand, CommandBase):
     cmd = "register_assembly"
     attributes=CommandAttributes(
-        dependencies=["register_file"]
+        dependencies=["register_file"],
+        alias=True
     )
     needs_admin = False
     help_cmd = "register_assembly (modal popup)"

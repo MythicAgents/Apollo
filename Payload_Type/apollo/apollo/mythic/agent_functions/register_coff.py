@@ -7,7 +7,8 @@ import base64
 class RegisterCoffAlias(RegisterFileCommand, CommandBase):
     cmd = "register_coff"
     attributes=CommandAttributes(
-        dependencies=["register_file"]
+        dependencies=["register_file"],
+        alias=True
     )
     needs_admin = False
     help_cmd = "register_coff (modal popup)"

@@ -20,7 +20,8 @@ class ShellCommand(CommandBase):
     cmd = "shell"
     attributes = CommandAttributes(
         dependencies=["run"],
-        suggested_command=True
+        suggested_command=True,
+        alias=True
     )
     needs_admin = False
     help_cmd = "shell [command] [arguments]"
