@@ -64,6 +64,7 @@ class ExecuteCoffArguments(TaskArguments):
                 display_name="Arguments",
                 type=ParameterType.TypedArray,
                 default_value=[],
+                choices=["int16", "int32", "string", "wchar", "base64"],
                 description="""Arguments to pass to the COFF via the following way:
                 -s:123 or int16:123
                 -i:123 or int32:123
