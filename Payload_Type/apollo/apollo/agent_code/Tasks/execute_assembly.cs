@@ -185,15 +185,12 @@ namespace Tasks
                                     }
                                     else
                                     {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
+                                        resp = CreateTaskResponse($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe.", true, "error");
                                     }
                                 }
                                 else
                                 {
-                                    resp = CreateTaskResponse(
-                                        $"Failed to inject assembly loader into sacrificial process.",
-                                        true,
-                                        "error");
+                                    resp = CreateTaskResponse($"Failed to inject assembly loader into sacrificial process {info.Application}.", true, "error");
                                 }
                             }
                             else
@@ -203,15 +200,12 @@ namespace Tasks
                         }
                         else
                         {
-                            resp = CreateTaskResponse(
-                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                true,
-                                "error");
+                            resp = CreateTaskResponse($"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})", true, "error");
                         }
                     }
                     else
                     {
-                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true, "error");
                     }
                 }
             }
