@@ -122,7 +122,7 @@ namespace Tasks
                 DebugHelp.DebugWriteLine($"Task Parameters: {_data.Parameters}");
                 ExecutePEParameters parameters = _jsonSerializer.Deserialize<ExecutePEParameters>(_data.Parameters);
                 string peArguments = string.Join(" ", parameters.PEArgumentsArray);
-                peArguments = $"\"{peArguments}\"";
+                //peArguments = $"\"{peArguments}\"";
                 DebugHelp.DebugWriteLine($"pe args: {peArguments}");
 
                 if (string.IsNullOrEmpty(parameters.LoaderStubId) || string.IsNullOrEmpty(parameters.PEName) || string.IsNullOrEmpty(parameters.PipeName))
@@ -167,8 +167,7 @@ namespace Tasks
                                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("",false, "",
                                         new IMythicMessage[]
                                         {
-                                            Artifact.ProcessInject((int) proc.PID,
-                                                _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                                            Artifact.ProcessInject((int) proc.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
                                         }
                                     ));
                                     IPCCommandArguments cmdargs = new IPCCommandArguments
