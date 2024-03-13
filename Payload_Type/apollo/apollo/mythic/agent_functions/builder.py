@@ -33,7 +33,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             description="Output as shellcode, executable, or dynamically loaded library.",
         )
     ]
-    c2_profiles = ["http", "smb", "tcp"]
+    c2_profiles = ["http", "smb", "tcp", "websocket"]
     agent_path = pathlib.Path(".") / "apollo" / "mythic"
     agent_code_path = pathlib.Path(".") / "apollo" / "agent_code"
     agent_icon_path = agent_path / "agent_functions" / "apollo.svg"
