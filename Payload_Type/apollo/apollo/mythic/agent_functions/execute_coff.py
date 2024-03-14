@@ -6,8 +6,12 @@ from os import path
 import shutil
 import tempfile
 import asyncio
+import platform
 
-RUNOF_HOST_PATH="/srv/RunOF.dll"
+if platform.system() == 'Windows':  
+    RUNOF_HOST_PATH= "C:\\Mythic\\Apollo\\srv\\RunOF.dll"
+else:
+    RUNOF_HOST_PATH= "/srv/RunOF.dll"
 RUNOF_FILE_ID=""
 
 

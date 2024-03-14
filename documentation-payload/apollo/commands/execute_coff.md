@@ -8,7 +8,7 @@ hidden = false
 ## Summary
 
 Execute a Beacon Object File (BOF) with the specified arguments. This object file must first be cached in the agent using the `register_coff` command before being executed.
-The `RunOF.dll` should be registered using `register_file` before invoking execute_coff. It only needs to be registered once. 
+The `RunOF.dll` ia now automatically obtained from mythic if Apollo does not have it loaded in its file store already. 
 
 ### Arguments
 

