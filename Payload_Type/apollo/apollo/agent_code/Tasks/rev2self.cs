@@ -19,7 +19,7 @@ namespace Tasks
 {
     public class rev2self : Tasking
     {
-        public rev2self(IAgent agent, Task data) : base(agent, data)
+        public rev2self(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 

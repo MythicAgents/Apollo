@@ -38,14 +38,14 @@ namespace Tasks
             Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
         };
         
-        public download(IAgent agent, Task task) : base(agent, task)
+        public download(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             try
             {
                 DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);

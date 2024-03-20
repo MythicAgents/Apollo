@@ -28,14 +28,14 @@ namespace Tasks
             [DataMember(Name = "path")] public string Path;
         }
         
-        public mkdir(IAgent agent, Task data) : base(agent, data)
+        public mkdir(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             MkdirParameters parameters = _jsonSerializer.Deserialize<MkdirParameters>(_data.Parameters);
             
             if (System.IO.Directory.Exists(parameters.Path))

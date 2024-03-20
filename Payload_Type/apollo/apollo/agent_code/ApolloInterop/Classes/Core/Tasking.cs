@@ -14,10 +14,10 @@ namespace ApolloInterop.Classes
     public abstract class Tasking : ITask
     {
         protected IAgent _agent;
-        protected Task _data;
+        protected MythicTask _data;
         protected static JsonSerializer _jsonSerializer = new JsonSerializer();
         protected CancellationTokenSource _cancellationToken;
-        public Tasking(IAgent agent, Task data)
+        public Tasking(IAgent agent, MythicTask data)
         {
             _agent = agent;
             _data = data;
@@ -47,9 +47,9 @@ namespace ApolloInterop.Classes
             _cancellationToken.Cancel();
         }
 
-        public virtual TaskResponse CreateTaskResponse(object userOutput, bool completed, string status = "completed", IEnumerable<IMythicMessage> messages = null)
+        public virtual MythicTaskResponse CreateTaskResponse(object userOutput, bool completed, string status = "completed", IEnumerable<IMythicMessage> messages = null)
         {
-            TaskResponse resp = new TaskResponse();
+            MythicTaskResponse resp = new MythicTaskResponse();
             resp.UserOutput = userOutput;
             resp.Completed = completed;
             resp.TaskID = _data.ID;

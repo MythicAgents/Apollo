@@ -231,7 +231,7 @@ namespace Tasks
 
         #endregion
         
-        public netstat(IAgent agent, Task data) : base(agent, data)
+        public netstat(IAgent agent, MythicTask data) : base(agent, data)
         {
             if (_pGetExtendedTcpTable == null)
             {

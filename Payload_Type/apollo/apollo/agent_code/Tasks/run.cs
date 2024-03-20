@@ -40,7 +40,7 @@ namespace Tasks
         private CommandLineToArgvW _pCommandLineToArgvW;
 
         private AutoResetEvent _complete = new AutoResetEvent(false);
-        public run(IAgent agent, Task task) : base(agent, task)
+        public run(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _pLocalFree = _agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
             _pCommandLineToArgvW = _agent.GetApi().GetLibraryFunction<CommandLineToArgvW>(Library.SHELL32, "CommandLineToArgvW");

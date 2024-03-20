@@ -37,14 +37,14 @@ namespace Tasks
             public string RunOFId;
         }
 
-        public execute_coff(IAgent agent, Task task) : base(agent, task)
+        public execute_coff(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
 
             try
             {

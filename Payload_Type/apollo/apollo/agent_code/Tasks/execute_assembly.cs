@@ -49,7 +49,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
-        public execute_assembly(IAgent agent, Task task) : base(agent, task)
+        public execute_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _sendAction = (object p) =>
             {
@@ -111,7 +111,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             Process proc = null;
             try
             {

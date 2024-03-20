@@ -34,7 +34,7 @@ namespace Tasks
             [DataMember(Name = "value_value")]
             public string ValueValue;
         }
-        public reg_write_value(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public reg_write_value(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
@@ -50,7 +50,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             RegWriteParameters parameters = _jsonSerializer.Deserialize<RegWriteParameters>(_data.Parameters);
             bool bRet;
 

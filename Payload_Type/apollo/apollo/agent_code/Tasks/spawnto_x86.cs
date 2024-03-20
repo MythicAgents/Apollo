@@ -31,7 +31,7 @@ namespace Tasks
         }
 
 
-        public spawnto_x86(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public spawnto_x86(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
@@ -39,7 +39,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             SpawnToArgsx86 parameters = _jsonSerializer.Deserialize<SpawnToArgsx86>(_data.Parameters);
             if (_agent.GetProcessManager().SetSpawnTo(parameters.Application, parameters.Arguments, false))
             {

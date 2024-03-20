@@ -19,14 +19,14 @@ namespace Tasks
 {
     public class set_injection_technique : Tasking
     {
-        public set_injection_technique(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public set_injection_technique(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             if (_agent.GetInjectionManager().SetTechnique(_data.Parameters))
             {
                 resp = CreateTaskResponse($"Set injection technique to {_data.Parameters}", true);

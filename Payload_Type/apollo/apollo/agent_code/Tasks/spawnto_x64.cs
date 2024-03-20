@@ -30,14 +30,14 @@ namespace Tasks
             public string Arguments;
         }
 
-        public spawnto_x64(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public spawnto_x64(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             SpawnToArgsx64 parameters = _jsonSerializer.Deserialize<SpawnToArgsx64>(_data.Parameters);
             if (_agent.GetProcessManager().SetSpawnTo(parameters.Application, parameters.Arguments, true))
             {

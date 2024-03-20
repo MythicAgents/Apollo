@@ -27,7 +27,7 @@ namespace Tasks
         {
             [DataMember(Name = "path")] public string Path;
         }
-        public cd(IAgent agent, Task task) : base(agent, task)
+        public cd(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }

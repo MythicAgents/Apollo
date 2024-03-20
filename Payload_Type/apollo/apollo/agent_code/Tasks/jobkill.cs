@@ -19,7 +19,7 @@ namespace Tasks
 {
     public class jobkill : Tasking
     {
-        public jobkill(IAgent agent, Task data) : base(agent, data)
+        public jobkill(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 

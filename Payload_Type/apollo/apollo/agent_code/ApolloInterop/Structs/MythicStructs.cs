@@ -682,7 +682,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskStatus : IMythicMessage, IChunkMessage
+        public struct MythicTaskStatus : IMythicMessage, IChunkMessage
         {
             public MessageType GetTypeCode()
             {
@@ -737,7 +737,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct TaskResponse : IEquatable<TaskResponse>, IMythicMessage
+        public struct MythicTaskResponse : IEquatable<MythicTaskResponse>, IMythicMessage
         {
             public MessageType GetTypeCode()
             {
@@ -780,10 +780,10 @@ namespace ApolloInterop.Structs
 
             public override bool Equals(object obj)
             {
-                return obj is TaskingMessage && this.Equals((TaskResponse)obj);
+                return obj is TaskingMessage && this.Equals((MythicTaskResponse)obj);
             }
 
-            public bool Equals(TaskResponse msg)
+            public bool Equals(MythicTaskResponse msg)
             {
                 for (int i = 0; i < this.Edges.Length; i++)
                 {
@@ -817,7 +817,7 @@ namespace ApolloInterop.Structs
         }
 
         [DataContract]
-        public struct Task : IMythicMessage
+        public struct MythicTask : IMythicMessage
         {
             public MessageType GetTypeCode()
             {
@@ -894,7 +894,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "delegates")]
             public DelegateMessage[] Delegates;
             [DataMember(Name = "responses")]
-            public TaskResponse[] Responses;
+            public MythicTaskResponse[] Responses;
             [DataMember(Name = "socks")]
             public SocksDatagram[] Socks;
 
@@ -1121,9 +1121,9 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "status")]
             public sStatusMessage Status;
             [DataMember(Name = "tasks")]
-            public Task[] Tasks;
+            public MythicTask[] Tasks;
             [DataMember(Name = "responses")]
-            public TaskStatus[] Responses;
+            public MythicTaskStatus[] Responses;
             [DataMember(Name = "delegates")]
             public DelegateMessage[] Delegates;
             [DataMember(Name = "socks")]

@@ -20,7 +20,7 @@ namespace Tasks
 {
     public class mv : Tasking
     {
-        public mv(IAgent agent, Task data) : base(agent, data)
+        public mv(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 
@@ -36,7 +36,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             HostFileInfo sourceInfo;
             var parameters = _jsonSerializer.Deserialize<MvParameters>(_data.Parameters);
 

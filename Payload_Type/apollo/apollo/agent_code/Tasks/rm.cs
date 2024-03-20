@@ -38,14 +38,14 @@ namespace Tasks
             Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
         };
         
-        public rm(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public rm(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             RmParameters parameters = _jsonSerializer.Deserialize<RmParameters>(_data.Parameters);
             string path = string.IsNullOrEmpty(parameters.File)
                 ? parameters.Path

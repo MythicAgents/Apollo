@@ -49,7 +49,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
-        public psinject(IAgent agent, Task task) : base(agent, task)
+        public psinject(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _sendAction = (object p) =>
             {
@@ -103,7 +103,7 @@ namespace Tasks
         
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             try
             {
                 PowerShellInjectParameters parameters = _jsonSerializer.Deserialize<PowerShellInjectParameters>(_data.Parameters);

@@ -46,7 +46,7 @@ namespace Tasks
             [DataMember(Name = "result_type")]
             public string ResultType;
         }
-        public reg_query(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public reg_query(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
@@ -107,7 +107,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             RegQueryParameters parameters = _jsonSerializer.Deserialize<RegQueryParameters>(_data.Parameters);
             List<RegQueryResult> results = new List<RegQueryResult>();
             List<IMythicMessage> artifacts = new List<IMythicMessage>();

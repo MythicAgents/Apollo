@@ -50,7 +50,7 @@ namespace Tasks
     {
         private List<InterfaceConfiguration> _interfaces = new List<InterfaceConfiguration>();
         
-        public ifconfig(IAgent agent, Task data) : base(agent, data)
+        public ifconfig(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
         

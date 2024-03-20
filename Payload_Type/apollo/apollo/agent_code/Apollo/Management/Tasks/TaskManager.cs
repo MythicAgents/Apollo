@@ -9,11 +9,12 @@ using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Classes;
 using System.Threading;
-using ThreadingTask = System.Threading.Tasks.Task;
+using  System.Threading.Tasks;
 using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
 using ApolloInterop.Classes.Collections;
+using ApolloInterop.Structs;
 
 namespace Apollo.Management.Tasks
 {
@@ -21,24 +22,24 @@ namespace Apollo.Management.Tasks
     {
         protected IAgent _agent;
 
-        private ThreadSafeList<TaskResponse> TaskResponseList = new ThreadSafeList<TaskResponse>();
-        private ThreadSafeList<DelegateMessage> DelegateMessages = new ThreadSafeList<DelegateMessage>();
+        private ThreadSafeList<MythicTaskResponse> TaskResponseList = new();
+        private ThreadSafeList<DelegateMessage> DelegateMessages = new();
         //private ConcurrentQueue<DelegateMessage> DelegateMessages = new ConcurrentQueue<DelegateMessage>();
 
-        private Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>> SocksDatagramQueue = new Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>>()
+        private Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>> SocksDatagramQueue = new()
         {
             { MessageDirection.ToMythic, new ConcurrentQueue<SocksDatagram>() },
             { MessageDirection.FromMythic, new ConcurrentQueue<SocksDatagram>() }
         };
 
-        private ConcurrentDictionary<string, Tasking> _runningTasks = new ConcurrentDictionary<string, Tasking>();
+        private ConcurrentDictionary<string, Tasking> _runningTasks = new();
 
-        private ConcurrentDictionary<string, Type> _loadedTaskTypes = new ConcurrentDictionary<string, Type>();
+        private ConcurrentDictionary<string, Type> _loadedTaskTypes = new();
 
-        private ConcurrentQueue<Task> TaskQueue = new ConcurrentQueue<Task>();
-        private ConcurrentQueue<TaskStatus> TaskStatusQueue = new ConcurrentQueue<TaskStatus>();
+        private ConcurrentQueue<MythicTask> TaskQueue = new();
+        private ConcurrentQueue<MythicTaskStatus> TaskStatusQueue = new();
         private Action _taskConsumerAction;
-        private ThreadingTask _mainworker;
+        private Task _mainworker;
         private Assembly _tasksAsm = null;
 
         public TaskManager(IAgent agent)
@@ -49,11 +50,11 @@ namespace Apollo.Management.Tasks
             {
                 while(_agent.IsAlive())
                 {
-                    if (TaskQueue.TryDequeue(out Task result))
+                    if (TaskQueue.TryDequeue(out MythicTask result))
                     {
                         if (!_loadedTaskTypes.ContainsKey(result.Command))
                         {
-                            AddTaskResponseToQueue(new TaskResponse()
+                            AddTaskResponseToQueue(new MythicTaskResponse()
                             {
                                 UserOutput = $"Task '{result.Command}' not loaded.",
                                 TaskID = result.ID,
@@ -83,7 +84,7 @@ namespace Apollo.Management.Tasks
                             }
                             catch (Exception ex)
                             {
-                                AddTaskResponseToQueue(new TaskResponse()
+                                AddTaskResponseToQueue(new MythicTaskResponse()
                                 {
                                     UserOutput = $"Unexpected error during create and execute: {ex.Message}\n{ex.StackTrace}",
                                     TaskID = result.ID,
@@ -100,7 +101,7 @@ namespace Apollo.Management.Tasks
                     }
                 }
             };
-            _mainworker = new ThreadingTask(_taskConsumerAction);
+            _mainworker = new Task(_taskConsumerAction);
             _mainworker.Start();
         }
 
@@ -176,7 +177,7 @@ namespace Apollo.Management.Tasks
             AddTaskResponseToQueue(msg);
         }
 
-        public void AddTaskResponseToQueue(TaskResponse message)
+        public void AddTaskResponseToQueue(MythicTaskResponse message)
         {
             TaskResponseList.Add(message);
         }
@@ -196,22 +197,32 @@ namespace Apollo.Management.Tasks
         {
             if (resp.SocksDatagrams != null)
             {
-                System.Threading.Tasks.Parallel.ForEach(resp.SocksDatagrams, (SocksDatagram dg) =>
+                /*System.Threading.Tasks.Parallel.ForEach(resp.SocksDatagrams, dg =>
                 {
                     _agent.GetSocksManager().Route(dg);
-                });
+                });*/
+                new Thread(() =>
+                {
+                    foreach(SocksDatagram dg in resp.SocksDatagrams)
+                    {
+                        _agent.GetSocksManager().Route(dg);
+                    }
+                }).Start();
             }
 
             if (resp.Tasks != null && resp.Tasks.Length > 0)
             {
-                foreach(Task t in resp.Tasks)
+                new Thread(() =>
                 {
-                    TaskQueue.Enqueue(t);
-                }
+                    foreach(MythicTask t in resp.Tasks)
+                    {
+                        TaskQueue.Enqueue(t);
+                    }
+                }).Start();
             }
             if (resp.Responses != null && resp.Responses.Length > 0)
             {
-                foreach(TaskStatus t in resp.Responses)
+                foreach(MythicTaskStatus t in resp.Responses)
                 {
                     if (_agent.GetFileManager().GetPendingTransfers().Contains(t.ApolloTrackerUUID))
                     {

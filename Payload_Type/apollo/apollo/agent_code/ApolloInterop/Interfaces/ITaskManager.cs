@@ -17,7 +17,7 @@ namespace ApolloInterop.Interfaces
 
         bool ProcessMessageResponse(MessageResponse resp);
 
-        void AddTaskResponseToQueue(TaskResponse message);
+        void AddTaskResponseToQueue(MythicTaskResponse message);
 
         void AddDelegateMessageToQueue(DelegateMessage delegateMessage);
 

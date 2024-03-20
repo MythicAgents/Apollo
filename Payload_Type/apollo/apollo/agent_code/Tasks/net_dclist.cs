@@ -38,13 +38,13 @@ namespace Tasks
             [DataMember(Name = "global_catalog")]
             public bool IsGlobalCatalog;
         }
-        public net_dclist(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public net_dclist(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             DirectoryContext ctx;
             DomainControllerCollection dcCollection;
             List<NetDomainController> results = new List<NetDomainController>();

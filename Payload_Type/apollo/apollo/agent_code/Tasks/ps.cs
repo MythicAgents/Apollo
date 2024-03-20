@@ -105,7 +105,7 @@ namespace Tasks
         private ThreadSafeList<ProcessInformation> _processes = new ThreadSafeList<ProcessInformation>();
         private AutoResetEvent _completed = new AutoResetEvent(false);
         private bool _complete = false;
-        public ps(IAgent agent, Task task) : base(agent, task)
+        public ps(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             try
             {
@@ -463,7 +463,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
             _complete = true;
             _completed.Set();
 
-            TaskResponse resp = CreateTaskResponse(
+            MythicTaskResponse resp = CreateTaskResponse(
                 "",
                 true);
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);

@@ -25,7 +25,7 @@ namespace Tasks
             [DataMember(Name = "block")]
             public bool Value;
         }
-        public blockdlls(IAgent agent, Task task) : base(agent, task)
+        public blockdlls(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }

@@ -579,7 +579,7 @@ namespace Tasks
         
         #endregion
         
-        public sc(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public sc(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             if (_pDeleteService == null)
             {
@@ -1032,7 +1032,7 @@ namespace Tasks
         }
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             ScParameters parameters = _jsonSerializer.Deserialize<ScParameters>(_data.Parameters);
             if (string.IsNullOrEmpty(parameters.Computer))
             {

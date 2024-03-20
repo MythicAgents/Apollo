@@ -30,7 +30,7 @@ namespace Tasks
             [DataMember(Name = "destination")]
             public string DestinationFile;
         }
-        public cp(IAgent agent, Task task) : base(agent, task)
+        public cp(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
@@ -40,7 +40,7 @@ namespace Tasks
         public override void Start()
         {
             CpParameters parameters = _jsonSerializer.Deserialize<CpParameters>(_data.Parameters);
-            TaskResponse resp;
+            MythicTaskResponse resp;
             List<IMythicMessage> artifacts = new List<IMythicMessage>();
             try
             {

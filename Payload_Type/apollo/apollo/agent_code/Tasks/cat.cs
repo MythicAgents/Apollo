@@ -40,7 +40,7 @@ namespace Tasks
         private byte[] _buffer = new byte[_chunkSize];
         private long _bytesRemaining = 0;
 
-        public cat(IAgent agent, Task task) : base(agent, task)
+        public cat(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _timers = new WaitHandle[]
             {
@@ -66,7 +66,7 @@ namespace Tasks
         {
             if (!string.IsNullOrEmpty(msg))
             {
-                TaskResponse resp = CreateTaskResponse(
+                MythicTaskResponse resp = CreateTaskResponse(
                     msg,
                     false,
                     "");
@@ -101,7 +101,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             CatParameters parameters = _jsonSerializer.Deserialize<CatParameters>(_data.Parameters);
             if (!File.Exists(parameters.Path))
             {

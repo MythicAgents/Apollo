@@ -23,14 +23,14 @@ namespace Tasks
 {
     public class screenshot : Tasking
     {
-        public screenshot(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public screenshot(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp = CreateTaskResponse("", true);
+            MythicTaskResponse resp = CreateTaskResponse("", true);
             try
             {
                 //foreach screen in all screens, pass it to the GetBytesFromScreen function and then put the output into a list

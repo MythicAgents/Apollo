@@ -28,7 +28,7 @@ namespace Tasks
             [DataMember(Name = "file_id")]
             public string FileId;
         }
-        public load(IAgent agent, Task data) : base(agent, data)
+        public load(IAgent agent, MythicTask data) : base(agent, data)
         {
             
         }
@@ -40,7 +40,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             LoadParameters parameters = _jsonSerializer.Deserialize<LoadParameters>(_data.Parameters);
             if (parameters.Commands.Length == 0)
             {

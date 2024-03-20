@@ -17,7 +17,7 @@ namespace Tasks
 {
     public class exit : Tasking
     {
-        public exit(IAgent agent, Task data) : base(agent, data)
+        public exit(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 

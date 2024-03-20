@@ -28,7 +28,7 @@ namespace Tasks
             public PeerInformation ConnectionInfo;
         }
 
-        public link(IAgent agent, Task task) : base(agent, task)
+        public link(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             
         }
@@ -40,7 +40,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             ApolloInterop.Classes.P2P.Peer p = null;
             try
             {

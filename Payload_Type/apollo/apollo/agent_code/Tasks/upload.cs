@@ -36,7 +36,7 @@ namespace Tasks
             internal string HostName;
         }
 
-        public upload(IAgent agent, Task task) : base(agent, task)
+        public upload(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
@@ -87,7 +87,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
             // some additional upload logic
             if (_agent.GetFileManager().GetFile(

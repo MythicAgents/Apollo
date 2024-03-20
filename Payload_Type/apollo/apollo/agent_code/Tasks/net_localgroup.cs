@@ -73,7 +73,7 @@ namespace Tasks
          */
         #endregion
 
-        public net_localgroup(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public net_localgroup(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _pNetLocalGroupEnum = _agent.GetApi().GetLibraryFunction<NetLocalGroupEnum>(Library.SAMCLI, "NetLocalGroupEnum");
             _pNetApiBufferFree = _agent.GetApi().GetLibraryFunction<NetApiBufferFree>(Library.NETUTILS, "NetApiBufferFree");
@@ -82,7 +82,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp = new TaskResponse { };
+            MythicTaskResponse resp = new MythicTaskResponse { };
             int res = 0;
             int level = 1;
             IntPtr buffer = IntPtr.Zero;

@@ -10,7 +10,7 @@ namespace ApolloInterop.Interfaces
     public interface IFileManager
     {
         string[] GetPendingTransfers();
-        void ProcessResponse(TaskStatus resp);
+        void ProcessResponse(MythicTaskStatus resp);
 
         bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes);
 
