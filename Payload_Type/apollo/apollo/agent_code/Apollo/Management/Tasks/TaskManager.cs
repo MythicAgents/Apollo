@@ -197,10 +197,6 @@ namespace Apollo.Management.Tasks
         {
             if (resp.SocksDatagrams != null)
             {
-                /*System.Threading.Tasks.Parallel.ForEach(resp.SocksDatagrams, dg =>
-                {
-                    _agent.GetSocksManager().Route(dg);
-                });*/
                 new Thread(() =>
                 {
                     foreach(SocksDatagram dg in resp.SocksDatagrams)
