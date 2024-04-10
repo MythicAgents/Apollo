@@ -21,6 +21,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.IO;
+using ApolloInterop.Utils;
 
 namespace Tasks
 {

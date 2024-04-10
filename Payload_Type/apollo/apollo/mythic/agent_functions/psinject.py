@@ -11,8 +11,12 @@ from os import path
 import base64
 import asyncio
 import donut
+import platform 
 
-POWERSHELL_HOST_PATH="/srv/PowerShellHost.exe"
+if platform.system() == 'Windows':  
+    POWERSHELL_HOST_PATH = "C:\\Mythic\\Apollo\\srv\\PowerShellHost.exe"
+else:
+    POWERSHELL_HOST_PATH="/srv/PowerShellHost.exe"
 
 class PsInjectArguments(TaskArguments):
 
