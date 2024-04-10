@@ -23,13 +23,13 @@ public class wmiexecute : Tasking
     internal struct WmiExecuteParameters
     {
         [DataMember(Name = "host")]
-        internal string HostName;
+        internal string? HostName;
         [DataMember(Name = "username")] 
-        internal string Username;
+        internal string? Username;
         [DataMember(Name = "password")]
-        internal string Password;
+        internal string? Password;
         [DataMember(Name = "domain")]
-        internal string Domain;
+        internal string? Domain;
         [DataMember(Name = "command")]
         internal string Command;
     }
@@ -44,10 +44,10 @@ public class wmiexecute : Tasking
         try
         {
             WmiExecuteParameters parameters = _jsonSerializer.Deserialize<WmiExecuteParameters>(_data.Parameters);
-            string? HostName = parameters.HostName.Trim();
-            string? Username = parameters.Username.Trim();
-            string? Password = parameters.Password.Trim();
-            string? Domain = parameters.Domain.Trim();
+            string? HostName = parameters.HostName?.Trim();
+            string? Username = parameters.Username?.Trim();
+            string? Password = parameters.Password?.Trim();
+            string? Domain = parameters.Domain?.Trim();
             string Command = parameters.Command.Trim();
 
             //Original version using wmi v1   
