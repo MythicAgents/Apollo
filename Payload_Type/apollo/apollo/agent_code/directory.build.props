@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+	    <TargetFramework>net451</TargetFramework>
+		<LangVersion>12</LangVersion>
+		<Nullable>enable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<Platforms>AnyCPU;x64;x86</Platforms>
+  </PropertyGroup>
+</Project>
+

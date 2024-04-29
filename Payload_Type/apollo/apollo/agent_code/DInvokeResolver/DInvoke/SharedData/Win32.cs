@@ -647,6 +647,13 @@ namespace DInvokeResolver.DInvoke.Data
             {
                 public UInt32 LowPart;
                 public UInt32 HighPart;
+                
+                public static implicit operator ulong(_LUID luid)
+                {
+                    // enable casting to a ulong
+                    UInt64 Value = ((UInt64)luid.HighPart << 32);
+                    return Value + luid.LowPart;
+                }
             }
 
             [StructLayout(LayoutKind.Sequential)]

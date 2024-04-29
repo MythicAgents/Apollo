@@ -1,14 +1,9 @@
-﻿using ApolloInterop.Interfaces;
-using ApolloInterop.Structs.ApolloStructs;
+﻿using ApolloInterop.Structs.ApolloStructs;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO.Pipes;
-using System.Linq;
 using System.Security.AccessControl;
-using System.Text;
 using System.Security.Principal;
-using ApolloInterop.Utils;
 
 namespace ApolloInterop.Classes
 {

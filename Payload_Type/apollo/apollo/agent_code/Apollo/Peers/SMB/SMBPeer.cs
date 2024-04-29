@@ -1,19 +1,13 @@
 ﻿using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
-using ApolloInterop.Serializers;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using AI = ApolloInterop;
-using ApolloInterop.Constants;
 using AS = ApolloInterop.Structs.ApolloStructs;
-using System.Threading;
 using TTasks = System.Threading.Tasks;
-using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Structs.ApolloStructs;
 

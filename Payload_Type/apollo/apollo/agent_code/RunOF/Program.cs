@@ -1,6 +1,5 @@
 ﻿using RunOF.Internals;
 using System;
-using System.Runtime.CompilerServices;
 using System.Diagnostics;
 
 namespace RunOF

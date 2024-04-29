@@ -7,19 +7,11 @@
 #if PS
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
 using System.Threading;
-using System.IO;
-using System.Security.AccessControl;
 using TT = System.Threading.Tasks;
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Management;
 using static ApolloInterop.Enums.Win32;

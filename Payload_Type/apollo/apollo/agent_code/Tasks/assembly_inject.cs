@@ -6,7 +6,6 @@
 
 #if ASSEMBLY_INJECT
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ApolloInterop.Classes;
@@ -15,11 +14,9 @@ using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
 using ApolloInterop.Serializers;
 using System.Threading;
-using System.IO;
 using System.Collections.Concurrent;
 using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
-using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Collections;
 
 namespace Tasks

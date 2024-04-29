@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ApolloInterop.Types.Delegates;
+﻿using ApolloInterop.Types.Delegates;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Enums.ApolloEnums;
 

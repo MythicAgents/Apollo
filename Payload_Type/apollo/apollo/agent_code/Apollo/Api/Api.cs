@@ -1,19 +1,10 @@
 ﻿using ApolloInterop.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Security.Cryptography;
 using ApolloInterop.Classes;
 using PlaintextCryptography;
 using PSKCryptography;
 using ApolloInterop.Serializers;
-using System.IO.Pipes;
 using ApolloInterop.Classes.Api;
-using System.Runtime.InteropServices;
-using ApolloInterop.Classes.Core;
-using DinvokeResolver = DInvokeResolver.DInvokeResolver;
 using SimpleResolver;
 namespace Apollo.Api
 {

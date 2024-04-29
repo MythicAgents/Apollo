@@ -7,17 +7,11 @@
 #if UPLOAD
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
 using System.IO;
-using System.Security.Principal;
 
 namespace Tasks
 {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ApolloInterop.Classes.IO;
 using ApolloInterop.Serializers;
 using System.Collections.Concurrent;
 using ApolloInterop.Classes;
@@ -12,11 +11,9 @@ using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Interfaces;
 using ST = System.Threading.Tasks;
 using ApolloInterop.Enums.ApolloEnums;
-using System.IO;
 using System.IO.Pipes;
 using ApolloInterop.Constants;
 using ApolloInterop.Classes.Events;
-using System.Windows.Forms;
 
 namespace ScreenshotInject
 {

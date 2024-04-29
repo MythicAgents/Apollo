@@ -1,9 +1,6 @@
 ﻿using Microsoft.Win32.SafeHandles;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using static ApolloInterop.Enums.Win32;
 
 namespace ApolloInterop.Structs
@@ -38,7 +35,6 @@ namespace ApolloInterop.Structs
             public Int32 cb;
             public String lpReserved;
             public String lpDesktop;
-
             public String lpTitle;
             public Int32 dwX;
             public Int32 dwY;

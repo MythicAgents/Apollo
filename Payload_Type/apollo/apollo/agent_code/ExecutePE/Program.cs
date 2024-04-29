@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Linq;
 using ExecutePE.Internals;
 using ExecutePE.Patchers;
 using System.IO.Pipes;
-using static ExecutePE.Internals.NativeDeclarations;
-using System.Threading.Tasks;
-using System.Diagnostics;
 using ExecutePE.Helpers;
 using System.Threading;
 using System.Runtime.InteropServices;

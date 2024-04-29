@@ -3,11 +3,8 @@ using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Enums.ApolloEnums;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using ApolloInterop.Serializers;
-using ThreadingTask = System.Threading.Tasks.Task;
 
 namespace ApolloInterop.Classes
 {

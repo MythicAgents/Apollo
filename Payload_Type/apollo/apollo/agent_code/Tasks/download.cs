@@ -7,15 +7,11 @@
 #if DOWNLOAD
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
 using System.IO;
 
 namespace Tasks

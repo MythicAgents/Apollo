@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Interfaces;
+using ApolloInterop.Utils;
 
 namespace SimpleResolver
 {
@@ -12,17 +13,14 @@ namespace SimpleResolver
         private Dictionary<Library, IntPtr> _modulePointers = new Dictionary<Library, IntPtr>();
         
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr LoadLibraryA(
-            [MarshalAs(UnmanagedType.LPStr)] string lpFileName);
+        private static extern IntPtr LoadLibraryA([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
         
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetProcAddress(
-            IntPtr hModule,
-            [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
+        private static extern IntPtr GetProcAddress(IntPtr hModule, [MarshalAs(UnmanagedType.LPStr)] string lpProcName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetModuleHandleA(
-            [MarshalAs(UnmanagedType.LPStr)] string lpModuleName);
+        private static extern IntPtr GetModuleHandleA([MarshalAs(UnmanagedType.LPStr)] string lpModuleName);
+        
         public T GetLibraryFunction<T>(Library library, string functionName, bool canLoadFromDisk = true, bool resolveForwards = true) where T : Delegate
         {
             IntPtr functionHandle = IntPtr.Zero;
@@ -36,10 +34,11 @@ namespace SimpleResolver
 
                 if (libraryHandle == IntPtr.Zero)
                 {
+                    DebugHelp.DebugWriteLine($"Failed to load library {library}");
                     throw new Win32Exception($"Failed to load library {functionName}",
                         new Win32Exception(Marshal.GetLastWin32Error()));
                 }
-
+                //DebugHelp.DebugWriteLine($"Loaded library {library}");
                 _modulePointers[library] = libraryHandle;
             }
 
@@ -47,8 +46,11 @@ namespace SimpleResolver
             
             if (functionHandle != IntPtr.Zero)
             {
+                //DebugHelp.DebugWriteLine($"Found function {functionName} in library {library}");
+                //todo: check if this is giving valid values back ?
                 return Marshal.GetDelegateForFunctionPointer(functionHandle, typeof(T)) as T;
             }
+            DebugHelp.DebugWriteLine($"Could not find function {functionName} in library {library}");
             throw new Exception("Could not find function " + functionName + " in library " + library.ToString(),
                 new Win32Exception(Marshal.GetLastWin32Error()));
         }

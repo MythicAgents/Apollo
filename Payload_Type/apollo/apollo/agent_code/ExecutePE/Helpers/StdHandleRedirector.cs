@@ -1,13 +1,8 @@
 ﻿#define NAMED_PIPE
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Reflection;
 using System.IO.Pipes;
 using System.IO;
 using static ExecutePE.Internals.NativeDeclarations;
-using Microsoft.Win32.SafeHandles;
 using System.Threading.Tasks;
 using System.Threading;
 using ApolloInterop.Classes.Events;

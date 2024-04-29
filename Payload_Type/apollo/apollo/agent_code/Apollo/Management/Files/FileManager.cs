@@ -6,10 +6,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using ApolloInterop.Classes.Cryptography;
-using EncryptedFileStore;
 
 namespace Apollo.Management.Files
 {

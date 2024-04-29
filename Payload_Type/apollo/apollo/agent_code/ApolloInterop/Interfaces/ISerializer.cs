@@ -1,9 +1,5 @@
 ﻿using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Structs.ApolloStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Constants;
 
 namespace ApolloInterop.Interfaces

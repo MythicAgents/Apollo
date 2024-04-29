@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using ExecutePE.Helpers;
-using ExecutePE.Internals;
 
 namespace ExecutePE.Patchers
 {

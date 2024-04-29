@@ -13,7 +13,6 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
-using ST = System.Threading.Tasks;
 
 
 namespace Tasks

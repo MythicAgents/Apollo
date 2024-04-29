@@ -1,7 +1,5 @@
 ﻿using System;
 
-using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
-
 namespace DInvokeResolver.DInvoke.Injection
 {
     /// <summary>

@@ -3,8 +3,6 @@ using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
 
-using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
-
 namespace DInvokeResolver.DInvoke.Injection
 {
     /// <summary>

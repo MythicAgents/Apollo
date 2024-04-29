@@ -9,12 +9,8 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
+
 namespace Tasks
 {
     public class jobs : Tasking

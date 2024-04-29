@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using ApolloInterop.Utils;
 using ExecutePE.Helpers;
-using ExecutePE.Internals;
 
 namespace ExecutePE.Patchers
 {

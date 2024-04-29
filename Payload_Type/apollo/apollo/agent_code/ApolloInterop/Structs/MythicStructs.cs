@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Runtime.Serialization;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using sCredentialType = System.String;
 using sStatusMessage = System.String;
 using sMessageAction = System.String;
 using ApolloInterop.Interfaces;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace ApolloInterop.Classes.Api
+﻿namespace ApolloInterop.Classes.Api
 {
     public class Library
     {
@@ -29,5 +24,6 @@ namespace ApolloInterop.Classes.Api
         public static Library NETAPI32 { get { return new Library("Netapi32.dll"); } }
         public static Library SRVCLI { get { return new Library("srvcli.dll"); } }
         public static Library IPHLPAPI { get { return new Library("iphlpapi.dll"); } }
+        public static Library SECUR32 { get { return new Library("Secur32.dll"); } }
     }
 }

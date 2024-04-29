@@ -3,7 +3,6 @@ using ApolloInterop.Interfaces;
 using System;
 using System.Security.Cryptography;
 using System.Linq;
-using System.Text;
 using System.IO;
 
 namespace PSKCryptography

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Collections.Concurrent;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Types.Delegates;
@@ -11,10 +10,7 @@ using ApolloInterop.Classes;
 using System.Threading;
 using  System.Threading.Tasks;
 using System.Reflection;
-using System.Security;
-using System.Security.Permissions;
 using ApolloInterop.Classes.Collections;
-using ApolloInterop.Structs;
 
 namespace Apollo.Management.Tasks
 {

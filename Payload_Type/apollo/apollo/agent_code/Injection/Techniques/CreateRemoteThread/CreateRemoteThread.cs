@@ -2,9 +2,6 @@
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using static Injection.Shared.Win32;
 
 namespace Injection.Techniques.CreateRemoteThread
