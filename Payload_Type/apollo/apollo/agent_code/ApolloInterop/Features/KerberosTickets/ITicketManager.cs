@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ApolloInterop.Structs.MythicStructs;
 
 namespace ApolloInterop.Features.KerberosTickets;
 
@@ -8,6 +9,9 @@ namespace ApolloInterop.Features.KerberosTickets;
 /// </summary>
 public interface ITicketManager
 {
+    //artifact related functions
+    public List<Artifact> GetArtifacts();
+    
     //returns the current LUID
     public string GetCurrentLuid();
     
@@ -20,7 +24,9 @@ public interface ITicketManager
     //loads a ticket into memory and should be tracked by the agent session
     public bool LoadTicketIntoCache(byte[] ticket, string luid);
     //unloads a ticket from memory and should be removed from the agent session
-    public bool UnloadTicketFromCache(byte[] ticket, string luid, bool All = false);
+    public bool UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false);
+
+    public KerberosTicket? GetTicketDetailsFromKirbi(byte[] kirbi);
    
     
     //returns a list of tickets stored inside the ticket store (if any) 

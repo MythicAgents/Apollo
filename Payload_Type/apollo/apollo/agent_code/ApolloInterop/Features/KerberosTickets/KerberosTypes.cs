@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using ApolloInterop.Enums;
 using ApolloInterop.Features.WindowsTypesAndAPIs;
@@ -91,12 +92,13 @@ public struct KERB_SUBMIT_TKT_REQUEST
 
 
 
-public struct KERB_PURGE_TKT_CACHE_REQUEST
+[StructLayout(LayoutKind.Sequential)]
+public record struct KERB_PURGE_TKT_CACHE_REQUEST
 {
     public KERB_PROTOCOL_MESSAGE_TYPE MessageType;
     public LUID LogonId;
-    public LSA_IN_STRING ServerName;
-    public LSA_IN_STRING RealmName;
+    public UNICODE_STRING  ServerName;
+    public UNICODE_STRING  RealmName;
 }
 
 public record struct KERB_TICKET_CACHE_INFO_EX
@@ -157,6 +159,14 @@ public struct SecHandle
 {
     public nuint dwLower;
     public nuint dwUpper;
+}
+
+public struct KERB_INTERACTIVE_LOGON 
+{
+    public KERB_LOGON_SUBMIT_TYPE LogonType;
+    public UNICODE_STRING         LogonDomainName;
+    public UNICODE_STRING         UserName;
+    public UNICODE_STRING         Password;
 }
 
 public enum KERB_CRYPTO_KEY_TYPE
@@ -228,6 +238,23 @@ public enum KERB_PROTOCOL_MESSAGE_TYPE
     KerbRetrieveKeyTabMessage = 34,
     KerbRefreshPolicyMessage = 35,
     KerbPrintCloudKerberosDebugMessage = 36,
+}
+
+public enum KERB_LOGON_SUBMIT_TYPE 
+{
+    KerbInteractiveLogon = 2,
+    KerbSmartCardLogon = 6,
+    KerbWorkstationUnlockLogon = 7,
+    KerbSmartCardUnlockLogon = 8,
+    KerbProxyLogon = 9,
+    KerbTicketLogon = 10,
+    KerbTicketUnlockLogon = 11,
+    KerbS4ULogon = 12,
+    KerbCertificateLogon = 13,
+    KerbCertificateS4ULogon = 14,
+    KerbCertificateUnlockLogon = 15,
+    KerbNoElevationLogon = 83,
+    KerbLuidLogon = 84
 }
 
 public enum KerbEncType

@@ -3,6 +3,7 @@ using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Enums.ApolloEnums;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using ApolloInterop.Serializers;
 
@@ -110,6 +111,16 @@ namespace ApolloInterop.Classes
                 }
             }
             return resp;
+        }
+
+        public virtual MythicTaskResponse CreateArtifactTaskResponse(IEnumerable<Artifact> artifacts)
+        {
+            var artifactMessages = new IMythicMessage[artifacts.Count()];
+            for (int i = 0; i < artifacts.Count(); i++)
+            {
+                artifactMessages[i] = artifacts.ElementAt(i);
+            }
+            return CreateTaskResponse("", false, "", artifactMessages);
         }
     }
 }

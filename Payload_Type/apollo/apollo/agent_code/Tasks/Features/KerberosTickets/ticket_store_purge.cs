@@ -1,12 +1,13 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define TICKET_STORED_PURGE
+#define TICKET_STORE_PURGE
 #endif
 
-#if TICKET_STORED_PURGE
+#if TICKET_STORE_PURGE
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
@@ -45,6 +46,11 @@ public class ticket_store_purge : Tasking
         {
             resp = CreateTaskResponse($"Failed to inject ticket into session: {e.Message}", true, "error");
         }
+        //get and send back any artifacts
+        IEnumerable<Artifact> artifacts = _agent.GetTicketManager().GetArtifacts();
+        var artifactResp = CreateArtifactTaskResponse(artifacts);
+        _agent.GetTaskManager().AddTaskResponseToQueue(artifactResp);
+
         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
     }
 }

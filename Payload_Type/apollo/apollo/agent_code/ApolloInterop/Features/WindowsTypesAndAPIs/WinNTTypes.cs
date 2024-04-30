@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using static ApolloInterop.Features.WindowsTypesAndAPIs.APIInteropTypes;
 
 namespace ApolloInterop.Features.WindowsTypesAndAPIs;
@@ -66,7 +67,7 @@ public static class WinNTTypes
     }
         
     [StructLayout(LayoutKind.Sequential)]
-    public record struct UNICODE_STRING : IDisposable
+    public record struct UNICODE_STRING 
     {
         public ushort Length;
         public ushort MaximumLength;
@@ -74,15 +75,9 @@ public static class WinNTTypes
 
         public UNICODE_STRING(string str)
         {
-            Length = (ushort)(str.Length * 2);
-            MaximumLength = (ushort)(Length + 2);
+            Length = (ushort)((str.Length +1) * 2);
+            MaximumLength = Length;
             Buffer = (HANDLE)Marshal.StringToHGlobalUni(str);
-        }
-
-        public void Dispose()
-        {
-            Marshal.FreeHGlobal(Buffer);
-            Buffer = HANDLE.Null;
         }
 
         public override string ToString()
@@ -110,6 +105,26 @@ public static class WinNTTypes
         public uint GroupCount;
         public uint PrivilegeCount;
         public LUID ModifiedId;
+    }
+    
+    public struct TOKEN_GROUPS
+    {
+        public uint GroupCount;
+        public SID_AND_ATTRIBUTES Groups;
+    }
+    
+    public record struct TOKEN_SOURCE
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public byte[] SourceName;
+        public LUID SourceIdentifier;
+        
+        public TOKEN_SOURCE(string name)
+        {
+            SourceName = new byte[8];
+            Encoding.GetEncoding(1252).GetBytes(name, 0, name.Length, SourceName, 0);
+        }
+        
     }
     
     public enum SECURITY_IMPERSONATION_LEVEL

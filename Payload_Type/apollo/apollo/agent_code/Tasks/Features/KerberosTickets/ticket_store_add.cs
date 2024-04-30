@@ -1,12 +1,14 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define TICKET_STORED_ADD
+#define TICKET_STORE_ADD
 #endif
 
-#if TICKET_STORED_ADD
+#if TICKET_STORE_ADD
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Features.KerberosTickets;
@@ -36,28 +38,26 @@ public class ticket_store_add : Tasking
             string base64Ticket = parameters.base64Ticket;
             byte[] ticketBytes = Convert.FromBase64String(base64Ticket);
             //make a placeholder ticket for now
-            KerberosTicket ticket = new()
+            KerberosTicket? ticket = _agent.GetTicketManager().GetTicketDetailsFromKirbi(ticketBytes);
+            if(ticket == null)
             {
-                Luid = new(),
-                ClientName = "test",
-                ClientRealm = "test",
-                ServerName = "test",
-                ServerRealm = "test",
-                StartTime = DateTime.Now,
-                EndTime = DateTime.Now,
-                RenewTime = DateTime.Now,
-                EncryptionType = KerbEncType.des3_cbc_md5,
-                TicketFlags = KerbTicketFlags.Initial,
-                Kirbi = ticketBytes
-            };
-            
-            _agent.GetTicketManager().AddTicketToTicketStore(new KerberosTicketStoreDTO(ticket));
-            resp = CreateTaskResponse($"Added Ticket to Ticket Store", true);
+                resp = CreateTaskResponse($"Failed to extract ticket from kirbi", true, "error");
+            }
+            else
+            {
+                _agent.GetTicketManager().AddTicketToTicketStore(new KerberosTicketStoreDTO(ticket));
+                resp = CreateTaskResponse($"Added Ticket to Ticket Store", true);
+            }
         }
         catch (Exception e)
         {
             resp = CreateTaskResponse($"Failed to inject ticket into session: {e.Message}", true, "error");
         }
+        //get and send back any artifacts
+        IEnumerable<Artifact> artifacts = _agent.GetTicketManager().GetArtifacts();
+        var artifactResp = CreateArtifactTaskResponse(artifacts);
+        _agent.GetTaskManager().AddTaskResponseToQueue(artifactResp);
+        
         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
     }
 }

@@ -72,7 +72,9 @@ namespace ApolloInterop.Enums
             LOGON32_LOGON_SERVICE = 5,
             LOGON32_LOGON_UNLOCK = 7,
             LOGON32_LOGON_NETWORK_CLEARTEXT = 8,
-            LOGON32_LOGON_NEW_CREDENTIALS = 9
+            LOGON32_LOGON_NEW_CREDENTIALS = 9,
+            LOGON32_REMOTE_INTERACTIVE = 10,
+            LOGON32_LOGON_CACHED_INTERACTIVE = 11,
         }
 
         public enum LogonProvider : UInt32

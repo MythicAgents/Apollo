@@ -66,6 +66,7 @@ public static class LSATypes
         }
     }
     
+    
     /// <summary>
     /// Data provided by lsa after a call to LsaGetLogonSessionData
     /// Make sure to convert this to a LogonSessionData object before accessing its properties to avoid issues
@@ -86,5 +87,14 @@ public static class LSATypes
         public LSA_OUT_STRING Upn;
     }
 
+    public struct QUOTA_LIMITS
+    {
+        public uint PagedPoolLimit;
+        public uint NonPagedPoolLimit;
+        public uint MinimumWorkingSetSize;
+        public uint MaximumWorkingSetSize;
+        public uint PagefileLimit;
+        public long TimeLimit;
+    }
     
 }

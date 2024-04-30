@@ -7,6 +7,7 @@
 #if TICKET_CACHE_ADD
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
@@ -50,6 +51,11 @@ public class ticket_cache_add : Tasking
         {
             resp = CreateTaskResponse($"Failed to inject ticket into session: {e.Message}", true, "error");
         }
+        //get and send back any artifacts
+        IEnumerable<Artifact> artifacts = _agent.GetTicketManager().GetArtifacts();
+        var artifactResp = CreateArtifactTaskResponse(artifacts);
+        _agent.GetTaskManager().AddTaskResponseToQueue(artifactResp);
+        
         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
     }
 }

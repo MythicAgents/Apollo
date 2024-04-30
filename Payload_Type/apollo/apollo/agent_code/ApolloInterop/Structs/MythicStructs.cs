@@ -656,6 +656,24 @@ namespace ApolloInterop.Structs
                     ArtifactDetails = subkey.StartsWith("\\") ? $"{hive}:{subkey} {name} {val}" : $"{hive}:\\{subkey} {name} {val}"
                 };
             }
+            
+            public static Artifact PrivilegeEscalation(string privilege)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "PrivilegeEscalation",
+                    ArtifactDetails = $"Escalated to {privilege}"
+                };
+            }
+            
+            public static Artifact WindowsAPIInvoke(string api)
+            {
+                return new Artifact
+                {
+                    BaseArtifact = "WindowsAPIInvoke",
+                    ArtifactDetails = $"Invoked Windows API {api}"
+                };
+            }
         }
 
         public class StatusMessage

@@ -1,12 +1,13 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define TICKET_STORED_LIST
+#define TICKET_STORE_LIST
 #endif
 
-#if TICKET_STORED_LIST
+#if TICKET_STORE_LIST
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
@@ -41,6 +42,11 @@ public class ticket_store_list : Tasking
            resp = CreateTaskResponse($"Error in {this.GetType().Name} - {ex.Message}", true, "error");
             
         }
+        //get and send back any artifacts
+        IEnumerable<Artifact> artifacts = _agent.GetTicketManager().GetArtifacts();
+        var artifactResp = CreateArtifactTaskResponse(artifacts);
+        _agent.GetTaskManager().AddTaskResponseToQueue(artifactResp);
+
         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
     }
 }

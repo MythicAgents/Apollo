@@ -3,6 +3,7 @@ using System.Linq;
 using ApolloInterop.Features.KerberosTickets;
 using ApolloInterop.Features.WindowsTypesAndAPIs;
 using ApolloInterop.Interfaces;
+using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
 
 namespace KerberosTickets;
@@ -25,8 +26,9 @@ public class KerberosTicketManager : ITicketManager
         WindowsAPI.Initialize();
         DebugHelp.DebugWriteLine("KerberosTicketManager initialized");
     }
-    
 
+
+    public List<Artifact> GetArtifacts() => KerberosHelpers.GetCreatedArtifacts();
     public string GetCurrentLuid() => KerberosHelpers.GetCurrentLuid().ToString();
     
     public string GetTargetProcessLuid(int pid) => KerberosHelpers.GetTargetProcessLuid(pid).ToString();
@@ -37,7 +39,9 @@ public class KerberosTicketManager : ITicketManager
     
     public bool LoadTicketIntoCache(byte[] ticket, string luid) => KerberosHelpers.LoadTicket(ticket, WinNTTypes.LUID.FromString(luid));
     
-    public bool UnloadTicketFromCache(byte[] ticket, string luid,bool All = false) =>  KerberosHelpers.UnloadTicket(ticket, WinNTTypes.LUID.FromString(luid), All);
+    public bool UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false) =>  KerberosHelpers.UnloadTicket(serviceName, domainName, WinNTTypes.LUID.FromString(luid), All);
+    
+    public KerberosTicket? GetTicketDetailsFromKirbi(byte[] kirbi) => KerberosHelpers.TryGetTicketDetailsFromKirbi(kirbi);
     
     
     //Ticket Store Functions, these only effect the in memory ticket store

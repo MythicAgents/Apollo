@@ -25,6 +25,10 @@ public static class WindowsAPI
     public static Kernel32APIs.CloseHandle CloseHandleDelegate { get; private set; }
     public static Advapi32APIs.ImpersonateLoggedOnUser ImpersonateLoggedOnUserDelegate { get; private set; }
     
+    public static Secur32APIs.LsaLogonUser LsaLogonUserDelegate { get; private set; }
+    public static Advapi32APIs.AllocateLocallyUniqueId AllocateLocallyUniqueIdDelegate { get; private set; }
+    public static Advapi32APIs.LogonUserA LogonUserADelegate { get; private set; }
+    
     
     
     public static void Initialize()
@@ -44,6 +48,9 @@ public static class WindowsAPI
         OpenProcessTokenDelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
         CloseHandleDelegate = Agent.GetApi().GetLibraryFunction<Kernel32APIs.CloseHandle>(Library.KERNEL32, "CloseHandle");
         ImpersonateLoggedOnUserDelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.ImpersonateLoggedOnUser>(Library.ADVAPI32, "ImpersonateLoggedOnUser");
+        LsaLogonUserDelegate = Agent.GetApi().GetLibraryFunction<Secur32APIs.LsaLogonUser>(Library.SECUR32, "LsaLogonUser");
+        AllocateLocallyUniqueIdDelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.AllocateLocallyUniqueId>(Library.ADVAPI32, "AllocateLocallyUniqueId");
+        LogonUserADelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.LogonUserA>(Library.ADVAPI32, "LogonUserA");
     }
     
 }
