@@ -697,6 +697,7 @@ internal class KerberosHelpers
                 //passing new luid here is fine because we have switched to the new logon session
                 LoadTicket(kirbiTicket, new LUID());
                 ticket = TriageTickets().FirstOrDefault();
+                ticket.Kirbi = kirbiTicket;
             }
             DebugHelp.DebugWriteLine($"Converted base64 ticket to KerberosTicket: {ticket.ToString().ToIndentedString()}");
         }

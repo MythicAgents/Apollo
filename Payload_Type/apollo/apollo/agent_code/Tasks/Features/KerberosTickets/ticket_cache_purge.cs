@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
@@ -40,7 +41,7 @@ public class ticket_cache_purge : Tasking
             string luid = parameters.luid ?? "";
             string? serviceFullName = parameters.serviceName ?? "";
             string serviceName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName;
-            string domainName =  String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('/')[1];
+            string domainName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('/').Last();
             bool all = parameters.all;
             
             bool ticketRemoved = _agent.GetTicketManager().UnloadTicketFromCache(serviceName,domainName, luid, all);
