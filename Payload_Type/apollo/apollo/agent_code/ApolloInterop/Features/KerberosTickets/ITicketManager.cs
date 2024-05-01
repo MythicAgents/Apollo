@@ -34,7 +34,7 @@ public interface ITicketManager
     //adds a ticket to the ticket store
     public void AddTicketToTicketStore(KerberosTicketStoreDTO ticket);
     //removes a ticket from the ticket store
-    public bool RemoveTicketFromTicketStore(string b64ticket,bool All = false);
+    public bool RemoveTicketFromTicketStore(string serviceName, bool All = false);
     
 
 

@@ -40,8 +40,8 @@ public class ticket_cache_purge : Tasking
             ticket_cache_purgeParameters parameters = _jsonSerializer.Deserialize<ticket_cache_purgeParameters>(_data.Parameters);
             string luid = parameters.luid ?? "";
             string? serviceFullName = parameters.serviceName ?? "";
-            string serviceName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName;
-            string domainName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('/').Last();
+            string serviceName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('@').First();
+            string domainName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('@').Last();
             bool all = parameters.all;
             
             bool ticketRemoved = _agent.GetTicketManager().UnloadTicketFromCache(serviceName,domainName, luid, all);

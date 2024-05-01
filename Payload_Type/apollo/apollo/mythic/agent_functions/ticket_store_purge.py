@@ -11,11 +11,11 @@ class ticket_store_purgeArguments(TaskArguments):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="base64ticket",
-                cli_name="b64ticket",
-                display_name="b64ticket",
+               name="serviceName",
+                cli_name="serviceName",
+                display_name="serviceName",
                 type=ParameterType.String,
-                description="A base64 encoded kerberos ticket value that should be removed from the agents internal ticket store",
+                description="the name of the service to remove, needs to include the domain name, is required if -all flag is not present",
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,

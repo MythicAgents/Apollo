@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using ApolloInterop.Features.KerberosTickets;
 using ApolloInterop.Features.WindowsTypesAndAPIs;
@@ -49,8 +50,8 @@ public class KerberosTicketManager : ITicketManager
     
     public void AddTicketToTicketStore(KerberosTicketStoreDTO ticket) => loadedTickets.Add(ticket);
 
-    public bool RemoveTicketFromTicketStore(string b64ticket, bool All = false) 
+    public bool RemoveTicketFromTicketStore(string serviceName, bool All = false) 
         => All ? loadedTickets.RemoveAll(_ => true) > 0  
-            : loadedTickets.Remove(loadedTickets.Find(x => x.base64Ticket == b64ticket));
+            : loadedTickets.RemoveAll(x => x.ServiceFullName.Equals(serviceName, StringComparison.CurrentCultureIgnoreCase)) > 0;
 
 }

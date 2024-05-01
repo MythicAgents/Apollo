@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
@@ -21,8 +22,8 @@ public class ticket_store_purge : Tasking
     [DataContract]
     internal struct ticket_store_purgeParameters
     {
-        [DataMember(Name = "base64ticket")]
-        internal string? base64Ticket;
+        [DataMember(Name = "serviceName")]
+        internal string? serviceName;
         [DataMember(Name = "all")]
         internal bool all;
     }
@@ -35,9 +36,9 @@ public class ticket_store_purge : Tasking
         try
         {
             ticket_store_purgeParameters parameters = _jsonSerializer.Deserialize<ticket_store_purgeParameters>(_data.Parameters);
-            string? base64Ticket = parameters.base64Ticket;
+            string? serviceFullName = parameters.serviceName ?? "";
             bool all = parameters.all;
-            bool ticketRemoved = _agent.GetTicketManager().RemoveTicketFromTicketStore(base64Ticket, all);
+            bool ticketRemoved = _agent.GetTicketManager().RemoveTicketFromTicketStore(serviceFullName, all);
             //if true return without error if false return with error
             resp = ticketRemoved ? CreateTaskResponse($"Purged Ticket from Store", true) 
                 : CreateTaskResponse($"Failed to purge ticket from Store", true, "error");

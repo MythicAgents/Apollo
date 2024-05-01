@@ -17,7 +17,7 @@ Remove the specified ticket(s) from the current logon session, this uses LSA API
 
 
 #### serviceName 
-the name of the service to remove, needs to include the domain name, is required if -all flag is not present
+the name of the service to remove, needs to include the domain name, not required if -all flag is present
 
 #### All (Optional)
 Argument flag to remove all tickets from the current logon session
@@ -33,9 +33,10 @@ ticket_cache_purge -luid [luidValue] -serviceName  [serviceName] -All
 
 Example
 ```
-ticket_cache_purge -serviceName  [serviceName]
-ticket_cache_purge -All
-ticket_cache_purge -luid 0xabcd123 -serviceName  [serviceName]
+ticket_cache_purge -serviceName  ldap/machineName.DomainName.local/domainName.local@DomainName.local
+ticket_cache_purge -serviceName  cifs/machineName@DomainName.local
+ticket_cache_purge -all
+ticket_cache_purge -luid 0xabcd123 -serviceName  cifs/machineName@DomainName.local
 ticket_cache_purge -luid 0xabcd123  -All
 ```
 
