@@ -43,7 +43,12 @@ class JobsCommand(CommandBase):
                 SearchAgentTaskID=job
             ))
             if job_resp.Success:
-                jobs.append(job_resp.Tasks[0].DisplayID)
+                jobs.append({
+                 "agent_task_id": job_resp.Tasks[0].AgentTaskID,
+                 "command": job_resp.Tasks[0].CommandName,
+                 "display_params": job_resp.Tasks[0].DisplayParams,
+                  "operator": job_resp.Tasks[0].OperatorUsername,
+                  "display_id": job_resp.Tasks[0].DisplayID})
             else:
                 raise Exception("Failed to get job info for job {}".format(job))
         await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
