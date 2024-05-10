@@ -1,12 +1,8 @@
-﻿using ApolloInterop.Interfaces;
-using ApolloInterop.Structs.ApolloStructs;
+﻿using ApolloInterop.Structs.ApolloStructs;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO.Pipes;
-using System.Linq;
 using System.Security.AccessControl;
-using System.Text;
 using System.Security.Principal;
 
 namespace ApolloInterop.Classes
@@ -21,7 +17,7 @@ namespace ApolloInterop.Classes
         private readonly int _BUF_OUT;
         private readonly int _maxInstances;
 
-        private ConcurrentDictionary<PipeStream, IPCData> _connections = new ConcurrentDictionary<PipeStream, IPCData>();
+        private ConcurrentDictionary<PipeStream, IPCData> _connections = new();
 
         public event EventHandler<NamedPipeMessageArgs> ConnectionEstablished;
         public event EventHandler<NamedPipeMessageArgs> MessageReceived;

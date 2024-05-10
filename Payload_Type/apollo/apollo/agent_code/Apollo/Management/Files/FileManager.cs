@@ -6,10 +6,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using ApolloInterop.Classes.Cryptography;
-using EncryptedFileStore;
 
 namespace Apollo.Management.Files
 {
@@ -36,14 +34,14 @@ namespace Apollo.Management.Files
         internal struct UploadMessageTracker
         {
             internal AutoResetEvent Complete;
-            internal ChunkedMessageStore<TaskStatus> MessageStore;
+            internal ChunkedMessageStore<MythicTaskStatus> MessageStore;
             internal byte[] Data;
             private CancellationToken _ct;
-            internal UploadMessageTracker(CancellationToken ct, bool initialState = false, ChunkedMessageStore<TaskStatus> store = null, byte[] data = null)
+            internal UploadMessageTracker(CancellationToken ct, bool initialState = false, ChunkedMessageStore<MythicTaskStatus> store = null, byte[] data = null)
             {
                 _ct = ct;
                 Complete = new AutoResetEvent(initialState);
-                MessageStore = store == null ? new ChunkedMessageStore<TaskStatus>() : store;
+                MessageStore = store == null ? new ChunkedMessageStore<MythicTaskStatus>() : store;
                 Data = data;
             }
         }
@@ -52,9 +50,9 @@ namespace Apollo.Management.Files
         public class DownloadMessageTracker
         {
             public AutoResetEvent Complete = new AutoResetEvent(false);
-            public List<TaskStatus> Statuses = new List<TaskStatus>();
-            public event EventHandler<ChunkMessageEventArgs<TaskStatus>> ChunkAdd;
-            public event EventHandler<ChunkMessageEventArgs<TaskStatus>> AllChunksSent;
+            public List<MythicTaskStatus> Statuses = new List<MythicTaskStatus>();
+            public event EventHandler<ChunkMessageEventArgs<MythicTaskStatus>> ChunkAdd;
+            public event EventHandler<ChunkMessageEventArgs<MythicTaskStatus>> AllChunksSent;
             private CancellationToken _ct;
             public int TotalChunks { get; private set; }
             public string FilePath { get; private set; }
@@ -79,7 +77,7 @@ namespace Apollo.Management.Files
                 IsScreenshot = screenshot;
             }
 
-            public void AddMessage(TaskStatus t)
+            public void AddMessage(MythicTaskStatus t)
             {
                 if (!string.IsNullOrEmpty(t.FileID) && string.IsNullOrEmpty(FileID))
                 {
@@ -91,11 +89,11 @@ namespace Apollo.Management.Files
                 Statuses.Add(t);
                 if (ChunksSent == TotalChunks || t.StatusMessage == "error" || _ct.IsCancellationRequested)
                 {
-                    AllChunksSent?.Invoke(this, new ChunkMessageEventArgs<TaskStatus>(new TaskStatus[] { t }));
+                    AllChunksSent?.Invoke(this, new ChunkMessageEventArgs<MythicTaskStatus>(new MythicTaskStatus[] { t }));
                     Complete.Set();
                 } else
                 {
-                    ChunkAdd?.Invoke(this, new ChunkMessageEventArgs<TaskStatus>(new TaskStatus[]{ t }));
+                    ChunkAdd?.Invoke(this, new ChunkMessageEventArgs<MythicTaskStatus>(new MythicTaskStatus[]{ t }));
                 }
             }
         }
@@ -108,7 +106,7 @@ namespace Apollo.Management.Files
             return _uploadMessageStore.Keys.Concat(_downloadMessageStore.Keys).ToArray();
         }
 
-        public void ProcessResponse(TaskStatus resp)
+        public void ProcessResponse(MythicTaskStatus resp)
         {
             if (_uploadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
             {
@@ -126,7 +124,7 @@ namespace Apollo.Management.Files
             }
         }
 
-        private void FileManager_MessageComplete(object sender, ChunkMessageEventArgs<TaskStatus> e)
+        private void FileManager_MessageComplete(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
         {
             List<byte> data = new List<byte>();
             for(int i = 0; i < e.Chunks.Length; i++)
@@ -153,7 +151,7 @@ namespace Apollo.Management.Files
                 _downloadMessageStore[uuid] = new DownloadMessageTracker(ct, content, _chunkSize, originatingPath, originatingHost, isScreenshot);
                 _downloadMessageStore[uuid].ChunkAdd += DownloadChunkSent;
             }
-            TaskResponse resp = new TaskResponse
+            MythicTaskResponse resp = new MythicTaskResponse
             {
                 TaskID = taskID,
                 Download = new DownloadMessage
@@ -189,7 +187,7 @@ namespace Apollo.Management.Files
                     _uploadMessageStore[uuid].MessageStore.MessageComplete += FileManager_MessageComplete;
                 }
             }
-            _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
+            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
             {
                 TaskID = taskID,
                 Upload = new UploadMessage()
@@ -220,10 +218,10 @@ namespace Apollo.Management.Files
             return bRet;
         }
 
-        private void MessageStore_ChunkAdd(object sender, ChunkMessageEventArgs<TaskStatus> e)
+        private void MessageStore_ChunkAdd(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
         {
-            TaskStatus msg = e.Chunks[0];
-            _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
+            MythicTaskStatus msg = e.Chunks[0];
+            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
             {
                 TaskID = msg.TaskID,
                 Upload = new UploadMessage()
@@ -237,10 +235,10 @@ namespace Apollo.Management.Files
             });
         }
 
-        private void DownloadChunkSent(object sender, ChunkMessageEventArgs<TaskStatus> e)
+        private void DownloadChunkSent(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
         {
             DownloadMessageTracker tracker = (DownloadMessageTracker)sender;
-            _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse()
+            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
             {
                 TaskID = e.Chunks[0].TaskID,
                 Download = new DownloadMessage

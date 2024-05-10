@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ApolloInterop.Classes.P2P;
+﻿using ApolloInterop.Classes.P2P;
 using ApolloInterop.Structs.MythicStructs;
 namespace ApolloInterop.Interfaces
 {

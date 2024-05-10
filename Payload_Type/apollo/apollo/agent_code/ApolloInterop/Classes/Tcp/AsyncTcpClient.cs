@@ -1,5 +1,4 @@
 ﻿using ApolloInterop.Constants;
-using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
 using System;
 using System.Net;

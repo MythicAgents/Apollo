@@ -12,11 +12,8 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -187,7 +184,7 @@ namespace Tasks
         private AdjustTokenPrivileges _pAdjustTokenPrivileges;
         
         #endregion
-        public getprivs(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public getprivs(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _pLookupPrivilegeValue = _agent.GetApi().GetLibraryFunction<LookupPrivilegeValue>(Library.ADVAPI32, "LookupPrivilegeValueA");
             _pAdjustTokenPrivileges = _agent.GetApi().GetLibraryFunction<AdjustTokenPrivileges>(Library.ADVAPI32, "AdjustTokenPrivileges");
@@ -214,7 +211,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             WindowsIdentity impersonationIdentity = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
             WindowsIdentity primaryIdentity = _agent.GetIdentityManager().GetCurrentPrimaryIdentity();
             List<string> imperonationPrivs = new List<string>();

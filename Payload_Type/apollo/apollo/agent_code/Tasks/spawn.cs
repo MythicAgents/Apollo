@@ -9,12 +9,7 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -26,14 +21,14 @@ namespace Tasks
             [DataMember(Name = "template")]
             public string Template;
         }
-        public spawn(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public spawn(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             SpawnParameters parameters = _jsonSerializer.Deserialize<SpawnParameters>(_data.Parameters);
             if (_agent.GetFileManager().GetFile(
                     _cancellationToken.Token,

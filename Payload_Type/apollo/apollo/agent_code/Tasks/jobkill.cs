@@ -9,17 +9,12 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
     public class jobkill : Tasking
     {
-        public jobkill(IAgent agent, Task data) : base(agent, data)
+        public jobkill(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 

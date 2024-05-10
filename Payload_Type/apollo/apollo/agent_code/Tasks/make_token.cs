@@ -10,13 +10,8 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -28,12 +23,12 @@ namespace Tasks
             [DataMember(Name = "credential")]
             public Credential Credential;
         }
-        public make_token(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public make_token(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             MakeTokenParameters parameters = _jsonSerializer.Deserialize<MakeTokenParameters>(_data.Parameters);
             if (string.IsNullOrEmpty(parameters.Credential.Account))
             {

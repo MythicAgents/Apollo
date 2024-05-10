@@ -4,10 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-using Data = DInvokeResolver.DInvoke.Data;
-using Utilities = DInvokeResolver.DInvoke;
-using DynamicInvoke = DInvokeResolver.DInvoke.DynamicInvoke;
-
 namespace DInvokeResolver.DInvoke.ManualMap
 {
     public class Overload

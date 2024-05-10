@@ -10,12 +10,8 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 
 namespace Tasks
@@ -28,14 +24,14 @@ namespace Tasks
             [DataMember(Name = "path")] public string Path;
         }
         
-        public mkdir(IAgent agent, Task data) : base(agent, data)
+        public mkdir(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             MkdirParameters parameters = _jsonSerializer.Deserialize<MkdirParameters>(_data.Parameters);
             
             if (System.IO.Directory.Exists(parameters.Path))

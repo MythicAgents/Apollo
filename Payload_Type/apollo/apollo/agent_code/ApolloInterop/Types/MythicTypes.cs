@@ -2,9 +2,6 @@
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace ApolloInterop.Types
 {
@@ -46,15 +43,15 @@ namespace ApolloInterop.Types
             }
             else if (msg == MessageType.TaskStatus)
             {
-                return typeof(TaskStatus);
+                return typeof(MythicTaskStatus);
             }
             else if (msg == MessageType.TaskResponse)
             {
-                return typeof(TaskResponse);
+                return typeof(MythicTaskResponse);
             }
             else if (msg == MessageType.Task)
             {
-                return typeof(Task);
+                return typeof(MythicTask);
             }
             else if (msg == MessageType.DelegateMessage)
             {

@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using ApolloInterop.Interfaces;
-using ApolloInterop.Structs;
-using System.IO;
-using System.Runtime.Serialization.Json;
 using System.Collections.Concurrent;
 using ApolloInterop.Structs.ApolloStructs;
-using ApolloInterop.Types.Delegates;
 using ApolloInterop.Classes.Core;
 
 namespace ApolloInterop.Classes

@@ -10,12 +10,9 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -38,14 +35,14 @@ namespace Tasks
             Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
         };
         
-        public rm(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public rm(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             RmParameters parameters = _jsonSerializer.Deserialize<RmParameters>(_data.Parameters);
             string path = string.IsNullOrEmpty(parameters.File)
                 ? parameters.Path

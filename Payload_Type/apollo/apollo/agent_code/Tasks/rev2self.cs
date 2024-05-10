@@ -10,16 +10,12 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Tasks
 {
     public class rev2self : Tasking
     {
-        public rev2self(IAgent agent, Task data) : base(agent, data)
+        public rev2self(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 

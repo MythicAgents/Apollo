@@ -9,17 +9,13 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
+
 namespace Tasks
 {
     public class jobs : Tasking
     {
-        public jobs(IAgent agent, Task data) : base(agent, data)
+        public jobs(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
         
@@ -36,7 +32,7 @@ namespace Tasks
                 }
             }
 
-            TaskResponse resp = CreateTaskResponse("", true, "completed");
+            MythicTaskResponse resp = CreateTaskResponse("", true, "completed");
             resp.ProcessResponse = new ApolloInterop.Structs.ApolloStructs.ProcessResponse
             {
                 Jobs = realJids.ToArray()

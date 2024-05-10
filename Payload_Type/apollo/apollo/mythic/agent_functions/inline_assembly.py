@@ -10,8 +10,12 @@ import tempfile
 from distutils.dir_util import copy_tree
 import shutil
 import asyncio
+import platform
 
-INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
+if platform.system() == 'Windows':  
+    INTEROP_ASSEMBLY_PATH = "C:\\Mythic\\Apollo\\srv\\ApolloInterop.dll"
+else:
+    INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
 INTEROP_FILE_ID = ""
 
 class InlineAssemblyArguments(TaskArguments):
@@ -95,12 +99,12 @@ class InlineAssemblyCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name)
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/ApolloInterop/ApolloInterop.csproj".format(agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ApolloInterop/ApolloInterop.csproj -o {}/ApolloInterop/bin/Release/".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
-            raise Exception("Failed to build ApolloInterop.dll:\n{}".format(stderr.decode()))
+            raise Exception("Failed to build ApolloInterop.dll:\n{}".format(stderr.decode() + "\n" + stdout.decode()))
         shutil.copy(outputPath, INTEROP_ASSEMBLY_PATH)
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:

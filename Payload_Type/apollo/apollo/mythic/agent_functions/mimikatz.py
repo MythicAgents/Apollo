@@ -12,19 +12,26 @@ class MimikatzArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
         self.args = [
-            # CommandParameter(
-            #     name="command",
-            #     cli_name="Command",
-            #     display_name="Command(s)", 
-            #     type=ParameterType.String, 
-            #     description="Mimikatz command to run (can be one or more)."),
+            CommandParameter(
+                name="command",
+                cli_name="Command",
+                display_name="Command(s)",
+                type=ParameterType.Array,
+                description="Mimikatz commands to run (can be one or more). Each array entry is one command to run"),
         ]
 
     async def parse_arguments(self):
-        if len(self.command_line):
-            self.add_arg("command", "mimikatz.exe {}".format(self.command_line))
-        else:
+        if len(self.command_line) == 0:
             raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(MimikatzCommand.help_cmd))
+        try:
+            self.load_args_from_json_string(command_line=self.command_line)
+        except Exception:
+            # no array of commands given, so assume the user just typed out one command or use Scripting
+            self.add_arg("command", [self.command_line])
+        return
+
+    async def parse_dictionary(self, dictionary_arguments):
+        return self.load_args_from_dictionary(dictionary=dictionary_arguments)
 
 
 async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskCompletionFunctionMessageResponse:
@@ -84,7 +91,7 @@ class MimikatzCommand(CommandBase):
         await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
             TaskID=taskData.Task.ID,
             CommandName="execute_pe",
-            Params=taskData.args.get_arg("command"),
+            Params=json.dumps({"pe_name": "mimikatz.exe", "pe_arguments": taskData.args.get_arg("command")}),
             SubtaskCallbackFunction="parse_credentials"
         ))
         return response

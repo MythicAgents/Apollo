@@ -9,19 +9,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
 using System.IO;
 using System.Security.AccessControl;
 using TT = System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.Globalization;
 
 namespace Tasks
 {
@@ -112,14 +108,14 @@ namespace Tasks
             }
         }
 
-        public ls(IAgent agent, Task task) : base(agent, task)
+        public ls(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             LsParameters parameters = _jsonSerializer.Deserialize<LsParameters>(_data.Parameters);
             string host = string.IsNullOrEmpty(parameters.Host) ? "" : parameters.Host;
             host = localhostAliases.Contains(host.ToLower()) ? "" : host;

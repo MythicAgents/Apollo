@@ -9,12 +9,7 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Runtime.Serialization;
-using ST = System.Threading.Tasks;
 
 
 namespace Tasks
@@ -28,14 +23,14 @@ namespace Tasks
             public PeerInformation ConnectionInfo;
         }
 
-        public unlink(IAgent agent, Task data) : base(agent, data)
+        public unlink(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             UnlinkParameters parameters = _jsonSerializer.Deserialize<UnlinkParameters>(_data.Parameters);
 
             if (_agent.GetPeerManager().Remove(parameters.ConnectionInfo.CallbackUUID))

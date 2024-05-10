@@ -14,14 +14,28 @@ class RegWriteValueArguments(TaskArguments):
                 type=ParameterType.ChooseOne,
                 description="The hive to query",
                 default_value="HKLM",
-                choices=["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]),
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=1
+                    ),
+                ],
+                choices=["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]
+            ),
             CommandParameter(
                 name="key",
                 cli_name="Key",
                 display_name="Registry Key",
                 type=ParameterType.String,
-                description='Registry key to interrogate.', 
-                default_value='\\'),
+                description='Registry key to interrogate.',
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=2
+                    ),
+                ],
+                default_value='\\'
+            ),
             CommandParameter(
                 name="value_name",
                 cli_name="Name",
@@ -32,6 +46,7 @@ class RegWriteValueArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
+                        ui_position=3
                     ),
                 ]),
             CommandParameter(
@@ -44,6 +59,7 @@ class RegWriteValueArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
+                        ui_position=4
                     ),
                 ]),
         ]
@@ -76,33 +92,46 @@ class RegWriteValueArguments(TaskArguments):
 
         return cmds
 
-    async def parse_arguments(self):
-        if self.command_line[0] == "{":
-            self.load_args_from_json_string(self.command_line)
+    hiveMap = {
+        "HKEY_LOCAL_MACHINE": "HKLM",
+        "HKEY_CURRENT_USER": "HKCU",
+        "HKEY_USERS": "HKU",
+        "HKEY_CLASSES_ROOT": "HKCR",
+        "HKEY_CURRENT_CONFIG": "HKCC"
+    }
+
+    async def parse_dictionary(self, dictionary_arguments):
+        self.load_args_from_dictionary(dictionary=dictionary_arguments)
+        hive = self.get_arg("hive")
+        parts = hive.split("\\")
+        hiveClean = parts[0].replace(":", "").strip().upper()
+        if hiveClean in self.hiveMap.keys():
+            self.add_arg("hive", self.hiveMap[hiveClean])
+        elif hiveClean in ["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]:
+            self.add_arg("hive", hiveClean)
         else:
-            cmds = self.split_commandline()
-            if len(cmds) != 3:
-                raise Exception("Failed to parse command line arguments. Expected two arguments, got {}\n\tUsage: {}".format(cmds, RegWriteValueBase.help_cmd))
-            
-            parts = cmds[0].split("\\")
-            hiveMap = {
-                "HKEY_LOCAL_MACHINE": "HKLM",
-                "HKEY_CURRENT_USER": "HKCU",
-                "HKEY_USERS": "HKU",
-                "HKEY_CLASSES_ROOT": "HKCR",
-                "HKEY_CURRENT_CONFIG": "HKCC"
-            }
-            hiveClean = parts[0].replace(":", "").strip().upper()
-            if hiveClean in hiveMap.keys():
-                self.add_arg("hive", hiveMap[hiveClean])
-            elif hiveClean in ["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]:
-                self.add_arg("hive", hiveClean)
-            else:
-                raise Exception("Invalid hive: " + hiveClean)
+            raise Exception("Invalid hive: " + hiveClean)
+        if len(parts) > 1:
+            self.add_arg("value_value", self.get_arg("value_name"))
+            self.add_arg("value_name", self.get_arg("key"))
             self.add_arg("key", "\\".join(parts[1:]))
-            self.add_arg("value_name", cmds[1])
-            self.add_arg("value_value", cmds[2])
-        pass
+
+    async def parse_arguments(self):
+        cmds = self.split_commandline()
+        if len(cmds) != 3:
+            raise Exception("Failed to parse command line arguments. Expected two arguments, got {}\n\tUsage: {}".format(cmds, RegWriteValueBase.help_cmd))
+
+        parts = cmds[0].split("\\")
+        hiveClean = parts[0].replace(":", "").strip().upper()
+        if hiveClean in self.hiveMap.keys():
+            self.add_arg("hive", self.hiveMap[hiveClean])
+        elif hiveClean in ["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]:
+            self.add_arg("hive", hiveClean)
+        else:
+            raise Exception("Invalid hive: " + hiveClean)
+        self.add_arg("key", "\\".join(parts[1:]))
+        self.add_arg("value_name", cmds[1])
+        self.add_arg("value_value", cmds[2])
 
 
 class RegWriteValueBase(CommandBase):
@@ -120,11 +149,10 @@ class RegWriteValueBase(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        key = taskData.args.get_arg("key")
-        if key[0] == "\\":
-            response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(taskData.args.get_arg("hive"), key, taskData.args.get_arg("value_name"), taskData.args.get_arg("value_value"))
-        else:
-            response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(taskData.args.get_arg("hive"), key, taskData.args.get_arg("value_name"), taskData.args.get_arg("value_value"))
+        response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(taskData.args.get_arg("hive"),
+                                                                                taskData.args.get_arg("key"),
+                                                                                taskData.args.get_arg("value_name"),
+                                                                                taskData.args.get_arg("value_value"))
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

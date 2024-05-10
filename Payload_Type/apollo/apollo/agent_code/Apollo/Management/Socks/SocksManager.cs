@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using AI = ApolloInterop;
+﻿using AI = ApolloInterop;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Collections.Concurrent;
-using ApolloInterop.Classes;
-using System.Net.Sockets;
-using ApolloInterop.Structs.ApolloStructs;
-using ApolloInterop.Enums.ApolloEnums;
-using static ApolloInterop.Structs.MythicStructs.MessageResponse;
-using System.Net;
 
 namespace Apollo.Management.Socks
 {

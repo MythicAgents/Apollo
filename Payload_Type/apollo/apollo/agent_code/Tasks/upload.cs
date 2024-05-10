@@ -7,17 +7,11 @@
 #if UPLOAD
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
 using System.IO;
-using System.Security.Principal;
 
 namespace Tasks
 {
@@ -36,7 +30,7 @@ namespace Tasks
             internal string HostName;
         }
 
-        public upload(IAgent agent, Task task) : base(agent, task)
+        public upload(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
@@ -87,7 +81,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
             // some additional upload logic
             if (_agent.GetFileManager().GetFile(

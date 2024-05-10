@@ -4,8 +4,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using DInvokeResolver.DInvoke.DynamicInvoke;
-using Data = DInvokeResolver.DInvoke.Data;
 
 namespace DInvokeResolver.DInvoke.DynamicInvoke
 {

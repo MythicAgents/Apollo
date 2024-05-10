@@ -9,11 +9,7 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using ApolloInterop.Structs.ApolloStructs;
 using ST = System.Threading.Tasks;
 namespace Tasks
@@ -28,7 +24,7 @@ namespace Tasks
             [DataMember(Name = "file_id")]
             public string FileId;
         }
-        public load(IAgent agent, Task data) : base(agent, data)
+        public load(IAgent agent, MythicTask data) : base(agent, data)
         {
             
         }
@@ -40,7 +36,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             LoadParameters parameters = _jsonSerializer.Deserialize<LoadParameters>(_data.Parameters);
             if (parameters.Commands.Length == 0)
             {
@@ -52,11 +48,7 @@ namespace Tasks
             }
             else
             {
-                if (_agent.GetFileManager().GetFile(
-                        _cancellationToken.Token,
-                        _data.ID,
-                        parameters.FileId,
-                        out byte[] taskLib))
+                if (_agent.GetFileManager().GetFile(_cancellationToken.Token,_data.ID, parameters.FileId,out byte[] taskLib))
                 {
                     if (_agent.GetTaskManager().LoadTaskModule(taskLib, parameters.Commands))
                     {

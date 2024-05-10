@@ -96,6 +96,8 @@ class LoadCommand(CommandBase):
         ))
 
         requested_cmds_names = set([r.Name for r in requested_cmds.Commands])
+        alias_commands = [r.Name for r in requested_cmds.Commands if r.Attributes.get("alias", False)]
+
         loaded_cmds_names = set([r.Name for r in loaded_cmds.Commands])
         diff = requested_cmds_names.difference(loaded_cmds_names)
 
@@ -107,17 +109,17 @@ class LoadCommand(CommandBase):
         for requested_cmd in requested_cmds:
             dependencies = requested_cmd.Attributes.get("dependencies", [])
             script_only = requested_cmd.ScriptOnly
-            if len(dependencies) == 0 and script_only:
+            if len(dependencies) == 0 and (script_only or requested_cmd.Name in alias_commands):
                 load_immediately_rpc.append(requested_cmd.Name)
-            elif len(dependencies) > 0 and script_only:
+            elif len(dependencies) > 0 and (script_only or requested_cmd.Name in alias_commands):
                 dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
                 if len(dep_not_loaded) > 0:
                     to_compile += dep_not_loaded
                 else:
                     load_immediately_rpc.append(requested_cmd.Name)
-            elif len(dependencies) == 0 and not script_only:
+            elif len(dependencies) == 0 and not script_only and requested_cmd.Name not in alias_commands:
                 to_compile.append(requested_cmd.Name)
-            elif len(dependencies) > 0 and not script_only:
+            elif len(dependencies) > 0 and not script_only and requested_cmd.Name not in alias_commands:
                 dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
                 if len(dep_not_loaded) > 0:
                     to_compile += dep_not_loaded
@@ -138,10 +140,18 @@ class LoadCommand(CommandBase):
                 raise Exception("Failed to register {} commands: {}".format(load_immediately_rpc, reg_resp.Error))
 
         if len(to_compile) == 0:
-            await self.update_output(taskData, "Loaded {}\n".format(", ".join(list(load_immediately_rpc))))
+            if len(load_immediately_rpc) > 0:
+                await self.update_output(taskData, "Automatically loaded {}\n".format(", ".join(list(load_immediately_rpc))))
+            else:
+                await self.update_output(taskData, "All commands already loaded")
             response.TaskStatus = MythicStatus.Completed
+            response.DisplayParams = ', '.join(taskData.args.get_arg("commands"))
             response.Completed = True
+            return response
         else:
+            if len(load_immediately_rpc) > 0:
+                await self.update_output(taskData, "Automatically loaded {}\n".format(", ".join(list(load_immediately_rpc))))
+            await self.update_output(taskData, "Compiling {}\n".format(", ".join(list(to_compile))))
             defines_commands_upper = [f"#define {x.upper()}" for x in to_compile]
             agent_build_path = tempfile.TemporaryDirectory()
             # shutil to copy payload files over
@@ -165,7 +175,7 @@ class LoadCommand(CommandBase):
                     f.write(templateFile.encode())
 
             outputPath = "{}/Tasks/bin/Release/Tasks.dll".format(agent_build_path.name)
-            shell_cmd = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release {}/Tasks/Tasks.csproj".format(agent_build_path.name)
+            shell_cmd = "dotnet build -c release -p:Platform=x64 {}/Tasks/Tasks.csproj -o {}/Tasks/bin/Release/".format(agent_build_path.name, agent_build_path.name)
             proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
@@ -184,9 +194,9 @@ class LoadCommand(CommandBase):
                     raise Exception("Failed to register task dll with Mythic")
             else:
                 raise Exception("Failed to build task dll. Stdout/Stderr:\n{}\n\n{}".format(stdout, stderr))
-
+        await self.update_output(taskData, "Compiled {}\n".format(", ".join(list(to_compile))))
         all_task_cmds = [x for x in to_compile.union(load_immediately_rpc)]
-        response.DisplayParams = "-Commands {}".format(" ".join(all_task_cmds))
+        response.DisplayParams = f"{' '.join(all_task_cmds)}"
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

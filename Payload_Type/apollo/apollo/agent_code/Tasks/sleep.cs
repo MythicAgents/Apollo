@@ -9,23 +9,19 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ST = System.Threading.Tasks;
+
 namespace Tasks
 {
     public class sleep : Tasking
     {
-        public sleep(IAgent agent, Task data) : base(agent, data)
+        public sleep(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             string[] parts = _data.Parameters.Split(' ');
             int sleepTime = -1;
             double jitterTime = -1;

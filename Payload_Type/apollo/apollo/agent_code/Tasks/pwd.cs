@@ -7,21 +7,15 @@
 #if PWD
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
 
 namespace Tasks
 {
     public class pwd : Tasking
     {
-        public pwd(IAgent agent, Task task) : base(agent, task)
+        public pwd(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
@@ -33,7 +27,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp = CreateTaskResponse(
+            MythicTaskResponse resp = CreateTaskResponse(
                 $"{System.IO.Directory.GetCurrentDirectory().ToString()}",
                 true,
                 "completed");

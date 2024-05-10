@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace ApolloInterop.Constants
+﻿namespace ApolloInterop.Constants
 {
     public static class SOCKS
     {

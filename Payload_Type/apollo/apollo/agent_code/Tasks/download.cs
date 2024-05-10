@@ -7,15 +7,11 @@
 #if DOWNLOAD
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
 using System.IO;
 
 namespace Tasks
@@ -38,14 +34,14 @@ namespace Tasks
             Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
         };
         
-        public download(IAgent agent, Task task) : base(agent, task)
+        public download(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             try
             {
                 DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);

@@ -1,10 +1,7 @@
 ﻿using ApolloInterop.Interfaces;
-using ApolloInterop.Serializers;
 using HttpTransport;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Apollo.Management.C2
 {

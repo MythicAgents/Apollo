@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ApolloInterop.Interfaces;
@@ -8,9 +7,6 @@ using System.Runtime.Serialization.Json;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Types;
 using ApolloInterop.Enums.ApolloEnums;
-using System.Diagnostics;
-using System.Reflection;
-using ApolloInterop.Structs.MythicStructs;
 
 namespace ApolloInterop.Serializers
 {

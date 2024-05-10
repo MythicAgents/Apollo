@@ -1,9 +1,5 @@
 ﻿using ApolloInterop.Classes.Core;
 using ApolloInterop.Structs.ApolloStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace ApolloInterop.Interfaces
 {

@@ -4,20 +4,18 @@ using ApolloInterop.Enums.ApolloEnums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using ApolloInterop.Serializers;
-using ThreadingTask = System.Threading.Tasks.Task;
 
 namespace ApolloInterop.Classes
 {
     public abstract class Tasking : ITask
     {
         protected IAgent _agent;
-        protected Task _data;
+        protected MythicTask _data;
         protected static JsonSerializer _jsonSerializer = new JsonSerializer();
         protected CancellationTokenSource _cancellationToken;
-        public Tasking(IAgent agent, Task data)
+        public Tasking(IAgent agent, MythicTask data)
         {
             _agent = agent;
             _data = data;
@@ -47,9 +45,9 @@ namespace ApolloInterop.Classes
             _cancellationToken.Cancel();
         }
 
-        public virtual TaskResponse CreateTaskResponse(object userOutput, bool completed, string status = "completed", IEnumerable<IMythicMessage> messages = null)
+        public virtual MythicTaskResponse CreateTaskResponse(object userOutput, bool completed, string status = "completed", IEnumerable<IMythicMessage> messages = null)
         {
-            TaskResponse resp = new TaskResponse();
+            MythicTaskResponse resp = new MythicTaskResponse();
             resp.UserOutput = userOutput;
             resp.Completed = completed;
             resp.TaskID = _data.ID;
@@ -113,6 +111,16 @@ namespace ApolloInterop.Classes
                 }
             }
             return resp;
+        }
+
+        public virtual MythicTaskResponse CreateArtifactTaskResponse(IEnumerable<Artifact> artifacts)
+        {
+            var artifactMessages = new IMythicMessage[artifacts.Count()];
+            for (int i = 0; i < artifacts.Count(); i++)
+            {
+                artifactMessages[i] = artifacts.ElementAt(i);
+            }
+            return CreateTaskResponse("", false, "", artifactMessages);
         }
     }
 }

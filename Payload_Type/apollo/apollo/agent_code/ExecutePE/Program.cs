@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Linq;
 using ExecutePE.Internals;
 using ExecutePE.Patchers;
 using System.IO.Pipes;
-using static ExecutePE.Internals.NativeDeclarations;
-using System.Threading.Tasks;
-using System.Diagnostics;
 using ExecutePE.Helpers;
 using System.Threading;
 using System.Runtime.InteropServices;
@@ -23,6 +19,7 @@ using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
 using System.ComponentModel;
 using ApolloInterop.Constants;
+using ApolloInterop.Utils;
 
 namespace ExecutePE
 {
@@ -98,8 +95,8 @@ namespace ExecutePE
                     {
                         return -1;
                     }
-                    string[] realArgs = ParseCommandLine(command.StringData);
-
+                    //string[] realArgs = ParseCommandLine(command.StringData);
+                    IEnumerable<string> realArgs = command.StringData.Split(' ');
                     var peRunDetails = ParseArgs(realArgs.ToList());
                     peRunDetails.binaryBytes = command.ByteData;
 
@@ -154,8 +151,10 @@ namespace ExecutePE
                 }
                 catch (Exception e)
                 {
+                    DebugHelp.WriteToLogFile($"Error in execution: {e.Message}");
                     return -6;
-                } finally
+                } 
+                finally
                 {
                     _cts.Cancel();
                 }
@@ -183,8 +182,7 @@ namespace ExecutePE
                 // ptrToSplitArgs is an array of pointers to null terminated Unicode strings.
                 // Copy each of these strings into our split argument array.
                 for (int i = 0; i < numberOfArgs; i++)
-                    splitArgs[i] = Marshal.PtrToStringUni(
-                        Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
+                    splitArgs[i] = Marshal.PtrToStringUni(Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
 
                 return splitArgs;
             }

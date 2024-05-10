@@ -11,10 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Host;
-using System.Text;
 using System.Threading;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
@@ -319,7 +317,7 @@ namespace Tasks
         }
         
         
-        public powershell(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public powershell(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _flushMessages = () =>
             {
@@ -357,7 +355,7 @@ namespace Tasks
         public override void Start()
         {
             System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
-            TaskResponse resp;
+            MythicTaskResponse resp;
             string cmd = "";
             var loadedScript = _agent.GetFileManager().GetScript();
             if (!string.IsNullOrEmpty(loadedScript))

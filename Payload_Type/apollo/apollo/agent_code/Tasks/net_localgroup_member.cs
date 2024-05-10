@@ -12,11 +12,8 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -92,7 +89,7 @@ namespace Tasks
         }
 
         #endregion
-        public net_localgroup_member(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public net_localgroup_member(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _pNetLocalGroupGetMembers = _agent.GetApi().GetLibraryFunction<NetLocalGroupGetMembers>(Library.SAMCLI, "NetLocalGroupGetMembers");
             _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidA");
@@ -100,7 +97,7 @@ namespace Tasks
         }
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             NetLocalGroupMemberParameters args = _jsonSerializer.Deserialize<NetLocalGroupMemberParameters>(_data.Parameters);
             if (string.IsNullOrEmpty(args.Computer))
             {

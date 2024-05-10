@@ -10,11 +10,7 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -26,14 +22,14 @@ namespace Tasks
             [DataMember(Name = "pid")]
             public int PID;
         }
-        public kill(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public kill(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             KillArguments parameters = _jsonSerializer.Deserialize<KillArguments>(_data.Parameters);
             try
             {

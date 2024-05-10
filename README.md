@@ -38,6 +38,7 @@ cp | `cp -Path [source] -Destination [destination]`                             
 dcsync | `dcsync -Domain contoso.local [-User username -DC dc.ip]`                                                                | DCSync one or more user credentials
 download | `download -Path [path] [-Host [hostname]]`                                                                               | Download a file off the target system.
 execute_assembly | `execute_assembly -Assembly [assembly.exe] -Arguments [args]`                                                            | Execute a .NET assembly registered with `register_file`
+execute_coff | `execute_coff -Coff [object.x64.o] -Function [go] -Timeout [30] [-Arguments [args]]`         | Execute a object file (BOF) that's been registered with `register_file`
 execute_pe | `execute_pe -PE [binary.exe] -Arguments [args]`                                                                          | Execute a statically compiled executable that's been registered with `register_file`
 exit | `exit`                                                                                                                   | Task agent to exit.
 get_injection_techniques | `get_injection_techniques`                                                                                               | Show currently registered injection techniques as well as the current technique.

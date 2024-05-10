@@ -7,17 +7,10 @@
 #if REGISTER_FILE
 
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
-using System.Threading;
-using System.IO;
 
 namespace Tasks
 {
@@ -32,7 +25,7 @@ namespace Tasks
             internal string FileName;
         }
 
-        public register_file(IAgent agent, Task task) : base(agent, task)
+        public register_file(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
@@ -40,7 +33,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             RegisterFileParameters parameters = _jsonSerializer.Deserialize<RegisterFileParameters>(_data.Parameters);
             // some additional upload logic
             if (_agent.GetFileManager().GetFile(

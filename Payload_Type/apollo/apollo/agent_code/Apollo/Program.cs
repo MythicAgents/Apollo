@@ -1,24 +1,17 @@
 ﻿using System;
-using PSKCryptography;
-using HttpTransport;
 using ApolloInterop.Serializers;
 using System.Collections.Generic;
-using ApolloInterop.Structs.MythicStructs;
-using Apollo.Agent;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
 using System.Text;
 using System.Threading;
-using Apollo.Peers.SMB;
 using System.Linq;
 using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
-using System.Diagnostics;
 
 namespace Apollo
 {

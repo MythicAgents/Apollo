@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using ExecutePE.Helpers;
-using ExecutePE.Internals;
 
 namespace ExecutePE.Patchers
 {

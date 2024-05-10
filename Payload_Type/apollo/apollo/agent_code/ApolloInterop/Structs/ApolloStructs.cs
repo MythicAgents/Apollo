@@ -1,18 +1,11 @@
-﻿using ApolloInterop.Classes.Collections;
-using ApolloInterop.Enums.ApolloEnums;
+﻿using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Interfaces;
-using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO.Pipes;
-using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Security;
-using System.Text;
-using System.Threading;
-using TT = System.Threading.Tasks;
 
 namespace ApolloInterop.Structs.ApolloStructs
 {

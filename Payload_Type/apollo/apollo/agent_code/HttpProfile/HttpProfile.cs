@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Types.Delegates;
 using System.Net;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
 using ApolloInterop.Enums.ApolloEnums;
 
 namespace HttpTransport
@@ -100,10 +95,7 @@ namespace HttpTransport
             bool first = true;
             while(Agent.IsAlive())
             {
-                bool bRet = GetTasking(delegate (MessageResponse resp)
-                {
-                    return Agent.GetTaskManager().ProcessMessageResponse(resp);
-                });
+                bool bRet = GetTasking(resp => Agent.GetTaskManager().ProcessMessageResponse(resp));
 
                 if (!bRet)
                 {
@@ -114,33 +106,14 @@ namespace HttpTransport
             }
         }
 
-        private bool GetTasking(OnResponse<MessageResponse> onResp)
-        {
-            return Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage msg)
-            {
-                return SendRecv<TaskingMessage, MessageResponse>(msg, onResp);
-            });
-        }
+        private bool GetTasking(OnResponse<MessageResponse> onResp) => Agent.GetTaskManager().CreateTaskingMessage(msg => SendRecv(msg, onResp));
+        
+        public bool IsOneWay() => false;
 
-        public bool IsOneWay()
-        {
-            return false;
-        }
-
-        public bool Send<T>(T message)
-        {
-            throw new Exception("HttpProfile does not support Send only.");
-        }
-
-        public bool Recv<T>(OnResponse<T> onResponse)
-        {
-            throw new Exception("HttpProfile does not support Recv only.");
-        }
-
-        public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp)
-        {
-            throw new NotImplementedException("HttpProfile does not support Recv only.");
-        }
+        public bool Send<T>(T message) => throw new Exception("HttpProfile does not support Send only.");
+        public bool Recv<T>(OnResponse<T> onResponse) => throw new Exception("HttpProfile does not support Recv only.");
+        public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp) => throw new NotImplementedException("HttpProfile does not support Recv only.");
+        
 
         public bool SendRecv<T, TResult>(T message, OnResponse<TResult> onResponse)
         {
@@ -156,7 +129,9 @@ namespace HttpTransport
                     UseDefaultCredentials = false,
                     BypassProxyOnLocal = false
                 };
-            } else {
+            } 
+            else 
+            {
                 // Use Default Proxy and Cached Credentials for Internet Access
                 webClient.Proxy = WebRequest.GetSystemWebProxy();
                 webClient.Proxy.Credentials = CredentialCache.DefaultCredentials;

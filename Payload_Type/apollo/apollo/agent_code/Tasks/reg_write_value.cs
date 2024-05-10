@@ -11,12 +11,7 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
 using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -34,7 +29,7 @@ namespace Tasks
             [DataMember(Name = "value_value")]
             public string ValueValue;
         }
-        public reg_write_value(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public reg_write_value(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
@@ -50,7 +45,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             RegWriteParameters parameters = _jsonSerializer.Deserialize<RegWriteParameters>(_data.Parameters);
             bool bRet;
 

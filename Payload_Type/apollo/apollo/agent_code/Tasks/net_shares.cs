@@ -12,11 +12,8 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using System.Text;
-using ST = System.Threading.Tasks;
 
 namespace Tasks
 {
@@ -104,7 +101,7 @@ namespace Tasks
         }
 
 
-        public net_shares(IAgent agent, ApolloInterop.Structs.MythicStructs.Task data) : base(agent, data)
+        public net_shares(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _pNetApiBufferFree = _agent.GetApi().GetLibraryFunction<NetApiBufferFree>(Library.NETUTILS, "NetApiBufferFree");
             _pNetShareEnum = _agent.GetApi().GetLibraryFunction<NetShareEnum>(Library.SRVCLI, "NetShareEnum");
@@ -140,7 +137,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             NetSharesParameters parameters = _jsonSerializer.Deserialize<NetSharesParameters>(_data.Parameters);
             string computer = parameters.Computer;
             if (string.IsNullOrEmpty(computer))

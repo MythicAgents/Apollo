@@ -7,7 +7,6 @@ using ApolloInterop.Classes;
 using System.IO.Pipes;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Types.Delegates;
-using System.Runtime.Serialization.Formatters.Binary;
 using ApolloInterop.Structs.ApolloStructs;
 using System.Collections.Concurrent;
 using ApolloInterop.Enums.ApolloEnums;

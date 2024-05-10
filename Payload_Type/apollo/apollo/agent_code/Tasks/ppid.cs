@@ -10,11 +10,8 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace Tasks
 {
@@ -26,14 +23,14 @@ namespace Tasks
             [DataMember(Name = "ppid")]
             public int ParentProcessId;
         }
-        public ppid(IAgent agent, Task task) : base(agent, task)
+        public ppid(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             PpidParameters parameters = _jsonSerializer.Deserialize<PpidParameters>(_data.Parameters);
             Process p = null;
             string errorMsg = "";

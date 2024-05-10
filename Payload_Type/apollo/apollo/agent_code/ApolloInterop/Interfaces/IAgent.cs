@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ApolloInterop.Types.Delegates;
-using ApolloInterop.Structs.MythicStructs;
-using System.Threading;
+﻿using System.Threading;
+using ApolloInterop.Features.KerberosTickets;
 
 namespace ApolloInterop.Interfaces
 {
@@ -57,6 +52,9 @@ namespace ApolloInterop.Interfaces
 
         // Return IInjectionManager interface. Used for managing how injection is performed and injecting into processes
         IInjectionManager GetInjectionManager();
+        
+        // Return ITicketManager interface. Used for managing Kerberos tickets.
+        ITicketManager GetTicketManager();
 
         // Return IApi interface. Used for resolving native Win32 API calls, RSA cryptography, and otherwise.
         IApi GetApi();

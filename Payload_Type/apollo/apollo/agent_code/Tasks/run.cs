@@ -10,14 +10,10 @@ using ApolloInterop.Classes;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Interfaces;
-using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
 
 namespace Tasks
@@ -40,7 +36,7 @@ namespace Tasks
         private CommandLineToArgvW _pCommandLineToArgvW;
 
         private AutoResetEvent _complete = new AutoResetEvent(false);
-        public run(IAgent agent, Task task) : base(agent, task)
+        public run(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _pLocalFree = _agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
             _pCommandLineToArgvW = _agent.GetApi().GetLibraryFunction<CommandLineToArgvW>(Library.SHELL32, "CommandLineToArgvW");

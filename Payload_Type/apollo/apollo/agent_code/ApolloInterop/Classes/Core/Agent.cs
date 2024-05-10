@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
+using ApolloInterop.Features.KerberosTickets;
 using ApolloInterop.Interfaces;
-using ApolloInterop.Structs.MythicStructs;
-using ApolloInterop.Types.Delegates;
 
 namespace ApolloInterop.Classes
 {
@@ -31,6 +27,8 @@ namespace ApolloInterop.Classes
         public IIdentityManager IdentityManager { get; protected set; }
         public IProcessManager ProcessManager { get; protected set; }
         public IInjectionManager InjectionManager { get; protected set; }
+        
+        public ITicketManager TicketManager { get; protected set; }
         public string UUID { get; protected set; }
 
         public Agent(string uuid)
@@ -101,6 +99,8 @@ namespace ApolloInterop.Classes
         public virtual IIdentityManager GetIdentityManager() { return IdentityManager; }
         public virtual IProcessManager GetProcessManager() { return ProcessManager; }
         public virtual IInjectionManager GetInjectionManager() { return InjectionManager; }
+        
+        public virtual ITicketManager GetTicketManager() { return TicketManager; }
         public string GetUUID()
         {
             return UUID;

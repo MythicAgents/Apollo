@@ -1,11 +1,6 @@
 ﻿using ApolloInterop.Classes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO.Pipes;
 using ApolloInterop.Classes.Api;
-using ApolloInterop.Classes.Core;
 
 namespace ApolloInterop.Interfaces
 {
