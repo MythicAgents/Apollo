@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using ApolloInterop.Classes.Api;
+using ApolloInterop.Utils;
 
 namespace Tasks
 {
@@ -245,28 +246,26 @@ namespace Tasks
                 isolationDomain.SetThreadPrincipal(new WindowsPrincipal(_agent.GetIdentityManager().GetCurrentImpersonationIdentity()));
                 isolationDomain.SetData("str", sParams);
                 bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
+                // Load dependencies wrapped into a try catch to avoid non critical loading failures from causing the entire module to fail
                 foreach (byte[] dependency in dependencies)
                 {
-                    isolationDomain.Load(dependency);
-                }
-                isolationDomain.Load(bMod);
-                    /*try
+                    try
                     {
                         isolationDomain.Load(dependency);
                     }
-                    catch
+                    catch (Exception e)
                     {
-
+                        DebugHelp.DebugWriteLine(e.Message);
                     }
-                    }
-                    try
-                    {
-                        isolationDomain.Load(bMod);
-                    }
-                    catch
-                    {
-
-                    }*/
+                }
+                try
+                {
+                    isolationDomain.Load(bMod);
+                }
+                catch (Exception e)
+                {
+                    DebugHelp.DebugWriteLine(e.Message);
+                }
                 var sleeve = new CrossAppDomainDelegate(Console.Beep);
                 var ace = new CrossAppDomainDelegate(ActivateLoader);
 
@@ -317,7 +316,6 @@ namespace Tasks
                 {
                     
                 }
-                UnloadAppDomain(isolationDomain);
                 return (bRet,"");
 
             }
