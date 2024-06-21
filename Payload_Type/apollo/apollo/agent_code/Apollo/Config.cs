@@ -53,17 +53,17 @@ namespace Apollo
                         { "killdate", "-1" },
                         { "USER_AGENT", "Apollo-Refactor" },
 #else
-                        { "callback_interval", "callback_interval_here" },
-                        { "callback_jitter", "callback_jitter_here" },
-                        { "callback_port", "callback_port_here" },
-                        { "callback_host", "callback_host_here" },
-                        { "post_uri", "post_uri_here" },
-                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
-                        { "proxy_host", "proxy_host_here" },
-                        { "proxy_port", "proxy_port_here" },
-                        { "proxy_user", "proxy_user_here" },
-                        { "proxy_pass", "proxy_pass_here" },
-                        { "killdate", "killdate_here" },
+                        { "callback_interval", "http_callback_interval_here" },
+                        { "callback_jitter", "http_callback_jitter_here" },
+                        { "callback_port", "http_callback_port_here" },
+                        { "callback_host", "http_callback_host_here" },
+                        { "post_uri", "http_post_uri_here" },
+                        { "encrypted_exchange_check", "http_encrypted_exchange_check_here" },
+                        { "proxy_host", "http_proxy_host_here" },
+                        { "proxy_port", "http_proxy_port_here" },
+                        { "proxy_user", "http_proxy_user_here" },
+                        { "proxy_pass", "http_proxy_pass_here" },
+                        { "killdate", "http_killdate_here" },
                         HTTP_ADDITIONAL_HEADERS_HERE
 #endif
                     }
@@ -90,16 +90,16 @@ namespace Apollo
                         { "killdate", "-1" },
                         { "USER_AGENT", "Apollo-Refactor" },
 #else
-                        { "tasking_type", "tasking_type_here"},
-                        { "callback_interval", "callback_interval_here" },
-                        { "callback_jitter", "callback_jitter_here" },
-                        { "callback_port", "callback_port_here" },
-                        { "callback_host", "callback_host_here" },
-                        { "ENDPOINT_REPLACE", "ENDPOINT_REPLACE_here" },
-                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
-                        { "domain_front", "domain_front_here" },
-                        { "USER_AGENT", "USER_AGENT_here" },
-                        { "killdate", "killdate_here" },
+                        { "tasking_type", "websocket_tasking_type_here"},
+                        { "callback_interval", "websocket_callback_interval_here" },
+                        { "callback_jitter", "websocket_callback_jitter_here" },
+                        { "callback_port", "websocket_callback_port_here" },
+                        { "callback_host", "websocket_callback_host_here" },
+                        { "ENDPOINT_REPLACE", "websocket_ENDPOINT_REPLACE_here" },
+                        { "encrypted_exchange_check", "websocket_encrypted_exchange_check_here" },
+                        { "domain_front", "websocket_domain_front_here" },
+                        { "USER_AGENT", "websocket_USER_AGENT_here" },
+                        { "killdate", "websocket_killdate_here" },
                         HTTP_ADDITIONAL_HEADERS_HERE
 #endif
                     }
@@ -118,8 +118,8 @@ namespace Apollo
                         { "pipename", "ahatojqq-bo0w-oc3r-wqtg-4jf7voepqqbs" },
                         { "encrypted_exchange_check", "T" },
 #else
-                        { "pipename", "pipename_here" },
-                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
+                        { "pipename", "smb_pipename_here" },
+                        { "encrypted_exchange_check", "smb_encrypted_exchange_check_here" },
 #endif
                     }
                 }
@@ -136,8 +136,8 @@ namespace Apollo
                         { "port", "40000" },
                         { "encrypted_exchange_check", "T" },
 #else
-                        { "port", "port_here" },
-                        { "encrypted_exchange_check", "encrypted_exchange_check_here" },
+                        { "port", "tcp_port_here" },
+                        { "encrypted_exchange_check", "tcp_encrypted_exchange_check_here" },
 #endif
                     }
                 }
@@ -167,6 +167,7 @@ namespace Apollo
         public static string PayloadUUID = "a51253f6-7885-4fea-9109-154ecc54060d";
 #endif
 #else
+        // TODO: Make the AES key a config option specific to each profile
         public static string StagingRSAPrivateKey = "AESPSK_here";
         public static string PayloadUUID = "payload_uuid_here";
 #endif
