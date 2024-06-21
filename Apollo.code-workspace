@@ -13,4 +13,9 @@
             "path": "."
         }
     ],
+    "extensions": {
+        "recommendations": [
+            "EditorConfig.EditorConfig"
+        ]
+    }
 }
