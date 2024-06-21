@@ -53,23 +53,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {
             "Config.cs": {
-                "callback_interval": "",
-                "callback_jitter": "",
-                "callback_port": "",
-                "callback_host": "",
-                "post_uri": "",
-                "proxy_host": "",
-                "proxy_port": "",
-                "proxy_user": "",
-                "proxy_pass": "",
-                # "domain_front": "",
-                "killdate": "",
-                # "USER_AGENT": "",
-                "pipename": "",
-                "port": "",
-                "encrypted_exchange_check": "",
                 "payload_uuid": self.uuid,
-                "AESPSK": "",
             },
         }
         extra_variables = {
@@ -82,17 +66,20 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
             for key, val in c2.get_parameters_dict().items():
+                prefixed_key = f"{profile['name'].lower()}_{key}"
                 if isinstance(val, dict) and 'enc_key' in val:
-                    stdout_err += "Setting {} to {}".format(key, val["enc_key"] if val["enc_key"] is not None else "")
+                    stdout_err += "Setting {} to {}".format(prefixed_key, val["enc_key"] if val["enc_key"] is not None else "")
+
+                    # TODO: Prefix the AESPSK variable and also make it specific to each profile
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
                 elif isinstance(val, str):
-                    special_files_map["Config.cs"][key] = val
+                    special_files_map["Config.cs"][prefixed_key] = val
                 elif isinstance(val, bool):
-                    special_files_map["Config.cs"][key] = "T" if val else "F"
+                    special_files_map["Config.cs"][prefixed_key] = "T" if val else "F"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
                 else:
-                    special_files_map["Config.cs"][key] = json.dumps(val)
+                    special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
