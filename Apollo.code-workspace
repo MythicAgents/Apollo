@@ -1,0 +1,21 @@
+{
+    "folders": [
+        {
+            "name": "Apollo code",
+            "path": "Payload_Type/apollo/apollo/agent_code"
+        },
+        {
+            "name": "Mythic code",
+            "path": "Payload_Type/apollo/apollo/mythic"
+        },
+        {
+            "name": "Project Root",
+            "path": "."
+        }
+    ],
+    "extensions": {
+        "recommendations": [
+            "EditorConfig.EditorConfig"
+        ]
+    }
+}
