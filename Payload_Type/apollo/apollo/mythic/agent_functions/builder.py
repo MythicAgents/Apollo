@@ -1,7 +1,11 @@
+import datetime
+import time
+
 from mythic_container.PayloadBuilder import *
 from mythic_container.MythicCommandBase import *
 import os, fnmatch, tempfile, sys, asyncio
 from distutils.dir_util import copy_tree
+from mythic_container.MythicGoRPC.send_mythic_rpc_callback_next_checkin_range import *
 import traceback
 import shutil
 import json
@@ -17,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.2.5"
+    version = "2.2.6"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -26,9 +30,9 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     supports_dynamic_loading = True
     build_parameters = [
         BuildParameter(
-            name = "output_type",
+            name="output_type",
             parameter_type=BuildParameterType.ChooseOne,
-            choices=[ "WinExe", "Shellcode"],
+            choices=["WinExe", "Shellcode"],
             default_value="WinExe",
             description="Output as shellcode, executable, or dynamically loaded library.",
         )
@@ -68,7 +72,8 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             for key, val in c2.get_parameters_dict().items():
                 prefixed_key = f"{profile['name'].lower()}_{key}"
                 if isinstance(val, dict) and 'enc_key' in val:
-                    stdout_err += "Setting {} to {}".format(prefixed_key, val["enc_key"] if val["enc_key"] is not None else "")
+                    stdout_err += "Setting {} to {}".format(prefixed_key,
+                                                            val["enc_key"] if val["enc_key"] is not None else "")
 
                     # TODO: Prefix the AESPSK variable and also make it specific to each profile
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
@@ -89,7 +94,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             for csFile in get_csharp_files(agent_build_path.name):
                 templateFile = open(csFile, "rb").read().decode()
                 templateFile = templateFile.replace("#define C2PROFILE_NAME_UPPER", "\n".join(defines_profiles_upper))
-                templateFile = templateFile.replace("#define COMMAND_NAME_UPPER",  "\n".join(defines_commands_upper) )
+                templateFile = templateFile.replace("#define COMMAND_NAME_UPPER", "\n".join(defines_commands_upper))
                 for specialFile in special_files_map.keys():
                     if csFile.endswith(specialFile):
                         for key, val in special_files_map[specialFile].items():
@@ -159,13 +164,15 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     shellcode_path = "{}/loader.bin".format(agent_build_path.name)
                     donutPath = os.path.abspath(self.agent_code_path / "donut")
                     command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
-                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
+                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
+                                                                 stderr=asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
 
                     command = "{} -f 1 {}".format(donutPath, output_path)
                     # need to go through one more step to turn our exe into shellcode
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
-                                                                 stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                                 stderr=asyncio.subprocess.PIPE,
+                                                                 cwd=agent_build_path.name)
                     stdout, stderr = await proc.communicate()
 
                     stdout_err += f'[stdout]\n{stdout.decode()}\n'
@@ -210,6 +217,44 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             resp.status = BuildStatus.Error
             resp.build_message = "Error building payload: " + str(traceback.format_exc())
         return resp
+
+    async def check_if_callbacks_alive(self,
+                                       message: PTCheckIfCallbacksAliveMessage) -> PTCheckIfCallbacksAliveMessageResponse:
+        response = PTCheckIfCallbacksAliveMessageResponse(Success=True)
+        for callback in message.Callbacks:
+            if callback.SleepInfo == "":
+                continue  # can't do anything if we don't know the expected sleep info of the agent
+            try:
+                sleep_info = json.loads(callback.SleepInfo)
+            except Exception as e:
+                continue
+            atLeastOneCallbackWithinRange = False
+            try:
+                for activeC2, info in sleep_info.items():
+                    if activeC2 == "websocket" and callback.LastCheckin == "1970-01-01 00:00:00Z":
+                        atLeastOneCallbackWithinRange = True
+                        continue
+                    checkinRangeResponse = await SendMythicRPCCallbackNextCheckinRange(
+                        MythicRPCCallbackNextCheckinRangeMessage(
+                            LastCheckin=callback.LastCheckin,
+                            SleepJitter=info["jitter"],
+                            SleepInterval=info["interval"],
+                        ))
+                    if not checkinRangeResponse.Success:
+                        continue
+                    lastCheckin = datetime.datetime.strptime(callback.LastCheckin, '%Y-%m-%dT%H:%M:%S.%fZ')
+                    minCheckin = datetime.datetime.strptime(checkinRangeResponse.Min, '%Y-%m-%dT%H:%M:%S.%fZ')
+                    maxCheckin = datetime.datetime.strptime(checkinRangeResponse.Max, '%Y-%m-%dT%H:%M:%S.%fZ')
+                    if minCheckin <= lastCheckin <= maxCheckin:
+                        atLeastOneCallbackWithinRange = True
+                response.Callbacks.append(PTCallbacksToCheckResponse(
+                    ID=callback.ID,
+                    Alive=atLeastOneCallbackWithinRange,
+                ))
+            except Exception as e:
+                logger.info(e)
+                logger.info(callback.to_json())
+        return response
 
 
 def get_csharp_files(base_path: str) -> list[str]:
