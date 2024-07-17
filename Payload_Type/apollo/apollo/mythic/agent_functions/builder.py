@@ -62,12 +62,24 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         success_message = f"Apollo {self.uuid} Successfully Built"
         stdout_err = ""
         defines_profiles_upper = []
+
+        if len(set([info.get_c2profile()["is_p2p"] for info in self.c2info])) > 1:
+            resp.set_status(BuildStatus.Error)
+            resp.set_build_message("Cannot mix egress and P2P C2 profiles")
+            return resp
+
         for c2 in self.c2info:
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
             for key, val in c2.get_parameters_dict().items():
                 prefixed_key = f"{profile['name'].lower()}_{key}"
+
                 if isinstance(val, dict) and 'enc_key' in val:
+                    if val["value"] == "none":
+                        resp.set_status(BuildStatus.Error)
+                        resp.set_build_message("Apollo does not support plaintext encryption")
+                        return resp
+
                     stdout_err += "Setting {} to {}".format(prefixed_key, val["enc_key"] if val["enc_key"] is not None else "")
 
                     # TODO: Prefix the AESPSK variable and also make it specific to each profile
@@ -75,6 +87,11 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 elif isinstance(val, str):
                     special_files_map["Config.cs"][prefixed_key] = val
                 elif isinstance(val, bool):
+                    if key == "encrypted_exchange_check" and not val:
+                        resp.set_status(BuildStatus.Error)
+                        resp.set_build_message(f"Encrypted exchange check needs to be set for the {profile['name']} C2 profile")
+                        return resp
+
                     special_files_map["Config.cs"][prefixed_key] = "T" if val else "F"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
