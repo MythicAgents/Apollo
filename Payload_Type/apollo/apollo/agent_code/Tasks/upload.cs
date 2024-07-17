@@ -20,6 +20,7 @@ namespace Tasks
         [DataContract]
         internal struct UploadParameters
         {
+            #pragma warning disable 0649
             [DataMember(Name = "remote_path")]
             internal string RemotePath;
             [DataMember(Name = "file")]
@@ -28,6 +29,7 @@ namespace Tasks
             internal string FileName;
             [DataMember(Name = "host")]
             internal string HostName;
+            #pragma warning restore 0649
         }
 
         public upload(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
