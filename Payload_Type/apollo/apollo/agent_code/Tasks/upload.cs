@@ -43,10 +43,7 @@ namespace Tasks
             string path = "";
             if (!string.IsNullOrEmpty(p.HostName))
             {
-                if (p.HostName != "127.0.0.1" || p.HostName.ToLower() != "localhost")
-                {
-                    host = p.HostName;
-                }
+                host = p.HostName;
             }
             if (!string.IsNullOrEmpty(p.RemotePath))
             {

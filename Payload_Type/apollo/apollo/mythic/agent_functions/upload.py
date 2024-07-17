@@ -96,6 +96,15 @@ class UploadCommand(CommandBase):
             "file_name", original_file_name, type=ParameterType.String
         )
         host = taskData.args.get_arg("host")
+
+        # Remove any localhost aliases
+        if host and (
+            host.upper() == taskData.Callback.Host.upper()
+            or host == "127.0.0.1"
+            or host.lower() == "localhost"
+        ):
+            taskData.args.remove_arg("host")
+
         path = taskData.args.get_arg("remote_path")
         if path is not None and path != "":
             if host is not None and host != "":
