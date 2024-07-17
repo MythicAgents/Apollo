@@ -55,11 +55,13 @@ namespace Tasks
                         p.RemotePath,
                         p.FileName
                     });
-                } else
+                }
+                else
                 {
                     path = p.RemotePath;
                 }
-            } else
+            }
+            else
             {
                 path = Path.Combine(new string[]
                 {
@@ -71,7 +73,8 @@ namespace Tasks
             if (!string.IsNullOrEmpty(host))
             {
                 return string.Format(@"\\{0}\{1}", host, path);
-            } else
+            }
+            else
             {
                 FileInfo finfo = new FileInfo(path);
                 return finfo.FullName;
