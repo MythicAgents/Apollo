@@ -20,12 +20,14 @@ class UploadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                     ),
-                ]),
+                ],
+            ),
             CommandParameter(
                 name="file",
                 cli_name="File",
                 display_name="File",
-                type=ParameterType.File),
+                type=ParameterType.File,
+            ),
             CommandParameter(
                 name="host",
                 cli_name="Host",
@@ -36,7 +38,8 @@ class UploadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                     ),
-                ]),
+                ],
+            ),
         ]
 
     async def parse_arguments(self):
@@ -66,30 +69,39 @@ class UploadCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = UploadArguments
     attackmapping = ["T1132", "T1030", "T1105"]
-    attributes = CommandAttributes(
-        suggested_command=True
-    )
+    attributes = CommandAttributes(suggested_command=True)
 
-    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
-            TaskID=taskData.Task.ID,
-            AgentFileID=taskData.args.get_arg("file")
-        ))
+        file_resp = await SendMythicRPCFileSearch(
+            MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID, AgentFileID=taskData.args.get_arg("file")
+            )
+        )
         if file_resp.Success:
             original_file_name = file_resp.Files[0].Filename
         else:
-            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
+            raise Exception(
+                "Failed to fetch uploaded file from Mythic (ID: {})".format(
+                    taskData.args.get_arg("file")
+                )
+            )
 
-        taskData.args.add_arg("file_name", original_file_name, type=ParameterType.String)
+        taskData.args.add_arg(
+            "file_name", original_file_name, type=ParameterType.String
+        )
         host = taskData.args.get_arg("host")
         path = taskData.args.get_arg("remote_path")
         if path is not None and path != "":
             if host is not None and host != "":
-                disp_str = "-File {} -Host {} -Path {}".format(original_file_name, host, path)
+                disp_str = "-File {} -Host {} -Path {}".format(
+                    original_file_name, host, path
+                )
             else:
                 disp_str = "-File {} -Path {}".format(original_file_name, path)
         else:
@@ -97,6 +109,8 @@ class UploadCommand(CommandBase):
         response.DisplayParams = disp_str
         return response
 
-    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+    async def process_response(
+        self, task: PTTaskMessageAllData, response: any
+    ) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
         return resp
