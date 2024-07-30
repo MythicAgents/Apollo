@@ -110,7 +110,7 @@ namespace Tasks
         public override void Start()
         {
             MythicTaskResponse resp;
-            Process proc = null;
+            Process? proc = null;
             try
             {
                 ExecuteAssemblyParameters parameters = _jsonSerializer.Deserialize<ExecuteAssemblyParameters>(_data.Parameters);
