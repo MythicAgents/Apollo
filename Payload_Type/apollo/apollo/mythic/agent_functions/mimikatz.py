@@ -10,26 +10,29 @@ class MimikatzArguments(TaskArguments):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="command",
-                cli_name="Command",
+                name="commands",
+                cli_name="Commands",
                 display_name="Command(s)",
                 type=ParameterType.Array,
-                description="Mimikatz commands to run (can be one or more). Each array entry is one command to run"),
+                description="Mimikatz commands (can be one or more). Each array entry is one command to run",
+                parameter_group_info=[ParameterGroupInfo(ui_position=1, required=True)],
+            ),
         ]
 
     async def parse_arguments(self):
-        if len(self.command_line) == 0:
-            raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(MimikatzCommand.help_cmd))
-        try:
-            self.load_args_from_json_string(command_line=self.command_line)
-        except Exception:
-            # no array of commands given, so assume the user just typed out one command or use Scripting
-            self.add_arg("command", [self.command_line])
-        return
+        if self.tasking_location == "modal" or (
+            self.raw_command_line.startswith("{")
+            and self.raw_command_line.endswith("}")
+        ) or (
+            "-Commands " in self.raw_command_line
+        ):
+            commands = dict(json.loads(self.command_line))
+            commandlist = commands.get("Commands") or commands["commands"]
+            self.add_arg("commandline", mslex.join(commandlist, for_cmd = False))
+        else:
+            self.add_arg("commandline", self.raw_command_line)
 
-    async def parse_dictionary(self, dictionary_arguments):
-        return self.load_args_from_dictionary(dictionary=dictionary_arguments)
-
+        self.remove_arg("commands")
 
 async def parse_credentials(
     task: PTTaskCompletionFunctionMessage,
@@ -105,12 +108,23 @@ class MimikatzCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-            TaskID=taskData.Task.ID,
-            CommandName="execute_pe",
-            Params=json.dumps({"pe_name": "mimikatz.exe", "pe_arguments": taskData.args.get_arg("command")}),
-            SubtaskCallbackFunction="parse_credentials"
-        ))
+
+        commandline = taskData.args.get_arg("commandline")
+        response.DisplayParams = commandline
+
+        await SendMythicRPCTaskCreateSubtask(
+            MythicRPCTaskCreateSubtaskMessage(
+                TaskID=taskData.Task.ID,
+                CommandName="execute_pe",
+                Params=json.dumps(
+                    {
+                        "pe_name": "mimikatz.exe",
+                        "pe_arguments": commandline,
+                    }
+                ),
+                SubtaskCallbackFunction="parse_credentials",
+            )
+        )
         return response
 
     async def process_response(
