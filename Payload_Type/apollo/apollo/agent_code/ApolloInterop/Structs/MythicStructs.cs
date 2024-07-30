@@ -764,7 +764,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "status")]
-            public string Status;
+            public string? Status;
             [DataMember(Name = "keylogs")]
             public KeylogInformation[] Keylogs;
             [DataMember(Name = "edges")]

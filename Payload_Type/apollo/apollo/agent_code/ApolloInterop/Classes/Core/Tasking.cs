@@ -45,7 +45,7 @@ namespace ApolloInterop.Classes
             _cancellationToken.Cancel();
         }
 
-        public virtual MythicTaskResponse CreateTaskResponse(object userOutput, bool completed, string status = "completed", IEnumerable<IMythicMessage> messages = null)
+        public virtual MythicTaskResponse CreateTaskResponse(object userOutput, bool completed, string? status = null, IEnumerable<IMythicMessage>? messages = null)
         {
             MythicTaskResponse resp = new MythicTaskResponse();
             resp.UserOutput = userOutput;
