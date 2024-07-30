@@ -44,13 +44,11 @@ class ExecutePEArguments(TaskArguments):
                 name="pe_arguments",
                 cli_name="Arguments",
                 display_name="Arguments",
-                type=ParameterType.Array,
+                type=ParameterType.String,
                 description="Arguments to pass to the PE.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=False,
-                        group_name="Default",
-                        ui_position=2
+                        required=False, group_name="Default", ui_position=2
                     ),
                 ],
             ),
@@ -89,9 +87,9 @@ class ExecutePEArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            parts = self.command_line.split(" ", maxsplit=1)
+            parts = self.raw_command_line.split(" ", maxsplit=1)
             self.add_arg("pe_name", parts[0])
-            self.add_arg("pe_arguments",[])
+            self.add_arg("pe_arguments", "")
             if len(parts) == 2:
                 self.add_arg("pe_arguments", parts[1])
 
@@ -100,7 +98,7 @@ class ExecutePECommand(CommandBase):
     cmd = "execute_pe"
     needs_admin = False
     help_cmd = "execute_pe [PE.exe] [args]"
-    description = "Executes a .NET assembly with the specified arguments. This assembly must first be known by the agent using the `register_assembly` command."
+    description = "Executes an unmanaged executable with the specified arguments. This executable must first be known by the agent using the `register_file` command."
     version = 3
     author = "@djhohnstein"
     argument_class = ExecutePEArguments
@@ -253,11 +251,27 @@ class ExecutePECommand(CommandBase):
                     taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
                     PRINTSPOOFER_FILE_ID = file_resp.AgentFileId
                 else:
-                    raise Exception("Failed to register PrintSpoofer: " + file_resp.Error)
+                    raise Exception(
+                        "Failed to register PrintSpoofer: " + file_resp.Error
+                    )
+
+        imageName = taskData.args.get_arg("pe_name")
+        arguments = taskData.args.get_arg("pe_arguments")
+
+        # Form the command line being passed to the PE. Pass the arguments as is
+        commandline = f'"{imageName}" {arguments}'
+
+        taskData.args.add_arg(
+            "commandline",
+            commandline,
+            ParameterType.String,
+            parameter_group_info=[ParameterGroupInfo(required=True)],
+        )
+
+        taskData.args.remove_arg("arguments")
 
         response.DisplayParams = "-PE {} -Arguments {}".format(
-            taskData.args.get_arg("pe_name"),
-            taskData.args.get_arg("pe_arguments")
+            taskData.args.get_arg("pe_name"), arguments
         )
         return response
 
