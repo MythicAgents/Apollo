@@ -144,6 +144,24 @@ namespace ApolloInterop.Structs.ApolloStructs
         }
     }
 
+    [DataContract]
+    public struct ExecutePEIPCMessage : IMythicMessage
+    {
+        [DataMember(Name = "executable")]
+        public byte[] Executable;
+
+        [DataMember(Name = "name")]
+        public string ImageName;
+
+        [DataMember(Name = "commandline")]
+        public string CommandLine;
+
+        public readonly MessageType GetTypeCode()
+        {
+            return MessageType.ExecutePEIPCMessage;
+        }
+    }
+
 
     [DataContract]
     public struct ProcessResponse
