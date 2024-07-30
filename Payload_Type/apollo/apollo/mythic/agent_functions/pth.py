@@ -1,4 +1,3 @@
-from operator import truediv
 from mythic_container.MythicCommandBase import *
 import json
 from uuid import uuid4
@@ -142,11 +141,22 @@ class PthArguments(TaskArguments):
 
             self.add_arg("command", "mimikatz.exe {}".format(cmd))
         else:
-            raise Exception("No mimikatz command given to execute.\n\tUsage: {}".format(PthCommand.help_cmd))
+            raise Exception(
+                "No mimikatz command given to execute.\n\tUsage: {}".format(
+                    PthCommand.help_cmd
+                )
+            )
 
-async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskCompletionFunctionMessageResponse:
-    response = PTTaskCompletionFunctionMessageResponse(Success=True, TaskStatus="success", Completed=True)
-    responses = await SendMythicRPCResponseSearch(MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID))
+
+async def parse_credentials(
+    task: PTTaskCompletionFunctionMessage,
+) -> PTTaskCompletionFunctionMessageResponse:
+    response = PTTaskCompletionFunctionMessageResponse(
+        Success=True, TaskStatus="success", Completed=True
+    )
+    responses = await SendMythicRPCResponseSearch(
+        MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID)
+    )
     for output in responses.Responses:
         mimikatz_out = str(output.Response)
         comment = "task {}".format(output.TaskID)
@@ -157,22 +167,26 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskComp
                 line = lines[i]
                 if "Username" in line:
                     # Check to see if Password is null
-                    if i+2 >= len(lines):
+                    if i + 2 >= len(lines):
                         break
                     uname = line.split(" : ")[1].strip()
-                    realm = lines[i+1].split(" : ")[1].strip()
-                    passwd = lines[i+2].split(" : ")[1].strip()
+                    realm = lines[i + 1].split(" : ")[1].strip()
+                    passwd = lines[i + 2].split(" : ")[1].strip()
                     if passwd != "(null)":
-                        cred_resp = await SendMythicRPCCredentialCreate(MythicRPCCredentialCreateMessage(
-                            TaskID=task.SubtaskData.Task.ID,
-                            Credentials=[MythicRPCCredentialData(
-                                credential_type="plaintext",
-                                account=uname,
-                                realm=realm,
-                                credential=passwd,
-                                comment=comment
-                            )]
-                        ))
+                        cred_resp = await SendMythicRPCCredentialCreate(
+                            MythicRPCCredentialCreateMessage(
+                                TaskID=task.SubtaskData.Task.ID,
+                                Credentials=[
+                                    MythicRPCCredentialData(
+                                        credential_type="plaintext",
+                                        account=uname,
+                                        realm=realm,
+                                        credential=passwd,
+                                        comment=comment,
+                                    )
+                                ],
+                            )
+                        )
                         if not cred_resp.Success:
                             raise Exception("Failed to register credential")
     return response
@@ -180,12 +194,12 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage) -> PTTaskComp
 
 class PthCommand(CommandBase):
     cmd = "pth"
-    attributes=CommandAttributes(
-        dependencies=["execute_pe"]
-    )
+    attributes = CommandAttributes(dependencies=["execute_pe"])
     needs_admin = False
     help_cmd = "pth -Domain [domain] -User [user] -NTLM [ntlm] [-AES128 [aes128] -AES256 [aes256] -Run [cmd.exe]]"
-    description = "Spawn a new process using the specified domain user's credential material."
+    description = (
+        "Spawn a new process using the specified domain user's credential material."
+    )
     version = 3
     author = "@djhohnstein"
     argument_class = PthArguments
@@ -193,8 +207,9 @@ class PthCommand(CommandBase):
     script_only = True
     completion_functions = {"parse_credentials": parse_credentials}
 
-
-    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
             Success=True,
@@ -207,6 +222,8 @@ class PthCommand(CommandBase):
         ))
         return response
 
-    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+    async def process_response(
+        self, task: PTTaskMessageAllData, response: any
+    ) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
         return resp
