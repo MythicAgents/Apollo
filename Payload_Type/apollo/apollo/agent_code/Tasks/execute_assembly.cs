@@ -71,7 +71,7 @@ namespace Tasks
             _flushMessages = (object p) =>
             {
                 string output = "";
-                while(!_cancellationToken.IsCancellationRequested && !_completed)
+                while (!_cancellationToken.IsCancellationRequested && !_completed)
                 {
                     WaitHandle.WaitAny(new WaitHandle[]
                     {
