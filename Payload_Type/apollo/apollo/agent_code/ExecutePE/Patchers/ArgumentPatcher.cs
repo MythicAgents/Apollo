@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using ApolloInterop.Utils;
 using ExecutePE.Helpers;
 
 namespace ExecutePE.Patchers
@@ -27,7 +26,7 @@ namespace ExecutePE.Patchers
             UNICODE_STRING_STRUCT_STRING_POINTER_OFFSET =
                 0x8; // Offset into the UNICODE_STRING struct that the string pointer sits at https://docs.microsoft.com/en-us/windows/win32/api/subauth/ns-subauth-unicode_string
 
-        private byte[] _originalCommandLineFuncBytes;
+        private byte[]? _originalCommandLineFuncBytes;
         private IntPtr _ppCommandLineString;
         private IntPtr _ppImageString;
         private IntPtr _pLength;
@@ -37,10 +36,10 @@ namespace ExecutePE.Patchers
         private IntPtr _pNewString;
         private short _originalLength;
         private short _originalMaxLength;
-        private string _commandLineFunc = null;
-        private Encoding _encoding;
+        private string? _commandLineFunc;
+        private Encoding _encoding = Encoding.UTF8;
 
-        public bool UpdateArgs(string filename, string[] args)
+        public bool UpdateArgs(string imageName, string commandLine)
         {
             var pPEB = Utils.GetPointerToPeb();
             if (pPEB == IntPtr.Zero)
@@ -52,12 +51,8 @@ namespace ExecutePE.Patchers
                 out _ppImageString, out _pOriginalImageString, out _pLength, out _originalLength, out _pMaxLength,
                 out _originalMaxLength);
 
-            var commandLineString = Marshal.PtrToStringUni(_pOriginalCommandLineString);
-            var imageString = Marshal.PtrToStringUni(_pOriginalImageString);
-            var newCommandLineString = $"\"{filename}\" {string.Join(" ", args)}";
-            DebugHelp.DebugWriteLine($"Command Line String: {newCommandLineString}");
-            var pNewCommandLineString = Marshal.StringToHGlobalUni(newCommandLineString);
-            var pNewImageString = Marshal.StringToHGlobalUni(filename);
+            var pNewCommandLineString = Marshal.StringToHGlobalUni(commandLine);
+            var pNewImageString = Marshal.StringToHGlobalUni(imageName);
             if (!Utils.PatchAddress(_ppCommandLineString, pNewCommandLineString))
             {
 
@@ -67,8 +62,8 @@ namespace ExecutePE.Patchers
             {
                 return false;
             }
-            Marshal.WriteInt16(_pLength, 0, (short)newCommandLineString.Length);
-            Marshal.WriteInt16(_pMaxLength, 0, (short)newCommandLineString.Length);
+            Marshal.WriteInt16(_pLength, 0, (short)commandLine.Length);
+            Marshal.WriteInt16(_pMaxLength, 0, (short)commandLine.Length);
 
             if (!PatchGetCommandLineFunc(commandLine))
             {
@@ -78,12 +73,10 @@ namespace ExecutePE.Patchers
             return true;
         }
 
-        private bool PatchGetCommandLineFunc(string newCommandLineString)
+        private bool PatchGetCommandLineFunc(string commandLine)
         {
             var pCommandLineString = NativeDeclarations.GetCommandLine();
             var commandLineString = Marshal.PtrToStringAuto(pCommandLineString);
-
-            _encoding = Encoding.UTF8;
 
             if (commandLineString != null)
             {

