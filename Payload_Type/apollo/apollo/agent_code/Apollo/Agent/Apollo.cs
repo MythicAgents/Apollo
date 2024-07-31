@@ -6,6 +6,8 @@ using AM = Apollo.Management;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Win32;
+using System.Net.NetworkInformation;
+using System.Collections.Generic;
 
 namespace Apollo.Agent
 {
@@ -80,12 +82,32 @@ namespace Apollo.Agent
             }
         }
 
-        private static string GetIP()
+        private static string[] GetIPs()
         {
-            return Dns.GetHostEntry(
-                Dns.GetHostName()).AddressList.FirstOrDefault(
-                    ip => ip.AddressFamily == AddressFamily.InterNetwork
-                ).ToString();
+            var ifaces = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(iface =>
+                    iface.OperationalStatus == OperationalStatus.Up && iface.NetworkInterfaceType != NetworkInterfaceType.Loopback
+                )
+                .OrderBy(iface => iface.GetIPProperties().GatewayAddresses.ToArray().Length); // Push interfaces with a gateway to the front
+
+            var ipaddrs = new List<string>();
+            foreach (var iface in ifaces)
+            {
+                var addrs = iface.GetIPProperties().UnicastAddresses;
+
+                // Put the IPv4 addresses before the IPv6 addresses
+                ipaddrs.AddRange(
+                    addrs.Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork)
+                    .Select(addr => addr.Address.ToString())
+                );
+
+                ipaddrs.AddRange(
+                    addrs.Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetworkV6)
+                    .Select(addr => addr.Address.ToString())
+                );
+            }
+
+            return [.. ipaddrs];
         }
 
         private static string GetOSVersion()
@@ -103,7 +125,7 @@ namespace Apollo.Agent
                 Host = Dns.GetHostName(),
                 PID = System.Diagnostics.Process.GetCurrentProcess().Id,
                 ProcessName = System.Diagnostics.Process.GetCurrentProcess().ProcessName,
-                IP = GetIP(),
+                IPs = GetIPs(),
                 UUID = UUID,
                 Architecture = IntPtr.Size == 8 ? "x64" : "x86",
                 Domain = Environment.UserDomainName,
