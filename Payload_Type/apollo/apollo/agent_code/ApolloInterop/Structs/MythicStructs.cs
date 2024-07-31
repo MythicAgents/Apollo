@@ -1000,8 +1000,8 @@ namespace ApolloInterop.Structs
             public int PID;
 
             [DataMember(Name = "process_name")] public string ProcessName;
-            [DataMember(Name = "ip")]
-            public string IP;
+            [DataMember(Name = "ips")]
+            public string[] IPs;
             [DataMember(Name = "uuid")]
             public string UUID;
             [DataMember(Name = "architecture")]
