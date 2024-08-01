@@ -338,7 +338,7 @@ function(task, responses){
                     startIconColor: "",
                 };
 
-                if (fileCategory != undefined) {
+                if (fileCategory !== undefined) {
                     return { ...defaultStyling, ...fileStyleMap.get(fileCategory) };
                 } else {
                     return defaultStyling;
@@ -375,12 +375,10 @@ function(task, responses){
                     type: "task",
                     ui_feature: "file_browser:list",
                     startIcon: "list",
-                    parameters: JSON.stringify(
-                        {
+                    parameters: {
                             host: data["host"],
                             file: entry["full_name"],
                         }
-                    )
                 }
             }
         };
@@ -544,24 +542,23 @@ function(task, responses){
                                 disabled: !entry["is_file"],
                                 startIcon: "download",
                                 ui_feature: "file_browser:download",
-                                parameters: JSON.stringify(
-                                    {
+                                parameters: {
                                         host: data["host"],
                                         file: entry["full_name"],
                                     }
-                                ),
+                                ,
                             },
                             {
                                 name: "Delete",
                                 type: "task",
                                 startIcon: "delete",
                                 ui_feature: "file_browser:remove",
-                                parameters: JSON.stringify(
-                                    {
+                                getConfirmation: true,
+                                parameters: {
                                         host: data["host"],
                                         path: entry["full_name"],
                                     }
-                                ),
+                                ,
                             },
                         ]
                     }
