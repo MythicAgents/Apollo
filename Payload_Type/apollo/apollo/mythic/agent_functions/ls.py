@@ -42,6 +42,9 @@ class LsArguments(TaskArguments):
         # Tasking was sent from the modal
         elif self.tasking_location == "modal":
             args = json.loads(self.command_line)
+        elif self.tasking_location == "browserscript":
+            args = json.loads(self.command_line)
+            args["path"] = args["file"]
         # Freeform arguments
         else:
             # Check if named parameters were defined
