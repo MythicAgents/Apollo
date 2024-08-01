@@ -8,84 +8,23 @@ namespace ExecutePE.Helpers
     {
         internal static byte[] PatchFunction(string dllName, string funcName, byte[] patchBytes)
         {
-#if DEBUG
-
-
-            var patchString = "";
-            foreach (var x in patchBytes)
-            {
-                patchString += "0x" + x.ToString("X") + " ";
-            }
-
-
-
-
-
-#endif
             var moduleHandle = NativeDeclarations.GetModuleHandle(dllName);
             var pFunc = NativeDeclarations.GetProcAddress(moduleHandle, funcName);
-#if DEBUG
-
-
-#endif
             var originalBytes = new byte[patchBytes.Length];
             Marshal.Copy(pFunc, originalBytes, 0, patchBytes.Length);
 
-#if DEBUG
-            var originalBytesString = "";
-            foreach (var x in originalBytes)
-            {
-                originalBytesString += "0x" + x.ToString("X") + " ";
-            }
-
-
-
-#endif
             var result = NativeDeclarations.VirtualProtect(pFunc, (UIntPtr)patchBytes.Length,
                 NativeDeclarations.PAGE_EXECUTE_READWRITE, out var oldProtect);
             if (!result)
             {
-#if DEBUG
-
-
-                var error = NativeDeclarations.GetLastError();
-
-
-#endif
                 return null;
             }
-#if DEBUG
-            else
-            {
-
-
-            }
-#endif
             Marshal.Copy(patchBytes, 0, pFunc, patchBytes.Length);
-
-#if DEBUG
-
-
-#endif
 
             result = NativeDeclarations.VirtualProtect(pFunc, (UIntPtr)patchBytes.Length, oldProtect, out _);
             if (!result)
             {
-#if DEBUG
-
-
-                var error = NativeDeclarations.GetLastError();
-
-
-#endif
             }
-#if DEBUG
-            else
-            {
-
-
-            }
-#endif
             return originalBytes;
         }
 
@@ -95,11 +34,6 @@ namespace ExecutePE.Helpers
                 NativeDeclarations.PAGE_EXECUTE_READWRITE, out var oldProtect);
             if (!result)
             {
-#if DEBUG
-
-
-
-#endif
                 return false;
             }
 
@@ -107,16 +41,8 @@ namespace ExecutePE.Helpers
             result = NativeDeclarations.VirtualProtect(pAddress, (UIntPtr)IntPtr.Size, oldProtect, out _);
             if (!result)
             {
-#if DEBUG
-
-
-#endif
                 return false;
             }
-#if DEBUG
-
-
-#endif
             return true;
         }
 
@@ -126,14 +52,6 @@ namespace ExecutePE.Helpers
                 out var oldProtect);
             if (!result)
             {
-#if DEBUG
-
-
-                var error = NativeDeclarations.GetLastError();
-
-
-                return false;
-#endif
             }
 
             var zeroes = new byte[length];
@@ -147,13 +65,6 @@ namespace ExecutePE.Helpers
             result = NativeDeclarations.VirtualProtect(start, (UIntPtr)length, oldProtect, out _);
             if (!result)
             {
-#if DEBUG
-
-
-                var error = NativeDeclarations.GetLastError();
-
-
-#endif
                 return false;
             }
 
@@ -186,11 +97,7 @@ namespace ExecutePE.Helpers
             }
             else
             {
-
-
                 var error = NativeDeclarations.GetLastError();
-
-
             }
 
             Marshal.FreeHGlobal(processBasicInformation);

@@ -5,231 +5,604 @@ function(task, responses){
         }, "");
         return {'plaintext': combined};
     }else if(responses.length > 0){
-        // let folder = {
-        //             backgroundColor: "rgb(248, 240, 120)",
-        //             color: "black"
-        //         };
-        var archiveFormats = [".a",".ar",".cpio",".shar",".LBR",".lbr",".mar",".sbx",".tar",".bz2",".F",".gz",".lz",".lz4",".lzma",".lzo",".rz",".sfark",".sz",".?Q?",".?Z?",".xz",".z",".Z",".zst",".??",".7z",".s7z",".ace",".afa",".alz",".apk",".arc",".arc",".arj",".b1",".b6z",".ba",".bh",".cab",".car",".cfs",".cpt",".dar",".dd",".dgc",".ear",".gca",".ha",".hki",".ice",".jar",".kgb",".lzh",".lzx",".pak",".pak",".parti",".paq6",".pea",".pim",".pit",".qda",".rar",".rk",".sda",".sea",".sen",".sfx",".shk",".sit",".sitx",".sqx",".tar",".tbz2",".uc",".uca",".uha",".war",".wim",".xar",".xp3",".yz1",".zip",".zoo",".zpaq",".zz",".ecc",".ecsbx",".par",".par2",".rev"];
-        var diskImages = [".dmg", ".iso", ".vmdk"];
-        var wordDocs = [".doc", ".docx", ".dotm", ".dot", ".wbk", ".docm", ".dotx", ".docb"];
-        var excelDocs = [".csv",".xls", ".xlsx", ".xlsm", ".xltx", ".xltm", ".xlmx", ".xlmt"];
-        var powerPoint = [".ppt", ".pptx", ".potx", ".ppsx", ".thmx", ".pot", ".pps"];
-        var pdfExt = [".pdf"];
-        var dbExt = [".db", ".sql", ".psql"];
-        var keyFiles = [".pem", ".ppk", ".cer", ".pvk", ".pfx"];
-        var codeFiles = [".config", ".ps1", ".psm1", ".psd1", ".vbs", ".js", ".py", ".pl", ".rb", ".go", ".xml", ".html", ".css", ".sh", ".bash", ".yaml", ".yml", ".c", ".cpp", ".h", ".hpp", ".cs", ".sln", ".csproj"];
-        var imageFiles = [".2000",".ani",".anim",".apng",".art",".avif",".bmp",".bpg",".bsave",".cal",".cin",".cpc",".cpt",".cur",".dds",".dpx",".ecw",".ep",".exr",".fits",".flic",".flif",".fpx",".gif",".hdr",".hdri",".hevc",".icer",".icns",".ico",".ics",".ilbm",".it",".jbig",".jbig2",".jng",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".jpeg",".kra",".logluv",".ls",".miff",".mng",".nrrd",".pam",".pbm",".pcx",".pgf",".pgm",".pictor",".png",".pnm",".ppm",".psb",".psd",".psp",".qtvr",".ras",".rgbe",".sgi",".tga",".tiff",".tiff",".tiff",".tiff",".ufo",".ufp",".wbmp",".webp",".xbm",".xcf",".xl",".xpm",".xr",".xs",".xt",".xwd"];
-        let file = {};
-        let data = "";
-        let rows = [];
-        let headers = [
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 120, "disableSort": true},
-            {"plaintext": "Task", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
-            {"plaintext": "name", "type": "string", "fillWidth": true, "cellStyle": {}},
-            {"plaintext": "size", "type": "size", "cellStyle": {}},
-            {"plaintext": "owner", "type": "string", "fillWidth": true, "cellStyle": {}},
-            {"plaintext": "creation date", "type": "string", "width": 150, "cellStyle": {}},
-            {"plaintext": "last modified", "type": "string", "width": 150, "cellStyle": {}},
-            {"plaintext": "last accessed", "type": "string", "width": 150, "cellStyle": {}},
-        ];
-        let tableHeader = "";
-        for(let i = 0; i < responses.length; i++)
-        {
-            try{
+        // Known file types
+        const FileType = Object.freeze({
+            ARCHIVE: 'archive',
+            DISKIMAGE: 'diskimage',
+            WORD: 'word',
+            EXCEL: 'excel',
+            POWERPOINT: 'powerpoint',
+            PDF: 'pdf',
+            DATABASE: 'db',
+            KEYMATERIAL: 'keymaterial',
+            SOURCECODE: 'sourcecode',
+            IMAGE: 'image'
+        });
+
+        // Mappings for file extensions to file types
+        const fileExtensionMappings = new Map([
+            // Archive file extensions
+            [".a", FileType.ARCHIVE],
+            [".ar", FileType.ARCHIVE],
+            [".cpio", FileType.ARCHIVE],
+            [".shar", FileType.ARCHIVE],
+            [".LBR", FileType.ARCHIVE],
+            [".lbr", FileType.ARCHIVE],
+            [".mar", FileType.ARCHIVE],
+            [".sbx", FileType.ARCHIVE],
+            [".tar", FileType.ARCHIVE],
+            [".bz2", FileType.ARCHIVE],
+            [".F", FileType.ARCHIVE],
+            [".gz", FileType.ARCHIVE],
+            [".lz", FileType.ARCHIVE],
+            [".lz4", FileType.ARCHIVE],
+            [".lzma", FileType.ARCHIVE],
+            [".lzo", FileType.ARCHIVE],
+            [".rz", FileType.ARCHIVE],
+            [".sfark", FileType.ARCHIVE],
+            [".sz", FileType.ARCHIVE],
+            [".?Q?", FileType.ARCHIVE],
+            [".?Z?", FileType.ARCHIVE],
+            [".xz", FileType.ARCHIVE],
+            [".z", FileType.ARCHIVE],
+            [".Z", FileType.ARCHIVE],
+            [".zst", FileType.ARCHIVE],
+            [".??", FileType.ARCHIVE],
+            [".7z", FileType.ARCHIVE],
+            [".s7z", FileType.ARCHIVE],
+            [".ace", FileType.ARCHIVE],
+            [".afa", FileType.ARCHIVE],
+            [".alz", FileType.ARCHIVE],
+            [".apk", FileType.ARCHIVE],
+            [".arc", FileType.ARCHIVE],
+            [".arc", FileType.ARCHIVE],
+            [".arj", FileType.ARCHIVE],
+            [".b1", FileType.ARCHIVE],
+            [".b6z", FileType.ARCHIVE],
+            [".ba", FileType.ARCHIVE],
+            [".bh", FileType.ARCHIVE],
+            [".cab", FileType.ARCHIVE],
+            [".car", FileType.ARCHIVE],
+            [".cfs", FileType.ARCHIVE],
+            [".cpt", FileType.ARCHIVE],
+            [".dar", FileType.ARCHIVE],
+            [".dd", FileType.ARCHIVE],
+            [".dgc", FileType.ARCHIVE],
+            [".ear", FileType.ARCHIVE],
+            [".gca", FileType.ARCHIVE],
+            [".ha", FileType.ARCHIVE],
+            [".hki", FileType.ARCHIVE],
+            [".ice", FileType.ARCHIVE],
+            [".jar", FileType.ARCHIVE],
+            [".kgb", FileType.ARCHIVE],
+            [".lzh", FileType.ARCHIVE],
+            [".lzx", FileType.ARCHIVE],
+            [".pak", FileType.ARCHIVE],
+            [".pak", FileType.ARCHIVE],
+            [".parti", FileType.ARCHIVE],
+            [".paq6", FileType.ARCHIVE],
+            [".pea", FileType.ARCHIVE],
+            [".pim", FileType.ARCHIVE],
+            [".pit", FileType.ARCHIVE],
+            [".qda", FileType.ARCHIVE],
+            [".rar", FileType.ARCHIVE],
+            [".rk", FileType.ARCHIVE],
+            [".sda", FileType.ARCHIVE],
+            [".sea", FileType.ARCHIVE],
+            [".sen", FileType.ARCHIVE],
+            [".sfx", FileType.ARCHIVE],
+            [".shk", FileType.ARCHIVE],
+            [".sit", FileType.ARCHIVE],
+            [".sitx", FileType.ARCHIVE],
+            [".sqx", FileType.ARCHIVE],
+            [".tar", FileType.ARCHIVE],
+            [".tbz2", FileType.ARCHIVE],
+            [".uc", FileType.ARCHIVE],
+            [".uca", FileType.ARCHIVE],
+            [".uha", FileType.ARCHIVE],
+            [".war", FileType.ARCHIVE],
+            [".wim", FileType.ARCHIVE],
+            [".xar", FileType.ARCHIVE],
+            [".xp3", FileType.ARCHIVE],
+            [".yz1", FileType.ARCHIVE],
+            [".zip", FileType.ARCHIVE],
+            [".zoo", FileType.ARCHIVE],
+            [".zpaq", FileType.ARCHIVE],
+            [".zz", FileType.ARCHIVE],
+            [".ecc", FileType.ARCHIVE],
+            [".ecsbx", FileType.ARCHIVE],
+            [".par", FileType.ARCHIVE],
+            [".par2", FileType.ARCHIVE],
+            [".rev", FileType.ARCHIVE],
+
+            // Disk image file extensions
+            [".dmg", FileType.DISKIMAGE],
+            [".iso", FileType.DISKIMAGE],
+            [".vmdk", FileType.DISKIMAGE],
+
+            // Word documents
+            [".doc", FileType.WORD],
+            [".docx", FileType.WORD],
+            [".dotm", FileType.WORD],
+            [".dot", FileType.WORD],
+            [".wbk", FileType.WORD],
+            [".docm", FileType.WORD],
+            [".dotx", FileType.WORD],
+            [".docb", FileType.WORD],
+
+            // Excel documents
+            [".csv", FileType.EXCEL],
+            [".xls", FileType.EXCEL],
+            [".xlsx", FileType.EXCEL],
+            [".xlsm", FileType.EXCEL],
+            [".xltx", FileType.EXCEL],
+            [".xltm", FileType.EXCEL],
+            [".xlmx", FileType.EXCEL],
+            [".xlmt", FileType.EXCEL],
+
+            // Powerpoint documents
+            [".ppt", FileType.POWERPOINT],
+            [".pptx", FileType.POWERPOINT],
+            [".potx", FileType.POWERPOINT],
+            [".ppsx", FileType.POWERPOINT],
+            [".thmx", FileType.POWERPOINT],
+            [".pot", FileType.POWERPOINT],
+            [".pps", FileType.POWERPOINT],
+
+            // PDF documents
+            [".pdf", FileType.PDF],
+
+            // Database files
+            [".db", FileType.DATABASE],
+            [".sql", FileType.DATABASE],
+            [".psql", FileType.DATABASE],
+
+            // Key files
+            [".pem", FileType.KEYMATERIAL],
+            [".ppk", FileType.KEYMATERIAL],
+            [".cer", FileType.KEYMATERIAL],
+            [".pvk", FileType.KEYMATERIAL],
+            [".pfx", FileType.KEYMATERIAL],
+
+            // Source code files
+           [".config", FileType.SOURCECODE],
+           [".ps1", FileType.SOURCECODE],
+           [".psm1", FileType.SOURCECODE],
+           [".psd1", FileType.SOURCECODE],
+           [".vbs", FileType.SOURCECODE],
+           [".js", FileType.SOURCECODE],
+           [".py", FileType.SOURCECODE],
+           [".pl", FileType.SOURCECODE],
+           [".rb", FileType.SOURCECODE],
+           [".go", FileType.SOURCECODE],
+           [".xml", FileType.SOURCECODE],
+           [".html", FileType.SOURCECODE],
+           [".css", FileType.SOURCECODE],
+           [".sh", FileType.SOURCECODE],
+           [".bash", FileType.SOURCECODE],
+           [".yaml", FileType.SOURCECODE],
+           [".yml", FileType.SOURCECODE],
+           [".c", FileType.SOURCECODE],
+           [".cpp", FileType.SOURCECODE],
+           [".h", FileType.SOURCECODE],
+           [".hpp", FileType.SOURCECODE],
+           [".cs", FileType.SOURCECODE],
+           [".sln", FileType.SOURCECODE],
+           [".csproj", FileType.SOURCECODE],
+
+            // Image files
+           [".2000", FileType.IMAGE],
+           [".ani", FileType.IMAGE],
+           [".anim", FileType.IMAGE],
+           [".apng", FileType.IMAGE],
+           [".art", FileType.IMAGE],
+           [".avif", FileType.IMAGE],
+           [".bmp", FileType.IMAGE],
+           [".bpg", FileType.IMAGE],
+           [".bsave", FileType.IMAGE],
+           [".cal", FileType.IMAGE],
+           [".cin", FileType.IMAGE],
+           [".cpc", FileType.IMAGE],
+           [".cpt", FileType.IMAGE],
+           [".cur", FileType.IMAGE],
+           [".dds", FileType.IMAGE],
+           [".dpx", FileType.IMAGE],
+           [".ecw", FileType.IMAGE],
+           [".ep", FileType.IMAGE],
+           [".exr", FileType.IMAGE],
+           [".fits", FileType.IMAGE],
+           [".flic", FileType.IMAGE],
+           [".flif", FileType.IMAGE],
+           [".fpx", FileType.IMAGE],
+           [".gif", FileType.IMAGE],
+           [".hdr", FileType.IMAGE],
+           [".hdri", FileType.IMAGE],
+           [".hevc", FileType.IMAGE],
+           [".icer", FileType.IMAGE],
+           [".icns", FileType.IMAGE],
+           [".ico", FileType.IMAGE],
+           [".ics", FileType.IMAGE],
+           [".ilbm", FileType.IMAGE],
+           [".it", FileType.IMAGE],
+           [".jbig", FileType.IMAGE],
+           [".jbig2", FileType.IMAGE],
+           [".jng", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".jpeg", FileType.IMAGE],
+           [".kra", FileType.IMAGE],
+           [".logluv", FileType.IMAGE],
+           [".ls", FileType.IMAGE],
+           [".miff", FileType.IMAGE],
+           [".mng", FileType.IMAGE],
+           [".nrrd", FileType.IMAGE],
+           [".pam", FileType.IMAGE],
+           [".pbm", FileType.IMAGE],
+           [".pcx", FileType.IMAGE],
+           [".pgf", FileType.IMAGE],
+           [".pgm", FileType.IMAGE],
+           [".pictor", FileType.IMAGE],
+           [".png", FileType.IMAGE],
+           [".pnm", FileType.IMAGE],
+           [".ppm", FileType.IMAGE],
+           [".psb", FileType.IMAGE],
+           [".psd", FileType.IMAGE],
+           [".psp", FileType.IMAGE],
+           [".qtvr", FileType.IMAGE],
+           [".ras", FileType.IMAGE],
+           [".rgbe", FileType.IMAGE],
+           [".sgi", FileType.IMAGE],
+           [".tga", FileType.IMAGE],
+           [".tiff", FileType.IMAGE],
+           [".tiff", FileType.IMAGE],
+           [".tiff", FileType.IMAGE],
+           [".tiff", FileType.IMAGE],
+           [".ufo", FileType.IMAGE],
+           [".ufp", FileType.IMAGE],
+           [".wbmp", FileType.IMAGE],
+           [".webp", FileType.IMAGE],
+           [".xbm", FileType.IMAGE],
+           [".xcf", FileType.IMAGE],
+           [".xl", FileType.IMAGE],
+           [".xpm", FileType.IMAGE],
+           [".xr", FileType.IMAGE],
+           [".xs", FileType.IMAGE],
+           [".xt", FileType.IMAGE],
+           [".xwd", FileType.IMAGE],
+        ]);
+
+        // Mappings for file type to list entry styling
+        const fileStyleMap = new Map([
+            [FileType.ARCHIVE, {
+                startIcon: "archive",
+                startIconHoverText: "Archive File",
+                startIconColor: "goldenrod",
+            }],
+            [FileType.DISKIMAGE, {
+                startIcon: "diskimage",
+                startIconHoverText: "Disk Image",
+                startIconColor: "goldenrod",
+            }],
+            [FileType.WORD, {
+                startIcon: "word",
+                startIconHoverText: "Microsoft Word Document",
+                startIconColor: "cornflowerblue",
+            }],
+            [FileType.EXCEL, {
+                startIcon: 'excel',
+                startIconHoverText: "Microsoft Excel Document",
+                startIconColor: "darkseagreen",
+            }],
+            [FileType.POWERPOINT, {
+                startIcon: 'powerpoint',
+                startIconHoverText: "Microsoft PowerPoint Document",
+                startIconColor: "indianred",
+            }],
+            [FileType.PDF, {
+                startIcon: "pdf",
+                startIconHoverText: "Adobe Acrobat PDF",
+                startIconColor: "orangered",
+            }],
+            [FileType.DATABASE, {
+                startIcon: 'database',
+                startIconHoverText: "Database File Format",
+            }],
+            [FileType.KEYMATERIAL, {
+                startIcon: 'key',
+                startIconHoverText: "Key Credential Material",
+            }],
+            [FileType.SOURCECODE, {
+                startIcon: 'code',
+                startIconHoverText: "Source Code",
+                startIconColor: "rgb(25,142,117)",
+            }],
+            [FileType.IMAGE, {
+                startIcon: "image",
+                startIconHoverText: "Image File",
+            }]
+        ]);
+
+        let lookupEntryStyling = function(entry) {
+            if (entry["is_file"]) {
+                let fileExtension = "." + entry["name"].split(".").slice(-1)[0];
+                let fileCategory = fileExtensionMappings.get(fileExtension);
+
+                let defaultStyling = {
+                    startIcon: "",
+                    startIconHoverText: "",
+                    startIconColor: "",
+                };
+
+                if (fileCategory != undefined) {
+                    return { ...defaultStyling, ...fileStyleMap.get(fileCategory) };
+                } else {
+                    return defaultStyling;
+                }
+            } else {
+                return {
+                    startIcon: "openFolder",
+                    startIconHoverText: "Directory",
+                    startIconColor: "rgb(241,226,0)",
+                }
+            }
+        };
+
+        let entrySubTaskAction = function(data, entry) {
+            if (entry["is_file"]) {
+                // TODO: Rewrite this to always pass the UNC path to the cat command.
+                // Need to make sure the cat command is capable of handling UNC paths.
+                let cat_parameters = "";
+                if (entry["full_name"].includes(":")) {
+                    cat_parameters = entry["full_name"];
+                } else {
+                    cat_parameters = "\\\\" + data["host"] + "\\" + data["full_name"];
+                }
+
+                return {
+                    name: "cat",
+                    type: "task",
+                    ui_feature: "cat",
+                    parameters: cat_parameters,
+                }
+            } else {
+                return {
+                    name: "ls",
+                    type: "task",
+                    ui_feature: "file_browser:list",
+                    startIcon: "list",
+                    parameters: JSON.stringify(
+                        {
+                            host: data["host"],
+                            file: entry["full_name"],
+                        }
+                    )
+                }
+            }
+        };
+
+        let formattedResponse = {
+            headers: [
+                {
+                    plaintext: "actions",
+                    type: "button",
+                    cellStyle: {},
+                    width: 120,
+                    disableSort: true,
+                },
+                {
+                    plaintext: "Task",
+                    type: "button",
+                    cellStyle: {},
+                    width: 100,
+                    disableSort: true,
+                },
+                {
+                    plaintext: "name",
+                    type: "string",
+                    fillWidth: true,
+                    cellStyle: {},
+                },
+                {
+                    plaintext: "size",
+                    type: "size",
+                    cellStyle: {},
+                },
+                {
+                    plaintext: "owner",
+                    type: "string",
+                    fillWidth: true,
+                    cellStyle: {},
+                },
+                {
+                    plaintext: "created",
+                    type: "string",
+                    fillWidth: true,
+                    cellStyle: {},
+                },
+                {
+                    plaintext: "last modified",
+                    type: "string",
+                    fillWidth: true,
+                    cellStyle: {},
+                },
+                {
+                    plaintext: "last accessed",
+                    type: "string",
+                    fillWidth: true,
+                    cellStyle: {},
+                },
+            ],
+            title: "",
+            rows: [],
+        };
+
+
+
+        let createFormattedRow = function(data, entry) {
+            let entryStyling = lookupEntryStyling(entry);
+            return {
+                rowStyle: {},
+                name: {
+                    plaintext: entry["name"],
+                    cellStyle: {},
+                    startIcon: entryStyling.startIcon,
+                    startIconHoverText: entryStyling.startIconHoverText,
+                    startIconColor: entryStyling.startIconColor,
+                },
+                size: {
+                    plaintext: entry["size"],
+                    cellStyle: {},
+                },
+                owner: {
+                    plaintext: entry["owner"],
+                    cellStyle: {},
+                },
+                "created": {
+                    plaintext: new Date(entry["creation_date"]).toLocaleString(),
+                    cellStyle: {},
+                },
+                "last modified": {
+                    plaintext: new Date(entry["modify_time"]).toLocaleString(),
+                    cellStyle: {},
+                },
+                "last accessed": {
+                    plaintext: new Date(entry["access_time"]).toLocaleString(),
+                    cellStyle: {},
+                },
+                Task: {
+                    button: entrySubTaskAction(data, entry),
+                    cellStyle: {},
+                },
+                actions: {
+                    button: {
+                        startIcon: "list",
+                        name: "Actions",
+                        type: "menu",
+                        value: [
+                            {
+                                name: "Extended Attributes",
+                                title: "Viewing Extended Attributes for " + entry["name"],
+                                type: "dictionary",
+                                leftColumnTitle: "Extended Attributes",
+                                rightColumnTitle: "Values",
+                                startIcon: "list",
+                                value: {
+                                    "Extended Attributes": entry["extended_attributes"],
+                                },
+                            },
+                            {
+                                name: "Access Control Entries",
+                                type: "table",
+                                title: "Viewing Acess Control Lists for " + entry["name"],
+                                leftColumnTitle: "acls",
+                                rightColumnTitle: "Values",
+                                startIcon: "list",
+                                value: {
+                                    headers: [
+                                        {
+                                            plaintext: "account",
+                                            width: 400,
+                                            type: "string",
+                                        },
+                                        {
+                                            plaintext: "type",
+                                            type: "string",
+                                        },
+                                        {
+                                            plaintext: "rights",
+                                            type: "string",
+                                        },
+                                        {
+                                            plaintext: "inherited",
+                                            type: "string",
+                                        },
+                                    ],
+                                    rows: entry["permissions"].map((permValue) => ({
+                                        account: {
+                                            plaintext: permValue["account"],
+                                        },
+                                        type: {
+                                            plaintext: permValue["type"],
+                                        },
+                                        rights: {
+                                            plaintext: permValue["rights"],
+                                        },
+                                        inherited: {
+                                            plaintext: permValue["is_inherited"].toString(),
+                                        }
+                                    })),
+                                },
+                            },
+                            {
+                                name: "Download",
+                                type: "task",
+                                disabled: !entry["is_file"],
+                                startIcon: "download",
+                                ui_feature: "file_browser:download",
+                                parameters: JSON.stringify(
+                                    {
+                                        host: data["host"],
+                                        file: entry["full_name"],
+                                    }
+                                ),
+                            },
+                            {
+                                name: "Delete",
+                                type: "task",
+                                startIcon: "delete",
+                                ui_feature: "file_browser:remove",
+                                parameters: JSON.stringify(
+                                    {
+                                        host: data["host"],
+                                        path: entry["full_name"],
+                                    }
+                                ),
+                            },
+                        ]
+                    }
+                }
+            }
+        };
+
+        for (let i = 0; i < responses.length; i++) {
+            let data = {};
+            try {
                 data = JSON.parse(responses[i]);
-            }catch(error){
+            } catch(error) {
                 console.log(error);
                const combined = responses.reduce( (prev, cur) => {
                     return prev + cur;
                 }, "");
                 return {'plaintext': combined};
             }
+
             let ls_path = "";
             if(data["parent_path"].endsWith("\\")){
                 ls_path = data["parent_path"] + data["name"];
             }else{
                 ls_path = data["parent_path"] + "\\" + data["name"];
             }
-            tableHeader = "Contents of " + ls_path;
-            for(let j = 0; j < data["files"].length; j++){
-                let finfo = data["files"][j];
-                let buttonSettings = {};
-                let startIcon = "";
-                let startIconHoverText = "";
-                let startIconColor = "";
-                if (finfo["is_file"]) {
-                    var fileExt = "." + finfo['name'].split(".").slice(-1)[0].toLowerCase();
-                    if (archiveFormats.includes(fileExt)) {
-                        startIcon = 'archive';
-                        startIconHoverText = "Archive File";
-                        startIconColor = "goldenrod";
-                    } else if (diskImages.includes(fileExt)) {
-                        startIcon = 'diskimage';
-                        startIconHoverText = "Disk Image";
-                        startIconColor = "goldenrod";
-                    } else if (wordDocs.includes(fileExt)) {
-                        startIcon = 'word';
-                        startIconHoverText = "Microsoft Word Document";
-                        startIconColor = "cornflowerblue";
-                    } else if (excelDocs.includes(fileExt)){
-                        startIcon = 'excel';
-                        startIconHoverText = "Microsoft Excel Document";
-                        startIconColor = "darkseagreen";
-                    } else if (powerPoint.includes(fileExt)) {
-                        startIcon = 'powerpoint';
-                        startIconHoverText = "Microsoft PowerPoint Document";
-                        startIconColor = "indianred";
-                    } else if (pdfExt.includes(fileExt)){
-                        startIcon = 'pdf';
-                        startIconHoverText = "Adobe Acrobat PDF";
-                        startIconColor = "orangered";
-                    } else if (dbExt.includes(fileExt)) {
-                        startIcon = 'database';
-                        startIconHoverText = "Database File Format";
-                    } else if (keyFiles.includes(fileExt)) {
-                        startIcon = 'key';
-                        startIconHoverText = "Key Credential Material";
-                    } else if (codeFiles.includes(fileExt)) {
-                        startIcon = 'code';
-                        startIconHoverText = "Source Code";
-                        startIconColor = "rgb(25,142,117)";
-                    } else if (imageFiles.includes(fileExt)) {
-                        startIcon = "image";
-                        startIconHoverText = "Image File";
-                    }
-                    let cat_parameters = "";
-                    if (finfo["full_name"].includes(":")) {
-                        cat_parameters = finfo["full_name"];
-                    } else {
-                        cat_parameters = "\\\\" + data["host"] + "\\" + finfo["full_name"];
-                    }
-                    buttonSettings = {
-                        "button": {
-                            "name": "cat",
-                            "type": "task",
-                            "ui_feature": "cat",
-                            "parameters": cat_parameters,
-                        },
-                        "cellStyle": {},
-                    }
-                } else {
-                    startIcon = "openFolder";
-                    startIconHoverText = "Directory";
-                    startIconColor = "rgb(241,226,0)";
-                    buttonSettings = {"button": {
-                        "name": "ls",
-                        "type": "task",
-                        "ui_feature": "file_browser:list",
-                        "parameters": "\\\\" + data["host"] + "\\" + finfo["full_name"],
-                        "startIcon": "list",
-                        },
-                        "cellStyle": {},
-                    }
-                }
-                /*
-                
-data["files"][j]["creation_date"], "cellStyle": {}},
-                    "last modified": {"plaintext": data["files"][j]["modify_time"], "cellStyle": {}},
-                    "last accessed": {"plaintext": data["files"][j]["access_time"]                */
-                let creation_date = new Date(data["files"][j]["creation_date"]);
-                let last_modified_date = new Date(data["files"][j]["modify_time"]);
-                let access_date = new Date(data["files"][j]["access_time"]);
 
-                let fmt_creation = (creation_date.getMonth() + 1) + "/" + creation_date.getDate() + "/" + creation_date.getFullYear()
-                let fmt_last_modified = (last_modified_date.getMonth() + 1) + "/" + last_modified_date.getDate() + "/" + last_modified_date.getFullYear()
-                let fmt_access = (access_date.getMonth() + 1) + "/" + access_date.getDate() + "/" + access_date.getFullYear()
-                let acl_rows = [];
-                for(let z = 0; z < finfo["permissions"].length; z++) {
-                    acl_rows.push({
-                        "account": {"plaintext": finfo["permissions"][z]["account"]},
-                        "type": {"plaintext": finfo["permissions"][z]["type"]},
-                        "rights": {"plaintext": finfo["permissions"][z]["rights"]},
-                    });
-                }
-                let row = {
-                    "rowStyle": {}, //data["files"][j]["is_file"] ? file:  folder,
-                    "actions": {
-                        "button": {
-                        "startIcon": "list",
-                        "name": "Actions",
-                        "type": "menu",
-                        "value": [
-                            {
-                                "name": "Extended Attributes",
-                                "type": "dictionary",
-                                "value": {"Extended Attributes": finfo["extended_attributes"]},
-                                "leftColumnTitle": "Extended Attributes",
-                                "rightColumnTitle": "Values",
-                                "title": "Viewing Extended Attributes for " + finfo["name"],
-                                "startIcon": "list"
-                            },
-                            {
-                                "name": "Access Control Entries",
-                                "type": "table",
-                                "value": {
-                                    "headers": [
-                                        {"plaintext": "account", "width": 400, "type": "string"},
-                                        {"plaintext": "type", "type": "string"},
-                                        {"plaintext": "rights", "type": "string"}
-                                    ],
-                                    "rows": acl_rows
-                                },
-                                "leftColumnTitle": "acls",
-                                "rightColumnTitle": "Values",
-                                "title": "Viewing Acess Control Lists for " + data["files"][j]["name"],
-                                "startIcon": "list",
-                            },
-                            {
-                                "name": "Download",
-                                "type": "task",
-                                "disabled": !finfo["is_file"],
-                                "ui_feature": "file_browser:download",
-                                "parameters": JSON.stringify(
-                                    {
-                                        "host": data["host"],
-                                        "file": finfo["full_name"],
-                                    }
-                                ),
-                                "startIcon": "download"
-                            },
-                            {
-                                "name": "Delete",
-                                "type": "task",
-                                "ui_feature": "file_browser:remove",
-                                "parameters": JSON.stringify(
-                                    {
-                                        "host": data["host"],
-                                        "path": finfo["full_name"]
-                                    }
-                                ),
-                                "startIcon": "delete"
-                            },
-                        ]
-                    }},
-                    "Task": buttonSettings,
-                    "name": {
-                        "plaintext": data["files"][j]["name"],
-                        "cellStyle": {},
-                        "startIcon": startIcon,
-                        "startIconHoverText": startIconHoverText,
-                        "startIconColor": startIconColor
-                    },
-                    "size": {"plaintext": data["files"][j]["size"], "cellStyle": {}},
-                    "owner": {"plaintext": data["files"][j]["owner"], "cellStyle": {}},
-                    "creation date": {"plaintext": fmt_creation, "cellStyle": {}},
-                    "last modified": {"plaintext": fmt_last_modified, "cellStyle": {}},
-                    "last accessed": {"plaintext": fmt_access, "cellStyle": {}},
-                };
-                rows.push(row);
+            formattedResponse.title = "Contents of " + ls_path;
+
+            if (data["is_file"]) {
+                data["full_name"] = ls_path;
+                formattedResponse.rows.push(createFormattedRow(data, data));
+            } else {
+                console.log("Length: " + data["files"].length);
+                formattedResponse.rows = formattedResponse.rows.concat(
+                    data["files"].map((entry) => createFormattedRow(data, entry))
+                );
             }
         }
-        return {"table":[{
-            "headers": headers,
-            "rows": rows,
-            "title": tableHeader,
-        }]};
-    }else{
-        // this means we shouldn't have any output
+
+        return {table: [formattedResponse]};
+    } else {
         return {"plaintext": "No response yet from agent..."}
     }
 }

@@ -79,6 +79,7 @@
             DownloadMessage,
             FileBrowserACE,
             IPCCommandArguments,
+            ExecutePEIPCMessage,
             ProcessInformation,
             CommandInformation,
             ScreenshotInformation,

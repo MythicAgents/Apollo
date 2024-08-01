@@ -764,7 +764,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "task_id")]
             public string TaskID;
             [DataMember(Name = "status")]
-            public string Status;
+            public string? Status;
             [DataMember(Name = "keylogs")]
             public KeylogInformation[] Keylogs;
             [DataMember(Name = "edges")]
@@ -1000,8 +1000,8 @@ namespace ApolloInterop.Structs
             public int PID;
 
             [DataMember(Name = "process_name")] public string ProcessName;
-            [DataMember(Name = "ip")]
-            public string IP;
+            [DataMember(Name = "ips")]
+            public string[] IPs;
             [DataMember(Name = "uuid")]
             public string UUID;
             [DataMember(Name = "architecture")]

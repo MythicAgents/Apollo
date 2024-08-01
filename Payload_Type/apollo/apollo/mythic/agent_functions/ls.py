@@ -1,5 +1,6 @@
 from mythic_container.MythicCommandBase import *
-import json
+import re
+import string
 
 
 class LsArguments(TaskArguments):
@@ -15,11 +16,10 @@ class LsArguments(TaskArguments):
                 description="Host to list files from.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=False,
-                        group_name="Default",
-                        ui_position=1
+                        required=False, group_name="Default", ui_position=1
                     ),
-                ]),
+                ],
+            ),
             CommandParameter(
                 name="path",
                 cli_name="Path",
@@ -28,74 +28,45 @@ class LsArguments(TaskArguments):
                 description="Path to list files from.",
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=False,
-                        group_name="Default",
-                        ui_position=2
+                        required=False, group_name="Default", ui_position=2
                     ),
-                ]),
+                ],
+            ),
         ]
 
-    async def strip_host_from_path(self, path):
-        host = ""
-        if path[0] == "\\" and path[1] == "\\":
-            final = path.find("\\", 2)
-            if final != -1:
-                host = path[2:final]
-                path = path[final+1:]
-        return (host, path)
-
     async def parse_arguments(self):
-        if len(self.command_line) > 0:
-            # We'll never enter this control flow
-            if self.command_line[0] == '{':
-                temp_json = json.loads(self.command_line)
-                if "file" in temp_json.keys():
-                    # we came from the file browser
-                    host = ""
-                    path = temp_json['path']
-                    if 'file' in temp_json and temp_json['file'] != "":
-                        path += "\\" + temp_json['file']
-                    if 'host' in temp_json:
-                        # this means we have tasking from the file browser rather than the popup UI
-                        # the apfell agent doesn't currently have the ability to do _remote_ listings, so we ignore it
-                        host = temp_json['host']
-
-                    self.add_arg("host", host)
-                    self.add_arg("path", path)
-                    self.add_arg("file_browser", "true")
-                else:
-                    self.load_args_from_json_string(self.command_line)
-                    if self.get_arg("host") is not None and ":" in self.get_arg("host"):
-                        if self.get_arg("path") is None:
-                            self.add_arg("path", self.get_arg("host"))
-                        else:
-                            self.add_arg("path", self.get_arg("host") + " " + self.get_arg("path"))
-                        self.remove_arg("host")
-                    if self.get_arg("host") is not None and self.get_arg("path") is None:
-                        self.add_arg("path", self.get_arg("host"))
-                        self.set_arg("host", "")
-            else:
-                args = await self.strip_host_from_path(self.command_line)
-                self.add_arg("host", args[0])
-                self.add_arg("path", args[1])
-                self.add_arg("file_browser", "true")
+        # File browser tasking
+        if self.tasking_location == "file_browser":
+            args = json.loads(self.command_line)
+            args["path"] = args["full_path"]
+        # Tasking was sent from the modal
+        elif self.tasking_location == "modal":
+            args = json.loads(self.command_line)
+        # Freeform arguments
         else:
-            self.add_arg("host", "")
-            self.add_arg("path", self.command_line)
-            self.add_arg("file_browser", "true")
-        if self.get_arg("path") is None:
-            self.add_arg("path", ".")
-        if self.get_arg("host") is None or self.get_arg("host") == "":
-            args = await self.strip_host_from_path(self.get_arg("path"))
-            self.add_arg("host", args[0])
-            self.add_arg("path", args[1])
-        elif self.get_arg("path")[:2] == "\\\\":
-            args = await self.strip_host_from_path(self.get_arg("path"))
-            self.add_arg("host", args[0])
-            self.add_arg("path", args[1])
-        if self.get_arg("path") is not None and self.get_arg("path")[-1] == "\\":
-            self.add_arg("path", self.get_arg("path")[:-1])
+            # Check if named parameters were defined
+            cli_names = [arg.cli_name for arg in self.args if arg.cli_name is not None]
+            if (
+                any([self.raw_command_line.startswith(f"-{cli_name} ") for cli_name in cli_names])
+                or any([f" -{cli_name} " in self.raw_command_line for cli_name in cli_names])
+            ):
+                args = json.loads(self.command_line)
+            # Freeform unmatched arguments
+            else:
+                args = {"host": "", "path": "."}
 
+                if len(self.raw_command_line) > 0:
+                    # Check for a unc path and extract out information
+                    if uncmatch := re.match(
+                        r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
+                        self.raw_command_line,
+                    ):
+                        args["host"] = uncmatch.group("host")
+                        args["path"] = uncmatch.group("path") or ""
+                    else:
+                        args["path"] = self.raw_command_line
+
+        self.load_args_from_dictionary(args)
 
 
 class LsCommand(CommandBase):
@@ -108,21 +79,40 @@ class LsCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = LsArguments
     attackmapping = ["T1106", "T1083"]
-    browser_script = BrowserScript(script_name="ls_new", author="@djhohnstein", for_new_ui=True)
+    browser_script = BrowserScript(
+        script_name="ls_new", author="@djhohnstein", for_new_ui=True
+    )
 
-    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+    async def create_go_tasking(
+        self, taskData: PTTaskMessageAllData
+    ) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        host = taskData.args.get_arg("host")
+
         path = taskData.args.get_arg("path")
-        if host:
-            response.DisplayParams = "{} on {}".format(path, host)
+        response.DisplayParams = path
+
+        if host := taskData.args.get_arg("host"):
+            host = host.upper()
+
+            # Resolve 'localhost' and '127.0.0.1' aliases
+            if host == "127.0.0.1" or host.lower() == "localhost":
+                host = taskData.Callback.Host
+
+            taskData.args.set_arg("host", host)
+
+            if len(host) > 0:
+                response.DisplayParams += f" on {host}"
         else:
-            response.DisplayParams = path
+            # Set the host argument to an empty string if it does not exist
+            taskData.args.add_arg("host", "")
+
         return response
 
-    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+    async def process_response(
+        self, task: PTTaskMessageAllData, response: any
+    ) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
         return resp
