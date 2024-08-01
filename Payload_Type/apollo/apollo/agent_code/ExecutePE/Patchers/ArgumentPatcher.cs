@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using ApolloInterop.Utils;
 using ExecutePE.Helpers;
 
 namespace ExecutePE.Patchers
@@ -27,7 +26,7 @@ namespace ExecutePE.Patchers
             UNICODE_STRING_STRUCT_STRING_POINTER_OFFSET =
                 0x8; // Offset into the UNICODE_STRING struct that the string pointer sits at https://docs.microsoft.com/en-us/windows/win32/api/subauth/ns-subauth-unicode_string
 
-        private byte[] _originalCommandLineFuncBytes;
+        private byte[]? _originalCommandLineFuncBytes;
         private IntPtr _ppCommandLineString;
         private IntPtr _ppImageString;
         private IntPtr _pLength;
@@ -37,10 +36,10 @@ namespace ExecutePE.Patchers
         private IntPtr _pNewString;
         private short _originalLength;
         private short _originalMaxLength;
-        private string _commandLineFunc = null;
-        private Encoding _encoding;
+        private string? _commandLineFunc;
+        private Encoding _encoding = Encoding.UTF8;
 
-        public bool UpdateArgs(string filename, string[] args)
+        public bool UpdateArgs(string imageName, string commandLine)
         {
             var pPEB = Utils.GetPointerToPeb();
             if (pPEB == IntPtr.Zero)
@@ -52,12 +51,8 @@ namespace ExecutePE.Patchers
                 out _ppImageString, out _pOriginalImageString, out _pLength, out _originalLength, out _pMaxLength,
                 out _originalMaxLength);
 
-            var commandLineString = Marshal.PtrToStringUni(_pOriginalCommandLineString);
-            var imageString = Marshal.PtrToStringUni(_pOriginalImageString);
-            var newCommandLineString = $"\"{filename}\" {string.Join(" ", args)}";
-            DebugHelp.DebugWriteLine($"Command Line String: {newCommandLineString}");
-            var pNewCommandLineString = Marshal.StringToHGlobalUni(newCommandLineString);
-            var pNewImageString = Marshal.StringToHGlobalUni(filename);
+            var pNewCommandLineString = Marshal.StringToHGlobalUni(commandLine);
+            var pNewImageString = Marshal.StringToHGlobalUni(imageName);
             if (!Utils.PatchAddress(_ppCommandLineString, pNewCommandLineString))
             {
 
@@ -67,33 +62,21 @@ namespace ExecutePE.Patchers
             {
                 return false;
             }
-            Marshal.WriteInt16(_pLength, 0, (short)newCommandLineString.Length);
-            Marshal.WriteInt16(_pMaxLength, 0, (short)newCommandLineString.Length);
+            Marshal.WriteInt16(_pLength, 0, (short)commandLine.Length);
+            Marshal.WriteInt16(_pMaxLength, 0, (short)commandLine.Length);
 
-#if DEBUG
-            GetPebCommandLineAndImagePointers(pPEB, out _, out var pCommandLineStringCheck, out _,
-                out var pImageStringCheck, out _, out var lengthCheck, out _, out var maxLengthCheck);
-            var commandLineStringCheck = Marshal.PtrToStringUni(pCommandLineStringCheck);
-            var imageStringCheck = Marshal.PtrToStringUni(pImageStringCheck);
-#endif
-
-            if (!PatchGetCommandLineFunc(newCommandLineString))
+            if (!PatchGetCommandLineFunc(commandLine))
             {
                 return false;
             }
 
-#if DEBUG
-            var getCommandLineAPIString = Marshal.PtrToStringUni(NativeDeclarations.GetCommandLine());
-#endif
             return true;
         }
 
-        private bool PatchGetCommandLineFunc(string newCommandLineString)
+        private bool PatchGetCommandLineFunc(string commandLine)
         {
             var pCommandLineString = NativeDeclarations.GetCommandLine();
             var commandLineString = Marshal.PtrToStringAuto(pCommandLineString);
-
-            _encoding = Encoding.UTF8;
 
             if (commandLineString != null)
             {
@@ -108,38 +91,17 @@ namespace ExecutePE.Patchers
                     _encoding = Encoding.ASCII; // At present assuming either ASCII or UTF8
                 }
 
-                Program.encoding = _encoding;
-
-#if DEBUG
-                // Print the string bytes and what the encoding was determined to be
-                var stringBytesHexString = "";
-                foreach (var x in stringBytes)
-                {
-                    stringBytesHexString += x.ToString("X") + " ";
-                }
-
-
-
-
-
-#endif
+                PERunner.encoding = _encoding;
             }
 
             // Set the GetCommandLine func based on the determined encoding
             _commandLineFunc = _encoding.Equals(Encoding.ASCII) ? "GetCommandLineA" : "GetCommandLineW";
 
-#if DEBUG
-
-
-#endif
             // Write the new command line string into memory
             _pNewString = _encoding.Equals(Encoding.ASCII)
-                ? Marshal.StringToHGlobalAnsi(newCommandLineString)
-                : Marshal.StringToHGlobalUni(newCommandLineString);
-#if DEBUG
+                ? Marshal.StringToHGlobalAnsi(commandLine)
+                : Marshal.StringToHGlobalUni(commandLine);
 
-
-#endif
             // Create the patch bytes that provide the new string pointer
             var patchBytes = new List<byte>() { 0x48, 0xB8 }; // TODO architecture
             var pointerBytes = BitConverter.GetBytes(_pNewString.ToInt64());
@@ -155,11 +117,6 @@ namespace ExecutePE.Patchers
                 return false;
             }
 
-#if DEBUG
-            var pNewCommandLineString = NativeDeclarations.GetCommandLine();
-
-
-#endif
             return true;
         }
 
@@ -168,20 +125,8 @@ namespace ExecutePE.Patchers
             out IntPtr pCommandLineLength, out short commandLineLength, out IntPtr pCommandLineMaxLength,
             out short commandLineMaxLength)
         {
-#if DEBUG
-
-
-#endif
             var ppRtlUserProcessParams = (IntPtr)(pPEB.ToInt64() + PEB_RTL_USER_PROCESS_PARAMETERS_OFFSET);
-#if DEBUG
-
-
-#endif
             var pRtlUserProcessParams = Marshal.ReadInt64(ppRtlUserProcessParams);
-#if DEBUG
-
-
-#endif
             ppCommandLineString = (IntPtr)pRtlUserProcessParams + RTL_USER_PROCESS_PARAMETERS_COMMANDLINE_OFFSET +
                                   UNICODE_STRING_STRUCT_STRING_POINTER_OFFSET;
             pCommandLineString = (IntPtr)Marshal.ReadInt64(ppCommandLineString);
@@ -196,75 +141,20 @@ namespace ExecutePE.Patchers
             pCommandLineMaxLength = (IntPtr)pRtlUserProcessParams + RTL_USER_PROCESS_PARAMETERS_COMMANDLINE_OFFSET +
                                     RTL_USER_PROCESS_PARAMETERS_MAX_LENGTH_OFFSET;
             commandLineMaxLength = Marshal.ReadInt16(pCommandLineMaxLength);
-#if DEBUG
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif
         }
 
         internal void ResetArgs()
         {
-#if DEBUG
-
-
-#endif
-            if (Utils.PatchFunction("kernelbase", _commandLineFunc, _originalCommandLineFuncBytes) == null)
+            if (_originalCommandLineFuncBytes is not null && _commandLineFunc is not null)
             {
-#if DEBUG
-
-
-#endif
+                Utils.PatchFunction("kernelbase", _commandLineFunc, _originalCommandLineFuncBytes);
             }
-#if DEBUG
 
+            Utils.PatchAddress(_ppCommandLineString, _pOriginalCommandLineString);
+            Utils.PatchAddress(_ppImageString, _pOriginalImageString);
 
-#endif
-            if (!Utils.PatchAddress(_ppCommandLineString, _pOriginalCommandLineString))
-            {
-#if DEBUG
-
-
-#endif
-            }
-#if DEBUG
-
-
-#endif
-            if (!Utils.PatchAddress(_ppImageString, _pOriginalImageString))
-            {
-#if DEBUG
-
-
-#endif
-            }
-#if DEBUG
-
-
-#endif
             Marshal.WriteInt16(_pLength, 0, _originalLength);
-#if DEBUG
-
-
-#endif
             Marshal.WriteInt16(_pMaxLength, 0, _originalMaxLength);
-#if DEBUG
-
-
-#endif
         }
     }
 }

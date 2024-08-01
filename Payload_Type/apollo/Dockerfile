@@ -7,6 +7,7 @@ WORKDIR /Mythic/
 RUN python3 -m venv /venv
 RUN /venv/bin/python -m pip install mythic-container==0.4.10
 RUN /venv/bin/python -m pip install donut-shellcode
+RUN /venv/bin/python -m pip install mslex
 
 COPY [".", "."]
 
