@@ -9,66 +9,49 @@ class LsArguments(TaskArguments):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="host",
-                cli_name="Host",
-                display_name="Host",
+                name="path",
+                cli_name="path",
+                display_name="Path to list files from.",
                 type=ParameterType.String,
-                description="Host to list files from.",
+                description="Path to list files from.",
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False, group_name="Default", ui_position=1
                     ),
                 ],
             ),
-            CommandParameter(
-                name="path",
-                cli_name="Path",
-                display_name="Path to list files from.",
-                type=ParameterType.String,
-                description="Path to list files from.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=False, group_name="Default", ui_position=2
-                    ),
-                ],
-            ),
         ]
 
-    async def parse_arguments(self):
-        # File browser tasking
-        if self.tasking_location == "file_browser":
-            args = json.loads(self.command_line)
-            args["path"] = args["full_path"]
-        # Tasking was sent from the modal
-        elif self.tasking_location == "modal":
-            args = json.loads(self.command_line)
-        elif self.tasking_location == "browserscript":
-            args = json.loads(self.command_line)
-            args["path"] = args["file"]
-        # Freeform arguments
-        else:
-            # Check if named parameters were defined
-            cli_names = [arg.cli_name for arg in self.args if arg.cli_name is not None]
-            if (
-                any([self.raw_command_line.startswith(f"-{cli_name} ") for cli_name in cli_names])
-                or any([f" -{cli_name} " in self.raw_command_line for cli_name in cli_names])
-            ):
-                args = json.loads(self.command_line)
-            # Freeform unmatched arguments
+    async def parse_dictionary(self, dictionary_arguments):
+        logger.info(dictionary_arguments)
+        logger.info(self.tasking_location)
+        self.load_args_from_dictionary(dictionary_arguments)
+        if "host" in dictionary_arguments:
+            if "full_path" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
+            elif "path" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
+            elif "file" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
             else:
-                args = {"host": "", "path": "."}
+                logger.info("unknown dictionary args")
+        else:
+            if "path" not in dictionary_arguments or dictionary_arguments["path"] is None:
+                self.add_arg("path", f'.')
 
-                if len(self.raw_command_line) > 0:
-                    # Check for a unc path and extract out information
-                    if uncmatch := re.match(
-                        r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
-                        self.raw_command_line,
-                    ):
-                        args["host"] = uncmatch.group("host")
-                        args["path"] = uncmatch.group("path") or ""
-                    else:
-                        args["path"] = self.raw_command_line
-
+    async def parse_arguments(self):
+        # Check if named parameters were defined
+        cli_names = [arg.cli_name for arg in self.args if arg.cli_name is not None]
+        if (
+            any([self.raw_command_line.startswith(f"-{cli_name} ") for cli_name in cli_names])
+            or any([f" -{cli_name} " in self.raw_command_line for cli_name in cli_names])
+        ):
+            args = json.loads(self.command_line)
+        # Freeform unmatched arguments
+        else:
+            args = {"path": "."}
+            if len(self.raw_command_line) > 0:
+                args["path"] = self.raw_command_line
         self.load_args_from_dictionary(args)
 
 
@@ -106,11 +89,16 @@ class LsCommand(CommandBase):
 
             taskData.args.set_arg("host", host)
 
-            if len(host) > 0:
-                response.DisplayParams += f" on {host}"
         else:
-            # Set the host argument to an empty string if it does not exist
-            taskData.args.add_arg("host", "")
+            if uncmatch := re.match(
+                r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
+                path,
+            ):
+                taskData.args.set_arg("host", uncmatch.group("host"))
+                taskData.args.set_arg("path", uncmatch.group("path"))
+            else:
+                # Set the host argument to an empty string if it does not exist
+                taskData.args.add_arg("host", "")
 
         return response
 

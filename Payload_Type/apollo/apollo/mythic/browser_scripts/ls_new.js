@@ -579,7 +579,10 @@ function(task, responses){
             }
 
             let ls_path = "";
-            if(data["parent_path"].endsWith("\\")){
+            if(data["parent_path"] === ""){
+                ls_path = data["name"];
+            }
+            else if(data["parent_path"].endsWith("\\")){
                 ls_path = data["parent_path"] + data["name"];
             }else{
                 ls_path = data["parent_path"] + "\\" + data["name"];
