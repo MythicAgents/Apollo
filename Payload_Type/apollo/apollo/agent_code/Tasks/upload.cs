@@ -12,6 +12,8 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
 using System.IO;
+using ApolloInterop.Utils;
+using System.Linq;
 
 namespace Tasks
 {
@@ -20,6 +22,7 @@ namespace Tasks
         [DataContract]
         internal struct UploadParameters
         {
+#pragma warning disable 0649
             [DataMember(Name = "remote_path")]
             internal string RemotePath;
             [DataMember(Name = "file")]
@@ -28,6 +31,7 @@ namespace Tasks
             internal string FileName;
             [DataMember(Name = "host")]
             internal string HostName;
+#pragma warning restore 0649
         }
 
         public upload(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
@@ -37,45 +41,67 @@ namespace Tasks
 
         internal string ParsePath(UploadParameters p)
         {
-            string host = "";
-            string path = "";
+            string uploadPath;
             if (!string.IsNullOrEmpty(p.HostName))
             {
-                if (p.HostName != "127.0.0.1" || p.HostName.ToLower() != "localhost")
+                if (!string.IsNullOrEmpty(p.RemotePath))
                 {
-                    host = p.HostName;
+                    uploadPath = string.Format(@"\\{0}\{1}", p.HostName, p.RemotePath);
+                }
+                else
+                {
+                    // Remote paths require a share name
+                    throw new ArgumentException("SMB share name not specified.");
                 }
             }
-            if (!string.IsNullOrEmpty(p.RemotePath))
+            else
             {
-                if (Directory.Exists(p.RemotePath))
+                if (!string.IsNullOrEmpty(p.RemotePath))
                 {
-                    path = Path.Combine(new string[]
+                    if (Path.IsPathRooted(p.RemotePath))
                     {
-                        p.RemotePath,
-                        p.FileName
-                    });
-                } else
-                {
-                    path = p.RemotePath;
+                        uploadPath = p.RemotePath;
+                    }
+                    else
+                    {
+                        uploadPath = Path.GetFullPath(p.RemotePath);
+                    }
                 }
-            } else
-            {
-                path = Path.Combine(new string[]
+                else
                 {
-                    Directory.GetCurrentDirectory(),
-                    p.FileName
-                });
+                    uploadPath = Directory.GetCurrentDirectory();
+                }
             }
 
-            if (!string.IsNullOrEmpty(host))
+            string unresolvedFilePath;
+            var uploadPathInfo = new DirectoryInfo(uploadPath);
+            if (uploadPathInfo.Exists)
             {
-                return string.Format(@"\\{0}\{1}", host, path);
-            } else
-            {
-                FileInfo finfo = new FileInfo(path);
-                return finfo.FullName;
+                unresolvedFilePath = Path.Combine([uploadPathInfo.FullName, p.FileName]);
             }
+            else if (uploadPathInfo.Parent is DirectoryInfo parentInfo && parentInfo.Exists)
+            {
+                unresolvedFilePath = uploadPathInfo.FullName;
+            }
+            else
+            {
+                throw new ArgumentException($"{uploadPath} does not exist.");
+            }
+
+            var parentPath = Path.GetDirectoryName(unresolvedFilePath);
+            var fileName = unresolvedFilePath.Split(Path.DirectorySeparatorChar).Last();
+
+            string resolvedParent;
+            if (PathUtils.TryGetExactPath(parentPath, out var resolved))
+            {
+                resolvedParent = resolved;
+            }
+            else
+            {
+                resolvedParent = parentPath;
+            }
+
+            return Path.Combine([resolvedParent, fileName]);
         }
 
 
@@ -90,9 +116,9 @@ namespace Tasks
                     parameters.FileID,
                     out byte[] fileData))
             {
-                string path = ParsePath(parameters);
                 try
                 {
+                    string path = ParsePath(parameters);
                     File.WriteAllBytes(path, fileData);
 
                     resp = CreateTaskResponse(
