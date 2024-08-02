@@ -1,5 +1,6 @@
 from mythic_container.MythicCommandBase import *
 import json
+import re
 
 
 class DownloadArguments(TaskArguments):
@@ -8,8 +9,8 @@ class DownloadArguments(TaskArguments):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="file",
-                cli_name="Path",
+                name="path",
+                cli_name="path",
                 display_name="Path to file to download.",
                 type=ParameterType.String,
                 description="File to download.",
@@ -17,73 +18,40 @@ class DownloadArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=True,
                         group_name="Default",
-                        ui_position=2
-                    )
-                ]),
-            CommandParameter(
-                name="host",
-                cli_name="Host",
-                display_name="Host",
-                type=ParameterType.String,
-                description="File to download.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=False,
-                        group_name="Default",
                         ui_position=1
-                    ),
+                    )
                 ]),
         ]
 
-    async def parse_arguments(self):
-        if len(self.command_line) == 0:
-            raise Exception("Require a path to download.\n\tUsage: {}".format(DownloadCommand.help_cmd))
-        filename = ""
-        if self.command_line[0] == '"' and self.command_line[-1] == '"':
-            self.command_line = self.command_line[1:-1]
-            filename = self.command_line
-        elif self.command_line[0] == "'" and self.command_line[-1] == "'":
-            self.command_line = self.command_line[1:-1]
-            filename = self.command_line
-        elif self.command_line[0] == "{":
-            args = json.loads(self.command_line)
-            if args.get("path") is not None and args.get("file") is not None:
-                # Then this is a filebrowser thing
-                if args["path"][-1] == "\\":
-                    self.add_arg("file", args["path"] + args["file"])
-                else:
-                    self.add_arg("file", args["path"] + "\\" + args["file"])
-                self.add_arg("host", args["host"])
+    async def parse_dictionary(self, dictionary_arguments):
+        logger.info(dictionary_arguments)
+        logger.info(self.tasking_location)
+        self.load_args_from_dictionary(dictionary_arguments)
+        if "host" in dictionary_arguments:
+            if "full_path" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
+            elif "path" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
+            elif "file" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
             else:
-                # got a modal popup or parsed-cli
-                self.load_args_from_json_string(self.command_line)
-                if self.get_arg("host"):
-                    if ":" in self.get_arg("host"):
-                        if self.get_arg("file"):
-                            self.add_arg("file", self.get_arg("host") + " " + self.get_arg("file"))
-                        else:
-                            self.add_arg("file", self.get_arg("host"))
-                        self.remove_arg("host")
+                logger.info("unknown dictionary args")
         else:
-            filename = self.command_line
+            if "path" not in dictionary_arguments or dictionary_arguments["path"] is None:
+                self.add_arg("path", f'.')
 
-        if filename != "":
-            if filename[:2] == "\\\\":
-                # UNC path
-                filename_parts = filename.split("\\")
-                if len(filename_parts) < 4:
-                    raise Exception("Illegal UNC path or no file could be parsed from: {}".format(filename))
-                self.add_arg("host", filename_parts[2])
-                self.add_arg("file", "\\".join(filename_parts[3:]))
-            else:
-                self.add_arg("file", filename)
-                self.add_arg("host", "")
+    async def parse_arguments(self):
+        # Check if named parameters were defined
+        args = {"path": "."}
+        if len(self.raw_command_line) > 0:
+            args["path"] = self.raw_command_line
+        self.load_args_from_dictionary(args)
 
 
 class DownloadCommand(CommandBase):
     cmd = "download"
     needs_admin = False
-    help_cmd = "download -Path [path/to/file] [-Host [hostname]]"
+    help_cmd = "download -Path [path/to/file]"
     description = "Download a file off the target system."
     version = 3
     supported_ui_features = ["file_browser:download"]
@@ -100,10 +68,27 @@ class DownloadCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        if taskData.args.get_arg("host"):
-            response.DisplayParams = "-Host {} -Path {}".format(taskData.args.get_arg("host"), taskData.args.get_arg("file"))
+        path = taskData.args.get_arg("path")
+        response.DisplayParams = path
+
+        if uncmatch := re.match(
+            r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
+            path,
+        ):
+            taskData.args.add_arg("host", uncmatch.group("host"))
+            taskData.args.set_arg("path", uncmatch.group("path"))
         else:
-            response.DisplayParams = "-Path {}".format(taskData.args.get_arg("file"))
+            # Set the host argument to an empty string if it does not exist
+            taskData.args.add_arg("host", "")
+        if host := taskData.args.get_arg("host"):
+            host = host.upper()
+
+            # Resolve 'localhost' and '127.0.0.1' aliases
+            if host == "127.0.0.1" or host.lower() == "localhost":
+                host = taskData.Callback.Host
+
+            taskData.args.set_arg("host", host)
+        taskData.args.add_arg("file", taskData.args.get_arg("path"))
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

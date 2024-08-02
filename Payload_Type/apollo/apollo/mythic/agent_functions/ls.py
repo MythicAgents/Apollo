@@ -80,6 +80,15 @@ class LsCommand(CommandBase):
         path = taskData.args.get_arg("path")
         response.DisplayParams = path
 
+        if uncmatch := re.match(
+            r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
+            path,
+        ):
+            taskData.args.add_arg("host", uncmatch.group("host"))
+            taskData.args.set_arg("path", uncmatch.group("path"))
+        else:
+            # Set the host argument to an empty string if it does not exist
+            taskData.args.add_arg("host", "")
         if host := taskData.args.get_arg("host"):
             host = host.upper()
 
@@ -88,17 +97,6 @@ class LsCommand(CommandBase):
                 host = taskData.Callback.Host
 
             taskData.args.set_arg("host", host)
-
-        else:
-            if uncmatch := re.match(
-                r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
-                path,
-            ):
-                taskData.args.set_arg("host", uncmatch.group("host"))
-                taskData.args.set_arg("path", uncmatch.group("path"))
-            else:
-                # Set the host argument to an empty string if it does not exist
-                taskData.args.add_arg("host", "")
 
         return response
 

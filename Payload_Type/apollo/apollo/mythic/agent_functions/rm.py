@@ -1,5 +1,6 @@
 from mythic_container.MythicCommandBase import *
 import json
+import re
 
 
 class RmArguments(TaskArguments):
@@ -9,50 +10,45 @@ class RmArguments(TaskArguments):
         self.args = [
             CommandParameter(
                 name="path",
-                cli_name="Path",
+                cli_name="path",
                 display_name="Directory of File",
                 type=ParameterType.String,
                 description="The full path of the file to remove on the specified host"),
-            CommandParameter(
-                name="file",
-                cli_name="File", 
-                display_name="File",
-                type=ParameterType.String, description="The file to remove on the specified host (used by file browser)",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=False,
-                    ),
-                ]),
-            CommandParameter(
-                name="host",
-                cli_name="Host",
-                display_name="Host",
-                type=ParameterType.String,
-                description="Computer from which to remove the file.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=False,
-                    ),
-                ]),
         ]
 
-    async def parse_arguments(self):
-        if len(self.command_line) > 0:
-            if self.command_line[0] == '{':
-                self.load_args_from_json_string(self.command_line)
+    async def parse_dictionary(self, dictionary_arguments):
+        logger.info(dictionary_arguments)
+        logger.info(self.tasking_location)
+        self.load_args_from_dictionary(dictionary_arguments)
+        if "host" in dictionary_arguments:
+            if "full_path" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
+            elif "path" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
+            elif "file" in dictionary_arguments:
+                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
             else:
-                host = ""
-                if self.command_line[0] == "\\" and self.command_line[1] == "\\":
-                    final = self.command_line.find("\\", 2)
-                    if final != -1:
-                        host = self.command_line[2:final]
-                    else:
-                        raise Exception("Invalid UNC path: {}".format(self.command_line))
-                self.add_arg("host", host)
-                self.add_arg("path", self.command_line)
+                logger.info("unknown dictionary args")
         else:
-            raise Exception("rm requires a path to remove.\n\tUsage: {}".format(RmCommand.help_cmd))
+            if "path" not in dictionary_arguments or dictionary_arguments["path"] is None:
+                self.add_arg("path", f'.')
 
+    async def parse_arguments(self):
+        if len(self.command_line) == 0:
+            raise Exception("rm requires a path to remove.\n\tUsage: {}".format(RmCommand.help_cmd))
+        # Check if named parameters were defined
+        cli_names = [arg.cli_name for arg in self.args if arg.cli_name is not None]
+        if (
+            any([self.raw_command_line.startswith(f"-{cli_name} ") for cli_name in cli_names])
+            or any([f" -{cli_name} " in self.raw_command_line for cli_name in cli_names])
+        ):
+            args = json.loads(self.command_line)
+        # Freeform unmatched arguments
+        else:
+            args = {"path": "."}
+            if len(self.raw_command_line) > 0:
+                args["path"] = self.raw_command_line
+        self.load_args_from_dictionary(args)
 
 
 class RmCommand(CommandBase):
@@ -71,10 +67,27 @@ class RmCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        host = taskData.args.get_arg("host")
-        response.DisplayParams = "-Path {}".format(taskData.args.get_arg("path"))
-        if host:
-            response.DisplayParams += " -Host {}".format(host)
+        path = taskData.args.get_arg("path")
+        response.DisplayParams = path
+
+        if uncmatch := re.match(
+            r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
+            path,
+        ):
+            taskData.args.add_arg("host", uncmatch.group("host"))
+            taskData.args.set_arg("path", uncmatch.group("path"))
+        else:
+            # Set the host argument to an empty string if it does not exist
+            taskData.args.add_arg("host", "")
+        if host := taskData.args.get_arg("host"):
+            host = host.upper()
+
+            # Resolve 'localhost' and '127.0.0.1' aliases
+            if host == "127.0.0.1" or host.lower() == "localhost":
+                host = taskData.Callback.Host
+
+            taskData.args.set_arg("host", host)
+
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

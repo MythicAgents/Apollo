@@ -360,7 +360,7 @@ function(task, responses){
                 if (entry["full_name"].includes(":")) {
                     cat_parameters = entry["full_name"];
                 } else {
-                    cat_parameters = "\\\\" + data["host"] + "\\" + data["full_name"];
+                    cat_parameters = "\\\\" + data["host"] + "\\" + entry["full_name"];
                 }
 
                 return {
@@ -377,7 +377,7 @@ function(task, responses){
                     startIcon: "list",
                     parameters: {
                             host: data["host"],
-                            file: entry["full_name"],
+                            full_path: entry["full_name"],
                         }
                 }
             }
@@ -544,7 +544,7 @@ function(task, responses){
                                 ui_feature: "file_browser:download",
                                 parameters: {
                                         host: data["host"],
-                                        file: entry["full_name"],
+                                        full_path: entry["full_name"],
                                     }
                                 ,
                             },
@@ -556,7 +556,7 @@ function(task, responses){
                                 getConfirmation: true,
                                 parameters: {
                                         host: data["host"],
-                                        path: entry["full_name"],
+                                        full_path: entry["full_name"],
                                     }
                                 ,
                             },
