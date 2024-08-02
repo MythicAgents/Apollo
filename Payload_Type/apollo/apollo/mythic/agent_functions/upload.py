@@ -2,7 +2,7 @@ from mythic_container.MythicCommandBase import *
 import json
 from mythic_container.MythicRPC import *
 import sys
-import base64
+import re
 
 
 class UploadArguments(TaskArguments):
@@ -12,8 +12,8 @@ class UploadArguments(TaskArguments):
         self.args = [
             CommandParameter(
                 name="remote_path",
-                cli_name="Destination",
-                display_name="Destination",
+                cli_name="Path",
+                display_name="Path With Filename",
                 type=ParameterType.String,
                 description="Path to write the file on the target. If empty, defaults to current working directory.",
                 parameter_group_info=[
@@ -28,19 +28,19 @@ class UploadArguments(TaskArguments):
                 display_name="File",
                 type=ParameterType.File,
             ),
-            CommandParameter(
-                name="host",
-                cli_name="Host",
-                display_name="Host",
-                type=ParameterType.String,
-                description="Computer to upload the file to. If empty, the current computer.",
-                parameter_group_info=[
-                    ParameterGroupInfo(
-                        required=False,
-                    ),
-                ],
-            ),
         ]
+
+    async def parse_dictionary(self, dictionary_arguments):
+        self.load_args_from_dictionary(dictionary_arguments)
+        if "host" in dictionary_arguments:
+            if "full_path" in dictionary_arguments:
+                self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
+            elif "path" in dictionary_arguments:
+                self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
+            elif "file" in dictionary_arguments:
+                self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
+            else:
+                logger.info("unknown dictionary args")
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -49,14 +49,13 @@ class UploadArguments(TaskArguments):
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
         remote_path = self.get_arg("remote_path")
-        if remote_path != "" and remote_path != None:
+        if remote_path != "" and remote_path is not None:
             remote_path = remote_path.strip()
             if remote_path[0] == '"' and remote_path[-1] == '"':
                 remote_path = remote_path[1:-1]
             elif remote_path[0] == "'" and remote_path[-1] == "'":
                 remote_path = remote_path[1:-1]
             self.add_arg("remote_path", remote_path)
-        pass
 
 
 class UploadCommand(CommandBase):
@@ -95,24 +94,33 @@ class UploadCommand(CommandBase):
         taskData.args.add_arg(
             "file_name", original_file_name, type=ParameterType.String
         )
-        host = taskData.args.get_arg("host")
-
-        # Remove any localhost aliases
-        if host and (
-            host.upper() == taskData.Callback.Host.upper()
-            or host == "127.0.0.1"
-            or host.lower() == "localhost"
-        ):
-            taskData.args.remove_arg("host")
 
         path = taskData.args.get_arg("remote_path")
+
+        if uncmatch := re.match(
+            r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
+            path,
+        ):
+            taskData.args.add_arg("host", uncmatch.group("host"))
+            taskData.args.set_arg("remote_path", uncmatch.group("path"))
+        else:
+            # Set the host argument to an empty string if it does not exist
+            taskData.args.add_arg("host", "")
+        if host := taskData.args.get_arg("host"):
+            host = host.upper()
+
+            # Resolve 'localhost' and '127.0.0.1' aliases
+            if host == "127.0.0.1" or host.lower() == "localhost":
+                host = taskData.Callback.Host
+
+            taskData.args.set_arg("host", host)
         if path is not None and path != "":
             if host is not None and host != "":
                 disp_str = "-File {} -Host {} -Path {}".format(
-                    original_file_name, host, path
+                    original_file_name, taskData.args.get_arg("host"), taskData.args.get_arg("remote_path")
                 )
             else:
-                disp_str = "-File {} -Path {}".format(original_file_name, path)
+                disp_str = "-File {} -Path {}".format(original_file_name, taskData.args.get_arg("remote_path"))
         else:
             disp_str = "-File {}".format(original_file_name)
         response.DisplayParams = disp_str
