@@ -17,19 +17,9 @@ namespace ExecutePE.Patchers
         public bool PatchAPIs(IntPtr baseAddress)
         {
             _getModuleHandleFuncName = Encoding.UTF8.Equals(PERunner.encoding) ? "GetModuleHandleW" : "GetModuleHandleA";
-
-#if DEBUG
-
-
-
-#endif
             WriteNewFuncToMemory(baseAddress);
 
             if (PatchAPIToJmpToNewFunc()) return true;
-#if DEBUG
-
-
-#endif
             return false;
         }
 
@@ -97,10 +87,6 @@ namespace ExecutePE.Patchers
             */
             _newFuncAlloc = NativeDeclarations.VirtualAlloc(IntPtr.Zero, (uint)newFuncBytes.Count,
                 NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
-#if DEBUG
-
-
-#endif
             Marshal.Copy(newFuncBytes.ToArray(), 0, _newFuncAlloc, newFuncBytes.Count);
             _newFuncBytesCount = newFuncBytes.Count;
 
@@ -111,17 +97,9 @@ namespace ExecutePE.Patchers
 
         public bool RevertAPIs()
         {
-#if DEBUG
-
-
-#endif
             Utils.PatchFunction("kernelbase", _getModuleHandleFuncName, _originalGetModuleHandleBytes);
             Utils.ZeroOutMemory(_newFuncAlloc, _newFuncBytesCount);
             Utils.FreeMemory(_newFuncAlloc);
-#if DEBUG
-
-
-#endif
             return true;
         }
     }
