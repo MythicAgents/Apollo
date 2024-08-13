@@ -12,18 +12,10 @@ namespace ExecutePE.Patchers
 
         public void MapPEIntoMemory(byte[] unpacked, out PELoader peLoader, out long currentBase)
         {
-#if DEBUG
-
-
-#endif
             _pe = peLoader = new PELoader(unpacked);
             _codebase = NativeDeclarations.VirtualAlloc(IntPtr.Zero, _pe.OptionalHeader64.SizeOfImage,
                 NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
             currentBase = _codebase.ToInt64();
-#if DEBUG
-
-
-#endif
 
             // Copy Sections
             for (var i = 0; i < _pe.FileHeader.NumberOfSections; i++)
@@ -80,36 +72,17 @@ namespace ExecutePE.Patchers
 
                 if (relocationNextEntry.SizeOfBlock == 0)
                 {
-#if DEBUG
-
-
-#endif
                     break;
                 }
             }
 
-#if DEBUG
-
-
-
-
-#endif
         }
 
         internal void ClearPE()
         {
             var size = _pe.OptionalHeader64.SizeOfImage;
-#if DEBUG
-
-
-#endif
             Utils.ZeroOutMemory(_codebase, (int)size);
             Utils.FreeMemory(_codebase);
-
-#if DEBUG
-
-
-#endif
         }
 
         internal void SetPagePermissions()
