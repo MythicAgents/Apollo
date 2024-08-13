@@ -20,6 +20,12 @@ namespace ExecutePE.Patchers
             // Copy Sections
             for (var i = 0; i < _pe.FileHeader.NumberOfSections; i++)
             {
+                // Discard sections marked as discardable
+                if (_pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_MEM_DISCARDABLE))
+                {
+                    continue;
+                }
+
                 var y = NativeDeclarations.VirtualAlloc((IntPtr)(currentBase + _pe.ImageSectionHeaders[i].VirtualAddress),
                     _pe.ImageSectionHeaders[i].SizeOfRawData, NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
 
@@ -94,6 +100,12 @@ namespace ExecutePE.Patchers
         {
             for (var i = 0; i < _pe.FileHeader.NumberOfSections; i++)
             {
+                // Skip over discarded sections since they are not mapped in
+                if (_pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_MEM_DISCARDABLE))
+                {
+                    continue;
+                }
+
                 var execute = ((uint)_pe.ImageSectionHeaders[i].Characteristics & NativeDeclarations.IMAGE_SCN_MEM_EXECUTE) != 0;
                 var read = ((uint)_pe.ImageSectionHeaders[i].Characteristics & NativeDeclarations.IMAGE_SCN_MEM_READ) != 0;
                 var write = ((uint)_pe.ImageSectionHeaders[i].Characteristics & NativeDeclarations.IMAGE_SCN_MEM_WRITE) != 0;
