@@ -1,5 +1,7 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
+using ApolloInterop.Utils;
 using ExecutePE.Helpers;
 using ExecutePE.Internals;
 
@@ -26,8 +28,20 @@ namespace ExecutePE.Patchers
                     continue;
                 }
 
+                var sectionSize = (
+                    _pe.ImageSectionHeaders[i].SizeOfRawData > _pe.ImageSectionHeaders[i].VirtualSize
+                    ? _pe.ImageSectionHeaders[i].SizeOfRawData
+                    : _pe.ImageSectionHeaders[i].VirtualSize
+                );
+
                 var y = NativeDeclarations.VirtualAlloc((IntPtr)(currentBase + _pe.ImageSectionHeaders[i].VirtualAddress),
-                    _pe.ImageSectionHeaders[i].SizeOfRawData, NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
+                    sectionSize, NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
+                if (y == null)
+                {
+                    var sectionName = new string(_pe.ImageSectionHeaders[i].Name);
+                    var exc = new Win32Exception();
+                    throw new Exception($"Could not allocate memory for the '{sectionName}' section: {exc.Message}");
+                }
 
                 // Only copy the section data if the section has initialized data
                 if (_pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_CNT_INITIALIZED_DATA))
