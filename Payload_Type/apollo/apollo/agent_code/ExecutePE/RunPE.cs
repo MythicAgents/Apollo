@@ -42,23 +42,14 @@ public static class PERunner
             throw new InvalidOperationException("Failed to patch exit function");
         }
 
-        var extraEnvironmentalPatcher = new ExtraEnvironmentPatcher((IntPtr)currentBase);
-        extraEnvironmentalPatcher.PerformExtraEnvironmentPatches();
-
-        // Patch this last as may interfere with other activity
-        var extraAPIPatcher = new ExtraAPIPatcher();
-
-        if (!extraAPIPatcher.PatchAPIs((IntPtr)currentBase))
-        {
-            throw new InvalidOperationException("Failed to patch APIs");
-        }
+        var imageBasePatcher = new ImageBasePatcher((IntPtr)currentBase);
+        imageBasePatcher.PatchImageBaseAddress();
 
         StartExecution(pe, currentBase);
 
         // Revert changes
+        imageBasePatcher.RevertImageBasePatch();
         exitPatcher.ResetExitFunctions();
-        extraAPIPatcher.RevertAPIs();
-        extraEnvironmentalPatcher.RevertExtraPatches();
         argumentHandler.ResetArgs();
         peMapper.ClearPE();
         importResolver.ResetImports();
