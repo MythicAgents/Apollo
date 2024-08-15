@@ -83,7 +83,7 @@ async def parse_credentials(
 
 class MimikatzCommand(CommandBase):
     cmd = "mimikatz"
-    attributes = CommandAttributes(dependencies=["execute_pe"])
+    attributes = CommandAttributes(dependencies=["execute_pe"], alias=True)
     needs_admin = False
     help_cmd = "mimikatz [command1] [command2] [...]"
     description = "Execute one or more mimikatz commands (e.g. `mimikatz coffee sekurlsa::logonpasswords`)."
