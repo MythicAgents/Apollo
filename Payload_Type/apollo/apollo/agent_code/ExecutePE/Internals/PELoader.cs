@@ -185,6 +185,7 @@ namespace ExecutePE.Internals
         [Flags]
         public enum SectionFlags : uint
         {
+            IMAGE_SCN_CNT_CODE = 0x00000020,
             IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040,
             IMAGE_SCN_MEM_DISCARDABLE = 0x02000000,
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using ApolloInterop.Utils;
 using ExecutePE.Helpers;
 using ExecutePE.Internals;
 
@@ -75,8 +76,9 @@ namespace ExecutePE.Patchers
                     throw new Exception($"Could not allocate memory for the '{sectionName}' section: {exc.Message}");
                 }
 
-                // Only copy the section data if the section has initialized data
-                if (_pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_CNT_INITIALIZED_DATA))
+                // Copy the section data if the section has initialized data or code
+                if (_pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_CNT_INITIALIZED_DATA)
+                    || _pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_CNT_CODE))
                 {
                     Marshal.Copy(_pe.RawBytes, (int)_pe.ImageSectionHeaders[i].PointerToRawData, y, (int)_pe.ImageSectionHeaders[i].SizeOfRawData);
                 }
