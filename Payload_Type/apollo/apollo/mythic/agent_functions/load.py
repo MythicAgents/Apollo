@@ -115,8 +115,7 @@ class LoadCommand(CommandBase):
                 dep_not_loaded = [x for x in dependencies if x not in loaded_cmds_names]
                 if len(dep_not_loaded) > 0:
                     to_compile += dep_not_loaded
-                else:
-                    load_immediately_rpc.append(requested_cmd.Name)
+                load_immediately_rpc.append(requested_cmd.Name)
             elif len(dependencies) == 0 and not script_only and requested_cmd.Name not in alias_commands:
                 to_compile.append(requested_cmd.Name)
             elif len(dependencies) > 0 and not script_only and requested_cmd.Name not in alias_commands:

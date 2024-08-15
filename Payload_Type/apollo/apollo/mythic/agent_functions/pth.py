@@ -219,7 +219,7 @@ async def parse_credentials(
 
 class PthCommand(CommandBase):
     cmd = "pth"
-    attributes = CommandAttributes(dependencies=["execute_pe"])
+    attributes = CommandAttributes(dependencies=["execute_pe"], alias=True)
     needs_admin = False
     help_cmd = "pth -Domain [domain] -User [user] -NTLM [ntlm] [-AES128 [aes128] -AES256 [aes256] -Run [cmd.exe]]"
     description = (
