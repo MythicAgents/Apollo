@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -21,6 +21,7 @@ namespace ExecutePE.Patchers
         private const int ILT_HINT_LENGTH = 2; // Length of the 'hint' prefix to the function name in the ILT/IAT
 
         private readonly List<string> _originalModules = new List<string>();
+        private readonly IATHooks _iatHooks = new();
 
         public void ResolveImports(PELoader pe, long currentBase)
         {
@@ -73,11 +74,10 @@ namespace ExecutePE.Patchers
                         }
                         else
                         {
-#if DEBUG
-
-
-#endif
-                            Marshal.WriteInt64(pCurrentIATEntry, pRealFunction.ToInt64());
+                            if (!_iatHooks.ApplyHook(dllName, dllFuncName, pCurrentIATEntry, pRealFunction))
+                            {
+                                Marshal.WriteInt64(pCurrentIATEntry, pRealFunction.ToInt64());
+                            }
                         }
 
                         pCurrentIATEntry =
