@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -28,10 +28,6 @@ namespace ExecutePE.Patchers
             var currentProcess = Process.GetCurrentProcess();
             foreach (ProcessModule module in currentProcess.Modules)
             {
-#if DEBUG
-
-
-#endif
                 _originalModules.Add(module.ModuleName);
             }
 
@@ -51,19 +47,10 @@ namespace ExecutePE.Patchers
 
                 if (string.IsNullOrEmpty(dllName))
                 {
-#if DEBUG
-
-
-#endif
                     break;
                 }
 
                 var handle = NativeDeclarations.LoadLibrary(dllName);
-#if DEBUG
-
-
-#endif
-
                 var pCurrentIATEntry = pIAT;
                 while (true)
                 {
@@ -77,18 +64,12 @@ namespace ExecutePE.Patchers
 
                         if (string.IsNullOrEmpty(dllFuncName))
                         {
-#if DEBUG
-
-
-#endif
                             break;
                         }
 
                         var pRealFunction = NativeDeclarations.GetProcAddress(handle, dllFuncName);
                         if (pRealFunction.ToInt64() == 0)
                         {
-
-
                         }
                         else
                         {
@@ -103,52 +84,28 @@ namespace ExecutePE.Patchers
                             (IntPtr)(pCurrentIATEntry.ToInt64() +
                                       IntPtr.Size); // Shift the current entry to point to the next entry along, as each entry is just a pointer this is one IntPtr.Size
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-
-
                     }
                 }
 
                 dllIterator++;
             }
-#if DEBUG
-
-
-#endif
         }
 
         internal void ResetImports()
         {
-#if DEBUG
-
-
-#endif
             var currentProcess = Process.GetCurrentProcess();
             foreach (ProcessModule module in currentProcess.Modules)
             {
                 if (!_originalModules.Contains(module.ModuleName))
                 {
-#if DEBUG
-
-
-#endif
                     if (!FreeLibrary(module.BaseAddress))
                     {
-#if DEBUG
-
-
                         var error = NativeDeclarations.GetLastError();
-
-
-#endif
                     }
                 }
             }
-#if DEBUG
-
-
-#endif
         }
     }
 }
