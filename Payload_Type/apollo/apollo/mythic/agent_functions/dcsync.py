@@ -104,7 +104,7 @@ async def parse_credentials_dcsync(
 
 class DcSyncCommand(CommandBase):
     cmd = "dcsync"
-    attributes = CommandAttributes(dependencies=["execute_pe"])
+    attributes = CommandAttributes(dependencies=["execute_pe"], alias=True)
     needs_admin = False
     help_cmd = "dcsync -Domain [domain] -User [user]"
     description = "Sync a user's Kerberos keys to the local machine."

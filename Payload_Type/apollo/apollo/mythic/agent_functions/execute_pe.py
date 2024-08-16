@@ -202,7 +202,7 @@ class ExecutePECommand(CommandBase):
                 MythicRPCFileCreateMessage(
                     TaskID=taskData.Task.ID,
                     Filename="execute_pe shellcode",
-                    DeleteAfterFetch=False,
+                    DeleteAfterFetch=True,
                     FileContents=shellcode,
                 )
             )
@@ -224,7 +224,7 @@ class ExecutePECommand(CommandBase):
                     MythicRPCFileCreateMessage(
                         TaskID=taskData.Task.ID,
                         Filename="execute_pe mimikatz",
-                        DeleteAfterFetch=False,
+                        DeleteAfterFetch=True,
                         FileContents=mimibytes,
                     )
                 )
@@ -243,7 +243,7 @@ class ExecutePECommand(CommandBase):
                     MythicRPCFileCreateMessage(
                         TaskID=taskData.Task.ID,
                         Filename="execute_pe printspoofer",
-                        DeleteAfterFetch=False,
+                        DeleteAfterFetch=True,
                         FileContents=psbytes,
                     )
                 )
