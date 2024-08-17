@@ -1,4 +1,5 @@
-﻿using ApolloInterop.Classes.Events;
+﻿using ApolloInterop.Classes.Api;
+using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
 using System;
@@ -17,10 +18,11 @@ namespace ApolloInterop.Classes.Core
         public string StdErr { get; protected set; } = "";
         public IntPtr Handle { get; protected set; }
         protected IAgent _agent;
+        private delegate ulong RtlNtStatusToDosError(int status);
         public event EventHandler<StringDataEventArgs> OutputDataReceived;
         public event EventHandler<StringDataEventArgs> ErrorDataReceieved;
         public event EventHandler Exit;
-        
+
         public void OnOutputDataReceived(object sender, StringDataEventArgs args)
         {
             OutputDataReceived?.Invoke(sender, args);
@@ -37,7 +39,7 @@ namespace ApolloInterop.Classes.Core
         {
             Exit?.Invoke(sender, args);
         }
-        public Process(IAgent agent, string lpApplication, string lpArguments=null, bool startSuspended = false)
+        public Process(IAgent agent, string lpApplication, string lpArguments = null, bool startSuspended = false)
         {
             _agent = agent;
             if (string.IsNullOrEmpty(lpApplication) && string.IsNullOrEmpty(lpArguments))
@@ -48,15 +50,35 @@ namespace ApolloInterop.Classes.Core
             {
                 CommandLine = lpApplication;
                 Application = lpApplication;
-            } else if (string.IsNullOrEmpty(lpApplication))
+            }
+            else if (string.IsNullOrEmpty(lpApplication))
             {
                 CommandLine = lpArguments;
-            } else
+            }
+            else
             {
                 Application = lpApplication;
                 CommandLine = $"{lpApplication} {lpArguments}";
             }
             _startSuspended = startSuspended;
+        }
+
+        public int? GetExitCodeHResult()
+        {
+            const uint HRESULT_MASK = 0x80070000;
+
+            if (!HasExited)
+            {
+                return null;
+            }
+
+            var rtlNtStatusToDosError = _agent.GetApi().GetLibraryFunction<RtlNtStatusToDosError>(Library.NTDLL, "RtlNtStatusToDosError");
+            if (rtlNtStatusToDosError == null)
+            {
+                return null;
+            }
+
+            return unchecked((int)(rtlNtStatusToDosError(ExitCode) | HRESULT_MASK));
         }
 
         public abstract bool Inject(byte[] code, string arguments = "");
