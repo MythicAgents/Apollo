@@ -54,14 +54,54 @@ async def parse_credentials(
 
             for i in range(len(lines)):
                 line = lines[i]
-                if "Username" in line:
+                if "SAM Username" in line:
+                    if i + 6 > len(lines):
+                        continue
+                    usernamePieces = line.split(":")
+                    username = usernamePieces[1].strip()
+                    if "Hash NTLM" in lines[i+6]:
+                        pieces = lines[i+6].split(":")
+                        if len(pieces) > 1:
+                            hash = pieces[1].strip()
+                            cred_resp = await SendMythicRPCCredentialCreate(
+                                MythicRPCCredentialCreateMessage(
+                                    TaskID=task.TaskData.Task.ID,
+                                    Credentials=[
+                                        MythicRPCCredentialData(
+                                            credential_type="hash",
+                                            account=username,
+                                            realm="",
+                                            credential=hash,
+                                            comment="Hash NTLM From Mimikatz",
+                                        )
+                                    ],
+                                )
+                            )
+                            continue
+                if "* Username" in line:
                     # Check to see if Password is null
                     if i + 2 >= len(lines):
                         break
                     uname = line.split(" : ")[1].strip()
                     realm = lines[i + 1].split(" : ")[1].strip()
                     passwd = lines[i + 2].split(" : ")[1].strip()
-                    if passwd != "(null)":
+                    passwdType = lines[i+2].split(" : ")[0].strip()
+                    if passwdType == "NTLM" and passwd != "":
+                        cred_resp = await SendMythicRPCCredentialCreate(
+                            MythicRPCCredentialCreateMessage(
+                                TaskID=task.TaskData.Task.ID,
+                                Credentials=[
+                                    MythicRPCCredentialData(
+                                        credential_type="hash",
+                                        account=uname,
+                                        realm=realm,
+                                        credential=passwd,
+                                        comment=comment,
+                                    )
+                                ],
+                            )
+                        )
+                    elif passwdType == "Password" and passwd != "" and passwd != "(null)":
                         cred_resp = await SendMythicRPCCredentialCreate(
                             MythicRPCCredentialCreateMessage(
                                 TaskID=task.TaskData.Task.ID,
@@ -76,8 +116,6 @@ async def parse_credentials(
                                 ],
                             )
                         )
-                        if not cred_resp.Success:
-                            raise Exception("Failed to register credential")
     return response
 
 
@@ -126,7 +164,8 @@ class MimikatzCommand(CommandBase):
         # update the response to make sure this gets pulled down as execute_pe instead of mimikatz
         newResp.CommandName = "execute_pe"
         newResp.DisplayParams = commandline
-        newResp.CompletionFunctionName = "parse_credentials"
+        if "lsadump::dcsync" in commandline or "sekurlsa::logonpasswords" in commandline:
+            newResp.CompletionFunctionName = "parse_credentials"
         return newResp
 
     async def process_response(

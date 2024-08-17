@@ -202,7 +202,7 @@ class ExecutePECommand(CommandBase):
                 MythicRPCFileCreateMessage(
                     TaskID=taskData.Task.ID,
                     Filename="execute_pe shellcode",
-                    DeleteAfterFetch=False,
+                    DeleteAfterFetch=True,
                     FileContents=shellcode,
                 )
             )
