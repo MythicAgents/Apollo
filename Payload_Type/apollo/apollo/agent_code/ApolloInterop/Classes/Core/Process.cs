@@ -1,3 +1,4 @@
+﻿using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
@@ -17,6 +18,7 @@ namespace ApolloInterop.Classes.Core
         public string StdErr { get; protected set; } = "";
         public IntPtr Handle { get; protected set; }
         protected IAgent _agent;
+        private delegate ulong RtlNtStatusToDosError(int status);
         public event EventHandler<StringDataEventArgs> OutputDataReceived;
         public event EventHandler<StringDataEventArgs> ErrorDataReceieved;
         public event EventHandler Exit;
@@ -59,6 +61,24 @@ namespace ApolloInterop.Classes.Core
                 CommandLine = $"{lpApplication} {lpArguments}";
             }
             _startSuspended = startSuspended;
+        }
+
+        public int? GetExitCodeHResult()
+        {
+            const uint HRESULT_MASK = 0x80070000;
+
+            if (!HasExited)
+            {
+                return null;
+            }
+
+            var rtlNtStatusToDosError = _agent.GetApi().GetLibraryFunction<RtlNtStatusToDosError>(Library.NTDLL, "RtlNtStatusToDosError");
+            if (rtlNtStatusToDosError == null)
+            {
+                return null;
+            }
+
+            return unchecked((int)(rtlNtStatusToDosError(ExitCode) | HRESULT_MASK));
         }
 
         public abstract bool Inject(byte[] code, string arguments = "");
