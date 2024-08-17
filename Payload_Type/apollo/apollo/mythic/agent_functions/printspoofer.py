@@ -5,6 +5,7 @@ from apollo.mythic.sRDI import ShellcodeRDI
 from os import path
 from mythic_container.MythicRPC import *
 import base64
+from .execute_pe import *
 
 
 class PrintSpooferArguments(TaskArguments):
@@ -30,7 +31,8 @@ class PrintSpooferArguments(TaskArguments):
 class PrintSpooferCommand(CommandBase):
     cmd = "printspoofer"
     attributes=CommandAttributes(
-        dependencies=["execute_pe"]
+        dependencies=["execute_pe"],
+        alias=True
     )
     needs_admin = False
     help_cmd = "printspoofer [args]"
@@ -39,19 +41,31 @@ class PrintSpooferCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = PrintSpooferArguments
     attackmapping = ["T1547"]
-    script_only = True
+    script_only = False
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-            TaskID=taskData.Task.ID,
-            CommandName="execute_pe",
-            Params=taskData.args.get_arg("command")
+        commandline = taskData.args.command_line
+        executePEArgs = ExecutePEArguments(command_line=json.dumps(
+            {
+                "pe_name": "printspoofer.exe",
+                "pe_arguments": commandline,
+            }
         ))
-        response.DisplayParams = "-Command {}".format(taskData.args.get_arg("command"))
+        await executePEArgs.parse_arguments()
+        executePECommand = ExecutePECommand(agent_path=self.agent_code_path,
+                                            agent_code_path=self.agent_code_path,
+                                            agent_browserscript_path=self.agent_browserscript_path)
+        # set our taskData args to be the new ones for execute_pe
+        taskData.args = executePEArgs
+        # executePE's creat_go_tasking function returns a response for us
+        newResp = await executePECommand.create_go_tasking(taskData=taskData)
+        # update the response to make sure this gets pulled down as execute_pe instead of mimikatz
+        newResp.CommandName = "execute_pe"
+        newResp.DisplayParams = commandline
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
