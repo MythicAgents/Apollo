@@ -21,6 +21,7 @@ using ApolloInterop.Classes.Core;
 using ApolloInterop.Utils;
 using System.Threading.Tasks;
 using ApolloInterop.Classes.Events;
+using System.ComponentModel;
 
 namespace Tasks
 {
@@ -222,7 +223,17 @@ namespace Tasks
 
                 if (procHandle.ExitCode != 0)
                 {
-                    taskResponse.UserOutput = $"[*] Process exited with code: {procHandle.ExitCode}";
+                    if ((procHandle.ExitCode & 0xc0000000) != 0
+                        && procHandle.GetExitCodeHResult() is int exitCodeHResult)
+                    {
+                        var errorMessage = new Win32Exception(exitCodeHResult).Message;
+                        taskResponse.UserOutput = $"[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x} - {errorMessage}";
+                        taskResponse.Status = "error";
+                    }
+                    else
+                    {
+                        taskResponse.UserOutput = $"[*] Process exited with code: {procHandle.ExitCode} - 0x{(uint)procHandle.ExitCode:x}";
+                    }
                 }
             }
 
