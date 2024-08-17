@@ -23,7 +23,6 @@ namespace ExecutePE
         internal const uint PAGE_NOACCESS = 0x01;
         internal const uint PAGE_READONLY = 0x02;
         internal const uint PAGE_WRITECOPY = 0x08;
-        
         internal const uint MEM_COMMIT = 0x1000;
         internal const uint MEM_RELEASE = 0x00008000;
 
@@ -31,11 +30,33 @@ namespace ExecutePE
         internal const uint IMAGE_SCN_MEM_READ = 0x40000000;
         internal const uint IMAGE_SCN_MEM_WRITE = 0x80000000;
 
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct IMAGE_BASE_RELOCATION
+        public struct IMAGE_BASE_RELOCATION
         {
-            internal uint VirtualAdress;
+            internal uint VirtualAddress;
             internal uint SizeOfBlock;
+
+            private IMAGE_BASE_RELOCATION(uint virtualAddress, uint sizeOfBlock)
+            {
+                VirtualAddress = virtualAddress;
+                SizeOfBlock = sizeOfBlock;
+            }
+
+            public static IMAGE_BASE_RELOCATION Parse(byte[] b)
+            {
+                var virtualAddress = BitConverter.ToUInt32(b, 0);
+                var sizeOfBlock = BitConverter.ToUInt32(b, 4);
+                return new IMAGE_BASE_RELOCATION(virtualAddress, sizeOfBlock);
+            }
+        }
+
+        internal enum X86BaseRelocationType : byte
+        {
+            IMAGE_REL_BASED_ABSOLUTE = 0,
+            IMAGE_REL_BASED_HIGH = 1,
+            IMAGE_REL_BASED_LOW = 2,
+            IMAGE_REL_BASED_HIGHLOW = 3,
+            IMAGE_REL_BASED_HIGHADJ = 4,
+            IMAGE_REL_BASED_DIR64 = 10,
         }
 
         [DllImport("kernel32.dll")]

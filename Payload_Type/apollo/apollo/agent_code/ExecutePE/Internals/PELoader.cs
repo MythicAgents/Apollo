@@ -179,13 +179,15 @@ namespace ExecutePE.Internals
             [FieldOffset(28)] public uint PointerToLinenumbers;
             [FieldOffset(32)] public ushort NumberOfRelocations;
             [FieldOffset(34)] public ushort NumberOfLinenumbers;
-            [FieldOffset(36)] public DataSectionFlags Characteristics;
+            [FieldOffset(36)] public SectionFlags Characteristics;
         }
 
         [Flags]
-        public enum DataSectionFlags : uint
+        public enum SectionFlags : uint
         {
-            Stub = 0x00000000,
+            IMAGE_SCN_CNT_CODE = 0x00000020,
+            IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040,
+            IMAGE_SCN_MEM_DISCARDABLE = 0x02000000,
         }
 
 
