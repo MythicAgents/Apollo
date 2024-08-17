@@ -6,10 +6,10 @@ namespace ExecutePE.Patchers
 {
     internal class ExitPatcher
     {
-        private byte[] _terminateProcessOriginalBytes;
-        private byte[] _ntTerminateProcessOriginalBytes;
-        private byte[] _rtlExitUserProcessOriginalBytes;
-        private byte[] _corExitProcessOriginalBytes;
+        private byte[]? _terminateProcessOriginalBytes;
+        private byte[]? _ntTerminateProcessOriginalBytes;
+        private byte[]? _rtlExitUserProcessOriginalBytes;
+        private byte[]? _corExitProcessOriginalBytes;
 
         public bool PatchExit()
         {
@@ -61,10 +61,25 @@ namespace ExecutePE.Patchers
 
         internal void ResetExitFunctions()
         {
-            Utils.PatchFunction("kernelbase", "TerminateProcess", _terminateProcessOriginalBytes);
-            Utils.PatchFunction("mscoree", "CorExitProcess", _corExitProcessOriginalBytes);
-            Utils.PatchFunction("ntdll", "NtTerminateProcess", _ntTerminateProcessOriginalBytes);
-            Utils.PatchFunction("ntdll", "RtlExitUserProcess", _rtlExitUserProcessOriginalBytes);
+            if (_terminateProcessOriginalBytes != null)
+            {
+                Utils.PatchFunction("kernelbase", "TerminateProcess", _terminateProcessOriginalBytes);
+            }
+
+            if (_corExitProcessOriginalBytes != null)
+            {
+                Utils.PatchFunction("mscoree", "CorExitProcess", _corExitProcessOriginalBytes);
+            }
+
+            if (_ntTerminateProcessOriginalBytes != null)
+            {
+                Utils.PatchFunction("ntdll", "NtTerminateProcess", _ntTerminateProcessOriginalBytes);
+            }
+
+            if (_rtlExitUserProcessOriginalBytes != null)
+            {
+                Utils.PatchFunction("ntdll", "RtlExitUserProcess", _rtlExitUserProcessOriginalBytes);
+            }
         }
     }
 }

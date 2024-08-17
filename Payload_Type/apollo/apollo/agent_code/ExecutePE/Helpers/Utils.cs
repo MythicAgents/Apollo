@@ -6,7 +6,7 @@ namespace ExecutePE.Helpers
 {
     internal static class Utils
     {
-        internal static byte[] PatchFunction(string dllName, string funcName, byte[] patchBytes)
+        internal static byte[]? PatchFunction(string dllName, string funcName, byte[] patchBytes)
         {
             var moduleHandle = NativeDeclarations.GetModuleHandle(dllName);
             var pFunc = NativeDeclarations.GetProcAddress(moduleHandle, funcName);
