@@ -1,4 +1,4 @@
-﻿using ApolloInterop.Classes.Events;
+using ApolloInterop.Classes.Events;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.ApolloStructs;
 using System;
@@ -20,7 +20,7 @@ namespace ApolloInterop.Classes.Core
         public event EventHandler<StringDataEventArgs> OutputDataReceived;
         public event EventHandler<StringDataEventArgs> ErrorDataReceieved;
         public event EventHandler Exit;
-        
+
         public void OnOutputDataReceived(object sender, StringDataEventArgs args)
         {
             OutputDataReceived?.Invoke(sender, args);
@@ -37,7 +37,7 @@ namespace ApolloInterop.Classes.Core
         {
             Exit?.Invoke(sender, args);
         }
-        public Process(IAgent agent, string lpApplication, string lpArguments=null, bool startSuspended = false)
+        public Process(IAgent agent, string lpApplication, string lpArguments = null, bool startSuspended = false)
         {
             _agent = agent;
             if (string.IsNullOrEmpty(lpApplication) && string.IsNullOrEmpty(lpArguments))
@@ -48,10 +48,12 @@ namespace ApolloInterop.Classes.Core
             {
                 CommandLine = lpApplication;
                 Application = lpApplication;
-            } else if (string.IsNullOrEmpty(lpApplication))
+            }
+            else if (string.IsNullOrEmpty(lpApplication))
             {
                 CommandLine = lpArguments;
-            } else
+            }
+            else
             {
                 Application = lpApplication;
                 CommandLine = $"{lpApplication} {lpArguments}";
