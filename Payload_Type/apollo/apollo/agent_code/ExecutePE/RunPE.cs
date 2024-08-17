@@ -36,23 +36,10 @@ public static class PERunner
             throw new InvalidOperationException("Failed to update arguments");
         }
 
-        var exitPatcher = new ExitPatcher();
-        if (!exitPatcher.PatchExit())
-        {
-            throw new InvalidOperationException("Failed to patch exit function");
-        }
-
         var imageBasePatcher = new ImageBasePatcher((IntPtr)currentBase);
         imageBasePatcher.PatchImageBaseAddress();
 
         StartExecution(pe, currentBase);
-
-        // Revert changes
-        imageBasePatcher.RevertImageBasePatch();
-        exitPatcher.ResetExitFunctions();
-        argumentHandler.ResetArgs();
-        peMapper.ClearPE();
-        importResolver.ResetImports();
     }
 
     private static void StartExecution(PELoader pe, long currentBase)

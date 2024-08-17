@@ -83,8 +83,6 @@ namespace ExecutePE.Patchers
 
         public bool ApplyHook(IntPtr iatAddress, IntPtr originalFunction)
         {
-            DebugHelp.DebugWriteLine("Applying '__wgetmainargs' hook");
-
             var kernelbase = NativeDeclarations.GetModuleHandle("kernelbase");
             if (kernelbase == IntPtr.Zero)
             {
