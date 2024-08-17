@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using ApolloInterop.Utils;
 using ExecutePE.Helpers;
 using ExecutePE.Internals;
 
@@ -10,7 +9,7 @@ namespace ExecutePE.Patchers
     internal class PEMapper
     {
         private IntPtr _codebase;
-        private PELoader _pe;
+        private PELoader? _pe;
 
         public void MapPEIntoMemory(byte[] unpacked, out PELoader peLoader, out long currentBase)
         {
@@ -154,14 +153,18 @@ namespace ExecutePE.Patchers
 
         internal void ClearPE()
         {
-            var size = _pe.OptionalHeader64.SizeOfImage;
-            Utils.ZeroOutMemory(_codebase, (int)size);
+            var size = _pe?.OptionalHeader64.SizeOfImage;
+            if (size != null)
+            {
+                Utils.ZeroOutMemory(_codebase, (int)size);
+            }
+
             Utils.FreeMemory(_codebase);
         }
 
         internal void SetPagePermissions()
         {
-            for (var i = 0; i < _pe.FileHeader.NumberOfSections; i++)
+            for (var i = 0; i < _pe?.FileHeader.NumberOfSections; i++)
             {
                 // Skip over discarded sections since they are not mapped in
                 if (_pe.ImageSectionHeaders[i].Characteristics.HasFlag(PELoader.SectionFlags.IMAGE_SCN_MEM_DISCARDABLE))
