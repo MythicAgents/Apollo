@@ -394,10 +394,11 @@ namespace Tasks
                         try
                         {
                             invokeTask.Start();
-                            ST.Task.WaitAny(new ST.Task[]
-                            {
-                                invokeTask
-                            }, _cancellationToken.Token);
+                            //ST.Task.WaitAny(new ST.Task[]
+                            //{
+                            //    invokeTask
+                            //}, _cancellationToken.Token);
+                            invokeTask.Wait(_cancellationToken.Token);
                         }
                         catch (OperationCanceledException)
                         {
