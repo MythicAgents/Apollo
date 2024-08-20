@@ -118,7 +118,7 @@ namespace Tasks
                 for (int i = 0; i < entriesRead; i++)
                 {
                     groupMembers[i] = (LocalGroupMembersInfo) Marshal.PtrToStructure(iter, typeof(LocalGroupMembersInfo));
-                    iter = (IntPtr) ((int) iter + Marshal.SizeOf(typeof(LocalGroupMembersInfo)));
+                    iter =  iter + Marshal.SizeOf(typeof(LocalGroupMembersInfo));
                     //myList.Add(Marshal.PtrToStringUni(Members[i].lgrmi2_domainandname) + "," + Members[i].lgrmi2_sidusage);
                     string sidString = "";
                     bool bRet = _pConvertSidToStringSid(groupMembers[i].lgrmi2_sid, out sidString);
