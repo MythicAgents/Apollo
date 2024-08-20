@@ -18,6 +18,7 @@ namespace ApolloInterop.Interfaces
         void AddDelegateMessageToQueue(DelegateMessage delegateMessage);
 
         void AddSocksDatagramToQueue(MessageDirection dir, SocksDatagram dg);
+        void AddRpfwdDatagramToQueue(MessageDirection dir, SocksDatagram dg);
 
         bool LoadTaskModule(byte[] taskAsm, string[] commands);
     }

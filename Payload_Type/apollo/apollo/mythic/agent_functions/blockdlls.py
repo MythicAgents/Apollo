@@ -42,7 +42,7 @@ class BlockDllsArguments(TaskArguments):
 class BlockDllsCommand(CommandBase):
     cmd = "blockdlls"
     needs_admin = False
-    help_cmd = "blockdlls [on|off]"
+    help_cmd = "blockdlls -block true|false"
     description = "Block non-Microsoft DLLs from loading into sacrificial processes."
     version = 3
     author = "@djhohnstein"
@@ -56,9 +56,9 @@ class BlockDllsCommand(CommandBase):
         )
         block = taskData.args.get_arg("block")
         if block:
-            response.DisplayParams = "on"
+            response.DisplayParams = "true"
         else:
-            response.DisplayParams = "off"
+            response.DisplayParams = "false"
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

