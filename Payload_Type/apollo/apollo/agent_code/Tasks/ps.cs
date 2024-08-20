@@ -18,6 +18,8 @@ using static ApolloInterop.Enums.Win32;
 using System.Security.Principal;
 using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Collections;
+using ApolloInterop.Utils;
+using System.Net.Http;
 
 namespace Tasks
 {
@@ -119,7 +121,7 @@ namespace Tasks
                     {
                         _completed,
                         _cancellationToken.Token.WaitHandle
-                    }, 1000);
+                    }, 5000);
                     output = _processes.Flush();
                     if (output.Length > 0)
                     {
@@ -225,6 +227,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                         if (mo.GetPropertyValue("CommandLine") != null)
                         {
                             result = mo.GetPropertyValue("CommandLine").ToString();
+                            result = Uri.UnescapeDataString(result);
                             break;
                         }
                     }

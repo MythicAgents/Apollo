@@ -12,6 +12,7 @@ namespace ApolloInterop.Classes
         private readonly string _host;
         private readonly int _port;
         private readonly IPAddress _addr = null;
+        private readonly bool _clientConnectionSupplied;
 
         public event EventHandler<TcpMessageEventArgs> ConnectionEstablished;
         public event EventHandler<TcpMessageEventArgs> MessageReceived;
@@ -22,6 +23,7 @@ namespace ApolloInterop.Classes
             _client = new TcpClient();
             _host = host;
             _port = port;
+            _clientConnectionSupplied = false;
         }
 
         public AsyncTcpClient(IPAddress host, int port)
@@ -29,22 +31,33 @@ namespace ApolloInterop.Classes
             _client = new TcpClient();
             _addr = host;
             _port = port;
+            _clientConnectionSupplied = false;
+        }
+        public AsyncTcpClient(TcpClient client)
+        {
+            _client = client;
+            _clientConnectionSupplied = true;
         }
 
         public bool Connect()
         {
-            try
+            if (!_clientConnectionSupplied)
             {
-                if (_addr == null)
+                try
                 {
-                    _client.Connect(_host, _port);
-                } else
-                {
-                    _client.Connect(_addr, _port);
+                    if (_addr == null)
+                    {
+                        _client.Connect(_host, _port);
+                    }
+                    else
+                    {
+                        _client.Connect(_addr, _port);
+                    }
+                    // Client times out, so fail.
                 }
-                // Client times out, so fail.
+                catch { return false; }
             }
-            catch { return false; }
+            
             // we set pipe to be message transactions ; don't think we need to for tcp
             IPCData pd = new IPCData()
             {
