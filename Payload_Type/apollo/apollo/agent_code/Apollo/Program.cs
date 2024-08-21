@@ -51,6 +51,12 @@ namespace Apollo
 
         public static void Main(string[] args)
         {
+            // add a read to _security_init so it doesn't get optimized away in release builds
+            var keeper = _security_init;
+            if(args.Length < 0)
+            {
+                Console.WriteLine($"CoInitializeSecurity: {_security_init}");
+            }
             //_sendAction = (object p) =>
             //{
             //    PipeStream ps = (PipeStream)p;
