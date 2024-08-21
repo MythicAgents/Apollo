@@ -133,7 +133,7 @@ public class wmiexecute : Tasking
                 // CLSID_WbemLevel1Login does not allow you to immediately query IWbemLevel1Login so you
                 // must query for IUnknown first.
                 var CLSID_WbemLevel1Login = new Guid("8BC3F05E-D86B-11D0-A075-00C04FB68820");
-                var typeInfo = Type.GetTypeFromCLSID(CLSID_WbemLevel1Login, address, true);
+                var typeInfo = Type.GetTypeFromCLSID(CLSID_WbemLevel1Login, HostName, true);
                 var wbemLevel1Login = (IWbemLevel1Login)Activator.CreateInstance(typeInfo);
                 object output = null;
                 var result = wbemLevel1Login.NTLMLogin("ROOT\\CIMV2", null, 0, null, ref output);
@@ -148,7 +148,7 @@ public class wmiexecute : Tasking
                 // actual values.
                 inSignature.SpawnInstance(0, ref output);
                 var inParameters = (IWbemClassObject)output;
-                var input = (object)process;
+                var input = (object)Command;
                 result = inParameters.Put("CommandLine", 0, ref input);
                 // Execute the Win32_Process:Create and show its output parameters.
                 result = wbemServices.ExecMethod("Win32_Process", "Create", 0, null, inParameters, ref output, null);
