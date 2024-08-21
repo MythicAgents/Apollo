@@ -189,3 +189,5 @@ A big thanks goes to those who have contributed to the project in both major and
 - Harley Lebeau [@r3dQu1nn](https://twitter.com/r3dQu1nn)
 - Antonio Quina [@st3r30byt3](https://twitter.com/st3r30byt3)
 - Sean Pierce [@secure_sean](https://twitter.com/secure_sean)
+- Evan McBroom, [@EvanMcBroom](https://gist.github.com/EvanMcBroom)
+- Matt Ehrnschwender, [@M_alphaaa](https://x.com/M_alphaaa)
