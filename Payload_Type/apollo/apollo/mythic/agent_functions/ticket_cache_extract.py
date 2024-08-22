@@ -15,7 +15,7 @@ class ticket_cache_extractArguments(TaskArguments):
             cli_name="service",
             display_name="service",
             type=ParameterType.String,
-            description="Service to get a ticket for, use krbtgt to get the TGT from the session, otherwise use the service name (ex. ldap, cifs, host)",
+            description="Service to extract a ticket for, use krbtgt to get the TGT from the session, otherwise use the service name (ex. ldap, cifs, host)",
             parameter_group_info=[
                 ParameterGroupInfo(
                     required=True,

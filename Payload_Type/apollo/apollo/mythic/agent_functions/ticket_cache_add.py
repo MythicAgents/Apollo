@@ -15,7 +15,7 @@ class ticket_cache_addArguments(TaskArguments):
                 cli_name="b64ticket",
                 display_name="b64ticket",
                 type=ParameterType.String,
-                description="A base64 encoded kerberos ticket value that will be loaded into the agents ticket store for future use",
+                description="A base64 encoded kerberos ticket value that will be loaded into the current logon session",
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
@@ -27,7 +27,7 @@ class ticket_cache_addArguments(TaskArguments):
                 cli_name="luid",
                 display_name="luid",
                 type=ParameterType.String,
-                description="From an elevated context a LUID may be provided to target a specific session to enumerate tickets.",
+                description="From an elevated context a LUID may be provided to target a specific session to add tickets to.",
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
@@ -47,7 +47,7 @@ class ticket_cache_addCommand(CommandBase):
     cmd = "ticket_cache_add"
     needs_admin = False
     help_cmd = "ticket_cache_add [b64Ticket] [luid]"
-    description = "Add a kerberos ticket to the current luid, or if elevated and a luid is provided load the ticket into that logon session instead"
+    description = "Add a kerberos ticket to the current luid, or if elevated and a luid is provided load the ticket into that logon session instead. This modifies the tickets in the current logon session."
     version = 2
     author = "@drago-qcc"
     argument_class = ticket_cache_addArguments
