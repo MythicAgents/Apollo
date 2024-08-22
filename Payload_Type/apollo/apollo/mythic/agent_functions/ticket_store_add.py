@@ -35,7 +35,7 @@ class ticket_store_addCommand(CommandBase):
     cmd = "ticket_store_add"
     needs_admin = False
     help_cmd = "ticket_store_add [b64ticket]"
-    description = "Add a kerberos ticket to the agents internal ticket store"
+    description = "Add a kerberos ticket to the agents internal ticket store. Tickets are injected into sacrificial processes when you're impersonating a token (make_token / steal_token). This is because you have a new logon session to put the tickets into without overriding your existing tickets. For safety, do a make_token with junk creds first."
     version = 2
     author = "@drago-qcc"
     argument_class = ticket_store_addArguments
