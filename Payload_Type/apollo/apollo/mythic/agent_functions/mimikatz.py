@@ -125,7 +125,7 @@ class MimikatzCommand(CommandBase):
     needs_admin = False
     help_cmd = "mimikatz [command1] [command2] [...]"
     description = "Execute one or more mimikatz commands (e.g. `mimikatz coffee sekurlsa::logonpasswords`)."
-    version = 2
+    version = 3
     author = "@djhohnstein"
     argument_class = MimikatzArguments
     attackmapping = [

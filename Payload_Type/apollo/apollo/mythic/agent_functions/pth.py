@@ -28,6 +28,7 @@ class PthArguments(TaskArguments):
                 display_name="Credential",
                 type=ParameterType.Credential_JSON,
                 description="Saved credential of the user to impersonate (either an NTLM hash or AES key).",
+                limit_credentials_by_type=["hash"],
                 parameter_group_info=[
                     ParameterGroupInfo(
                         ui_position=1, required=True, group_name="Credential"
@@ -225,7 +226,7 @@ class PthCommand(CommandBase):
     description = (
         "Spawn a new process using the specified domain user's credential material."
     )
-    version = 3
+    version = 4
     author = "@djhohnstein"
     argument_class = PthArguments
     attackmapping = ["T1550"]

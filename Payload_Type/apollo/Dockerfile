@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install python3 python3-pip python3.11-venv -y
 
 WORKDIR /Mythic/
 RUN python3 -m venv /venv
-RUN /venv/bin/python -m pip install mythic-container==0.4.10
+RUN /venv/bin/python -m pip install mythic-container==0.5.9
 RUN /venv/bin/python -m pip install donut-shellcode
 RUN /venv/bin/python -m pip install mslex
 

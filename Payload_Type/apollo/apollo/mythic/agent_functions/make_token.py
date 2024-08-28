@@ -11,7 +11,9 @@ class MakeTokenArguments(TaskArguments):
                 name="credential",
                 cli_name="Credential",
                 display_name="Credential",
-                type=ParameterType.Credential_JSON)
+                type=ParameterType.Credential_JSON,
+                limit_credentials_by_type=["plaintext"]
+            )
         ]
 
     async def parse_arguments(self):
