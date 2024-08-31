@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'Mythic3.3'
     tags:
       - "v*.*.*"
 
