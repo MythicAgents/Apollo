@@ -173,7 +173,7 @@ class ExecutePECommand(CommandBase):
                 donutPath, EXECUTE_PE_PATH, taskData.args.get_arg("pipe_name")
             )
         else:
-            command = '{} -f 1 {} -p "{}"'.format(
+            command = '{} -i {} -p "{}"'.format(
                 donutPath, EXECUTE_PE_PATH, taskData.args.get_arg("pipe_name")
             )
         # print(command)

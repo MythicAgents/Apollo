@@ -184,7 +184,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                                                  stderr=asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
 
-                    command = "{} -f 1 {}".format(donutPath, output_path)
+                    command = "{} {}".format(donutPath, output_path)
                     # need to go through one more step to turn our exe into shellcode
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                                  stderr=asyncio.subprocess.PIPE,
