@@ -19,6 +19,6 @@ RUN /venv/bin/python -m pip install mslex
 COPY [".", "."]
 
 # fetch all dependencies
-RUN cd apollo/agent_code && dotnet restore && rm donut && cp /donut donut
+RUN cd apollo/agent_code && dotnet restore && rm donut ; cp /donut donut
 
-CMD ["/venv/bin/python", "main.py"]
+CMD ["bash", "-c", "cp /donut donut && /venv/bin/python main.py"]
