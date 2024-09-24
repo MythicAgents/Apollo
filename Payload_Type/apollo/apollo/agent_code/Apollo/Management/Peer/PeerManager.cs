@@ -1,8 +1,10 @@
 ﻿using System;
 using Apollo.Peers.SMB;
 using Apollo.Peers.TCP;
+using Apollo.Peers.Webshell;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
+using ApolloInterop.Utils;
 using AI = ApolloInterop;
 namespace Apollo.Management.Peer
 {
@@ -23,6 +25,9 @@ namespace Apollo.Management.Peer
                     break;
                 case "TCP":
                     peer = new TCPPeer(_agent, connectionInfo);
+                    break;
+                case "WEBSHELL":
+                    peer = new WebshellPeer(_agent, connectionInfo);
                     break;
                 default:
                     throw new Exception("Not implemented.");

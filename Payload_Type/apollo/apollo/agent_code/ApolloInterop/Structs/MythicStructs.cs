@@ -177,6 +177,17 @@ namespace ApolloInterop.Structs
             public MythicEncryption AESPSK;
             [DataMember(Name = "killdate")]
             public string KillDate;
+            [DataMember(Name = "url")]
+            public string WebshellURL;
+            [DataMember(Name = "query_param")]
+            public string WebshellQueryParam;
+            [DataMember(Name = "cookie_name")]
+            public string WebshellCookieName;
+            [DataMember(Name = "cookie_value")]
+            public string WebshellCookieValue;
+            [DataMember(Name = "user_agent")]
+            public string WebshellUserAgent;
+
         }
 
         [DataContract]

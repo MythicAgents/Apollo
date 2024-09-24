@@ -1,4 +1,5 @@
 from mythic_container.MythicCommandBase import *
+from mythic_container.MythicGoRPC.send_mythic_rpc_callback_search import *
 import json
 
 
@@ -35,7 +36,25 @@ class LinkCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        response.DisplayParams = "{}".format(taskData.args.get_arg("connection_info")["host"])
+        connection_info = taskData.args.get_arg("connection_info")
+        if connection_info["c2_profile"]["name"] != "webshell":
+            response.DisplayParams = f"{connection_info['host']} via {connection_info['c2_profile']['name']}"
+            return response
+        callback_resp = await SendMythicRPCCallbackSearch(MythicRPCCallbackSearchMessage(
+            AgentCallbackUUID=taskData.Callback.AgentCallbackID,
+            SearchCallbackUUID=connection_info["callback_uuid"]
+        ))
+        if not callback_resp.Success:
+            response.Success = False
+            response.Error = callback_resp.Error
+            return response
+        if len(callback_resp.Results) == 0:
+            response.Success = False
+            response.Error = "Failed to find callback to link to"
+            return response
+        connection_info["c2_profile"]["parameters"]["cookie_value"] = base64.b64encode(callback_resp.Results[0].RegisteredPayloadUUID.encode()).decode()
+        taskData.args.set_arg("connection_info", connection_info)
+        response.DisplayParams = f"{connection_info['host']} at {connection_info['c2_profile']['parameters']['url']}"
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
