@@ -396,7 +396,7 @@ function(task, responses){
                     plaintext: "Task",
                     type: "button",
                     cellStyle: {},
-                    width: 100,
+                    width: 70,
                     disableSort: true,
                 },
                 {
@@ -408,6 +408,7 @@ function(task, responses){
                 {
                     plaintext: "size",
                     type: "size",
+                    width: 100,
                     cellStyle: {},
                 },
                 {
@@ -588,7 +589,7 @@ function(task, responses){
                 ls_path = data["parent_path"] + "\\" + data["name"];
             }
 
-            formattedResponse.title = "Contents of " + ls_path;
+            //formattedResponse.title = "Contents of " + ls_path;
 
             if (data["is_file"]) {
                 data["full_name"] = ls_path;

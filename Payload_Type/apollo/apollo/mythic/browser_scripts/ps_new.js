@@ -127,7 +127,6 @@ function(task, responses){
         return {"table":[{
             "headers": headers,
             "rows": rows,
-            "title": "Process List"
         }]};
     }else{
         // this means we shouldn't have any output
