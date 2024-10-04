@@ -64,7 +64,7 @@ namespace ExecuteAssembly
                         _senderEvent,
                         _cts.Token.WaitHandle
                     });
-                    if (!_cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] result))
+                    while (_senderQueue.TryDequeue(out byte[] result))
                     {
                         pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }
@@ -101,7 +101,7 @@ namespace ExecuteAssembly
                 stderrSw.BufferWritten += OnBufferWrite;
 
                 Console.SetOut(stdoutSw);
-                Console.SetError(stdoutSw);
+                Console.SetError(stderrSw);
 
                 try
                 {
@@ -176,8 +176,13 @@ namespace ExecuteAssembly
         {
             if (args.Data != null)
             {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(args.Data));
-                _senderEvent.Set();
+                try
+                {
+                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(args.Data));
+                    _senderEvent.Set();
+                }
+                catch { }
+
             }
         }
 
