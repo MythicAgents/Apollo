@@ -134,7 +134,7 @@ namespace ExecuteAssembly
             _cts.Cancel();
 
             // Wait for the pipe client comms to finish
-            if (_clientConnectedTask is ST.Task task)
+            while (_clientConnectedTask is ST.Task task && !_clientConnectedTask.IsCompleted)
             {
                 task.Wait(1000);
             }

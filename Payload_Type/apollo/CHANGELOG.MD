@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.16] - 2024-10-03
+
+### Changed
+
+- updated `jump_wmi` command
+- added `jump_psexec` command
+- added `Service` build option
+- updated execute_assembly and sacrificial processes to hopefully capture more output consistently
+
 ## [v2.2.15] - 2024-09-27
 
 ### Changed

@@ -51,7 +51,8 @@ namespace Process
 
         private CancellationTokenSource _cts = new CancellationTokenSource();
 
-        private SafeFileHandle hReadOut, hWriteOut, hReadErr, hWriteErr, hReadIn, hWriteIn, hDupWriteOut = new SafeFileHandle(IntPtr.Zero, true), hDupWriteErr = new SafeFileHandle(IntPtr.Zero, true);
+        private SafeFileHandle hReadOut, hWriteOut, hReadErr, hWriteErr, hReadIn, hWriteIn, hDupWriteOut = new SafeFileHandle(IntPtr.Zero, true);
+        private SafeFileHandle hDupWriteErr  = new SafeFileHandle(IntPtr.Zero, true);
         private IntPtr _unmanagedEnv;
 
         #region Delegate Typedefs
@@ -228,7 +229,7 @@ namespace Process
             _pSetHandleInformation =
                 (SetHandleInformation)Marshal.GetDelegateForFunctionPointer(pSetHandleInfo,
                     typeof(SetHandleInformation));
-            
+
             _pUpdateProcThreadAttribute = (UpdateProcThreadAttribute)Marshal.GetDelegateForFunctionPointer(pUpdateProcThreadAttribute, typeof(UpdateProcThreadAttribute));
             _pDeleteProcThreadAttributeList = (DeleteProcThreadAttributeList)Marshal.GetDelegateForFunctionPointer(pDeleteProcThreadAttributeList, typeof(DeleteProcThreadAttributeList));
 #else
@@ -255,6 +256,15 @@ namespace Process
 
         ~SacrificialProcess()
         {
+            DebugHelp.DebugWriteLine($"hReadOut 0x{hReadOut.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hWriteOut 0x{hWriteOut.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hReadErr 0x{hReadErr.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hWriteErr 0x{hWriteErr.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hReadIn 0x{hReadIn.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hWriteIn 0x{hWriteIn.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hDupWriteOut 0x{hDupWriteOut.DangerousGetHandle():x}");
+            DebugHelp.DebugWriteLine($"hDupWriteErr 0x{hDupWriteErr.DangerousGetHandle():x}");
+            ;
             if (_startupInfoEx.lpAttributeList != IntPtr.Zero)
             {
                 _pDeleteProcThreadAttributeList(_startupInfoEx.lpAttributeList);
@@ -265,7 +275,6 @@ namespace Process
             {
                 _pDestroyEnvironmentBlock(_unmanagedEnv);
             }
-
             if (Handle != IntPtr.Zero)
             {
                 _pCloseHandle(Handle);
@@ -360,9 +369,9 @@ namespace Process
                             DebugHelp.DebugWriteLine($"Running duplicate handles as: {WindowsIdentity.GetCurrent().Name}");
                             DebugHelp.DebugWriteLine("Duplicating handles");
                             //source process handle, source handle, target process handle, target handle, desired access, inherit handle, options
-                            bRet = _pDuplicateHandle(currentProcHandle, hWriteOut, _hParentProc, ref hDupWriteOut, 0, true, DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                            bRet = _pDuplicateHandle(currentProcHandle, hWriteOut, _hParentProc, ref hDupWriteOut, 0, true, DuplicateOptions.DuplicateSameAccess);
                             DebugHelp.DebugWriteLine($"Duplicated StdOut handle normal: {bRet}");
-                            bRet = _pDuplicateHandle(currentProcHandle, hWriteErr, _hParentProc, ref hDupWriteErr, 0, true, DuplicateOptions.DuplicateCloseSource | DuplicateOptions.DuplicateSameAccess);
+                            bRet = _pDuplicateHandle(currentProcHandle, hWriteErr, _hParentProc, ref hDupWriteErr, 0, true,  DuplicateOptions.DuplicateSameAccess);
                             DebugHelp.DebugWriteLine($"Duplicated StdErr handle normal: {bRet}");
                         }
                         catch (Exception ex)
@@ -560,61 +569,88 @@ namespace Process
         {
             Handle = _processInfo.hProcess;
             PID = (uint)_processInfo.dwProcessId;
-            _standardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
-            _standardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
-            _standardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
+            //_standardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
+            //_standardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
+            //_standardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
         }
 
-        private void WaitForExitAsync()
+        private async void WaitForExitAsync()
         {
-            Task.Factory.StartNew(() =>
+            try
             {
-                var stdOutTask = GetStdOutAsync();
-                var stdErrTask = GetStdErrAsync();
-                var waitExitForever = new Task(() =>
+                await Task.Factory.StartNew(() =>
                 {
-                    _pWaitForSingleObject(Handle, 0xFFFFFFFF);
-                });
-                stdOutTask.Start();
-                stdErrTask.Start();
-                waitExitForever.Start();
-                try
-                {
-                    waitExitForever.Wait(_cts.Token);
-                }
-                catch (OperationCanceledException)
-                {
+                    //var stdOutTask = GetStdOutAsync();
+                    //var stdErrTask = GetStdErrAsync();
+                    //var waitExitForever = new Task(() =>
+                    //{
+                    //    _pWaitForSingleObject(Handle, 0xFFFFFFFF);
+                    //});
+                    //stdOutTask.Start();
+                    //stdErrTask.Start();
+                    //waitExitForever.Start();
+                    try
+                    {
+                        //waitExitForever.Wait(_cts.Token);
+                        WaitHandle.WaitAny(new WaitHandle[]
+                        {
+                            _cts.Token.WaitHandle,
+                        });
+                    }
+                    catch (OperationCanceledException)
+                    {
 
-                }
-                finally
-                {
+                    }
+                    try
+                    {
+                        Task.WaitAll(new Task[]
+                        {
+                        //stdOutTask,
+                        //stdErrTask
+                            });
+                    }
+                    catch { }
                     OnExit(this, null);
-                }
-                Task.WaitAll(new Task[]
-                {
-                    stdOutTask,
-                    stdErrTask
                 });
-            });
+            }
+            catch(Exception ex)
+            {
+                DebugHelp.DebugWriteLine($"Error getting output. {ex}");
+            }
+
         }
 
         private IEnumerable<string> ReadStream(TextReader stream)
         {
             string output = "";
-            int szBuffer = 4096;
+            int szBuffer = 20;
             int bytesRead = 0;
             char[] tmp;
             bool needsBreak = false;
-
-            while (!_cts.IsCancellationRequested && !HasExited)
+            do
             {
                 char[] buf = new char[szBuffer];
+                bytesRead = 0;
                 try
                 {
-                    bytesRead = stream.Read(buf, 0, szBuffer);
-                }
-                catch { bytesRead = 0; }
+                    DebugHelp.DebugWriteLine($"About to call stream.Read");
+                    Task<int> readTask = stream.ReadAsync(buf, 0, szBuffer);
+                    Task.WaitAny(new Task[]
+                    {
+                        readTask,
+                    }, _cts.Token);
+                    if (readTask.IsCompleted)
+                    {
+                        bytesRead = readTask.Result;
+                    }
+                    //bytesRead = stream.Read(buf, 0, szBuffer);
 
+                }
+                catch (Exception ex)
+                {
+                    DebugHelp.DebugWriteLine($"Error calling stream.Read. {ex}, {bytesRead}");
+                }
+                DebugHelp.DebugWriteLine("Finished stream.Read.");
                 if (bytesRead > 0)
                 {
                     tmp = new char[bytesRead];
@@ -622,29 +658,35 @@ namespace Process
                     output = new string(tmp);
                     yield return output;
                 }
-            }
+            } while (!_cts.IsCancellationRequested);
+
             output = "";
             try
             {
-                output = stream.ReadToEnd();
+                DebugHelp.DebugWriteLine("About to call stream.ReadToEnd.");
+                //output = stream.ReadToEnd();
             }
             catch { }
             if (!string.IsNullOrEmpty(output))
             {
                 yield return output;
             }
-
+            DebugHelp.DebugWriteLine("Returning from ReadStream.");
+            yield break;
         }
 
         private Task GetStdOutAsync()
         {
             return new Task(() =>
             {
+                DebugHelp.DebugWriteLine("Starting GetStdOutAsync.");
                 foreach (string s in ReadStream(_standardOutput))
                 {
                     StdOut += s;
+                    DebugHelp.DebugWriteLine("Got Data on GetStdOutAsync.");
                     OnOutputDataReceived(this, new StringDataEventArgs(s));
                 }
+                DebugHelp.DebugWriteLine("Finished GetStdOutAsync.");
             });
         }
 
@@ -652,11 +694,14 @@ namespace Process
         {
             return new Task(() =>
             {
+                DebugHelp.DebugWriteLine("Starting GetStdErrAsync.");
                 foreach (string s in ReadStream(_standardError))
                 {
                     StdErr += s;
+                    DebugHelp.DebugWriteLine("Got Data on GetStdErrAsync.");
                     OnErrorDataRecieved(this, new StringDataEventArgs(s));
                 }
+                DebugHelp.DebugWriteLine("Finished GetStdErrAsync.");
             });
         }
 

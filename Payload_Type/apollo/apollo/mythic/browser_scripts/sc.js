@@ -73,7 +73,7 @@ function(task, responses){
                                 "type": "task",
                                 "ui_feature": "sc:delete",
                                 "parameters": {
-                                    "start": true,
+                                    "delete": true,
                                     "computer": jinfo["computer"],
                                     "service": jinfo["service"],
                                 },

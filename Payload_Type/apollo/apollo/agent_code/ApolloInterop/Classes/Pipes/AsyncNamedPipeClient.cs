@@ -1,5 +1,6 @@
 ﻿using ApolloInterop.Constants;
 using ApolloInterop.Structs.ApolloStructs;
+using ApolloInterop.Utils;
 using System;
 using System.IO.Pipes;
 
@@ -50,6 +51,7 @@ namespace ApolloInterop.Classes
                     pd.Pipe.BeginRead(pd.Data, 0, pd.Data.Length, OnAsyncMessageReceived, pd);
                 } catch (Exception ex)
                 {
+                    DebugHelp.DebugWriteLine($"got exception for named pipe: {ex}");
                     isConnected = false;
                 }
             }
@@ -57,6 +59,7 @@ namespace ApolloInterop.Classes
             if (!isConnected)
             {
                 pd.Pipe.Close();
+                DebugHelp.DebugWriteLine($"disconnecting on named pipe");
                 OnDisconnect(new NamedPipeMessageArgs(pd.Pipe, null, pd.State));
             }
         }
@@ -72,6 +75,7 @@ namespace ApolloInterop.Classes
                 OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
             } else
             {
+                DebugHelp.DebugWriteLine($"closing pipe in OnAsyncMessageReceived with 0 bytesRead");
                 pd.Pipe.Close();
             }
             BeginRead(pd);
@@ -89,6 +93,7 @@ namespace ApolloInterop.Classes
 
         private void OnDisconnect(NamedPipeMessageArgs args)
         {
+            DebugHelp.DebugWriteLine($"OnDisconnect");
             Disconnect?.Invoke(this, args);
         }
     }

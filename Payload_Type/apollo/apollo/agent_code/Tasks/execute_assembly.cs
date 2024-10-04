@@ -20,6 +20,7 @@ using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Collections;
+using ApolloInterop.Utils;
 
 namespace Tasks
 {
@@ -64,6 +65,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
+        private System.Threading.Tasks.Task flushTask;
 
         public execute_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
@@ -79,7 +81,22 @@ namespace Tasks
                     });
                     if (!_cancellationToken.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        try
+                        {
+                            ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        }
+                        catch
+                        {
+                            ps.Close();
+                            _complete.Set();
+                            return;
+                        }
+
+                    } else if (!ps.IsConnected)
+                    {
+                        ps.Close();
+                        _complete.Set();
+                        return;
                     }
                 }
                 ps.Close();
@@ -95,7 +112,7 @@ namespace Tasks
                     {
                         _complete,
                         _cancellationToken.Token.WaitHandle
-                    }, 1000);
+                    }, 2000);
                     output = string.Join("", _assemblyOutput.Flush());
                     if (!string.IsNullOrEmpty(output))
                     {
@@ -106,23 +123,34 @@ namespace Tasks
                                 ""));
                     }
                 }
-                output = string.Join("", _assemblyOutput.Flush());
-                if (!string.IsNullOrEmpty(output))
+                while (true)
                 {
-                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                        CreateTaskResponse(
-                            output,
-                            false,
-                            ""));
+                    System.Threading.Tasks.Task.Delay(1000).Wait(); // wait 1s
+                    output = string.Join("", _assemblyOutput.Flush());
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(
+                            CreateTaskResponse(
+                                output,
+                                false,
+                                ""));
+                    } else
+                    {
+                        DebugHelp.DebugWriteLine($"no longer collecting output");
+                        return;
+                    }
                 }
+
             };
         }
 
         public override void Kill()
         {
             _completed = true;
-            _cancellationToken.Cancel();
             _complete.Set();
+            flushTask.Wait();
+            _cancellationToken.Cancel();
+
         }
 
         public override void Start()
@@ -219,7 +247,6 @@ namespace Tasks
                 _senderEvent.Set();
                 WaitHandle.WaitAny(new WaitHandle[]
                 {
-                    _complete,
                     _cancellationToken.Token.WaitHandle
                 });
 
@@ -245,16 +272,18 @@ namespace Tasks
 
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
         {
-            e.Pipe.Close();
             _completed = true;
-            _cancellationToken.Cancel();
             _complete.Set();
+            flushTask.Wait();
+            e.Pipe.Close();
+            _cancellationToken.Cancel();
+
         }
 
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
         {
             System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe, _cancellationToken.Token);
-            System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
+            flushTask = System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
         }
 
         public void OnAsyncMessageSent(IAsyncResult result)
@@ -263,8 +292,16 @@ namespace Tasks
             // Potentially delete this since theoretically the sender Task does everything
             if (pipe.IsConnected && !_cancellationToken.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] data))
             {
-                pipe.EndWrite(result);
-                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+                try
+                {
+                    pipe.EndWrite(result);
+                    pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+                }
+                catch
+                {
+
+                }
+
             }
         }
 
@@ -272,6 +309,7 @@ namespace Tasks
         {
             IPCData d = e.Data;
             string msg = Encoding.UTF8.GetString(d.Data.Take(d.DataLength).ToArray());
+            DebugHelp.DebugWriteLine($"adding data to output");
             _assemblyOutput.Add(msg);
         }
     }
