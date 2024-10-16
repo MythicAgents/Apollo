@@ -1110,6 +1110,8 @@ namespace ApolloInterop.Structs
             public string FullPath;
             [DataMember(Name = "task_id")]
             public string TaskID;
+            [DataMember(Name = "host")]
+            public string Host;
 
             public override bool Equals(object obj)
             {

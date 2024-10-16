@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.18] - 2024-10-16
+
+### Changed
+
+- Updated `sleep` to take named parameters
+- Updated `wmiexecute` to include Evan's wmi execute with impersonation tokens work https://gist.github.com/EvanMcBroom/99ea88304faec38d3ed1deefd1aba6f9
+- Updated `ls` to check for a CWD of a UNC path before returning bad data for the browser script to leverage
+- Updated `upload` and `download` to also try to process a CWD of a UNC path when returning full paths for the file browser
+- Added `host` field to return `upload` data to try to more accurately capture the host of where data is uploaded
+
 ## [v2.2.17] - 2024-10-04
 
 ### Changed

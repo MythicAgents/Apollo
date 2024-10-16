@@ -123,7 +123,27 @@ namespace Tasks
             if (string.IsNullOrEmpty(uncPath))
                 uncPath = ".";
             if (string.IsNullOrEmpty(host))
-                host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            {
+                string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
+                if (cwd.StartsWith("\\\\"))
+                {
+                    var hostPieces = cwd.Split('\\');
+                    if(hostPieces.Length > 2)
+                    {
+                        host = hostPieces[2];
+                    } else
+                    {
+                        resp = CreateTaskResponse($"invalid UNC path for CWD: {cwd}. Can't determine host. Please use explicit UNC path", true, "error");
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                        return;
+                    }
+                } else
+                {
+                    host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+                }
+
+            }
+
             FileBrowser results = new FileBrowser
             {
                 Host = host

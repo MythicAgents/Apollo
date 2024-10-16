@@ -6,19 +6,39 @@ class SleepArguments(TaskArguments):
 
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
-        self.args = []
+        self.args = [
+            CommandParameter(
+                name="interval",
+                type=ParameterType.Number,
+                default_value=-1,
+                parameter_group_info=[ParameterGroupInfo(
+                    ui_position=0
+                )]
+            ),
+            CommandParameter(
+                name="jitter",
+                type=ParameterType.Number,
+                default_value=-1,
+                parameter_group_info=[ParameterGroupInfo(
+                    ui_position=1
+                )]
+            )
+        ]
+
+    async def parse_dictionary(self, dictionary_arguments):
+        self.load_args_from_dictionary(dictionary_arguments)
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
             raise Exception("sleep requires an integer value (in seconds) to be passed on the command line to update the sleep value to.")
         parts = self.command_line.split(" ", maxsplit=1)
         try:
-            int(parts[0])
+            self.set_arg("interval", int(parts[0]))
         except:
             raise Exception("sleep requires an integer value (in seconds) to be passed on the command line to update the sleep value to.")
         if len(parts) == 2:
             try:
-                int(parts[1])
+                self.set_arg("jitter", int(parts[1]))
             except:
                 raise Exception("sleep requires an integer value for jitter, but received: {}".format(parts[1]))
         pass

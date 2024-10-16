@@ -9,11 +9,21 @@
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
+using System.Runtime.Serialization;
+using static Tasks.make_token;
 
 namespace Tasks
 {
     public class sleep : Tasking
     {
+        [DataContract]
+        internal struct SleepParameters
+        {
+            [DataMember(Name = "interval")]
+            public int Sleep;
+            [DataMember(Name = "jitter")]
+            public int Jitter;
+        }
         public sleep(IAgent agent, MythicTask data) : base(agent, data)
         {
         }
@@ -22,37 +32,21 @@ namespace Tasks
         public override void Start()
         {
             MythicTaskResponse resp;
-            string[] parts = _data.Parameters.Split(' ');
-            int sleepTime = -1;
-            double jitterTime = -1;
-            if (int.TryParse(parts[0], out sleepTime))
+            SleepParameters parameters = _jsonSerializer.Deserialize<SleepParameters>(_data.Parameters);
+            if (parameters.Sleep >= 0)
             {
-                if (parts.Length > 1 && double.TryParse(parts[1], out jitterTime))
+                if (parameters.Jitter >= 0)
                 {
-                    resp = CreateTaskResponse("", true);
+                    _agent.SetSleep(parameters.Sleep, parameters.Jitter);
                 }
                 else
                 {
-                    resp = CreateTaskResponse("", true);
+                    _agent.SetSleep(parameters.Sleep);
                 }
             }
-            else
-            {
-                resp = CreateTaskResponse($"Failed to parse int from {parts[0]}.", true, "error");
-            }
-
+            resp = CreateTaskResponse("", true);
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            if (sleepTime >= 0)
-            {
-                if (jitterTime >= 0)
-                {
-                    _agent.SetSleep(sleepTime, jitterTime);
-                }
-                else
-                {
-                    _agent.SetSleep(sleepTime);
-                }
-            }
+
         }
     }
 }
