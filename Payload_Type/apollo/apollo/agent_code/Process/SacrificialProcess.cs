@@ -569,9 +569,9 @@ namespace Process
         {
             Handle = _processInfo.hProcess;
             PID = (uint)_processInfo.dwProcessId;
-            //_standardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
-            //_standardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
-            //_standardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
+            _standardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
+            _standardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
+            _standardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
         }
 
         private async void WaitForExitAsync()
@@ -580,22 +580,24 @@ namespace Process
             {
                 await Task.Factory.StartNew(() =>
                 {
-                    //var stdOutTask = GetStdOutAsync();
-                    //var stdErrTask = GetStdErrAsync();
-                    //var waitExitForever = new Task(() =>
-                    //{
-                    //    _pWaitForSingleObject(Handle, 0xFFFFFFFF);
-                    //});
-                    //stdOutTask.Start();
-                    //stdErrTask.Start();
-                    //waitExitForever.Start();
+                    var stdOutTask = GetStdOutAsync();
+                    var stdErrTask = GetStdErrAsync();
+                    var waitExitForever = new Task(() =>
+                    {
+                        _pWaitForSingleObject(Handle, 0xFFFFFFFF);
+                    });
+                    stdOutTask.Start();
+                    stdErrTask.Start();
+                    waitExitForever.Start();
+
                     try
                     {
-                        //waitExitForever.Wait(_cts.Token);
-                        WaitHandle.WaitAny(new WaitHandle[]
-                        {
-                            _cts.Token.WaitHandle,
-                        });
+                        waitExitForever.Wait(_cts.Token);
+                        // at this point, the process has exited
+                        //WaitHandle.WaitAny(new WaitHandle[]
+                        //{
+                        //    _cts.Token.WaitHandle,
+                        //});
                     }
                     catch (OperationCanceledException)
                     {
@@ -642,6 +644,10 @@ namespace Process
                     if (readTask.IsCompleted)
                     {
                         bytesRead = readTask.Result;
+                    } else
+                    {
+                        bytesRead = 0;
+
                     }
                     //bytesRead = stream.Read(buf, 0, szBuffer);
 

@@ -97,21 +97,25 @@ namespace Tasks
                             {
                                 Artifact.ProcessCreate((int) proc.PID, app, cmdline)
                             }));
-                        try
+                        while(proc != null && !proc.HasExited && !_cancellationToken.IsCancellationRequested)
                         {
-                            WaitHandle.WaitAny(new WaitHandle[]
+                            try
                             {
+                                WaitHandle.WaitAny(new WaitHandle[]
+                                {
                                 _complete,
-                                _cancellationToken.Token.WaitHandle
-                            });
-                        }
-                        catch (OperationCanceledException)
-                        {
+                                _cancellationToken.Token.WaitHandle,
+                                }, 1000);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                            }
                         }
 
                         if (proc != null && !proc.HasExited)
                         {
                             proc.Kill();
+                            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true));
                         }
                     }
                 }
