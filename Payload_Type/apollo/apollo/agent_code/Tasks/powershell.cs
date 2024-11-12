@@ -369,7 +369,7 @@ namespace Tasks
             _agent.AcquireOutputLock();
 
             TextWriter oldStdout = Console.Out;
-            TextWriter oldStderr = Console.Out;
+            TextWriter oldStderr = Console.Error;
             try
             {
                 EventableStringWriter stdoutSw = new EventableStringWriter();
@@ -410,7 +410,7 @@ namespace Tasks
             }
             catch (Exception ex)
             {
-                resp = CreateTaskResponse($"Unhandled exception: {ex.Message}", true, "error");
+                resp = CreateTaskResponse($"Unexpected Error\n{ex.Message}\n\nStack trace: {ex.StackTrace}", true, "error");
             }
             finally
             {
@@ -429,7 +429,14 @@ namespace Tasks
 
         private void OnBufferWrite(object sender, ApolloInterop.Classes.Events.StringDataEventArgs e)
         {
-            _psOutput.Add(e.Data);
+            if(e.Data != null)
+            {
+                try
+                {
+                    _psOutput.Add(e.Data);
+                }
+                catch { }
+            }
         }
     }
 }

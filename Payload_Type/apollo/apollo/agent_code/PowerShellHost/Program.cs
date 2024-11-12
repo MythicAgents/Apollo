@@ -54,12 +54,16 @@ namespace PowerShellHost
                         _senderEvent,
                         _cts.Token.WaitHandle
                     });
-                    if (_senderQueue.TryDequeue(out byte[] result))
+                    while (_senderQueue.TryDequeue(out byte[] message))
                     {
-                        pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
+                        pipe.BeginWrite(message, 0, message.Length, OnAsyncMessageSent, pipe);
                     }
                 }
-                pipe.Flush();
+                while (_senderQueue.TryDequeue(out byte[] message))
+                {
+                    pipe.BeginWrite(message, 0, message.Length, OnAsyncMessageSent, pipe);
+                }
+                pipe.WaitForPipeDrain();
                 pipe.Close();
             };
             _server = new AsyncNamedPipeServer(_namedPipeName, null, 1, IPC.SEND_SIZE, IPC.RECV_SIZE);
@@ -79,7 +83,7 @@ namespace PowerShellHost
                 EventableStringWriter stderrSw = new EventableStringWriter();
 
                 stdoutSw.BufferWritten += OnBufferWrite;
-
+                stderrSw.BufferWritten += OnBufferWrite;
 
                 Console.SetOut(stdoutSw);
                 Console.SetError(stderrSw);
@@ -113,6 +117,11 @@ namespace PowerShellHost
                     Console.SetOut(oldStderr);
                 }
                 _cts.Cancel();
+                // Wait for the pipe client comms to finish
+                while (_clientConnectedTask is ST.Task task && !_clientConnectedTask.IsCompleted)
+                {
+                    task.Wait(1000);
+                }
             }
 
 
@@ -122,8 +131,16 @@ namespace PowerShellHost
         {
             if (e.Data != null)
             {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(e.Data));
-                _senderEvent.Set();
+                try
+                {
+                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(e.Data));
+                    _senderEvent.Set();
+                }
+                catch
+                {
+
+                }
+
             }
         }
 
@@ -131,11 +148,7 @@ namespace PowerShellHost
         {
             PipeStream pipe = (PipeStream)result.AsyncState;
             pipe.EndWrite(result);
-            // Potentially delete this since theoretically the sender Task does everything
-            if (_senderQueue.TryDequeue(out byte[] data))
-            {
-                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
-            }
+            pipe.Flush();
         }
 
         private static void OnAsyncMessageReceived(object sender, NamedPipeMessageArgs args)

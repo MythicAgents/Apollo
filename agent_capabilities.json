@@ -11,6 +11,6 @@
   "architectures": ["x86_64"],
   "c2": ["http", "smb", "tcp", "websocket"],
   "mythic_version": "3.3.0",
-  "agent_version": "2.2.17",
+  "agent_version": "2.2.20",
   "supported_wrappers": ["service_wrapper", "scarecrow_wrapper"]
 }

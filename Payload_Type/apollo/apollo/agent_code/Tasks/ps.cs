@@ -112,40 +112,6 @@ namespace Tasks
             _pNtQueryInformationProcess = _agent.GetApi().GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
             _pGetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
             _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidA");
-            _flushMessages = (object o) =>
-            {
-                ProcessInformation[] output = null;
-                while (!_cancellationToken.IsCancellationRequested && !_complete)
-                {
-                    WaitHandle.WaitAny(new WaitHandle[]
-                    {
-                        _completed,
-                        _cancellationToken.Token.WaitHandle
-                    }, 5000);
-                    output = _processes.Flush();
-                    if (output.Length > 0)
-                    {
-                        SendProcessInfo(output);
-                    }
-                }
-                output = _processes.Flush();
-                if (output.Length > 0)
-                {
-                    SendProcessInfo(output);
-                }
-            };
-        }
-
-        private void SendProcessInfo(ProcessInformation[] output)
-        {
-            IMythicMessage[] procs = new IMythicMessage[output.Length];
-            Array.Copy(output, procs, procs.Length);
-            _agent.GetTaskManager().AddTaskResponseToQueue(
-                CreateTaskResponse(
-                    _jsonSerializer.Serialize(output),
-                    false,
-                    "",
-                    procs));
         }
 
         #region helpers
@@ -313,7 +279,6 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
 
         public override void Start()
         {
-            TT.Task.Factory.StartNew(_flushMessages, _cancellationToken);
             TT.ParallelOptions po = new TT.ParallelOptions();
             po.CancellationToken = _cancellationToken.Token;
             po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
@@ -323,6 +288,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                 {
                     po.CancellationToken.ThrowIfCancellationRequested();
                     ProcessInformation current = new ProcessInformation();
+                    current.UpdateDeleted = true;
                     current.PID = proc.Id;
                     current.Name = proc.ProcessName;
                     try
@@ -360,7 +326,7 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                                     default:
                                         current.Architecture = "x86";
                                         break;
-                                }   
+                                }
                             }
                             else
                             {
@@ -457,11 +423,26 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
 
             _complete = true;
             _completed.Set();
-
-            MythicTaskResponse resp = CreateTaskResponse(
-                "",
+            ProcessInformation[] output = null;
+            output = _processes.Flush();
+            if (output.Length > 0)
+            {
+                IMythicMessage[] procs = new IMythicMessage[output.Length];
+                Array.Copy(output, procs, procs.Length);
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse(
+                        _jsonSerializer.Serialize(output),
+                        true,
+                        "completed",
+                        procs));
+            } else
+            {
+                MythicTaskResponse resp = CreateTaskResponse(
+                "No Process Data Collected",
                 true);
-            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            }
+
         }
     }
 }

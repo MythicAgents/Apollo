@@ -105,7 +105,7 @@ namespace Tasks
                                 {
                                 _complete,
                                 _cancellationToken.Token.WaitHandle,
-                                }, 1000);
+                                }, 500);
                             }
                             catch (OperationCanceledException)
                             {

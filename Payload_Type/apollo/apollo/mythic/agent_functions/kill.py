@@ -18,14 +18,20 @@ class KillArguments(TaskArguments):
         if len(self.command_line) == 0:
             raise Exception("No PID given.")
         if self.command_line[0] == "{":
-            self.load_args_from_json_string(self.command_line)
+            supplied_dict = json.loads(self.command_line)
+            if "pid" in supplied_dict:
+                self.add_arg("pid", supplied_dict["pid"])
+            elif "process_id" in supplied_dict:
+                self.add_arg("pid", supplied_dict["process_id"])
+            else:
+                self.load_args_from_json_string(self.command_line)
         else:
             try:
                 int(self.command_line)
             except:
                 raise Exception("Failed to parse integer PID from: {}\n\tUsage: {}".format(self.command_line, killCommand.help_cmd))
             self.add_arg("pid", int(self.command_line), ParameterType.Number)
-        
+
 
 class killCommand(CommandBase):
     cmd = "kill"
@@ -36,7 +42,7 @@ class killCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = KillArguments
     attackmapping = ["T1106"]
-    supported_ui_features = ["kill"]
+    supported_ui_features = ["kill", "process_browser:kill"]
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(

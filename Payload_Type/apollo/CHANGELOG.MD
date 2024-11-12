@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.20] - 2024-11-12
+
+### Changed
+
+- Updated powerpick and PowerShellHost to handle output the same way as execute_assembly and execute_pe
+- Updated sacrificial process code to only star tasks for reading stdout/stderr for non-fork and run jobs
+- Updated `ps` to include `update_deleted` and send all output at once so Mythic can update the process browser properly
+- Updated `kill` to also support `process_browser:kill`
+
 ## [v2.2.19] - 2024-11-08
 
 ### Changed

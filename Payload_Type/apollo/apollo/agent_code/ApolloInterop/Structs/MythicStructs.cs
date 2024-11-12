@@ -51,6 +51,8 @@ namespace ApolloInterop.Structs
             public string CompanyName;
             [DataMember(Name = "window_title")]
             public string WindowTitle;
+            [DataMember(Name = "update_deleted")]
+            public bool UpdateDeleted;
         }
 //
         [DataContract]

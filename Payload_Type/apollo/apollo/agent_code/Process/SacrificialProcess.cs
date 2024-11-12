@@ -569,6 +569,8 @@ namespace Process
         {
             Handle = _processInfo.hProcess;
             PID = (uint)_processInfo.dwProcessId;
+            if (_startSuspended) { return; }
+            // only start processing stdout/stderr/stdin for non sacrificial jobs
             _standardOutput = new StreamReader(new FileStream(hReadOut, FileAccess.Read), Console.OutputEncoding);
             _standardError = new StreamReader(new FileStream(hReadErr, FileAccess.Read), Console.OutputEncoding);
             _standardInput = new StreamWriter(new FileStream(hWriteIn, FileAccess.Write), Console.InputEncoding);
@@ -580,14 +582,19 @@ namespace Process
             {
                 await Task.Factory.StartNew(() =>
                 {
-                    var stdOutTask = GetStdOutAsync();
-                    var stdErrTask = GetStdErrAsync();
+                    if (!_startSuspended)
+                    {
+                        var stdOutTask = GetStdOutAsync();
+                        var stdErrTask = GetStdErrAsync();
+                        stdOutTask.Start();
+                        stdErrTask.Start();
+                    }
+
                     var waitExitForever = new Task(() =>
                     {
                         _pWaitForSingleObject(Handle, 0xFFFFFFFF);
                     });
-                    stdOutTask.Start();
-                    stdErrTask.Start();
+
                     waitExitForever.Start();
 
                     try
@@ -625,7 +632,7 @@ namespace Process
         private IEnumerable<string> ReadStream(TextReader stream)
         {
             string output = "";
-            int szBuffer = 20;
+            int szBuffer = 4096;
             int bytesRead = 0;
             char[] tmp;
             bool needsBreak = false;
