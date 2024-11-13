@@ -21,13 +21,15 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.2.20"
+    version = "2.2.21"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}
     """.format(version)
     supports_dynamic_loading = True
+    shellcode_format_options = ["Binary", "Base64", "C", "Ruby", "Python", "Powershell", "C#", "Hex"]
+    shellcode_bypass_options = ["None", "Abort on fail", "Continue on fail"]
     build_parameters = [
         BuildParameter(
             name="output_type",
@@ -35,6 +37,26 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
             choices=["WinExe", "Shellcode", "Service"],
             default_value="WinExe",
             description="Output as shellcode, executable, or service.",
+        ),
+        BuildParameter(
+            name="shellcode_format",
+            parameter_type=BuildParameterType.ChooseOne,
+            choices=shellcode_format_options,
+            default_value="Binary",
+            description="Donut shellcode format options.",
+        ),
+        BuildParameter(
+            name="shellcode_bypass",
+            parameter_type=BuildParameterType.ChooseOne,
+            choices=shellcode_bypass_options,
+            default_value="Continue on fail",
+            description="Donut shellcode AMSI/WLDP/ETW Bypass options.",
+        ),
+        BuildParameter(
+            name="adjust_filename",
+            parameter_type=BuildParameterType.Boolean,
+            default_value=False,
+            description="Automatically adjust payload extension based on selected choices.",
         )
     ]
     c2_profiles = ["http", "smb", "tcp", "websocket"]
@@ -176,16 +198,21 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                     resp.build_message = success_message
                     resp.status = BuildStatus.Success
                     resp.build_stdout = stdout_err
+                    resp.updated_filename = adjust_file_name(self.filename,
+                                                             self.get_parameter("shellcode_format"),
+                                                             self.get_parameter("output_type"),
+                                                             self.get_parameter("adjust_filename"))
                 else:
-
                     shellcode_path = "{}/loader.bin".format(agent_build_path.name)
                     donutPath = os.path.abspath(self.agent_code_path / "donut")
                     command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                                  stderr=asyncio.subprocess.PIPE)
                     stdout, stderr = await proc.communicate()
-
-                    command = "{} -x3 -k2 -i {}".format(donutPath, output_path)
+                    command = "{} -x3 -k2 -o loader.bin -i {}".format(donutPath, output_path)
+                    if self.get_parameter('output_type') == "Shellcode":
+                        command += f" -f{self.shellcode_format_options.index(self.get_parameter('shellcode_format')) + 1}"
+                    command += f" -b{self.shellcode_bypass_options.index(self.get_parameter('shellcode_bypass')) + 1}"
                     # need to go through one more step to turn our exe into shellcode
                     proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                                  stderr=asyncio.subprocess.PIPE,
@@ -218,6 +245,10 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                             resp.build_message = success_message
                             resp.status = BuildStatus.Success
                             resp.build_stdout = stdout_err
+                            resp.updated_filename = adjust_file_name(self.filename,
+                                                                     self.get_parameter("shellcode_format"),
+                                                                     self.get_parameter("output_type"),
+                                                                     self.get_parameter("adjust_filename"))
                         else:
                             # we're generating a service executable
                             working_path = (
@@ -260,6 +291,10 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                                     StepStdout=stdout_err,
                                     StepSuccess=True
                                 ))
+                                resp.updated_filename = adjust_file_name(self.filename,
+                                                                         self.get_parameter("shellcode_format"),
+                                                                         self.get_parameter("output_type"),
+                                                                         self.get_parameter("adjust_filename"))
                             else:
                                 resp.payload = b""
                                 resp.status = BuildStatus.Error
@@ -338,3 +373,32 @@ def get_csharp_files(base_path: str) -> list[str]:
     if len(results) == 0:
         raise Exception("No payload files found with extension .cs")
     return results
+
+
+def adjust_file_name(filename, shellcode_format, output_type, adjust_filename):
+    if not adjust_filename:
+        return filename
+    filename_pieces = filename.split(".")
+    original_filename = ".".join(filename_pieces[:-1])
+    if output_type == "WinExe":
+        return original_filename + ".exe"
+    elif output_type == "Service":
+        return original_filename + ".exe"
+    elif shellcode_format == "Binary":
+        return original_filename + ".bin"
+    elif shellcode_format == "Base64":
+        return original_filename + ".txt"
+    elif shellcode_format == "C":
+        return original_filename + ".c"
+    elif shellcode_format == "Ruby":
+        return original_filename + ".rb"
+    elif shellcode_format == "Python":
+        return original_filename + ".py"
+    elif shellcode_format == "Powershell":
+        return original_filename + ".ps1"
+    elif shellcode_format == "C#":
+        return original_filename + ".cs"
+    elif shellcode_format == "Hex":
+        return original_filename + ".txt"
+    else:
+        return filename
