@@ -3,7 +3,7 @@
   "languages": [".NET Framework"] ,
   "features": {
     "mythic": ["artifacts", "browser scripts", "credentials","docker", "dynamic loading", "file chunking", "file browser",
-      "keylogging", "p2p", "process browser", "pushc2", "rpwfd","screenshots", "socks"],
+      "keylogging", "p2p", "process browser", "push c2", "rpfwd","screenshots", "socks"],
     "custom": ["bofs","key exchange", "killdate", "execute pe", "execute assembly", "inline assembly","mimikatz", "powerpick",
     "donut", "sRDI", "shellcode injection"]
   },
