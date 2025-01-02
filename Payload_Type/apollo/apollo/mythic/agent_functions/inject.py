@@ -64,6 +64,9 @@ class InjectArguments(TaskArguments):
         if self.command_line[0] != "{":
             raise Exception("Inject requires JSON parameters and not raw command line.")
         self.load_args_from_json_string(self.command_line)
+        supplied_dict = json.loads(self.command_line)
+        if "process_id" in supplied_dict:
+            self.add_arg("pid", int(supplied_dict["process_id"]))
         if self.get_arg("pid") == 0:
             raise Exception("Required non-zero PID")
 
@@ -87,6 +90,7 @@ class InjectCommand(CommandBase):
     argument_class = InjectArguments
     attackmapping = ["T1055"]
     completion_functions = {"inject_callback": inject_callback}
+    supported_ui_features = ["process_browser:inject"]
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(

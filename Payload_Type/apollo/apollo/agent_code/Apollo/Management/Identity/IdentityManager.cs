@@ -304,7 +304,7 @@ public class IdentityManager : IIdentityManager
             _userCredential.Username,
             _userCredential.Domain,
             _userCredential.Password,
-            LogonType.LOGON32_LOGON_NEW_CREDENTIALS,
+            _userCredential.NetOnly ? LogonType.LOGON32_LOGON_NEW_CREDENTIALS : LogonType.LOGON32_LOGON_INTERACTIVE,
             LogonProvider.LOGON32_PROVIDER_WINNT50,
             out hToken);
 

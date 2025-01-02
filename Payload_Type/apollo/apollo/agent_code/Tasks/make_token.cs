@@ -22,6 +22,8 @@ namespace Tasks
         {
             [DataMember(Name = "credential")]
             public Credential Credential;
+            [DataMember(Name = "netOnly")]
+            public bool NetOnly;
         }
         public make_token(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
@@ -47,15 +49,26 @@ namespace Tasks
                 ApolloLogonInformation info = new ApolloLogonInformation(
                     parameters.Credential.Account,
                     parameters.Credential.CredentialMaterial,
-                    parameters.Credential.Realm);
+                    parameters.Credential.Realm,
+                    parameters.NetOnly);
                 if (_agent.GetIdentityManager().SetIdentity(info))
                 {
                     var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                    resp = CreateTaskResponse(
-                        $"Successfully impersonated {cur.Name}",
+                    if (parameters.NetOnly)
+                    {
+                        resp = CreateTaskResponse(
+                        $"Successfully impersonated {cur.Name} for local access and {parameters.Credential.Realm}\\{parameters.Credential.Account} for remote access",
                         true,
                         "completed",
-                        new IMythicMessage[] {Artifact.PlaintextLogon(cur.Name, true)});
+                        new IMythicMessage[] { Artifact.PlaintextLogon(cur.Name, true) });
+                    } else
+                    {
+                        resp = CreateTaskResponse(
+                        $"Successfully impersonated {cur.Name} for local and remote access",
+                        true,
+                        "completed",
+                        new IMythicMessage[] { Artifact.PlaintextLogon(cur.Name, true) });
+                    }
                 }
                 else
                 {

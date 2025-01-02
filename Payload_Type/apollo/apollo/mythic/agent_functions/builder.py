@@ -16,12 +16,12 @@ from mythic_container.MythicRPC import *
 class Apollo(PayloadType):
     name = "apollo"
     file_extension = "exe"
-    author = "@djhohnstein"
+    author = "@djhohnstein, @its_a_feature_"
     mythic_encrypts = True
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.2.21"
+    version = "2.2.22"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
