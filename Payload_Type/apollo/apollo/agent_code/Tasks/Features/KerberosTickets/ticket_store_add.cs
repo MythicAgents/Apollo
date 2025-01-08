@@ -41,7 +41,7 @@ public class ticket_store_add : Tasking
             KerberosTicket? ticket = _agent.GetTicketManager().GetTicketDetailsFromKirbi(ticketBytes);
             if(ticket == null)
             {
-                resp = CreateTaskResponse($"Failed to extract ticket from kirbi", true, "error");
+                resp = CreateTaskResponse($"Failed to extract ticket from kirbi or failed to parse new data", true, "error");
             }
             else
             {
@@ -51,7 +51,7 @@ public class ticket_store_add : Tasking
         }
         catch (Exception e)
         {
-            resp = CreateTaskResponse($"Failed to inject ticket into session: {e.Message}", true, "error");
+            resp = CreateTaskResponse($"Failed to add ticket into store: {e.Message}", true, "error");
         }
         //get and send back any artifacts
         IEnumerable<Artifact> artifacts = _agent.GetTicketManager().GetArtifacts();

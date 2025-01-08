@@ -53,6 +53,7 @@ class InjectArguments(TaskArguments):
             for f in payload_search.Payloads:
                 file_names.append(f"{f.Filename} - {f.Description}")
             fileResponse.Success = True
+            file_names.sort()
             fileResponse.Choices = file_names
             return fileResponse
         else:

