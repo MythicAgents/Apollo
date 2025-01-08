@@ -21,7 +21,21 @@ class ticket_cache_listArguments(TaskArguments):
                         required=False,
                         ui_position=1,
                     ),
-                ])
+                ]),
+            CommandParameter(
+                name="getSystemTickets",
+                cli_name="getSystemTickets",
+                display_name="Get System Tickets",
+                type=ParameterType.Boolean,
+                default_value=True,
+                description="Set this to false to filter out tickets for the SYSTEM context",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=2
+                    )
+                ]
+            )
         ]
 
     async def parse_arguments(self):

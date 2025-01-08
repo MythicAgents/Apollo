@@ -12,7 +12,8 @@ class SleepArguments(TaskArguments):
                 type=ParameterType.Number,
                 default_value=-1,
                 parameter_group_info=[ParameterGroupInfo(
-                    ui_position=0
+                    ui_position=0,
+                    required=True,
                 )]
             ),
             CommandParameter(
@@ -20,7 +21,8 @@ class SleepArguments(TaskArguments):
                 type=ParameterType.Number,
                 default_value=-1,
                 parameter_group_info=[ParameterGroupInfo(
-                    ui_position=1
+                    ui_position=1,
+                    required=False,
                 )]
             )
         ]
