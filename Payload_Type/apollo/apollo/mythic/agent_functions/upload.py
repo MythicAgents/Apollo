@@ -96,7 +96,10 @@ class UploadCommand(CommandBase):
         )
 
         path = taskData.args.get_arg("remote_path")
-
+        if path is None or path == "":
+            path = original_file_name
+            taskData.args.add_arg("remote_path", path)
+            taskData.args.add_arg("host", taskData.Callback.Host)
         if uncmatch := re.match(
             r"^\\\\(?P<host>[^\\]+)\\(?P<path>.*)$",
             path,
@@ -105,7 +108,7 @@ class UploadCommand(CommandBase):
             taskData.args.set_arg("remote_path", uncmatch.group("path"))
         else:
             # Set the host argument to an empty string if it does not exist
-            taskData.args.add_arg("host", "")
+            taskData.args.add_arg("host", taskData.Callback.Host)
         if host := taskData.args.get_arg("host"):
             host = host.upper()
 

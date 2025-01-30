@@ -12,11 +12,12 @@ import shutil
 import asyncio
 import platform
 
-if platform.system() == 'Windows':  
+if platform.system() == 'Windows':
     INTEROP_ASSEMBLY_PATH = "C:\\Mythic\\Apollo\\srv\\ApolloInterop.dll"
 else:
     INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
 INTEROP_FILE_ID = ""
+
 
 class InlineAssemblyArguments(TaskArguments):
 
@@ -25,12 +26,12 @@ class InlineAssemblyArguments(TaskArguments):
         self.args = [
             CommandParameter(
                 name="assembly_name",
-                cli_name = "Assembly",
-                display_name = "Assembly",
+                cli_name="Assembly",
+                display_name="Assembly",
                 type=ParameterType.ChooseOne,
                 dynamic_query_function=self.get_files,
                 description="Assembly to execute (e.g., Seatbelt.exe).",
-                parameter_group_info = [
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=True,
                         group_name="Default",
@@ -38,16 +39,30 @@ class InlineAssemblyArguments(TaskArguments):
                     ),
                 ]),
             CommandParameter(
+                name="assembly_file",
+                display_name="New Assembly",
+                type=ParameterType.File,
+                description="A new assembly to execute. After uploading once, you can just supply the assembly_name parameter",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True, group_name="New Assembly", ui_position=1,
+                    )
+                ]
+            ),
+            CommandParameter(
                 name="assembly_arguments",
                 cli_name="Arguments",
                 display_name="Arguments",
                 type=ParameterType.String,
                 description="Arguments to pass to the assembly.",
-                parameter_group_info = [
+                parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
                         ui_position=2
+                    ),
+                    ParameterGroupInfo(
+                        required=False, group_name="New Assembly", ui_position=2
                     ),
                 ]),
         ]
@@ -99,9 +114,10 @@ class InlineAssemblyCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name)
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ApolloInterop/ApolloInterop.csproj -o {}/ApolloInterop/bin/Release/".format(agent_build_path.name, agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ApolloInterop/ApolloInterop.csproj -o {}/ApolloInterop/bin/Release/".format(
+            agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                         stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
+                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
         if not path.exists(outputPath):
             raise Exception("Failed to build ApolloInterop.dll:\n{}".format(stderr.decode() + "\n" + stdout.decode()))
@@ -126,18 +142,48 @@ class InlineAssemblyCommand(CommandBase):
                 FileContents=interop_bytes,
                 DeleteAfterFetch=False,
             ))
-            
+
             if file_resp.Success:
                 INTEROP_FILE_ID = file_resp.AgentFileId
             else:
                 raise Exception("Failed to register Interop DLL: {}".format(file_resp.Error))
-        
-        taskData.args.add_arg("interop_id", INTEROP_FILE_ID)
+        originalGroupNameIsDefault = taskData.args.get_parameter_group_name() == "Default"
+        if taskData.args.get_parameter_group_name() == "New Assembly":
+            fileSearchResp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                AgentFileID=taskData.args.get_arg("assembly_file")
+            ))
+            if not fileSearchResp.Success:
+                raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
+            if len(fileSearchResp.Files) == 0:
+                raise Exception(f"Failed to find matching file, was it deleted?")
+            searchedTaskResp = await SendMythicRPCTaskSearch(MythicRPCTaskSearchMessage(
+                TaskID=taskData.Task.ID,
+                SearchCallbackID=taskData.Callback.ID,
+                SearchCommandNames=["register_file"],
+                SearchParams=taskData.args.get_arg("assembly_file")
+            ))
+            if not searchedTaskResp.Success:
+                raise Exception(f"Failed to search for matching tasks: {searchedTaskResp.Error}")
+            if len(searchedTaskResp.Tasks) == 0:
+                # we need to register this file with apollo first
+                subtaskCreationResp = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                    TaskID=taskData.Task.ID,
+                    CommandName="register_file",
+                    Params=json.dumps({"file": taskData.args.get_arg("assembly_file")})
+                ))
+                if not subtaskCreationResp.Success:
+                    raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
 
-        response.DisplayParams = "-Assembly {} -Arguments {}".format(
-            taskData.args.get_arg("assembly_name"),
-            taskData.args.get_arg("assembly_arguments")
-        )
+            taskData.args.add_arg("assembly_name", fileSearchResp.Files[0].Filename)
+            taskData.args.remove_arg("assembly_file")
+
+        taskData.args.add_arg("interop_id", INTEROP_FILE_ID)
+        if originalGroupNameIsDefault:
+            response.DisplayParams = "-Assembly {} -Arguments {}".format(
+                taskData.args.get_arg("assembly_name"),
+                taskData.args.get_arg("assembly_arguments")
+            )
 
         return response
 

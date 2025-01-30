@@ -51,7 +51,6 @@ class RegisterFileCommand(CommandBase):
         taskData.args.add_arg("file_name", original_file_name)
 
         taskData.args.add_arg("file_id", taskData.args.get_arg("file"))
-        taskData.args.add_arg("file_name", original_file_name)
         
         response.DisplayParams = original_file_name
         

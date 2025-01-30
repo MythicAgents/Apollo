@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.25] - 2025-01-30
+
+### Changed
+
+- Fixed a bug with upload if remote_path wasn't specified causing regex to break
+- Updated execute_coff to optionally take in a file at execution time to support forge
+- Updated execute_assembly to optionally take in a file at execution time to support forge
+- Updated inline_assembly to optionally take in a file at execution time to support forge
+
 ## [v2.2.24] - 2025-01-08
 
 ### Changed

@@ -8,7 +8,7 @@ import tempfile
 import asyncio
 import platform
 
-if platform.system() == 'Windows':  
+if platform.system() == 'Windows':
     RUNOF_HOST_PATH= "C:\\Mythic\\Apollo\\srv\\RunOF.dll"
 else:
     RUNOF_HOST_PATH= "/srv/RunOF.dll"
@@ -35,6 +35,17 @@ class ExecuteCoffArguments(TaskArguments):
                     )
                 ]),
             CommandParameter(
+                name="bof_file",
+                display_name="New Bof",
+                type=ParameterType.File,
+                description="A new bof to execute. After uploading once, you can just supply the coff_name parameter",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True, group_name="New", ui_position=1,
+                    )
+                ]
+            ),
+            CommandParameter(
                 name="function_name",
                 cli_name="Function",
                 display_name="Function",
@@ -45,6 +56,11 @@ class ExecuteCoffArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=2
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="New",
                         ui_position=2
                     ),
                 ]),
@@ -59,6 +75,11 @@ class ExecuteCoffArguments(TaskArguments):
                     ParameterGroupInfo(
                         required=False,
                         group_name="Default",
+                        ui_position=3
+                    ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="New",
                         ui_position=3
                     ),
                 ]),
@@ -82,11 +103,15 @@ class ExecuteCoffArguments(TaskArguments):
                         group_name="Default",
                         ui_position=4
                     ),
+                    ParameterGroupInfo(
+                        required=False,
+                        group_name="New",
+                        ui_position=4
+                    ),
                 ]),
         ]
 
     async def get_arguments(self, arguments: PTRPCTypedArrayParseFunctionMessage) -> PTRPCTypedArrayParseFunctionMessageResponse:
-        argumentResponse = PTRPCTypedArrayParseFunctionMessageResponse(Success=True)
         argumentSplitArray = []
         for argValue in arguments.InputArray:
             argSplitResult = argValue.split(" ")
@@ -98,18 +123,19 @@ class ExecuteCoffArguments(TaskArguments):
             value = value.strip("\'").strip("\"")
             if argType == "":
                 pass
-            elif argType == "int16" or argType == "-s":
+            elif argType == "int16" or argType == "-s" or argType == "s":
                 coff_arguments.append(["int16",int(value)])
-            elif argType == "int32" or argType == "-i":
+            elif argType == "int32" or argType == "-i" or argType == "i":
                 coff_arguments.append(["int32",int(value)])
-            elif argType == "string" or argType == "-z":
+            elif argType == "string" or argType == "-z" or argType == "z":
                 coff_arguments.append(["string",value])
-            elif argType == "wchar" or argType == "-Z":
+            elif argType == "wchar" or argType == "-Z" or argType == "Z":
                 coff_arguments.append(["wchar",value])
-            elif argType == "base64" or argType == "-b":
+            elif argType == "base64" or argType == "-b" or argType == "b":
                 coff_arguments.append(["base64",value])
             else:
-                return PTRPCTypedArrayParseFunctionMessageResponse(Success=False, Error=f"Failed to parse argument: {argument}: Unknown value type.")
+                return PTRPCTypedArrayParseFunctionMessageResponse(Success=False,
+                                                                   Error=f"Failed to parse argument: {argument}: Unknown value type.")
 
         argumentResponse = PTRPCTypedArrayParseFunctionMessageResponse(Success=True, TypedArray=coff_arguments)
         return argumentResponse
@@ -177,7 +203,7 @@ class ExecuteCoffCommand(CommandBase):
         fileSearch = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
             TaskID=taskData.Task.ID,
             Filename="RunOF.dll",
-            LimitByCallback=True,
+            LimitByCallback=False,
             MaxResults=1
         ))
         if not fileSearch.Success:
@@ -190,7 +216,7 @@ class ExecuteCoffCommand(CommandBase):
                 Filename="RunOF.dll",
                 IsScreenshot=False,
                 IsDownloadFromAgent=False,
-                Comment=f"Shared RunOF.dll for all execute_coff tasks within Callback {taskData.Callback.DisplayID}"
+                Comment=f"Shared RunOF.dll for all execute_coff tasks within apollo"
             ))
             if fileRegister.Success:
                 return fileRegister.AgentFileId
@@ -199,33 +225,84 @@ class ExecuteCoffCommand(CommandBase):
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID, Success=True)
+        originalGroupNameIsDefault = taskData.args.get_parameter_group_name() == "Default"
+        if taskData.args.get_parameter_group_name() == "New":
+            fileSearchResp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                AgentFileID=taskData.args.get_arg("bof_file")
+            ))
+            if not fileSearchResp.Success:
+                raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
+            if len(fileSearchResp.Files) == 0:
+                raise Exception(f"Failed to find matching file, was it deleted?")
+            searchedTaskResp = await SendMythicRPCTaskSearch(MythicRPCTaskSearchMessage(
+                TaskID=taskData.Task.ID,
+                SearchCallbackID=taskData.Callback.ID,
+                SearchCommandNames=["register_file"],
+                SearchParams=taskData.args.get_arg("bof_file")
+            ))
+            if not searchedTaskResp.Success:
+                raise Exception(f"Failed to search for matching tasks: {searchedTaskResp.Error}")
+            if len(searchedTaskResp.Tasks) == 0:
+                # we need to register this file with apollo first
+                subtaskCreationResp = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                    TaskID=taskData.Task.ID,
+                    CommandName="register_coff",
+                    Params=json.dumps({"file": taskData.args.get_arg("bof_file")})
+                ))
+                if not subtaskCreationResp.Success:
+                    raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
+
+            taskData.args.add_arg("coff_name", fileSearchResp.Files[0].Filename)
+            taskData.args.add_arg("loader_stub_id", taskData.args.get_arg("bof_file"))
+            taskData.args.remove_arg("bof_file")
+        else:
+            file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(TaskID=taskData.Task.ID, Filename=taskData.args.get_arg("coff_name")))
+            if file_resp.Success and len(file_resp.Files) > 0:
+                taskData.args.add_arg("loader_stub_id", file_resp.Files[0].AgentFileId)
+            else:
+                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("coff_name")))
         registered_runof_id = await self.registered_runof(taskData)
         taskData.args.add_arg("runof_id", registered_runof_id)
-        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(TaskID=taskData.Task.ID, Filename=taskData.args.get_arg("coff_name")))
-        if file_resp.Success and len(file_resp.Files) > 0:
-            taskData.args.add_arg("loader_stub_id", file_resp.Files[0].AgentFileId)
-        else:
-            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("coff_name")))
-
         timeout = taskData.args.get_arg("timeout")
         if timeout is None or timeout == "":
             taskData.args.set_arg("timeout", "30")
 
         taskargs = taskData.args.get_arg("coff_arguments")
-        if taskargs == "" or taskargs is None:
-            response.DisplayParams = "-Coff {} -Function {} -Timeout {}".format(
-                taskData.args.get_arg("coff_name"),
-                taskData.args.get_arg("function_name"),
-                taskData.args.get_arg("timeout")
-            )
-        else:
-            response.DisplayParams = "-Coff {} -Function {} -Timeout {} -Arguments {}".format(
-                taskData.args.get_arg("coff_name"),
-                taskData.args.get_arg("function_name"),
-                taskData.args.get_arg("timeout"),
-                taskargs
-            )
+        if originalGroupNameIsDefault:
+            if taskargs == "" or taskargs is None:
+                response.DisplayParams = "-Coff {} -Function {} -Timeout {}".format(
+                    taskData.args.get_arg("coff_name"),
+                    taskData.args.get_arg("function_name"),
+                    taskData.args.get_arg("timeout")
+                )
+            else:
+                argsString = ""
+                normalizedArgs = []
+                for argEntry in taskargs:
+                    if argEntry[0] in ['s', 'int16']:
+                        argsString += f"-Arguments {argEntry[0]}:{argEntry[1]} "
+                        normalizedArgs.append(['s', argEntry[1]])
+                    elif argEntry[0] in ['i', 'int32']:
+                        argsString += f"-Arguments {argEntry[0]}:{argEntry[1]} "
+                        normalizedArgs.append(['i', argEntry[1]])
+                    elif argEntry[0] in ['z', 'string']:
+                        argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
+                        normalizedArgs.append(['z', argEntry[1]])
+                    elif argEntry[0] in ['Z', 'wchar']:
+                        argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
+                        normalizedArgs.append(['Z', argEntry[1]])
+                    else:
+                        argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
+                        normalizedArgs.append(['b', argEntry[1]])
+                taskData.args.set_arg("coff_arguments", normalizedArgs)
 
+                response.DisplayParams = "-Coff {} -Function {} -Timeout {} {}".format(
+                    taskData.args.get_arg("coff_name"),
+                    taskData.args.get_arg("function_name"),
+                    taskData.args.get_arg("timeout"),
+                    argsString
+                )
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

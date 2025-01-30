@@ -34,6 +34,17 @@ class ExecuteAssemblyArguments(TaskArguments):
                 ],
             ),
             CommandParameter(
+                name="assembly_file",
+                display_name="New Assembly",
+                type=ParameterType.File,
+                description="A new assembly to execute. After uploading once, you can just supply the assembly_name parameter",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True, group_name="New Assembly", ui_position=1,
+                    )
+                ]
+            ),
+            CommandParameter(
                 name="assembly_arguments",
                 cli_name="Arguments",
                 display_name="Arguments",
@@ -42,6 +53,9 @@ class ExecuteAssemblyArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False, group_name="Default", ui_position=2
+                    ),
+                    ParameterGroupInfo(
+                        required=False, group_name="New Assembly", ui_position=2
                     ),
                 ],
             ),
@@ -91,7 +105,7 @@ class ExecuteAssemblyCommand(CommandBase):
     cmd = "execute_assembly"
     needs_admin = False
     help_cmd = "execute_assembly [Assembly.exe] [args]"
-    description = "Executes a .NET assembly with the specified arguments. This assembly must first be known by the agent using the `register_assembly` command."
+    description = "Executes a .NET assembly with the specified arguments. This assembly must first be known by the agent using the `register_assembly` command or by supplying an assembly with the task."
     version = 3
     author = "@djhohnstein"
     argument_class = ExecuteAssemblyArguments
@@ -134,6 +148,47 @@ class ExecuteAssemblyCommand(CommandBase):
             Success=True,
         )
         global EXEECUTE_ASSEMBLY_PATH
+        originalGroupNameIsDefault = taskData.args.get_parameter_group_name() == "Default"
+        if taskData.args.get_parameter_group_name() == "New Assembly":
+            fileSearchResp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                AgentFileID=taskData.args.get_arg("assembly_file")
+            ))
+            if not fileSearchResp.Success:
+                raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
+            if len(fileSearchResp.Files) == 0:
+                raise Exception(f"Failed to find matching file, was it deleted?")
+            searchedTaskResp = await SendMythicRPCTaskSearch(MythicRPCTaskSearchMessage(
+                TaskID=taskData.Task.ID,
+                SearchCallbackID=taskData.Callback.ID,
+                SearchCommandNames=["register_file"],
+                SearchParams=taskData.args.get_arg("assembly_file")
+            ))
+            if not searchedTaskResp.Success:
+                raise Exception(f"Failed to search for matching tasks: {searchedTaskResp.Error}")
+            if len(searchedTaskResp.Tasks) == 0:
+                # we need to register this file with apollo first
+                subtaskCreationResp = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                    TaskID=taskData.Task.ID,
+                    CommandName="register_file",
+                    Params=json.dumps({"file": taskData.args.get_arg("assembly_file")})
+                ))
+                if not subtaskCreationResp.Success:
+                    raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
+
+            taskData.args.add_arg("assembly_name", fileSearchResp.Files[0].Filename)
+            taskData.args.remove_arg("assembly_file")
+
+        taskargs = taskData.args.get_arg("assembly_arguments")
+        if originalGroupNameIsDefault:
+            if taskargs == "" or taskargs is None:
+                response.DisplayParams = "-Assembly {}".format(
+                    taskData.args.get_arg("assembly_name")
+                )
+            else:
+                response.DisplayParams = "-Assembly {} -Arguments {}".format(
+                    taskData.args.get_arg("assembly_name"), taskargs
+                )
         taskData.args.add_arg("pipe_name", str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
             # create
@@ -153,17 +208,6 @@ class ExecuteAssemblyCommand(CommandBase):
             raise Exception(
                 "Failed to register execute_assembly binary: " + file_resp.Error
             )
-
-        taskargs = taskData.args.get_arg("assembly_arguments")
-        if taskargs == "" or taskargs is None:
-            response.DisplayParams = "-Assembly {}".format(
-                taskData.args.get_arg("assembly_name")
-            )
-        else:
-            response.DisplayParams = "-Assembly {} -Arguments {}".format(
-                taskData.args.get_arg("assembly_name"), taskargs
-            )
-
         return response
 
     async def process_response(
