@@ -21,11 +21,12 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.2.25"
+    version = "2.3.0"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
-A fully featured .NET 4.0 compatible training agent. Version: {}
+A fully featured .NET 4.0 compatible training agent. Version: {}. 
+NOTE: P2P Not compatible with v2.2 agents!
     """.format(version)
     supports_dynamic_loading = True
     shellcode_format_options = ["Binary", "Base64", "C", "Ruby", "Python", "Powershell", "C#", "Hex"]
@@ -118,8 +119,7 @@ A fully featured .NET 4.0 compatible training agent. Version: {}
                         resp.set_status(BuildStatus.Error)
                         resp.set_build_message(f"Encrypted exchange check needs to be set for the {profile['name']} C2 profile")
                         return resp
-
-                    special_files_map["Config.cs"][prefixed_key] = "T" if val else "F"
+                    special_files_map["Config.cs"][prefixed_key] = "true" if val else "false"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
                 else:

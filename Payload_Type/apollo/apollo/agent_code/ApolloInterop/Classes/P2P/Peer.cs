@@ -5,6 +5,7 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Serializers;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
+using ApolloInterop.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -74,11 +75,7 @@ namespace ApolloInterop.Classes.P2P
                 OnUUIDNegotiated(this, new UUIDEventArgs(_mythicUUID));
                 _uuid = _mythicUUID;
             }
-            IPCChunkedData[] chunks = _serializer.SerializeDelegateMessage(message.Message, _serverResponseType);
-            foreach (IPCChunkedData chunk in chunks)
-            {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-            }
+            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(message.Message));
             _senderEvent.Set();
         }
 

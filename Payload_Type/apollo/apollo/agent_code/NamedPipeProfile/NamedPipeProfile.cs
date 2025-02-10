@@ -16,6 +16,7 @@ using ApolloInterop.Serializers;
 using ApolloInterop.Constants;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
+using ApolloInterop.Utils;
 
 namespace NamedPipeTransport
 {
@@ -43,11 +44,18 @@ namespace NamedPipeTransport
 
         private ST.Task _agentConsumerTask = null;
         private ST.Task _agentProcessorTask = null;
+        private int chunkSize = IPC.SEND_SIZE;
+        private UInt32 _currentMessageSize = 0;
+        private UInt32 _currentMessageChunkNum = 0;
+        private UInt32 _currentMessageTotalChunks = 0;
+        private bool _currentMessageReadAllMetadata = false;
+        private string _currentMessageID = Guid.NewGuid().ToString();
+        private Byte[] _partialData = [];
 
         public NamedPipeProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             _namedPipeName = data["pipename"];
-            _encryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
+            _encryptedExchangeCheck = data["encrypted_exchange_check"] == "true";
             _agent = agent;
             _sendAction = (object p) =>
             {
@@ -58,7 +66,32 @@ namespace NamedPipeTransport
                     _senderEvent.WaitOne();
                     if (!cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
+                        UInt32 totalChunksToSend = (UInt32)(result.Length / chunkSize) + 1;
+                        byte[] totalChunkBytes = BitConverter.GetBytes(totalChunksToSend);
+                        Array.Reverse(totalChunkBytes);
+                        for (UInt32 currentChunk = 0; currentChunk < totalChunksToSend; currentChunk++)
+                        {
+                            byte[] chunkData;
+                            if ((currentChunk + 1) * chunkSize > result.Length)
+                            {
+                                chunkData = new byte[result.Length - (currentChunk * chunkSize)];
+                            }
+                            else
+                            {
+                                chunkData = new byte[chunkSize];
+                            }
+                            Array.Copy(result, currentChunk * chunkSize, chunkData, 0, chunkData.Length);
+                            byte[] sizeBytes = BitConverter.GetBytes((UInt32)chunkData.Length + 8);
+                            Array.Reverse(sizeBytes);
+                            byte[] currentChunkBytes = BitConverter.GetBytes(currentChunk);
+                            Array.Reverse(currentChunkBytes);
+                            DebugHelp.DebugWriteLine($"sending chunk {currentChunk}/{totalChunksToSend} with size {chunkData.Length + 8}");
+                            pipe.BeginWrite(sizeBytes, 0, sizeBytes.Length, OnAsyncMessageSent, p);
+                            pipe.BeginWrite(totalChunkBytes, 0, totalChunkBytes.Length, OnAsyncMessageSent, p);
+                            pipe.BeginWrite(currentChunkBytes, 0, currentChunkBytes.Length, OnAsyncMessageSent, p);
+                            pipe.BeginWrite(chunkData, 0, chunkData.Length, OnAsyncMessageSent, p);
+                        }
+                        //pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }
                 }
             };
@@ -103,9 +136,98 @@ namespace NamedPipeTransport
 
         public void OnAsyncMessageReceived(object sender, NamedPipeMessageArgs args)
         {
-            IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(
-                Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray()));
-            lock(MessageStore)
+            Byte[] sData = args.Data.Data.Take(args.Data.DataLength).ToArray();
+            DebugHelp.DebugWriteLine($"got message from remote connection with length: {sData.Length}");
+            while (sData.Length > 0)
+            {
+                if (_currentMessageSize == 0)
+                {
+                    // This means we're looking at the start of a new message
+                    if (sData.Length < 4)
+                    {
+                        // we didn't even get enough for a size
+
+                    }
+                    else
+                    {
+                        Byte[] messageSizeBytes = sData.Take(4).ToArray();
+                        sData = sData.Skip(4).ToArray();
+                        Array.Reverse(messageSizeBytes);  // reverse the bytes so they're in big endian?
+                        _currentMessageSize = BitConverter.ToUInt32(messageSizeBytes, 0) - 8;
+                        continue;
+                    }
+                }
+                if (_currentMessageTotalChunks == 0)
+                {
+                    // This means we're looking at the start of a new message
+                    if (sData.Length < 4)
+                    {
+                        // we didn't even get enough for a size
+
+                    }
+                    else
+                    {
+                        Byte[] messageSizeBytes = sData.Take(4).ToArray();
+                        sData = sData.Skip(4).ToArray();
+                        Array.Reverse(messageSizeBytes);  // reverse the bytes so they're in big endian?
+                        _currentMessageTotalChunks = BitConverter.ToUInt32(messageSizeBytes, 0);
+                        continue;
+                    }
+                }
+                if (_currentMessageChunkNum == 0 && !_currentMessageReadAllMetadata)
+                {
+                    // This means we're looking at the start of a new message
+                    if (sData.Length < 4)
+                    {
+                        // we didn't even get enough for a size
+
+                    }
+                    else
+                    {
+                        Byte[] messageSizeBytes = sData.Take(4).ToArray();
+                        sData = sData.Skip(4).ToArray();
+                        Array.Reverse(messageSizeBytes);  // reverse the bytes so they're in big endian?
+                        _currentMessageChunkNum = BitConverter.ToUInt32(messageSizeBytes, 0) + 1;
+                        _currentMessageReadAllMetadata = true;
+                        continue;
+                    }
+
+                }
+                // try to read up to the remaining number of bytes
+                if (_partialData.Length + sData.Length > _currentMessageSize)
+                {
+                    // we potentially have this message and the next data in the pipeline
+                    byte[] nextData = sData.Take((int)_currentMessageSize - _partialData.Length).ToArray();
+                    _partialData = [.. _partialData, .. nextData];
+                    sData = sData.Skip(nextData.Length).ToArray();
+
+                }
+                else
+                {
+                    // we don't enough enough data to max out the current message size, so take it all
+                    _partialData = [.. _partialData, .. sData];
+                    sData = sData.Skip(sData.Length).ToArray();
+                }
+                if (_partialData.Length == _currentMessageSize)
+                {
+                    DebugHelp.DebugWriteLine($"got chunk {_currentMessageChunkNum}/{_currentMessageTotalChunks} with size {_currentMessageSize + 8}");
+                    UnwrapMessage();
+                    _currentMessageSize = 0;
+                    _currentMessageChunkNum = 0;
+                    _currentMessageTotalChunks = 0;
+                    _currentMessageReadAllMetadata = false;
+                }
+            }
+        }
+
+        private void UnwrapMessage()
+        {
+            IPCChunkedData chunkedData = new(id: _currentMessageID,
+                chunkNum: (int)_currentMessageChunkNum, totalChunks: (int)_currentMessageTotalChunks,
+                mt: MessageType.MessageResponse,
+                data: _partialData.Take(_partialData.Length).ToArray());
+            _partialData = [];
+            lock (MessageStore)
             {
                 if (!MessageStore.ContainsKey(chunkedData.ID))
                 {
@@ -114,26 +236,23 @@ namespace NamedPipeTransport
                 }
             }
             MessageStore[chunkedData.ID].AddMessage(chunkedData);
+            if (_currentMessageChunkNum == _currentMessageTotalChunks)
+            {
+                _currentMessageID = Guid.NewGuid().ToString();
+            }
         }
 
         private void OnAsyncMessageSent(IAsyncResult result)
         {
-            PipeStream pipe = (PipeStream)result.AsyncState;
+
+            PipeStream pipe = (PipeStream)((AsyncPipeState)(result.AsyncState)).Pipe;
             pipe.EndWrite(result);
-            // Potentially delete this since theoretically the sender Task does everything
-            if (_senderQueue.TryDequeue(out byte[] data))
-            {
-                pipe.BeginWrite(data, 0, data.Length, OnAsyncMessageSent, pipe);
-            }
         }
 
         private bool AddToSenderQueue(IMythicMessage msg)
         {
-            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, IPC.SEND_SIZE / 2);
-            foreach(IPCChunkedData part in parts)
-            {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(part)));
-            }
+            string serializedData = Serializer.Serialize(msg);
+            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(serializedData));
             _senderEvent.Set();
             return true;
         }
@@ -193,9 +312,9 @@ namespace NamedPipeTransport
                     SessionID = rsa.SessionId
                 };
                 AddToSenderQueue(handshake1);
-                if (!Recv(MessageType.EKEHandshakeResponse, delegate(IMythicMessage resp)
+                if (!Recv(MessageType.MessageResponse, delegate(IMythicMessage resp)
                 {
-                    EKEHandshakeResponse respHandshake = (EKEHandshakeResponse)resp;
+                    MessageResponse respHandshake = (MessageResponse)resp;
                     byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
                     ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
                     ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
@@ -235,7 +354,7 @@ namespace NamedPipeTransport
                 {
                     if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                     {
-                        if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0)
+                        if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0 || tm.Rpfwd.Length != 0)
                         {
                             AddToSenderQueue(tm);
                             return true;

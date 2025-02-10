@@ -16,6 +16,7 @@ using ApolloInterop.Constants;
 using System.Net.Sockets;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
+using ApolloInterop.Utils;
 
 namespace TcpTransport
 {
@@ -31,6 +32,7 @@ namespace TcpTransport
 
         private static JsonSerializer _jsonSerializer = new JsonSerializer();
         private int _port;
+        private int chunkSize = IPC.SEND_SIZE;
         private AsyncTcpServer _server;
         private bool _encryptedExchangeCheck;
         private static ConcurrentQueue<byte[]> _senderQueue = new ConcurrentQueue<byte[]>();
@@ -44,22 +46,53 @@ namespace TcpTransport
         private ST.Task _agentConsumerTask = null;
         private ST.Task _agentProcessorTask = null;
 
-        private string _partialData = "";
+        private UInt32 _currentMessageSize = 0;
+        private UInt32 _currentMessageChunkNum = 0;
+        private UInt32 _currentMessageTotalChunks = 0;
+        private bool _currentMessageReadAllMetadata = false;
+        private string _currentMessageID = Guid.NewGuid().ToString();
+        private Byte[] _partialData = [];
 
         public TcpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             _port = int.Parse(data["port"]);
-            _encryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
+            _encryptedExchangeCheck = data["encrypted_exchange_check"] == "true";
             _sendAction = (object p) =>
             {
                 CancellationTokenSource cts = ((AsyncTcpState)p).Cancellation;
-                TcpClient client = ((AsyncTcpState)p).Client;
-                while (client.Connected)
+                TcpClient c = ((AsyncTcpState)p).Client;
+                while (c.Connected)
                 {
                     _senderEvent.WaitOne();
                     if (!cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        client.GetStream().BeginWrite(result, 0, result.Length, OnAsyncMessageSent, client);
+                        UInt32 totalChunksToSend = (UInt32)(result.Length / chunkSize) + 1;
+                        DebugHelp.DebugWriteLine($"have {totalChunksToSend} chunks to send out");
+                        byte[] totalChunkBytes = BitConverter.GetBytes(totalChunksToSend);
+                        Array.Reverse(totalChunkBytes);
+                        for (UInt32 currentChunk = 0; currentChunk < totalChunksToSend; currentChunk++)
+                        {
+                            byte[] chunkData;
+                            if ((currentChunk + 1) * chunkSize > result.Length)
+                            {
+                                chunkData = new byte[result.Length - (currentChunk * chunkSize)];
+                            }
+                            else
+                            {
+                                chunkData = new byte[chunkSize];
+                            }
+                            Array.Copy(result, currentChunk * chunkSize, chunkData, 0, chunkData.Length);
+                            byte[] sizeBytes = BitConverter.GetBytes((UInt32)chunkData.Length + 8);
+                            Array.Reverse(sizeBytes);
+                            byte[] currentChunkBytes = BitConverter.GetBytes(currentChunk);
+                            Array.Reverse(currentChunkBytes);
+                            DebugHelp.DebugWriteLine($"sending chunk {currentChunk}/{totalChunksToSend} with size {chunkData.Length + 8}");
+                            c.GetStream().BeginWrite(sizeBytes, 0, sizeBytes.Length, OnAsyncMessageSent, p);
+                            c.GetStream().BeginWrite(totalChunkBytes, 0, totalChunkBytes.Length, OnAsyncMessageSent, p);
+                            c.GetStream().BeginWrite(currentChunkBytes, 0, currentChunkBytes.Length, OnAsyncMessageSent, p);
+                            c.GetStream().BeginWrite(chunkData, 0, chunkData.Length, OnAsyncMessageSent, p);
+                        }
+                        //client.GetStream().BeginWrite(result, 0, result.Length, OnAsyncMessageSent, client);
                     }
                 }
             };
@@ -103,76 +136,97 @@ namespace TcpTransport
 
         public void OnAsyncMessageReceived(object sender, TcpMessageEventArgs args)
         {
-            string sData = Encoding.UTF8.GetString(args.Data.Data.Take(args.Data.DataLength).ToArray());
-            int sDataLen = sData.Length;
-            int bytesProcessed = 0;
-            while (bytesProcessed < sDataLen)
+            Byte[] sData = args.Data.Data.Take(args.Data.DataLength).ToArray();
+            DebugHelp.DebugWriteLine($"got message from remote connection with length: {sData.Length}");
+            while (sData.Length > 0)
             {
-                int lBracket = sData.IndexOf('{');
-                int rBracket = sData.IndexOf('}');
-                // No left bracket
-                if (lBracket == -1)
+                if (_currentMessageSize == 0)
                 {
-                    // No left or right bracket
-                    if (rBracket == -1)
+                    // This means we're looking at the start of a new message
+                    if (sData.Length < 4)
                     {
-                        // Middle of the packet, just append
-                        _partialData += sData;
-                        bytesProcessed += sData.Length;
+                        // we didn't even get enough for a size
+
                     }
                     else
                     {
-                        // This is an ending packet, so we need to process
-                        // then shift to the next
-                        string d = new string(sData.Take(rBracket+1).ToArray());
-                        _partialData += d;
-                        bytesProcessed += d.Length;
-                        UnwrapMessage();
-                        sData = new string(sData.Skip(rBracket).ToArray());
+                        Byte[] messageSizeBytes = sData.Take(4).ToArray();
+                        sData = sData.Skip(4).ToArray();
+                        Array.Reverse(messageSizeBytes);  // reverse the bytes so they're in big endian?
+                        _currentMessageSize = BitConverter.ToUInt32(messageSizeBytes, 0) - 8;
+                        continue;
                     }
                 }
-                // left bracket exists, we're starting a packet
+                if (_currentMessageTotalChunks == 0)
+                {
+                    // This means we're looking at the start of a new message
+                    if (sData.Length < 4)
+                    {
+                        // we didn't even get enough for a size
+
+                    }
+                    else
+                    {
+                        Byte[] messageSizeBytes = sData.Take(4).ToArray();
+                        sData = sData.Skip(4).ToArray();
+                        Array.Reverse(messageSizeBytes);  // reverse the bytes so they're in big endian?
+                        _currentMessageTotalChunks = BitConverter.ToUInt32(messageSizeBytes, 0);
+                        continue;
+                    }
+                }
+                if (_currentMessageChunkNum == 0 && !_currentMessageReadAllMetadata)
+                {
+                    // This means we're looking at the start of a new message
+                    if (sData.Length < 4)
+                    {
+                        // we didn't even get enough for a size
+
+                    }
+                    else
+                    {
+                        Byte[] messageSizeBytes = sData.Take(4).ToArray();
+                        sData = sData.Skip(4).ToArray();
+                        Array.Reverse(messageSizeBytes);  // reverse the bytes so they're in big endian?
+                        _currentMessageChunkNum = BitConverter.ToUInt32(messageSizeBytes, 0) + 1;
+                        _currentMessageReadAllMetadata = true;
+                        continue;
+                    }
+
+                }
+                // try to read up to the remaining number of bytes
+                if (_partialData.Length + sData.Length > _currentMessageSize)
+                {
+                    // we potentially have this message and the next data in the pipeline
+                    byte[] nextData = sData.Take((int)_currentMessageSize - _partialData.Length).ToArray();
+                    _partialData = [.. _partialData, .. nextData];
+                    sData = sData.Skip(nextData.Length).ToArray();
+
+                }
                 else
                 {
-                    // left bracket is ahead of starting index
-                    // Thus we're in the middle of a packet receipt
-                    if (lBracket > 0)
-                    {
-                        string d = new string(sData.Take(lBracket).ToArray());
-                        _partialData += d;
-                        UnwrapMessage();
-                        bytesProcessed += d.Length;
-                        sData = new string(sData.Skip(d.Length).ToArray());
-                    // true start of a new packet
-                    } else
-                    {
-                        // No ending delimiter, will need to wait for more
-                        if (rBracket == -1)
-                        {
-                            _partialData += sData;
-                            bytesProcessed += sData.Length;
-                        }
-                        // Ending delimiter - time to unwrap singleton
-                        else
-                        {
-                            string d = new string(sData.Take(rBracket+1).ToArray());
-                            _partialData += d;
-                            bytesProcessed += d.Length;
-                            if (d.Length < sData.Length)
-                            {
-                                sData = new string(sData.Skip(d.Length).ToArray());
-                            }
-                            UnwrapMessage();
-                        }
-                    }
+                    // we don't enough enough data to max out the current message size, so take it all
+                    _partialData = [.. _partialData, .. sData];
+                    sData = sData.Skip(sData.Length).ToArray();
+                }
+                if (_partialData.Length == _currentMessageSize)
+                {
+                    DebugHelp.DebugWriteLine($"got chunk {_currentMessageChunkNum}/{_currentMessageTotalChunks} with size {_currentMessageSize + 8}");
+                    UnwrapMessage();
+                    _currentMessageSize = 0;
+                    _currentMessageChunkNum = 0;
+                    _currentMessageTotalChunks = 0;
+                    _currentMessageReadAllMetadata = false;
                 }
             }
         }
 
         private void UnwrapMessage()
         {
-            IPCChunkedData chunkedData = _jsonSerializer.Deserialize<IPCChunkedData>(_partialData);
-            _partialData = "";
+            IPCChunkedData chunkedData = new(id: _currentMessageID, 
+                chunkNum: (int)_currentMessageChunkNum, totalChunks: (int)_currentMessageTotalChunks, 
+                mt: MessageType.MessageResponse,
+                data: _partialData.Take(_partialData.Length).ToArray());
+            _partialData = [];
             lock (MessageStore)
             {
                 if (!MessageStore.ContainsKey(chunkedData.ID))
@@ -182,26 +236,23 @@ namespace TcpTransport
                 }
             }
             MessageStore[chunkedData.ID].AddMessage(chunkedData);
+            if (_currentMessageChunkNum == _currentMessageTotalChunks)
+            {
+                _currentMessageID = Guid.NewGuid().ToString();
+            }
         }
 
         private void OnAsyncMessageSent(IAsyncResult result)
         {
-            TcpClient client = (TcpClient)result.AsyncState;
+            TcpClient client = ((AsyncTcpState)result.AsyncState).Client;
+           // TcpClient client = (TcpClient)result.AsyncState;
             client.GetStream().EndWrite(result);
-            // Potentially delete this since theoretically the sender Task does everything
-            if (_senderQueue.TryDequeue(out byte[] data))
-            {
-                client.GetStream().BeginWrite(data, 0, data.Length, OnAsyncMessageSent, client);
-            }
         }
 
         private bool AddToSenderQueue(IMythicMessage msg)
         {
-            IPCChunkedData[] parts = Serializer.SerializeIPCMessage(msg, IPC.SEND_SIZE / 2);
-            foreach (IPCChunkedData part in parts)
-            {
-                _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(part)));
-            }
+            string serializedData = Serializer.Serialize(msg);
+            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(serializedData));
             _senderEvent.Set();
             return true;
         }
@@ -217,7 +268,6 @@ namespace TcpTransport
             }
 
             IMythicMessage msg = Serializer.DeserializeIPCMessage(data.ToArray(), mt);
-            // Console.WriteLine("We got a message: {0}", mt.ToString());
             _recieverQueue.Enqueue(msg);
             _receiverEvent.Set();
         }
@@ -261,9 +311,9 @@ namespace TcpTransport
                     SessionID = rsa.SessionId
                 };
                 AddToSenderQueue(handshake1);
-                if (!Recv(MessageType.EKEHandshakeResponse, delegate (IMythicMessage resp)
+                if (!Recv(MessageType.MessageResponse, delegate (IMythicMessage resp)
                 {
-                    EKEHandshakeResponse respHandshake = (EKEHandshakeResponse)resp;
+                    MessageResponse respHandshake = (MessageResponse)resp;
                     byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
                     ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
                     ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
@@ -302,7 +352,7 @@ namespace TcpTransport
                 {
                     if (!Agent.GetTaskManager().CreateTaskingMessage(delegate (TaskingMessage tm)
                     {
-                        if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0)
+                        if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0 || tm.Rpfwd.Length != 0)
                         {
                             AddToSenderQueue(tm);
                             return true;

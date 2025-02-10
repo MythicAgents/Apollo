@@ -1,5 +1,6 @@
 ﻿using ApolloInterop.Constants;
 using ApolloInterop.Structs.ApolloStructs;
+using ApolloInterop.Utils;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -57,7 +58,7 @@ namespace ApolloInterop.Classes
                 }
                 catch { return false; }
             }
-            
+
             // we set pipe to be message transactions ; don't think we need to for tcp
             IPCData pd = new IPCData()
             {
@@ -66,6 +67,7 @@ namespace ApolloInterop.Classes
                 NetworkStream = _client.GetStream(),
                 Data = new byte[IPC.RECV_SIZE],
             };
+            pd.NetworkStream.ReadTimeout = -1;
             OnConnect(new TcpMessageEventArgs(_client, pd, _client));
             BeginRead(pd);
             return true;
@@ -123,15 +125,23 @@ namespace ApolloInterop.Classes
             IPCData pd = (IPCData)result.AsyncState;
             try
             {
+                //DebugHelp.DebugWriteLine($"in OnAsyncMessageReceived in AsyncTcpClient");
                 Int32 bytesRead = pd.NetworkStream.EndRead(result);
                 if (bytesRead > 0)
                 {
                     pd.DataLength = bytesRead;
                     OnMessageReceived(new TcpMessageEventArgs(pd.Client, pd, pd.State));
+                } else
+                {
+                    pd.Client.Close();
+                    OnDisconnect(new TcpMessageEventArgs(pd.Client, null, pd.State));
+                    return;
                 }
             } catch (Exception ex)
             {
-                // Console.WriteLine($"Error in end read: {ex.Message}");
+                pd.Client.Close();
+                OnDisconnect(new TcpMessageEventArgs(pd.Client, null, pd.State));
+                return;
             }
             BeginRead(pd);
         }

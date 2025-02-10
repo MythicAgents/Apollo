@@ -2,7 +2,9 @@
 
 #if DEBUG
 //#define HTTP
-#define WEBSOCKET
+//#define WEBSOCKET
+//#define TCP
+#define SMB
 #endif
 
 #if HTTP
@@ -39,10 +41,10 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
 #if DEBUG
-                        { "callback_interval", "5" },
+                        { "callback_interval", "1" },
                         { "callback_jitter", "0" },
                         { "callback_port", "80" },
-                        { "callback_host", "http://mythic" },
+                        { "callback_host", "http://192.168.53.1" },
                         { "post_uri", "data" },
                         { "encrypted_exchange_check", "T" },
                         { "proxy_host", "" },
@@ -115,8 +117,8 @@ namespace Apollo
                     Parameters = new Dictionary<string, string>()
                     {
 #if DEBUG
-                        { "pipename", "ahatojqq-bo0w-oc3r-wqtg-4jf7voepqqbs" },
-                        { "encrypted_exchange_check", "T" },
+                        { "pipename", "h20iexte-2l1t-mmfu-ipjh-6ofmobkaruq8" },
+                        { "encrypted_exchange_check", "true" },
 #else
                         { "pipename", "smb_pipename_here" },
                         { "encrypted_exchange_check", "smb_encrypted_exchange_check_here" },
@@ -134,7 +136,7 @@ namespace Apollo
                     {
 #if DEBUG
                         { "port", "40000" },
-                        { "encrypted_exchange_check", "T" },
+                        { "encrypted_exchange_check", "true" },
 #else
                         { "port", "tcp_port_here" },
                         { "encrypted_exchange_check", "tcp_encrypted_exchange_check_here" },
@@ -149,22 +151,22 @@ namespace Apollo
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
 #if DEBUG
 #if HTTP
-        public static string StagingRSAPrivateKey = "Z16/29rxT59Ur23tVzIboE4UcnPGeWJcTszZYwJckOE= ";
+        public static string StagingRSAPrivateKey = "wkskVa0wTi4E3EZ6bi9YyKpbHb01NNDgZ1BXnJJM5io=";
 #elif WEBSOCKET
         public static string StagingRSAPrivateKey = "Hl3IzCYy3io5QU70xjpYyCNrOmA84aWMZLkCwumrAFM=";
 #elif SMB
-        public static string StagingRSAPrivateKey = "cnaJ2eDg1LVrR5LK/u6PkXuBjZxCnksWjy0vEFWsHIU=";
+        public static string StagingRSAPrivateKey = "NNLlAegRMB8DIX7EZ1Yb6UlKQ4la90QsisIThCyhfCc=";
 #elif TCP
-        public static string StagingRSAPrivateKey = "LbFpMoimB+aLx1pq0IqXJ1MQ4KIiGdp0LWju5jUhZRg=";
+        public static string StagingRSAPrivateKey = "Zq24zZvWPRGdWwEQ79JXcHunzvcOJaKLH7WtR+gLiGg=";
 #endif
 #if HTTP
-        public static string PayloadUUID = "9d4c064d-667b-49d1-99f0-ac310c72c394";
+        public static string PayloadUUID = "b40195db-22e5-4f9f-afc5-2f170c3cc204";
 #elif WEBSOCKET
         public static string PayloadUUID = "7546e204-aae4-42df-b28a-ade1c13594d2";
 #elif SMB
-        public static string PayloadUUID = "869c4909-30eb-4a90-99b2-874dae07a0a8";
+        public static string PayloadUUID = "aff94490-1e23-4373-978b-263d9c0a47b3";
 #elif TCP
-        public static string PayloadUUID = "a51253f6-7885-4fea-9109-154ecc54060d";
+        public static string PayloadUUID = "bfc167ea-9142-4da3-b807-c57ae054c544";
 #endif
 #else
         // TODO: Make the AES key a config option specific to each profile

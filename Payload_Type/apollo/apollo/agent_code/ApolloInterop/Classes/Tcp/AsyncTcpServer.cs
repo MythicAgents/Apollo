@@ -1,4 +1,5 @@
 ﻿using ApolloInterop.Structs.ApolloStructs;
+using ApolloInterop.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
@@ -65,12 +66,12 @@ namespace ApolloInterop.Classes
                 State = null,
                 Data = new byte[_BUF_IN],
             };
-
+            pd.NetworkStream.ReadTimeout = -1;
             // Add to connection list
             if (_running && _connections.TryAdd(client, pd))
             {
                 _server.BeginAcceptTcpClient(OnClientConnected, _server);
-                OnConnect(this, new TcpMessageEventArgs(client, null, this));
+                OnConnect(this, new TcpMessageEventArgs(client, pd, this));
                 BeginRead(pd);
             }
             else
@@ -117,6 +118,11 @@ namespace ApolloInterop.Classes
                 {
                     pd.DataLength = bytesRead;
                     OnMessageReceived(this, new TcpMessageEventArgs(pd.Client, pd, pd.State));
+                } else
+                {
+                    pd.Client.Close();
+                    OnDisconnect(this, new TcpMessageEventArgs(pd.Client, null, pd.State));
+                    return;
                 }
             } catch (Exception ex)
             {

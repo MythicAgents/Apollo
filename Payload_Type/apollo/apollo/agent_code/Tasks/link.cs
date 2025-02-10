@@ -82,7 +82,7 @@ namespace Tasks
                     _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                 };
                 _agent.GetTaskManager().AddTaskResponseToQueue(
-                    CreateTaskResponse("", false, "", new IMythicMessage[]
+                    CreateTaskResponse("", false, "Trying to connect...", new IMythicMessage[]
                     {
                         Artifact.NetworkConnection(parameters.ConnectionInfo.Hostname)
                     }));
@@ -94,6 +94,13 @@ namespace Tasks
                         "error");
                     _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     _agent.GetPeerManager().Remove(p);
+                } else
+                {
+                    resp = CreateTaskResponse(
+                        $"Connected to {parameters.ConnectionInfo.Hostname}\nTrying to establish link...\n",
+                        true,
+                        "");
+                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                 }
             }
             catch (Exception ex)
