@@ -42,7 +42,8 @@ namespace Tasks
         internal string ParsePath(UploadParameters p)
         {
             string uploadPath;
-            if (!string.IsNullOrEmpty(p.HostName))
+            string host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            if (!string.IsNullOrEmpty(p.HostName) && p.HostName != host)
             {
                 if (!string.IsNullOrEmpty(p.RemotePath))
                 {
@@ -56,7 +57,7 @@ namespace Tasks
             }
             else
             {
-                string host = Environment.GetEnvironmentVariable("COMPUTERNAME"); ;
+
                 string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
                 if (cwd.StartsWith("\\\\"))
                 {

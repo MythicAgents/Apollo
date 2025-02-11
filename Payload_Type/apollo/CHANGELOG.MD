@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.1] - 2025-02-11
+
+### Changed
+
+- Fixed a bug in `upload` that would try to create a UNC path even if the supplied hostname was the same as the current host
+
 ## [v2.3.0] - 2025-02-10
 
 ### Changed
