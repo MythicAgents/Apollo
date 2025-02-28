@@ -21,13 +21,13 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.2"
+    version = "2.3.3"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
 NOTE: P2P Not compatible with v2.2 agents! 
-NOTE: v2.3.2 has a different bof loader than 2.3.1 and are incompatible since their arguments are different
+NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since their arguments are different
     """.format(version)
     supports_dynamic_loading = True
     shellcode_format_options = ["Binary", "Base64", "C", "Ruby", "Python", "Powershell", "C#", "Hex"]

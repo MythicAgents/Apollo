@@ -10,7 +10,6 @@ using ApolloInterop.Classes;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
-using static Tasks.make_token;
 
 namespace Tasks
 {
