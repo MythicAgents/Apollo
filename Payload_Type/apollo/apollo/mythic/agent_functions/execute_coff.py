@@ -1,18 +1,16 @@
-from distutils.dir_util import copy_tree
+import binascii
+import struct
 from mythic_container.MythicCommandBase import *
-from uuid import uuid4
 from mythic_container.MythicRPC import *
+import platform
 from os import path
 import shutil
-import tempfile
-import asyncio
-import platform
 
 if platform.system() == 'Windows':
-    RUNOF_HOST_PATH= "C:\\Mythic\\Apollo\\srv\\RunOF.dll"
+    RUNOF_HOST_PATH = "C:\\Mythic\\Apollo\\srv\\COFFLoader.dll"
 else:
-    RUNOF_HOST_PATH= "/srv/RunOF.dll"
-RUNOF_FILE_ID=""
+    RUNOF_HOST_PATH = "/srv/COFFLoader.dll"
+RUNOF_FILE_ID = ""
 
 
 class ExecuteCoffArguments(TaskArguments):
@@ -165,13 +163,14 @@ class ExecuteCoffArguments(TaskArguments):
         else:
             raise Exception("Require a BOFF, Function Name and Timeout to execute.\n\tUsage: {}".format(ExecuteCoffCommand.help_cmd))
 
+
 class ExecuteCoffCommand(CommandBase):
     cmd = "execute_coff"
     needs_admin = False
     help_cmd = "execute_coff -Coff [COFF.o] -Function [go] -Timeout [30] [-Arguments [optional arguments]]"
     description = "Execute a COFF file in memory. This COFF must first be known by the agent using the `register_coff` command."
     version = 3
-    author = "@__Retrospect"
+    author = "@__Retrospect, @its_a_feature_"
     argument_class = ExecuteCoffArguments
     attackmapping = ["T1559"]
     attributes = CommandAttributes(
@@ -182,27 +181,13 @@ class ExecuteCoffCommand(CommandBase):
         suggested_command=False
     )
 
-    async def build_runof(self):
-        global RUNOF_HOST_PATH
-        agent_build_path = tempfile.TemporaryDirectory()
-        outputPath = "{}/RunOF/bin/Release/RunOF.dll".format(agent_build_path.name)
-        # shutil to copy payload files over
-        copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/RunOF/RunOF.csproj -o {}/RunOF/bin/Release/".format(agent_build_path.name, agent_build_path.name)
-        proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
-                                                     stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
-        stdout, stderr = await proc.communicate()
-        if not path.exists(outputPath):
-            raise Exception("Failed to build RunOF.dll:\n{}".format(stderr.decode() + "\n" + stdout.decode()))
-        shutil.copy(outputPath, RUNOF_HOST_PATH)
-
     async def registered_runof(self, taskData: PTTaskMessageAllData) -> str:
         global RUNOF_HOST_PATH
         if not path.exists(RUNOF_HOST_PATH):
-            await self.build_runof()
+            shutil.move(f"apollo/agent_code/COFFLoader.dll", RUNOF_HOST_PATH)
         fileSearch = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
             TaskID=taskData.Task.ID,
-            Filename="RunOF.dll",
+            Filename="COFFLoader.dll",
             LimitByCallback=False,
             MaxResults=1
         ))
@@ -213,10 +198,10 @@ class ExecuteCoffCommand(CommandBase):
                 TaskID=taskData.Task.ID,
                 FileContents=open(RUNOF_HOST_PATH, 'rb').read(),
                 DeleteAfterFetch=False,
-                Filename="RunOF.dll",
+                Filename="COFFLoader.dll",
                 IsScreenshot=False,
                 IsDownloadFromAgent=False,
-                Comment=f"Shared RunOF.dll for all execute_coff tasks within apollo"
+                Comment=f"Shared COFFLoader.dll for all execute_coff tasks within apollo"
             ))
             if fileRegister.Success:
                 return fileRegister.AgentFileId
@@ -254,21 +239,71 @@ class ExecuteCoffCommand(CommandBase):
                     raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
 
             taskData.args.add_arg("coff_name", fileSearchResp.Files[0].Filename)
-            taskData.args.add_arg("loader_stub_id", taskData.args.get_arg("bof_file"))
+            taskData.args.add_arg("bof_id", taskData.args.get_arg("bof_file"))
             taskData.args.remove_arg("bof_file")
         else:
             file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(TaskID=taskData.Task.ID, Filename=taskData.args.get_arg("coff_name")))
             if file_resp.Success and len(file_resp.Files) > 0:
-                taskData.args.add_arg("loader_stub_id", file_resp.Files[0].AgentFileId)
+                taskData.args.add_arg("bof_id", file_resp.Files[0].AgentFileId)
             else:
                 raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("coff_name")))
-        registered_runof_id = await self.registered_runof(taskData)
-        taskData.args.add_arg("runof_id", registered_runof_id)
         timeout = taskData.args.get_arg("timeout")
         if timeout is None or timeout == "":
             taskData.args.set_arg("timeout", "30")
-
+        registered_runof_id = await self.registered_runof(taskData)
+        taskData.args.add_arg("coff_id", registered_runof_id)
         taskargs = taskData.args.get_arg("coff_arguments")
+        argsString = ""
+        normalizedArgs = []
+        packedArgsBuffer = b''
+        packedArgsSize = 0
+        for argEntry in taskargs:
+            if argEntry[0] in ['s', 'int16']:
+                argsString += f"-Arguments {argEntry[0]}:{argEntry[1]} "
+                normalizedArgs.append(['s', argEntry[1]])
+                packedArgsBuffer += struct.pack("<h", int(argEntry[1]))
+                packedArgsSize += struct.calcsize("<h")
+            elif argEntry[0] in ['i', 'int32']:
+                argsString += f"-Arguments {argEntry[0]}:{argEntry[1]} "
+                normalizedArgs.append(['i', argEntry[1]])
+                packedArgsBuffer += struct.pack("<i", int(argEntry[1]))
+                packedArgsSize += struct.calcsize("<i")
+            elif argEntry[0] in ['z', 'string']:
+                argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
+                normalizedArgs.append(['z', argEntry[1]])
+                stringVal = (argEntry[1] + '\x00').encode("utf-8")
+                packedFormat = f"<L{len(stringVal)}s"
+                packedArgsBuffer += struct.pack(packedFormat, len(stringVal), stringVal)
+                packedArgsSize += struct.calcsize(packedFormat)
+            elif argEntry[0] in ['Z', 'wchar']:
+                argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
+                normalizedArgs.append(['Z', argEntry[1]])
+                stringVal = (argEntry[1] + '\x00').encode("utf-16_le")
+                packedFormat = f"<L{len(stringVal)}s"
+                packedArgsBuffer += struct.pack(packedFormat, len(stringVal), stringVal)
+                packedArgsSize += struct.calcsize(packedFormat)
+            else:
+                argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
+                normalizedArgs.append(['b', argEntry[1]])
+                stringVal = base64.b64decode(argEntry[1])
+                packedFormat = f"<L{len(stringVal)}s"
+                packedArgsBuffer += struct.pack(packedFormat, len(stringVal), stringVal)
+                packedArgsSize += struct.calcsize(packedFormat)
+        finalPackedArgs = binascii.hexlify(struct.pack("<L", packedArgsSize) + packedArgsBuffer).decode('utf-8')
+        taskData.args.remove_arg("coff_arguments")
+        taskData.args.add_arg("coff_arguments", finalPackedArgs, type=ParameterType.String,
+                              parameter_group_info=[
+                                  ParameterGroupInfo(
+                                      required=False,
+                                      group_name="Default",
+                                      ui_position=4
+                                  ),
+                                  ParameterGroupInfo(
+                                      required=False,
+                                      group_name="New",
+                                      ui_position=4
+                                  ),
+                              ])
         if originalGroupNameIsDefault:
             if taskargs == "" or taskargs is None:
                 response.DisplayParams = "-Coff {} -Function {} -Timeout {}".format(
@@ -277,26 +312,6 @@ class ExecuteCoffCommand(CommandBase):
                     taskData.args.get_arg("timeout")
                 )
             else:
-                argsString = ""
-                normalizedArgs = []
-                for argEntry in taskargs:
-                    if argEntry[0] in ['s', 'int16']:
-                        argsString += f"-Arguments {argEntry[0]}:{argEntry[1]} "
-                        normalizedArgs.append(['s', argEntry[1]])
-                    elif argEntry[0] in ['i', 'int32']:
-                        argsString += f"-Arguments {argEntry[0]}:{argEntry[1]} "
-                        normalizedArgs.append(['i', argEntry[1]])
-                    elif argEntry[0] in ['z', 'string']:
-                        argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
-                        normalizedArgs.append(['z', argEntry[1]])
-                    elif argEntry[0] in ['Z', 'wchar']:
-                        argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
-                        normalizedArgs.append(['Z', argEntry[1]])
-                    else:
-                        argsString += f"-Arguments {argEntry[0]}:\"{argEntry[1]}\" "
-                        normalizedArgs.append(['b', argEntry[1]])
-                taskData.args.set_arg("coff_arguments", normalizedArgs)
-
                 response.DisplayParams = "-Coff {} -Function {} -Timeout {} {}".format(
                     taskData.args.get_arg("coff_name"),
                     taskData.args.get_arg("function_name"),

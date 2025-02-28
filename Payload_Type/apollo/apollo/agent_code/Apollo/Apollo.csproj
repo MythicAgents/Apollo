@@ -28,7 +28,7 @@
     <ProjectReference Include="..\SimpleResolver\SimpleResolver.csproj" />
     <ProjectReference Include="..\Tasks\Tasks.csproj" />
     <ProjectReference Include="..\TcpProfile\TcpProfile.csproj" />
-    <ProjectReference Include="..\WebsocketProfile\WebsocketProfile.csproj"/>
+    <ProjectReference Include="..\WebsocketProfile\WebsocketProfile.csproj" />
     
   </ItemGroup>
   <ItemGroup>

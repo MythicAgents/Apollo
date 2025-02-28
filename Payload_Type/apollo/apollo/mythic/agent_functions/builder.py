@@ -21,12 +21,13 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.1"
+    version = "2.3.2"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
-NOTE: P2P Not compatible with v2.2 agents!
+NOTE: P2P Not compatible with v2.2 agents! 
+NOTE: v2.3.2 has a different bof loader than 2.3.1 and are incompatible since their arguments are different
     """.format(version)
     supports_dynamic_loading = True
     shellcode_format_options = ["Binary", "Base64", "C", "Ruby", "Python", "Powershell", "C#", "Hex"]
@@ -179,14 +180,12 @@ NOTE: P2P Not compatible with v2.2 agents!
                 targetKeylogInjectPath = "/srv/KeylogInject.exe"
                 targetExecutePEPath = "/srv/ExecutePE.exe"
                 targetInteropPath = "/srv/ApolloInterop.dll"
-                targetRunOfPath = "/srv/RunOF.dll"
                 shutil.move("{}/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
                 shutil.move("{}/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
                 shutil.move("{}/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
                 shutil.move("{}/Release/KeylogInject.exe".format(agent_build_path.name), targetKeylogInjectPath)
                 shutil.move("{}/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
                 shutil.move("{}/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
-                shutil.move("{}/Release/RunOF.dll".format(agent_build_path.name), targetRunOfPath)
                 if self.get_parameter('output_type') == "WinExe":
                     await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                         PayloadUUID=self.uuid,

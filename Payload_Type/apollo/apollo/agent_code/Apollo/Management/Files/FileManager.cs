@@ -190,6 +190,7 @@ namespace Apollo.Management.Files
             _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
             {
                 TaskID = taskID,
+                Status = "Fetching file...",
                 Upload = new UploadMessage()
                 {
                     TaskID = taskID,
@@ -215,6 +216,11 @@ namespace Apollo.Management.Files
                 bRet = false;
             }
             _uploadMessageStore.TryRemove(uuid, out UploadMessageTracker _);
+            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
+            {
+                TaskID = taskID,
+                Status = "Using file...",
+            });
             return bRet;
         }
 

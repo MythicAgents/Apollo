@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.2] - 2025-02-25
+
+### Changed
+
+- Removed RunOF and replaced it with TrustedSec's COFFLoader project
+- Adjusted the execute_coff command to pack args instead of sending down a typed array
+- Added a reflective loader for the COFFLoader.dll (with Claude)
+- Updated execute_pe's remote loaded code to hook more exit functions and load files better (with Claude)
+
 ## [v2.3.1] - 2025-02-11
 
 ### Changed
