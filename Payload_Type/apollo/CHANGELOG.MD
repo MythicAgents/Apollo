@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.4] - 2025-03-03
+
+### Changed
+
+- Fixed a bug in `ls` that would fail to return data about files/folders if apollo couldn't get full information
+- Added a `getsystem` command
+- Updated `execute_coff` to spin off a new thread and set the impersonation context on that thread
+
 ## [v2.3.3] - 2025-02-28
 
 ### Changed

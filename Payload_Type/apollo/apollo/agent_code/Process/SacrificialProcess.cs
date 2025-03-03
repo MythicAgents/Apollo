@@ -727,7 +727,7 @@ namespace Process
                 logonInfo.Username,
                 logonInfo.Domain,
                 logonInfo.Password,
-                LogonType.LOGON32_LOGON_NEW_CREDENTIALS,
+                logonInfo.NetOnly?LogonType.LOGON32_LOGON_NEW_CREDENTIALS:LogonType.LOGON32_LOGON_INTERACTIVE,
                 LogonProvider.LOGON32_PROVIDER_WINNT50,
                 out hToken);
             if (!bRet)

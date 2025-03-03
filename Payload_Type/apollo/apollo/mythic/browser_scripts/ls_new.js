@@ -521,7 +521,7 @@ function(task, responses){
                                             type: "string",
                                         },
                                     ],
-                                    rows: entry["permissions"].map((permValue) => ({
+                                    rows: entry["permissions"]?.map((permValue) => ({
                                         account: {
                                             plaintext: permValue["account"],
                                         },
@@ -595,9 +595,8 @@ function(task, responses){
                 data["full_name"] = ls_path;
                 formattedResponse.rows.push(createFormattedRow(data, data));
             } else {
-                console.log("Length: " + data["files"].length);
                 formattedResponse.rows = formattedResponse.rows.concat(
-                    data["files"].map((entry) => createFormattedRow(data, entry))
+                    data["files"]?.map((entry) => createFormattedRow(data, entry))
                 );
             }
         }

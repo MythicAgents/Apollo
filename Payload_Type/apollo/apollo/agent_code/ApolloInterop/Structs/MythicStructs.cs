@@ -302,11 +302,27 @@ namespace ApolloInterop.Structs
                 ModifyTime = (Int64)((TimeSpan)(finfo.LastWriteTimeUtc - unixEpoc)).TotalSeconds * 1000;
                 AccessTime = (Int64)((TimeSpan)(finfo.LastAccessTime - unixEpoc)).TotalSeconds * 1000;
                 Permissions = perms;
-                ExtendedAttributes = finfo.Attributes.ToString();
+                try
+                {
+                    ExtendedAttributes = finfo.Attributes.ToString();
+                }
+                catch(Exception ex)
+                {
+                    ExtendedAttributes = "";
+                }
+
                 Size = finfo.Length;
                 IsFile = true;
-                Owner = File.GetAccessControl(finfo.FullName).
+                try
+                {
+                    Owner = File.GetAccessControl(finfo.FullName).
                     GetOwner(typeof(System.Security.Principal.NTAccount)).ToString();
+                }
+                catch (Exception ex)
+                {
+                    Owner = "";
+                }
+
                 Group = "";
                 Hidden = ((finfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden);
             }
@@ -321,11 +337,26 @@ namespace ApolloInterop.Structs
                 ModifyTime = (Int64)((TimeSpan)(finfo.LastWriteTimeUtc - unixEpoc)).TotalSeconds * 1000;
                 AccessTime = (Int64)((TimeSpan)(finfo.LastAccessTime - unixEpoc)).TotalSeconds * 1000;
                 Permissions = perms;
-                ExtendedAttributes = finfo.Attributes.ToString();
+                try
+                {
+                    ExtendedAttributes = finfo.Attributes.ToString();
+                }
+                catch(Exception ex)
+                {
+                    ExtendedAttributes = "";
+                }
+
                 Size = 0;
                 IsFile = false;
-                Owner = File.GetAccessControl(finfo.FullName).
-                    GetOwner(typeof(System.Security.Principal.NTAccount)).ToString();
+                try
+                {
+                    Owner = File.GetAccessControl(finfo.FullName).
+                                        GetOwner(typeof(System.Security.Principal.NTAccount)).ToString();
+
+                }catch(Exception ex)
+                {
+                    Owner = "";
+                }
                 Group = "";
                 Hidden = ((finfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden);
             }

@@ -66,8 +66,8 @@ class ExecuteCoffArguments(TaskArguments):
                 name="timeout",
                 cli_name="Timeout",
                 display_name="Timeout",
-                type=ParameterType.String,
-                default_value="30",
+                type=ParameterType.Number,
+                default_value=30,
                 description="Set thread timeout (in seconds).",
                 parameter_group_info=[
                     ParameterGroupInfo(
@@ -248,8 +248,8 @@ class ExecuteCoffCommand(CommandBase):
             else:
                 raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("coff_name")))
         timeout = taskData.args.get_arg("timeout")
-        if timeout is None or timeout == "":
-            taskData.args.set_arg("timeout", "30")
+        if timeout is None:
+            taskData.args.set_arg("timeout", 30)
         registered_runof_id = await self.registered_runof(taskData)
         taskData.args.add_arg("coff_id", registered_runof_id)
         taskargs = taskData.args.get_arg("coff_arguments")

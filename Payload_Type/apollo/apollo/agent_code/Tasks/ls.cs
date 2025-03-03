@@ -18,6 +18,7 @@ using System.Security.AccessControl;
 using TT = System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Security.Policy;
 
 namespace Tasks
 {
@@ -239,23 +240,27 @@ namespace Tasks
                                 TT.Parallel.ForEach(directories, po, (dir) =>
                                 {
                                     po.CancellationToken.ThrowIfCancellationRequested();
+                                    DirectoryInfo tmp = new DirectoryInfo(dir);
                                     try
                                     {
-                                        var tmp = new DirectoryInfo(dir);
                                         FileInformation dirInfo = new FileInformation(tmp, null);
                                         try
                                         {
                                             dirInfo.Permissions = GetPermissions(tmp);
                                         }
-                                        catch
+                                        catch (Exception ex)
                                         {
                                         }
-
                                         ds.Add(dirInfo);
                                     }
-                                    catch
+                                    catch(Exception ex)
                                     {
+                                        FileInformation dirInfo = new FileInformation();
+                                        dirInfo.IsFile = false;
+                                        dirInfo.FullName = dir;
+                                        ds.Add(dirInfo);
                                     }
+
                                 });
                             }
                             catch (OperationCanceledException)

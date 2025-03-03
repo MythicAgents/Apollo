@@ -32,7 +32,7 @@ internal static class Program
             CommandLine = peCommandLine,
         };
 
-        PERunner.RunPE(message);
+        //PERunner.RunPE(message);
         return 0;
     }
 }
