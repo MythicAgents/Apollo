@@ -28,7 +28,6 @@ namespace NamedPipeTransport
             internal CancellationTokenSource Cancellation;
             internal ST.Task Task;
         }
-        private static JsonSerializer _jsonSerializer = new JsonSerializer();
         private string _namedPipeName;
         private AsyncNamedPipeServer _server;
         private bool _encryptedExchangeCheck;
@@ -86,10 +85,17 @@ namespace NamedPipeTransport
                             byte[] currentChunkBytes = BitConverter.GetBytes(currentChunk);
                             Array.Reverse(currentChunkBytes);
                             DebugHelp.DebugWriteLine($"sending chunk {currentChunk}/{totalChunksToSend} with size {chunkData.Length + 8}");
-                            pipe.BeginWrite(sizeBytes, 0, sizeBytes.Length, OnAsyncMessageSent, p);
-                            pipe.BeginWrite(totalChunkBytes, 0, totalChunkBytes.Length, OnAsyncMessageSent, p);
-                            pipe.BeginWrite(currentChunkBytes, 0, currentChunkBytes.Length, OnAsyncMessageSent, p);
-                            pipe.BeginWrite(chunkData, 0, chunkData.Length, OnAsyncMessageSent, p);
+                            try
+                            {
+                                pipe.BeginWrite(sizeBytes, 0, sizeBytes.Length, OnAsyncMessageSent, p);
+                                pipe.BeginWrite(totalChunkBytes, 0, totalChunkBytes.Length, OnAsyncMessageSent, p);
+                                pipe.BeginWrite(currentChunkBytes, 0, currentChunkBytes.Length, OnAsyncMessageSent, p);
+                                pipe.BeginWrite(chunkData, 0, chunkData.Length, OnAsyncMessageSent, p);
+                            }catch(Exception ex)
+                            {
+                                break;
+                            }
+
                         }
                         //pipe.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, pipe);
                     }

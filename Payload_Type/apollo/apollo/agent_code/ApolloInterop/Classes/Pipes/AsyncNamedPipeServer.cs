@@ -1,9 +1,12 @@
 ﻿using ApolloInterop.Structs.ApolloStructs;
+using ApolloInterop.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ApolloInterop.Classes
 {
@@ -64,6 +67,7 @@ namespace ApolloInterop.Classes
 
         private void CreateServerPipe()
         {
+            DebugHelp.DebugWriteLine($"Creating Named Pipe: {_pipeName}");
             NamedPipeServerStream pipe = new NamedPipeServerStream(
                 _pipeName,
                 PipeDirection.InOut,
@@ -76,7 +80,23 @@ namespace ApolloInterop.Classes
             );
             //NamedPipeServerStream pipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, -1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
             // wait for client to connect async
-            pipe.BeginWaitForConnection(OnClientConnected, pipe);
+            try
+            {
+                pipe.BeginWaitForConnection(OnClientConnected, pipe);
+            }catch(Exception ex)
+            {
+
+            }
+
+        }
+
+        private bool IsPersistentConnectionAsync(NamedPipeServerStream pipeServer)
+        {
+            // Try to complete the read task within the timeout
+            var completedTask = Task.WhenAny(
+                    Task.Delay(500)
+            );
+            return pipeServer.IsConnected;
         }
 
 
@@ -92,6 +112,7 @@ namespace ApolloInterop.Classes
 
         private void OnDisconnect(NamedPipeMessageArgs args)
         {
+            DebugHelp.DebugWriteLine($"Client disconnected from Named Pipe: {_pipeName}");
             Disconnect?.Invoke(this, args);
         }
 
@@ -100,7 +121,11 @@ namespace ApolloInterop.Classes
             // complete connection
             NamedPipeServerStream pipe = (NamedPipeServerStream)result.AsyncState;
             pipe.EndWaitForConnection(result);
-
+            DebugHelp.DebugWriteLine($"Client connected to Named Pipe: {_pipeName}");
+            if(!IsPersistentConnectionAsync(pipe))
+            {
+                pipe.Close();
+            }
             // create client pipe structure
             IPCData pd = new IPCData()
             {
