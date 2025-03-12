@@ -18,7 +18,7 @@ public interface ITicketManager
     public string GetTargetProcessLuid(int pid);
     
     //should return a ticket with the .kirbi initalized with the ticket data
-    public KerberosTicket ExtractTicketFromCache(string luid, string serviceName);
+    public (KerberosTicket?, string) ExtractTicketFromCache(string luid, string serviceName);
     //should return all tickets in the current LUID or all tickets if running as administrator
     public List<KerberosTicket> EnumerateTicketsInCache(bool getSystemTickets = false, string luid = "");
     //loads a ticket into memory and should be tracked by the agent session

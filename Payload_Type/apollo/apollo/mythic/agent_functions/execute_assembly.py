@@ -120,7 +120,7 @@ class ExecuteAssemblyCommand(CommandBase):
             )
             # shutil to copy payload files over
             copy_tree(str(self.agent_code_path), agent_build_path.name)
-            shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ExecuteAssembly/ExecuteAssembly.csproj -o {}/ExecuteAssembly/bin/Release/".format(
+            shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ExecuteAssembly/ExecuteAssembly.csproj -o {}/ExecuteAssembly/bin/Release/".format(
                 agent_build_path.name, agent_build_path.name
             )
             proc = await asyncio.create_subprocess_shell(
@@ -192,8 +192,15 @@ class ExecuteAssemblyCommand(CommandBase):
         taskData.args.add_arg("pipe_name", str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
             # create
+            await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+                TaskID=taskData.Task.ID,
+                UpdateStatus=f"building injection stub"
+            ))
             await self.build_exeasm()
-
+        await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+            TaskID=taskData.Task.ID,
+            UpdateStatus=f"generating stub shellcode"
+        ))
         donutPic = donut.create(
             file=EXEECUTE_ASSEMBLY_PATH, params=taskData.args.get_arg("pipe_name")
         )

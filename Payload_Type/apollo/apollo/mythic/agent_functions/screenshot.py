@@ -3,7 +3,6 @@ from uuid import uuid4
 import json
 from os import path
 from mythic_container.MythicRPC import *
-from apollo.mythic.sRDI import ShellcodeRDI
 import base64
 
 class ScreenshotArguments(TaskArguments):

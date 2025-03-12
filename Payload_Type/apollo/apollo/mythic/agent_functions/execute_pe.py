@@ -112,7 +112,7 @@ class ExecutePECommand(CommandBase):
                 agent_build_path.name
             )
             copy_tree(str(self.agent_code_path), agent_build_path.name)
-            shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ExecutePE/ExecutePE.csproj -o {}/ExecutePE/bin/Release".format(
+            shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ExecutePE/ExecutePE.csproj -o {}/ExecutePE/bin/Release".format(
                 agent_build_path.name, agent_build_path.name
             )
             proc = await asyncio.create_subprocess_shell(
@@ -166,8 +166,15 @@ class ExecutePECommand(CommandBase):
         stdout, stderr = await proc.communicate()
 
         if not path.exists(EXECUTE_PE_PATH):
+            await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+                TaskID=taskData.Task.ID,
+                UpdateStatus=f"building injection stub"
+            ))
             await self.build_exepe()
-
+        await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+            TaskID=taskData.Task.ID,
+            UpdateStatus=f"generating stub shellcode"
+        ))
         if platform.system() == "Windows":
             command = '{} -i {} -p "{}"'.format(
                 donutPath, EXECUTE_PE_PATH, taskData.args.get_arg("pipe_name")

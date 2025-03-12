@@ -36,16 +36,14 @@ class MimikatzArguments(TaskArguments):
         self.remove_arg("commands")
 
 
-async def parse_credentials(
-    task: PTTaskCompletionFunctionMessage,
-) -> PTTaskCompletionFunctionMessageResponse:
+async def parse_credentials(task: PTTaskCompletionFunctionMessage,) -> PTTaskCompletionFunctionMessageResponse:
     response = PTTaskCompletionFunctionMessageResponse(
         Success=True, TaskStatus="success", Completed=True
     )
     responses = await SendMythicRPCResponseSearch(
         MythicRPCResponseSearchMessage(TaskID=task.TaskData.Task.ID)
     )
-    logger.info(responses.Responses)
+    #logger.info(responses.Responses)
     for output in responses.Responses:
         mimikatz_out = str(output.Response)
         comment = "task {}".format(output.TaskID)

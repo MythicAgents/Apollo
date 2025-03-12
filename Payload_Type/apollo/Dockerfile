@@ -12,9 +12,8 @@ RUN curl -L -o donut_shellcode-2.0.0.tar.gz https://github.com/MEhrn00/donut/rel
 
 WORKDIR /Mythic/
 RUN python3 -m venv /venv
-RUN /venv/bin/python -m pip install mythic-container==0.5.22
+RUN /venv/bin/python -m pip install mythic-container==0.5.22  mslex impacket
 RUN /venv/bin/python -m pip install git+https://github.com/MEhrn00/donut.git@v2.0.0
-RUN /venv/bin/python -m pip install mslex
 
 COPY [".", "."]
 

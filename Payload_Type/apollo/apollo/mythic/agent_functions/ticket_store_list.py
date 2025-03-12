@@ -14,6 +14,7 @@ class ticket_store_listArguments(TaskArguments):
                 name="luid",
                 cli_name="luid",
                 display_name="luid",
+                default_value="",
                 type=ParameterType.String,
                 description="Can be used to filter tickets that are returned from the internal agent ticket store",
                 parameter_group_info=[
@@ -38,14 +39,22 @@ class ticket_store_listCommand(CommandBase):
     description = "List all kerberos tickets in the agents ticket store, optionally a single luid can be provided to limit the items returned from the store"
     version = 2
     author = "@drago-qcc"
+    supported_ui_features = ["apollo:ticket_store_list"]
     argument_class = ticket_store_listArguments
     attackmapping = []
     attributes = CommandAttributes(
         suggested_command=True
     )
+    browser_script = BrowserScript(
+        script_name="ticket_store_list", author="@its_a_feature_", for_new_ui=True
+    )
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID,Success=True)
+        response.DisplayParams = ""
+        luid = taskData.args.get_arg("luid")
+        if luid != "":
+            response.DisplayParams += f" -luid {luid}"
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

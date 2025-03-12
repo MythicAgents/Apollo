@@ -4,7 +4,6 @@ import tempfile
 from mythic_container.MythicCommandBase import *
 import json
 from .powerpick import POWERSHELL_HOST_PATH
-from apollo.mythic.sRDI import ShellcodeRDI
 from uuid import uuid4
 from mythic_container.MythicRPC import *
 from os import path

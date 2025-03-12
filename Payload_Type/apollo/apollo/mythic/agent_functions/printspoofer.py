@@ -1,7 +1,6 @@
 from mythic_container.MythicCommandBase import *
 import json
 from uuid import uuid4
-from apollo.mythic.sRDI import ShellcodeRDI
 from os import path
 from mythic_container.MythicRPC import *
 import base64

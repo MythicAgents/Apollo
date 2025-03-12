@@ -27,14 +27,7 @@ public class ticket_store_list : Tasking
         try
         {
            var storedTickets =   _agent.GetTicketManager().GetTicketsFromTicketStore();
-           StringBuilder ticketStringOutput = new StringBuilder();
-           for(int i = 0; i < storedTickets.Count; i++)
-           {
-               ticketStringOutput.AppendLine($"Store Ticket # {i}:");
-               ticketStringOutput.Append(storedTickets[i].ToString().ToIndentedString());
-               ticketStringOutput.Append("\n");
-           }
-           resp = CreateTaskResponse($"Enumerated Tickets \n {ticketStringOutput}", true);
+            resp = CreateTaskResponse(_jsonSerializer.Serialize(storedTickets), true);
             
         }
         catch (Exception ex)

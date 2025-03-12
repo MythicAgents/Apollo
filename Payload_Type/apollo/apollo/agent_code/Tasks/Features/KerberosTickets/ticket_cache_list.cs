@@ -42,14 +42,15 @@ public class ticket_cache_list : Tasking
         try
         {
             var tickets = _agent.GetTicketManager().EnumerateTicketsInCache(getSystemTickets, luid);
-            StringBuilder ticketStringOutput = new StringBuilder();
+            string currentLuid = _agent.GetTicketManager().GetCurrentLuid();
+            List<KerberosTicketInfoDTO> ticketList = new List<KerberosTicketInfoDTO>();
             for(int i = 0; i < tickets.Count; i++)
             {
-                ticketStringOutput.AppendLine($"Ticket # {i}:");
-                ticketStringOutput.Append(KerberosTicketInfoDTO.CreateFromKerberosTicket(tickets[i]).ToString().ToIndentedString());
-                ticketStringOutput.Append("\n");
+                KerberosTicketInfoDTO currentTicket = KerberosTicketInfoDTO.CreateFromKerberosTicket(tickets[i]);
+                currentTicket.CurrentLuid = currentLuid;
+                ticketList.Add(currentTicket);
             }
-            resp = CreateTaskResponse($"Enumerated Tickets \n {ticketStringOutput}", true);
+            resp = CreateTaskResponse(_jsonSerializer.Serialize(ticketList), true);
         }
         catch (Exception e)
         {

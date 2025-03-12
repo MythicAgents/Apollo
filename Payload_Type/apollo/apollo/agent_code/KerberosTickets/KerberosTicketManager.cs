@@ -35,7 +35,7 @@ public class KerberosTicketManager : ITicketManager
     public string GetTargetProcessLuid(int pid) => KerberosHelpers.GetTargetProcessLuid(pid).ToString();
     
     //ticket cache functions, these effect the session on the system
-    public KerberosTicket? ExtractTicketFromCache(string luid, string serviceName) => KerberosHelpers.ExtractTicket(WinNTTypes.LUID.FromString(luid), serviceName);
+    public (KerberosTicket?, string) ExtractTicketFromCache(string luid, string serviceName) => KerberosHelpers.ExtractTicket(WinNTTypes.LUID.FromString(luid), serviceName);
     public List<KerberosTicket> EnumerateTicketsInCache(bool getSystemTickets = false, string luid = "") => KerberosHelpers.TriageTickets(getSystemTickets,luid).ToList();
     
     public bool LoadTicketIntoCache(byte[] ticket, string luid) => KerberosHelpers.LoadTicket(ticket, WinNTTypes.LUID.FromString(luid));

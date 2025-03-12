@@ -53,6 +53,7 @@ class ticket_store_purgeCommand(CommandBase):
     description = "Remove the specified ticket from the ticket store"
     version = 2
     author = "@drago-qcc"
+    supported_ui_features = ["apollo:ticket_store_purge"]
     argument_class = ticket_store_purgeArguments
     attackmapping = []
     attributes = CommandAttributes(

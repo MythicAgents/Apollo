@@ -55,7 +55,7 @@ function(task, responses){
         return {"table":[{
             "headers": headers,
             "rows": rows,
-            "title": "Local Groups",
+            "title": "Local Shares",
         }]};
     }else{
         // this means we shouldn't have any output

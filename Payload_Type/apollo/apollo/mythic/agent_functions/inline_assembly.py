@@ -2,7 +2,6 @@ from mythic_container.MythicCommandBase import *
 import json
 from uuid import uuid4
 from .execute_pe import PRINTSPOOFER_FILE_ID
-from apollo.mythic.sRDI import ShellcodeRDI
 from mythic_container.MythicRPC import *
 from os import path
 import base64
@@ -114,7 +113,7 @@ class InlineAssemblyCommand(CommandBase):
         agent_build_path = tempfile.TemporaryDirectory()
         outputPath = "{}/ApolloInterop/bin/Release/ApolloInterop.dll".format(agent_build_path.name)
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:Platform=x64 {}/ApolloInterop/ApolloInterop.csproj -o {}/ApolloInterop/bin/Release/".format(
+        shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ApolloInterop/ApolloInterop.csproj -o {}/ApolloInterop/bin/Release/".format(
             agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                      stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
@@ -132,6 +131,10 @@ class InlineAssemblyCommand(CommandBase):
         global INTEROP_FILE_ID
 
         if not path.exists(INTEROP_ASSEMBLY_PATH):
+            await SendMythicRPCTaskUpdate(MythicRPCTaskUpdateMessage(
+                TaskID=taskData.Task.ID,
+                UpdateStatus=f"building interop code"
+            ))
             await self.build_interop()
 
         if INTEROP_FILE_ID == "":

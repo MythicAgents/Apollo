@@ -14,6 +14,7 @@ class ticket_cache_purgeArguments(TaskArguments):
                 name="serviceName",
                 cli_name="serviceName",
                 display_name="serviceName",
+                default_value="",
                 type=ParameterType.String,
                 description="the name of the service to remove, needs to include the domain name, is required if -all flag is not present",
                 parameter_group_info=[
@@ -28,7 +29,7 @@ class ticket_cache_purgeArguments(TaskArguments):
                 display_name="all",
                 type=ParameterType.Boolean,
                 description="If supplied all tickets will be removed from the current LUID on the system",
-                default_value= False,
+                default_value=False,
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False,
@@ -39,6 +40,7 @@ class ticket_cache_purgeArguments(TaskArguments):
                 name="luid",
                 cli_name="luid",
                 display_name="luid",
+                default_value="",
                 type=ParameterType.String,
                 description="From an elevated context a LUID may be provided to target a specific session to enumerate tickets.",
                 parameter_group_info=[
@@ -65,6 +67,7 @@ class ticket_cache_purgeCommand(CommandBase):
     description = "Remove the specified ticket from the system. This modifies your current logon session tickets, so be careful if purging all."
     version = 2
     author = "@drago-qcc"
+    supported_ui_features = ["apollo:ticket_cache_purge"]
     argument_class = ticket_cache_purgeArguments
     attackmapping = []
     attributes = CommandAttributes(
@@ -73,6 +76,15 @@ class ticket_cache_purgeCommand(CommandBase):
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID,Success=True)
+        response.DisplayParams = ""
+        luid = taskData.args.get_arg("luid")
+        all = taskData.args.get_arg("all")
+        serviceName = taskData.args.get_arg("serviceName")
+        if serviceName != "":
+            response.DisplayParams += f" -serviceName {serviceName}"
+        if luid != "" and luid is not None:
+            response.DisplayParams += f" -luid {luid}"
+        response.DisplayParams += f" -all {all}"
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

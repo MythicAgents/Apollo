@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.6] - 
+
+### Changed
+
+- Added `-p:DebugType=None -p:DebugSymbols=false` to all `dotnet build` commands
+- Removed sRDI package as it wasn't used
+- Standardized donut usage to all be with the donut binary and not partially with the donut PyPi package
+- Updated ticket_[store|cache]_list commands to return structured JSON
+- Added browser scripts for ticket_[store|cache]_list commands
+- 
 ## [v2.3.5] - 2025-03-03
 
 ### Changed
