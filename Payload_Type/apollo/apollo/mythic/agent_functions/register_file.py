@@ -12,8 +12,47 @@ class RegisterFileArguments(TaskArguments):
                 name="file",
                 cli_name="File", 
                 display_name="File",
-                type=ParameterType.File)
+                type=ParameterType.File,
+                parameter_group_info=[ParameterGroupInfo(
+                    ui_position=1,
+                    required=True,
+                    group_name="Add New File"
+                )]
+            ),
+            CommandParameter(
+                name="existingFile",
+                cli_name="existingFile",
+                display_name="Existing File",
+                type=ParameterType.ChooseOne,
+                dynamic_query_function=self.get_files,
+                parameter_group_info=[ParameterGroupInfo(
+                    ui_position=1,
+                    required=True,
+                    group_name="Use Existing File"
+                )]
+            )
         ]
+
+    async def get_files( self, inputMsg: PTRPCDynamicQueryFunctionMessage ) -> PTRPCDynamicQueryFunctionMessageResponse:
+        fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
+        file_resp = await SendMythicRPCFileSearch(
+            MythicRPCFileSearchMessage(
+                CallbackID=inputMsg.Callback,
+                LimitByCallback=False,
+                Filename="",
+            )
+        )
+        if file_resp.Success:
+            file_names = []
+            for f in file_resp.Files:
+                if f.Filename not in file_names:
+                    file_names.append(f.Filename)
+            fileResponse.Success = True
+            fileResponse.Choices = file_names
+            return fileResponse
+        else:
+            fileResponse.Error = file_resp.Error
+            return fileResponse
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
@@ -39,21 +78,39 @@ class RegisterFileCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
-            TaskID=taskData.Task.ID,
-            AgentFileID=taskData.args.get_arg("file")
-        ))
-        if file_resp.Success:
-            original_file_name = file_resp.Files[0].Filename
+        if taskData.args.get_parameter_group_name() == "Add New File":
+            file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                AgentFileID=taskData.args.get_arg("file")
+            ))
+            if file_resp.Success:
+                original_file_name = file_resp.Files[0].Filename
+            else:
+                raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
+            taskData.args.add_arg("file_name", original_file_name, parameter_group_info=[ParameterGroupInfo(
+                group_name="Add New File"
+            )])
+            taskData.args.add_arg("file_id", taskData.args.get_arg("file"), parameter_group_info=[ParameterGroupInfo(
+                group_name="Add New File"
+            )])
+            response.DisplayParams = original_file_name
         else:
-            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
-        
-        taskData.args.add_arg("file_name", original_file_name)
+            file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                Filename=taskData.args.get_arg("existingFile"),
+                MaxResults=1,
+            ))
+            if not file_resp.Success:
+                raise Exception("Failed to fetch find file from Mythic (name: {})".format(taskData.args.get_arg("existingFile")))
+            response.DisplayParams = file_resp.Files[0].Filename
+            taskData.args.add_arg("file_name", file_resp.Files[0].Filename, parameter_group_info=[ParameterGroupInfo(
+                group_name="Use Existing File"
+            )])
+            taskData.args.add_arg("file_id", file_resp.Files[0].AgentFileId, parameter_group_info=[ParameterGroupInfo(
+                group_name="Use Existing File"
+            )])
+            taskData.args.remove_arg("existingFile")
 
-        taskData.args.add_arg("file_id", taskData.args.get_arg("file"))
-        
-        response.DisplayParams = original_file_name
-        
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
