@@ -21,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.7"
+    version = "2.3.8"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -59,6 +59,12 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             parameter_type=BuildParameterType.Boolean,
             default_value=False,
             description="Automatically adjust payload extension based on selected choices.",
+        ),
+        BuildParameter(
+            name="debug",
+            parameter_type=BuildParameterType.Boolean,
+            default_value=False,
+            description="Create a DEBUG version.",
         )
     ]
     c2_profiles = ["http", "smb", "tcp", "websocket"]
@@ -79,6 +85,12 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         # resp.status = BuildStatus.Success
         # return resp
         #end debugging
+        if self.get_parameter('debug'):
+            possibleCommands = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
+                SearchPayloadTypeName="apollo",
+            ))
+            if possibleCommands.Success:
+                resp.updated_command_list = [c.Name for c in possibleCommands.Commands]
         defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {
             "Config.cs": {
@@ -91,7 +103,8 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         success_message = f"Apollo {self.uuid} Successfully Built"
         stdout_err = ""
         defines_profiles_upper = []
-
+        compileType = "debug" if self.get_parameter('debug') else "release"
+        buildPath = "Debug" if self.get_parameter('debug') else "Release"
         if len(set([info.get_c2profile()["is_p2p"] for info in self.c2info])) > 1:
             resp.set_status(BuildStatus.Error)
             resp.set_build_message("Cannot mix egress and P2P C2 profiles")
@@ -149,7 +162,10 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
-            command = f"dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=\"Any CPU\" -o {agent_build_path.name}/Release/"
+            if self.get_parameter('debug'):
+                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -o {agent_build_path.name}/{buildPath}/"
+            else:
+                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:Platform=\"Any CPU\" -o {agent_build_path.name}/{buildPath}/"
             #command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
             await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                 PayloadUUID=self.uuid,
@@ -164,7 +180,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 stdout_err += f'\n[stdout]\n{stdout.decode()}\n'
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
-            output_path = f"{agent_build_path.name}/Release/Apollo.exe"
+            output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
 
             if os.path.exists(output_path):
                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
@@ -180,12 +196,12 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 targetKeylogInjectPath = "/srv/KeylogInject.exe"
                 targetExecutePEPath = "/srv/ExecutePE.exe"
                 targetInteropPath = "/srv/ApolloInterop.dll"
-                shutil.move("{}/Release/ExecuteAssembly.exe".format(agent_build_path.name), targetExeAsmPath)
-                shutil.move("{}/Release/PowerShellHost.exe".format(agent_build_path.name), targetPowerPickPath)
-                shutil.move("{}/Release/ScreenshotInject.exe".format(agent_build_path.name), targetScreenshotInjectPath)
-                shutil.move("{}/Release/KeylogInject.exe".format(agent_build_path.name), targetKeylogInjectPath)
-                shutil.move("{}/Release/ExecutePE.exe".format(agent_build_path.name), targetExecutePEPath)
-                shutil.move("{}/Release/ApolloInterop.dll".format(agent_build_path.name), targetInteropPath)
+                shutil.move(f"{agent_build_path.name}/{buildPath}/ExecuteAssembly.exe", targetExeAsmPath)
+                shutil.move(f"{agent_build_path.name}/{buildPath}/PowerShellHost.exe", targetPowerPickPath)
+                shutil.move(f"{agent_build_path.name}/{buildPath}/ScreenshotInject.exe", targetScreenshotInjectPath)
+                shutil.move(f"{agent_build_path.name}/{buildPath}/KeylogInject.exe", targetKeylogInjectPath)
+                shutil.move(f"{agent_build_path.name}/{buildPath}/ExecutePE.exe", targetExecutePEPath)
+                shutil.move(f"{agent_build_path.name}/{buildPath}/ApolloInterop.dll", targetInteropPath)
                 if self.get_parameter('output_type') == "WinExe":
                     await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                         PayloadUUID=self.uuid,
@@ -258,7 +274,10 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 / "loader.bin"
                             )
                             shutil.move(shellcode_path, working_path)
-                            command = f"dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:OutputType=WinExe -p:Platform=\"Any CPU\""
+                            if self.get_parameter('debug'):
+                                command = f"dotnet build -c {compileType} -p:OutputType=WinExe -p:Platform=\"Any CPU\""
+                            else:
+                                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:OutputType=WinExe -p:Platform=\"Any CPU\""
                             proc = await asyncio.create_subprocess_shell(
                                 command,
                                 stdout=asyncio.subprocess.PIPE,
@@ -275,7 +294,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 / "Service"
                                 / "WindowsService1"
                                 / "bin"
-                                / "Release"
+                                / f"{buildPath}"
                                 / "net451"
                                 / "WindowsService1.exe"
                             )

@@ -4,7 +4,7 @@
 //#define HTTP
 //#define WEBSOCKET
 //#define TCP
-#define SMB
+//#define SMB
 #endif
 
 #if HTTP
