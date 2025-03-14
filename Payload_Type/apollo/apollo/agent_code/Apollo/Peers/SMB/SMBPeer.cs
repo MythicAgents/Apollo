@@ -227,8 +227,12 @@ namespace Apollo.Peers.SMB
 
         public override void Stop()
         {
-            _pipe.Close();
-            _sendTask.Wait();
+            if(_pipe != null){
+                _pipe.Close();
+            }
+            if(_sendTask != null){
+                _sendTask.Wait();
+            }
         }
     }
 }

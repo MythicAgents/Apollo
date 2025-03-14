@@ -67,18 +67,23 @@ namespace ApolloInterop.Classes
         private void OnAsyncMessageReceived(IAsyncResult result)
         {
             // read from client until complete
-            IPCData pd = (IPCData)result.AsyncState;
-            Int32 bytesRead = pd.Pipe.EndRead(result);
-            if (bytesRead > 0)
-            {
-                pd.DataLength = bytesRead;
-                OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
-            } else
-            {
-                DebugHelp.DebugWriteLine($"closing pipe in OnAsyncMessageReceived with 0 bytesRead");
+            try{
+                IPCData pd = (IPCData)result.AsyncState;
+                Int32 bytesRead = pd.Pipe.EndRead(result);
+                if (bytesRead > 0)
+                {
+                    pd.DataLength = bytesRead;
+                    OnMessageReceived(new NamedPipeMessageArgs(pd.Pipe, pd, pd.State));
+                } else
+                {
+                    DebugHelp.DebugWriteLine($"closing pipe in OnAsyncMessageReceived with 0 bytesRead");
+                    pd.Pipe.Close();
+                }
+                BeginRead(pd);
+            }catch(Exception ex){
+                DebugHelp.DebugWriteLine($"error reading from named pipe: ${ex}");
                 pd.Pipe.Close();
             }
-            BeginRead(pd);
         }
 
         private void OnConnectionEstablished(NamedPipeMessageArgs args)
