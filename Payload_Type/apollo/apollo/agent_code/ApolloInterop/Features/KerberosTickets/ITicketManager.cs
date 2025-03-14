@@ -22,7 +22,7 @@ public interface ITicketManager
     //should return all tickets in the current LUID or all tickets if running as administrator
     public List<KerberosTicket> EnumerateTicketsInCache(bool getSystemTickets = false, string luid = "");
     //loads a ticket into memory and should be tracked by the agent session
-    public bool LoadTicketIntoCache(byte[] ticket, string luid);
+    public (bool, string) LoadTicketIntoCache(byte[] ticket, string luid);
     //unloads a ticket from memory and should be removed from the agent session
     public bool UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false);
 

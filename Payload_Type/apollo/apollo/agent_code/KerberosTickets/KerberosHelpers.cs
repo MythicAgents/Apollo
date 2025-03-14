@@ -522,7 +522,7 @@ internal class KerberosHelpers
     }
 
     // load ticket
-    internal static bool LoadTicket(byte[] submittedTicket, LUID targetLuid)
+    internal static (bool, string) LoadTicket(byte[] submittedTicket, LUID targetLuid)
     {
         HANDLE requestAndTicketHandle = new();
         HANDLE lsaHandle = new();
@@ -570,14 +570,14 @@ internal class KerberosHelpers
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to submit ticket with api status: {status} and return status: {returnStatus}");
-                return false;
+                return (false, $"Failed to submit ticket:\n{returnStatus}");
             }
             DebugHelp.DebugWriteLine("Ticket submitted");
-            return true;
+            return (true, "");
         }
         catch (Exception e)
         {
-            return false;
+            return (false, e.Message);
         }
         finally
         {

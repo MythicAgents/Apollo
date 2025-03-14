@@ -38,13 +38,16 @@ public class ticket_cache_add : Tasking
             string luid = parameters.luid ?? "";
             string base64Ticket = parameters.base64Ticket;
             byte[] ticketBytes = Convert.FromBase64String(base64Ticket);
-            if (_agent.GetTicketManager().LoadTicketIntoCache(ticketBytes, luid))
+            bool success;
+            string errorMsg;
+            (success, errorMsg) = _agent.GetTicketManager().LoadTicketIntoCache(ticketBytes, luid);
+            if (success)
             {
                 resp = CreateTaskResponse($"Injected Ticket into Cache", true);
             }
             else
             {
-                resp = CreateTaskResponse($"Failed to inject ticket into cache", true, "error");
+                resp = CreateTaskResponse($"{errorMsg}", true, "error");
             }
         }
         catch (Exception e)

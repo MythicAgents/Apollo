@@ -25,6 +25,24 @@ public class ticket_store_add : Tasking
     {
         [DataMember(Name = "base64ticket")]
         internal string base64Ticket;
+        [DataMember(Name = "ClientName")]
+        public string ClientName;
+        [DataMember(Name = "ClientRealm")]
+        public string ClientRealm;
+        [DataMember(Name = "ServerName")]
+        public string ServerName;
+        [DataMember(Name = "ServerRealm")]
+        public string ServerRealm;
+        [DataMember(Name = "StartTime")]
+        public int StartTime;
+        [DataMember(Name = "EndTime")]
+        public int EndTime;
+        [DataMember(Name = "RenewTime")]
+        public int RenewTime;
+        [DataMember(Name = "EncryptionType")]
+        public int EncryptionType;
+        [DataMember(Name = "TicketFlags")]
+        public int TicketFlags;
     }
 
     public ticket_store_add(IAgent agent, MythicTask data) : base(agent, data)
@@ -37,17 +55,19 @@ public class ticket_store_add : Tasking
             TicketStoreAddParameters parameters = _jsonSerializer.Deserialize<TicketStoreAddParameters>(_data.Parameters);
             string base64Ticket = parameters.base64Ticket;
             byte[] ticketBytes = Convert.FromBase64String(base64Ticket);
-            //make a placeholder ticket for now
-            KerberosTicket? ticket = _agent.GetTicketManager().GetTicketDetailsFromKirbi(ticketBytes);
-            if(ticket == null)
-            {
-                resp = CreateTaskResponse($"Failed to extract ticket from kirbi or failed to parse new data", true, "error");
-            }
-            else
-            {
-                _agent.GetTicketManager().AddTicketToTicketStore(new KerberosTicketStoreDTO(ticket));
-                resp = CreateTaskResponse($"Added Ticket to Ticket Store", true);
-            }
+            KerberosTicket ticket = new KerberosTicket();
+            ticket.ClientRealm = parameters.ClientRealm;
+            ticket.ClientName = parameters.ClientName;
+            ticket.ServerName = parameters.ServerName;
+            ticket.ServerRealm = parameters.ServerRealm;
+            ticket.StartTime = new DateTime(1970,1,1,0,0,0).AddSeconds(parameters.StartTime);
+            ticket.EndTime = new DateTime(1970,1,1,0,0,0).AddSeconds(parameters.EndTime);
+            ticket.RenewTime = new DateTime(1970,1,1,0,0,0).AddSeconds(parameters.RenewTime);
+            ticket.TicketFlags = (KerbTicketFlags)parameters.TicketFlags;
+            ticket.EncryptionType = (KerbEncType)parameters.EncryptionType;
+            ticket.Kirbi = ticketBytes;
+            _agent.GetTicketManager().AddTicketToTicketStore(new KerberosTicketStoreDTO(ticket));
+            resp = CreateTaskResponse($"Added Ticket to Ticket Store", true);
         }
         catch (Exception e)
         {

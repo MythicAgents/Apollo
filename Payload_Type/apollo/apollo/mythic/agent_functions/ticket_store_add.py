@@ -61,23 +61,24 @@ class ticket_store_addCommand(CommandBase):
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID,Success=True)
-        if taskData.args.get_parameter_group_name() == "Use Existing Ticket":
+        current_group_name = taskData.args.get_parameter_group_name()
+        if current_group_name == "Use Existing Ticket":
             credentialData = taskData.args.get_arg("existingTicket")
             taskData.args.remove_arg("existingTicket")
-            taskData.args.add_arg("base64ticket", credentialData["credential"], parameter_group_info=[ParameterGroupInfo(group_name="Use Existing Ticket")])
-        else:
-            base64Ticket = taskData.args.get_arg("base64ticket")
-            ccache = CCache()
-            ccache.fromKRBCRED(base64.b64decode(base64Ticket))
-            #ccache.credentials[0].__getitem__('client').prettyPrint()  # user@domain
-            #ccache.credentials[0].__getitem__('server').prettyPrint()  # krbtgt/domain@domain
-            #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()
-            #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()
-            #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()
-            formattedComment = f"Service: {ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8')}\n"
-            formattedComment += f"Start: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()}\n"
-            formattedComment += f"End: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()}\n"
-            formattedComment += f"Renew: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()}\n"
+            taskData.args.add_arg("base64ticket", credentialData["credential"], parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        base64Ticket = taskData.args.get_arg("base64ticket")
+        ccache = CCache()
+        ccache.fromKRBCRED(base64.b64decode(base64Ticket))
+        #ccache.credentials[0].__getitem__('client').prettyPrint()  # user@domain
+        #ccache.credentials[0].__getitem__('server').prettyPrint()  # krbtgt/domain@domain
+        #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()
+        #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()
+        #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()
+        formattedComment = f"Service: {ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8')}\n"
+        formattedComment += f"Start: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()}\n"
+        formattedComment += f"End: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()}\n"
+        formattedComment += f"Renew: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()}\n"
+        if current_group_name == "Add New Ticket":
             resp = await SendMythicRPCCredentialCreate(MythicRPCCredentialCreateMessage(
                 TaskID=taskData.Task.ID,
                 Credentials=[
@@ -90,7 +91,48 @@ class ticket_store_addCommand(CommandBase):
                     )
                 ]
             ))
-        response.DisplayParams = f"-base64ticket {taskData.args.get_arg('base64ticket')}"
+        response.DisplayParams = f" client: {ccache.credentials[0].__getitem__('client').prettyPrint().decode('utf-8')}"
+        response.DisplayParams += f", service: {ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8')}"
+        taskData.args.add_arg("luid",
+                              type=ParameterType.Number,
+                              value=0,
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("ClientName",
+                              type=ParameterType.String,
+                              value=ccache.credentials[0].__getitem__('client').prettyPrint().decode('utf-8').split("@")[0],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("ClientRealm",
+                              type=ParameterType.String,
+                              value=ccache.credentials[0].__getitem__('client').prettyPrint().decode('utf-8').split("@")[1],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("ServerName",
+                              type=ParameterType.String,
+                              value=ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8').split("@")[0],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("ServerRealm",
+                              type=ParameterType.String,
+                              value=ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8').split("@")[1],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("StartTime",
+                              type=ParameterType.Number,
+                              value=ccache.credentials[0].__getitem__('time')['starttime'],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("EndTime",
+                              type=ParameterType.Number,
+                              value=ccache.credentials[0].__getitem__('time')['endtime'],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("RenewTime",
+                              type=ParameterType.Number,
+                              value=ccache.credentials[0].__getitem__('time')['renew_till'],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("TicketFlags",
+                              type=ParameterType.Number,
+                              value=ccache.credentials[0].__getitem__('tktflags'),
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
+        taskData.args.add_arg("EncryptionType",
+                              type=ParameterType.Number,
+                              value=ccache.credentials[0].__getitem__('key')['keytype'],
+                              parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

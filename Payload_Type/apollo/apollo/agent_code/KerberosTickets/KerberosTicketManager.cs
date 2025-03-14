@@ -38,7 +38,7 @@ public class KerberosTicketManager : ITicketManager
     public (KerberosTicket?, string) ExtractTicketFromCache(string luid, string serviceName) => KerberosHelpers.ExtractTicket(WinNTTypes.LUID.FromString(luid), serviceName);
     public List<KerberosTicket> EnumerateTicketsInCache(bool getSystemTickets = false, string luid = "") => KerberosHelpers.TriageTickets(getSystemTickets,luid).ToList();
     
-    public bool LoadTicketIntoCache(byte[] ticket, string luid) => KerberosHelpers.LoadTicket(ticket, WinNTTypes.LUID.FromString(luid));
+    public (bool, string) LoadTicketIntoCache(byte[] ticket, string luid) => KerberosHelpers.LoadTicket(ticket, WinNTTypes.LUID.FromString(luid));
     
     public bool UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false) =>  KerberosHelpers.UnloadTicket(serviceName, domainName, WinNTTypes.LUID.FromString(luid), All);
     

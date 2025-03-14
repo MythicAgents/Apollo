@@ -84,9 +84,10 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage, ) -> PTTaskCo
                     TaskID=task.TaskData.Task.ID,
                     Response=f"\nFailed to add to Mythic's credential store:\n{resp.Error}".encode()
                 ))
-        except:
-            pass
+        except Exception as e:
+            logger.error(e)
     return response
+
 
 class ticket_cache_extractCommand(CommandBase):
     cmd = "ticket_cache_extract"

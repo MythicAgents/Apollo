@@ -6,6 +6,7 @@ using ApolloInterop.Features.WindowsTypesAndAPIs;
 using static ApolloInterop.Features.WindowsTypesAndAPIs.WinNTTypes;
 using static ApolloInterop.Features.WindowsTypesAndAPIs.LSATypes;
 using static ApolloInterop.Features.WindowsTypesAndAPIs.APIInteropTypes;
+using System.Runtime.Serialization;
 
 namespace ApolloInterop.Features.KerberosTickets;
 
@@ -27,20 +28,31 @@ public record struct LogonSessionData
 /// <summary>
 /// Record type to represent a Kerberos ticket.
 /// </summary>
+[DataContract]
 public record KerberosTicket
 {
+    [DataMember(Name = "luid")]
     public LUID Luid { get; set; }
     public string LogonId => Luid.ToString();
+    [DataMember(Name = "ClientName")]
     public string ClientName { get; set; }
+    [DataMember(Name = "ClientRealm")]
     public string ClientRealm { get; set; }
     public string ClientFullName => $"{ClientName}@{ClientRealm}";
+    [DataMember(Name = "ServerName")]
     public string ServerName { get; set; }
+    [DataMember(Name = "ServerRealm")]
     public string ServerRealm { get; set; }
     public string ServerFullName => $"{ServerName}@{ServerRealm}";
+    [DataMember(Name = "StartTime")]
     public DateTime StartTime { get; set; }
+    [DataMember(Name = "EndTime")]
     public DateTime EndTime { get; set; }
+    [DataMember(Name = "RenewTime")]
     public DateTime RenewTime { get; set; }
+    [DataMember(Name = "EncryptionType")]
     public KerbEncType EncryptionType { get; set; }
+    [DataMember(Name = "TicketFlags")]
     public KerbTicketFlags TicketFlags { get; set; }
     public byte[] Kirbi { get; set; } = [];
 }
