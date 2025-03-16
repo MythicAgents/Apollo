@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.12] - 2025-03-16
+
+### Changed
+
+- Added an action (stop/start) for the SOCKS command
+- Added an option for username/password for rpfwd/socks command
+- Added a check in jobkill for the rpfwd command to auto stop it from the Mythic side
+
 ## [v2.3.11] - 2025-03-16
 
 ### Changed

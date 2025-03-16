@@ -12,19 +12,56 @@ class RpfwdArguments(TaskArguments):
                 cli_name="Port",
                 display_name="Port",
                 type=ParameterType.Number,
-                description="Port to listen for connections on the target host."),
+                description="Port to listen for connections on the target host.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=True,
+                    ui_position=1,
+                )]
+            ),
             CommandParameter(
                 name="remote_port",
                 cli_name="RemotePort",
                 display_name="Remote Port",
                 type=ParameterType.Number,
-                description="Remote port to send rpfwd traffic to."),
+                description="Remote port to send rpfwd traffic to.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=True,
+                    ui_position=3,
+                )]
+            ),
             CommandParameter(
                 name="remote_ip",
                 cli_name="RemoteIP",
                 display_name="Remote IP",
                 type=ParameterType.String,
-                description="Remote IP to send rpfwd traffic to."),
+                description="Remote IP to send rpfwd traffic to.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=True,
+                    ui_position=2,
+                )]
+            ),
+            CommandParameter(
+                name="username",
+                cli_name="Username",
+                display_name="Port Auth Username",
+                type=ParameterType.String,
+                description="Must auth as this user to use the SOCKS port.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False,
+                    ui_position=4,
+                )]
+            ),
+            CommandParameter(
+                name="password",
+                cli_name="Password",
+                display_name="Port Auth Password",
+                type=ParameterType.String,
+                description="Must auth with this password to use the SOCKS port.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False,
+                    ui_position=5,
+                )]
+            ),
         ]
 
     async def parse_arguments(self):
@@ -63,7 +100,9 @@ class RpfwdCommand(CommandBase):
             PortType="rpfwd",
             LocalPort=taskData.args.get_arg("port"),
             RemoteIP=taskData.args.get_arg("remote_ip"),
-            RemotePort=taskData.args.get_arg("remote_port")
+            RemotePort=taskData.args.get_arg("remote_port"),
+            Username=taskData.args.get_arg("username"),
+            Password=taskData.args.get_arg("password")
         ))
 
         if not resp.Success:

@@ -12,7 +12,47 @@ class SocksArguments(TaskArguments):
                 cli_name="Port",
                 display_name="Port",
                 type=ParameterType.Number,
-                description="Port to start the socks server on."),
+                description="Port to start the socks server on.",
+                parameter_group_info=[ParameterGroupInfo(
+                    ui_position=0,
+                    required=True
+                )]
+            ),
+            CommandParameter(
+                name="action",
+                cli_name="Action",
+                display_name="Action",
+                type=ParameterType.ChooseOne,
+                choices=["start", "stop"],
+                default_value="start",
+                description="Start or stop proxy server for this port.",
+                parameter_group_info=[ParameterGroupInfo(
+                    ui_position=1,
+                    required=False
+                )],
+            ),
+            CommandParameter(
+                name="username",
+                cli_name="Username",
+                display_name="Port Auth Username",
+                type=ParameterType.String,
+                description="Must auth as this user to use the SOCKS port.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False,
+                    ui_position=2,
+                )]
+            ),
+            CommandParameter(
+                name="password",
+                cli_name="Password",
+                display_name="Port Auth Password",
+                type=ParameterType.String,
+                description="Must auth with this password to use the SOCKS port.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False,
+                    ui_position=3,
+                )]
+            ),
         ]
 
     async def parse_arguments(self):
@@ -31,7 +71,7 @@ class SocksArguments(TaskArguments):
 class SocksCommand(CommandBase):
     cmd = "socks"
     needs_admin = False
-    help_cmd = "socks [port number]"
+    help_cmd = "socks -Port [port number] -Action {start|stop}"
     description = "Enable SOCKS 5 compliant proxy to send data to the target network. Compatible with proxychains and proxychains4."
     version = 2
     script_only = True
@@ -46,23 +86,46 @@ class SocksCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        resp = await SendMythicRPCProxyStartCommand(MythicRPCProxyStartMessage(
-            TaskID=taskData.Task.ID,
-            PortType="socks",
-            LocalPort=taskData.args.get_arg("port")
-        ))
-
-        if not resp.Success:
-            response.TaskStatus = MythicStatus.Error
-            response.Stderr = resp.Error
-            await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+        if taskData.args.get_arg("action") == "start":
+            resp = await SendMythicRPCProxyStartCommand(MythicRPCProxyStartMessage(
                 TaskID=taskData.Task.ID,
-                Response=resp.Error.encode()
+                PortType="socks",
+                LocalPort=taskData.args.get_arg("port"),
+                Username=taskData.args.get_arg("username"),
+                Password=taskData.args.get_arg("password")
             ))
+
+            if not resp.Success:
+                response.TaskStatus = MythicStatus.Error
+                response.Stderr = resp.Error
+                await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                    TaskID=taskData.Task.ID,
+                    Response=resp.Error.encode()
+                ))
+            else:
+                response.DisplayParams = "Started SOCKS5 server on port {}".format(taskData.args.get_arg("port"))
+                response.TaskStatus = MythicStatus.Success
+                response.Completed = True
         else:
-            response.DisplayParams = "Started SOCKS5 server on port {}".format(taskData.args.get_arg("port"))
-            response.TaskStatus = MythicStatus.Success
-            response.Completed = True
+            resp = await SendMythicRPCProxyStopCommand(MythicRPCProxyStopMessage(
+                TaskID=taskData.Task.ID,
+                PortType="socks",
+                Port=taskData.args.get_arg("port"),
+                Username=taskData.args.get_arg("username"),
+                Password=taskData.args.get_arg("password")
+            ))
+
+            if not resp.Success:
+                response.TaskStatus = MythicStatus.Error
+                response.Stderr = resp.Error
+                await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                    TaskID=taskData.Task.ID,
+                    Response=resp.Error.encode()
+                ))
+            else:
+                response.DisplayParams = "Stopped SOCKS5 server on port {}".format(taskData.args.get_arg("port"))
+                response.TaskStatus = MythicStatus.Success
+                response.Completed = True
         return response
 
 

@@ -1,4 +1,5 @@
 from mythic_container.MythicCommandBase import *
+from mythic_container.MythicGoRPC import *
 import json
 
 
@@ -30,6 +31,34 @@ class JobkillCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
+        killedTaskResp = await SendMythicRPCTaskSearch(MythicRPCTaskSearchMessage(
+            TaskID=taskData.Task.ID,
+            SearchAgentTaskID=taskData.args.command_line
+        ))
+        if killedTaskResp.Success:
+            if len(killedTaskResp.Tasks) > 0:
+                if killedTaskResp.Tasks[0].CommandName == "rpfwd":
+                    try:
+                        params = json.loads(killedTaskResp.Tasks[0].Params)
+                        rpfwdStopResp = await SendMythicRPCProxyStopCommand(MythicRPCProxyStopMessage(
+                            TaskID=taskData.Task.ID,
+                            PortType="rpfwd",
+                            Port=params["port"],
+                            Username=params["username"] if "username" in params else "",
+                            Password=params["password"] if "password" in params else "",
+                        ))
+                        if rpfwdStopResp.Success:
+                            await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                                TaskID=taskData.Task.ID,
+                                Response=f"Stopped Mythic's rpfwd components\n".encode()
+                            ))
+                        else:
+                            await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                                TaskID=taskData.Task.ID,
+                                Response=f"Failed to stop Mythic's rpfwd components: {rpfwdStopResp.Error}\n".encode()
+                            ))
+                    except Exception as e:
+                        logger.error(f"failed to parse rpfwd params as json: {killedTaskResp.Tasks[0].Params}")
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
