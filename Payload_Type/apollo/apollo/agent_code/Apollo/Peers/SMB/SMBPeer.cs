@@ -84,7 +84,12 @@ namespace Apollo.Peers.SMB
             // Potentially delete this since theoretically the sender Task does everything
             if (pipe.IsConnected && !_cts.IsCancellationRequested)
             {
-                pipe.EndWrite(result);
+                try {
+                    pipe.EndWrite(result);
+                }catch(Exception ex){
+                    DebugHelp.DebugWriteLine($"failed to write to pipe: {ex}");
+                    _cts.Cancel();
+                }
             }
         }
 

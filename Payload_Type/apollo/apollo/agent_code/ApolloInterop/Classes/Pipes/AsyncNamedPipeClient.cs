@@ -67,8 +67,8 @@ namespace ApolloInterop.Classes
         private void OnAsyncMessageReceived(IAsyncResult result)
         {
             // read from client until complete
+            IPCData pd = (IPCData)result.AsyncState;
             try{
-                IPCData pd = (IPCData)result.AsyncState;
                 Int32 bytesRead = pd.Pipe.EndRead(result);
                 if (bytesRead > 0)
                 {
@@ -81,8 +81,9 @@ namespace ApolloInterop.Classes
                 }
                 BeginRead(pd);
             }catch(Exception ex){
-                DebugHelp.DebugWriteLine($"error reading from named pipe: ${ex}");
+                DebugHelp.DebugWriteLine($"error reading from named pipe: {ex}");
                 pd.Pipe.Close();
+                OnDisconnect(new NamedPipeMessageArgs(pd.Pipe, null, pd.State));
             }
         }
 
