@@ -210,6 +210,9 @@ class InjectCommand(CommandBase):
                 "c2_profile": c2_info.to_json()
             }
             connection_info["c2_profile"]["name"] = connection_info["c2_profile"]["c2_profile"]
+            connection_info["c2_profile"]["parameters"] = connection_info["c2_profile"]["c2_profile_parameters"]
+            del connection_info["c2_profile"]["c2_profile"]
+            del connection_info["c2_profile"]["c2_profile_parameters"]
             temp_inject_link_data[taskData.Task.ID] = connection_info
             subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
                 TaskID=taskData.Task.ID,
