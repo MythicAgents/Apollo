@@ -21,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.13"
+    version = "2.3.14"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -127,7 +127,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     # TODO: Prefix the AESPSK variable and also make it specific to each profile
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
                 elif isinstance(val, str):
-                    special_files_map["Config.cs"][prefixed_key] = val
+                    special_files_map["Config.cs"][prefixed_key] = val.replace("\\", "\\\\")
                 elif isinstance(val, bool):
                     if key == "encrypted_exchange_check" and not val:
                         resp.set_status(BuildStatus.Error)
