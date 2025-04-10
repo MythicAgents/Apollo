@@ -117,7 +117,9 @@ namespace Apollo.Peers.TCP
             _cts.Cancel();
             args.Client.Close();
             _senderEvent.Set();
-            _sendTask.Wait();
+            if(_sendTask != null){
+                _sendTask.Wait();
+            }
             _connected = false;
             base.OnDisconnect(this, args);
         }

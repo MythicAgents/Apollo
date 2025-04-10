@@ -61,6 +61,12 @@ class SleepCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
+        interval = taskData.args.get_arg("interval")
+        jitter = taskData.args.get_arg("jitter")
+        displayParams = f"-interval {interval}"
+        if jitter >= 0:
+            displayParams += f" -jitter {jitter}"
+        response.DisplayParams = displayParams
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

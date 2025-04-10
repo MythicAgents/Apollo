@@ -117,7 +117,9 @@ namespace Apollo.Peers.SMB
             _cts.Cancel();
             args.Pipe.Close();
             _senderEvent.Set();
-            _sendTask.Wait();
+            if(_sendTask != null){
+                _sendTask.Wait();
+            }
             base.OnDisconnect(this, args);
         }
 

@@ -84,7 +84,7 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage,) -> PTTaskCom
                     realm = lines[i + 1].split(" : ")[1].strip()
                     passwd = lines[i + 2].split(" : ")[1].strip()
                     passwdType = lines[i+2].split(" : ")[0].strip()
-                    if passwdType == "NTLM" and passwd != "":
+                    if passwdType == "* NTLM" and passwd != "":
                         cred_resp = await SendMythicRPCCredentialCreate(
                             MythicRPCCredentialCreateMessage(
                                 TaskID=task.TaskData.Task.ID,
@@ -99,7 +99,7 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage,) -> PTTaskCom
                                 ],
                             )
                         )
-                    elif passwdType == "Password" and passwd != "" and passwd != "(null)":
+                    elif passwdType == "* Password" and passwd != "" and passwd != "(null)":
                         cred_resp = await SendMythicRPCCredentialCreate(
                             MythicRPCCredentialCreateMessage(
                                 TaskID=task.TaskData.Task.ID,

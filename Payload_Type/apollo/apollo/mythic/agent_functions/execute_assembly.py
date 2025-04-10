@@ -177,6 +177,8 @@ class ExecuteAssemblyCommand(CommandBase):
                     raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
 
             taskData.args.add_arg("assembly_name", fileSearchResp.Files[0].Filename)
+            if fileSearchResp.Files[0].AgentFileId in taskData.Task.OriginalParams:
+                response.DisplayParams = f"-Assembly {fileSearchResp.Files[0].Filename} -Arguments {taskData.args.get_arg('assembly_arguments')}"
             taskData.args.remove_arg("assembly_file")
 
         taskargs = taskData.args.get_arg("assembly_arguments")

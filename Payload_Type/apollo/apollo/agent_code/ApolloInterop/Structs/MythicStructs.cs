@@ -960,6 +960,8 @@ namespace ApolloInterop.Structs
             public SocksDatagram[] Socks;
             [DataMember(Name = "rpfwd")]
             public SocksDatagram[] Rpfwd;
+            [DataMember(Name = "edges")]
+            public EdgeNode[] Edges;
 
             public override bool Equals(object obj)
             {
@@ -971,6 +973,8 @@ namespace ApolloInterop.Structs
                 if (this.Delegates.Length != obj.Delegates.Length)
                     return false;
                 if (this.Socks.Length != obj.Socks.Length)
+                    return false;
+                if (this.Edges.Length != obj.Edges.Length)
                     return false;
                 for (int i = 0; i < this.Delegates.Length; i++)
                 {

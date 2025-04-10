@@ -109,12 +109,11 @@ namespace Tasks
                     $"{ex.StackTrace}\n\nFailed to establish connection. Reason: {ex.Message}",
                     true,
                     "error");
+                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                 if (p != null)
                 {
                     _agent.GetPeerManager().Remove(p);
                 }
-
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             }
         }
     }
