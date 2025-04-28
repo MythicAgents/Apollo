@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System;
 using ApolloInterop.Utils;
 using System.Xml.Linq;
+using ApolloInterop.Classes;
 
 namespace Apollo.Management.Rpfwd
 {
@@ -17,9 +18,9 @@ namespace Apollo.Management.Rpfwd
         {
 
         }
-        public override bool AddConnection(TcpClient client, int ServerID, int Port)
+        public override bool AddConnection(TcpClient client, int ServerID, int Port, int debugLevel, Tasking task)
         {
-            RpfwdClient c = new RpfwdClient(_agent, client, ServerID, Port);
+            RpfwdClient c = new RpfwdClient(_agent, client, ServerID, Port, debugLevel, task);
             _connections.AddOrUpdate(c.ID, c, (int i, RpfwdClient d) => { return d; });
             DebugHelp.DebugWriteLine($"added new connection to RpfwdManager _connections: {ServerID}");
             c.Start();
@@ -43,13 +44,14 @@ namespace Apollo.Management.Rpfwd
                    // RpfwdClient c = new RpfwdClient(_agent, dg.ServerID);
                     //_connections.AddOrUpdate(c.ID, c, (int i, RpfwdClient d) => { return d; });
             }
+            var handleRet = _connections[dg.ServerID].HandleDatagram(dg);
             if (dg.Exit)
             {
                 // we do have the connection tracked and the Mythic server is telling us its closed on their end, so close here and exit
                 _connections[dg.ServerID].Exit();
                 return dg.Exit;
             }
-            return _connections[dg.ServerID].HandleDatagram(dg);
+            return handleRet;
         }
 
         public override bool Remove(int id)

@@ -1,6 +1,8 @@
 ﻿#define C2PROFILE_NAME_UPPER
 
-#if DEBUG
+//#define LOCAL_BUILD
+
+#if LOCAL_BUILD
 //#define HTTP
 //#define WEBSOCKET
 //#define TCP
@@ -40,7 +42,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
-#if DEBUG
+#if LOCAL_BUILD
                         { "callback_interval", "1" },
                         { "callback_jitter", "0" },
                         { "callback_port", "80" },
@@ -80,7 +82,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
-#if DEBUG
+#if LOCAL_BUILD
                         { "tasking_type", "Push" },
                         { "callback_interval", "5" },
                         { "callback_jitter", "0" },
@@ -116,7 +118,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
-#if DEBUG
+#if LOCAL_BUILD
                         { "pipename", "h20iexte-2l1t-mmfu-ipjh-6ofmobkaruq8" },
                         { "encrypted_exchange_check", "true" },
 #else
@@ -134,7 +136,7 @@ namespace Apollo
                     TSerializer = typeof(EncryptedJsonSerializer),
                     Parameters = new Dictionary<string, string>()
                     {
-#if DEBUG
+#if LOCAL_BUILD
                         { "port", "40000" },
                         { "encrypted_exchange_check", "true" },
 #else
@@ -149,7 +151,7 @@ namespace Apollo
 
 
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
-#if DEBUG
+#if LOCAL_BUILD
 #if HTTP
         public static string StagingRSAPrivateKey = "wkskVa0wTi4E3EZ6bi9YyKpbHb01NNDgZ1BXnJJM5io=";
 #elif WEBSOCKET

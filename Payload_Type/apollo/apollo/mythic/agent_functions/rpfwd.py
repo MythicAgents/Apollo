@@ -62,6 +62,19 @@ class RpfwdArguments(TaskArguments):
                     ui_position=5,
                 )]
             ),
+            CommandParameter(
+                name="debugLevel",
+                cli_name="DebugLevel",
+                display_name="DebugLevel",
+                type=ParameterType.ChooseOne,
+                choices=["None", "Connections", "Received Data", "Sent Data"],
+                default_value="Connections",
+                description="Report debug messages back to Mythic. 'Connections' is just data about new/closed connections, 'Received Data' is connections plus data sent to the local port Apollo is bound to, 'Sent Data' is the other two plus data that Apollo is sending back to the remote connection.",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False,
+                    ui_position=6,
+                )]
+            ),
         ]
 
     async def parse_arguments(self):
@@ -116,6 +129,17 @@ class RpfwdCommand(CommandBase):
             response.TaskStatus = MythicStatus.Success
         else:
             response.DisplayParams = f"on port {taskData.args.get_arg('port')} sending to {taskData.args.get_arg('remote_ip')}:{taskData.args.get_arg('remote_port')}"
+            if taskData.args.get_arg("debugLevel") != "None":
+                response.DisplayParams += f" with debug level of \"{taskData.args.get_arg('debugLevel')}\""
+        debugLevel = taskData.args.get_arg("debugLevel")
+        if debugLevel == "None":
+            taskData.args.add_arg("debugLevel", value=0, type=ParameterType.Number)
+        elif debugLevel == "Connections":
+            taskData.args.add_arg("debugLevel", value=1, type=ParameterType.Number)
+        elif debugLevel == "Received Data":
+            taskData.args.add_arg("debugLevel", value=2, type=ParameterType.Number)
+        else:
+            taskData.args.add_arg("debugLevel", value=3, type=ParameterType.Number)
         return response
 
 

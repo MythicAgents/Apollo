@@ -14,7 +14,7 @@ namespace ApolloInterop.Classes
             _agent = agent;
         }
 
-        public virtual bool AddConnection(TcpClient client, int ServerID, int port)
+        public virtual bool AddConnection(TcpClient client, int ServerID, int port, int debugLevel, Tasking task)
         {
             throw new NotImplementedException();
         }

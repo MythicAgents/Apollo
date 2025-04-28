@@ -28,9 +28,11 @@ namespace Tasks
         {
             [DataMember(Name = "port")] public int Port;
             [DataMember(Name = "action")] public string Action;
+            [DataMember(Name = "debugLevel")] public int DebugLevel;
         }
         private int _port;
         private TcpListener _server;
+        private int _debugLevel;
        
         private Random _random = new Random((int) DateTime.UtcNow.Ticks);
         private void OnClientConnected(IAsyncResult result)
@@ -43,7 +45,7 @@ namespace Tasks
                 int newClientID = _random.Next(int.MaxValue);
                 DebugHelp.DebugWriteLine($"Got a new connection: {newClientID}");
                 // Add to connection list at a higher level that can be routed to
-                if (_agent.GetRpfwdManager().AddConnection(client, newClientID, _port))
+                if (_agent.GetRpfwdManager().AddConnection(client, newClientID, _port, _debugLevel, this))
                 {
                     DebugHelp.DebugWriteLine("accepting more connections");
                     // need to explicitly accept more connection after handling the first one
@@ -70,6 +72,7 @@ namespace Tasks
             var parameters = _jsonSerializer.Deserialize<RpfwdParameters>(_data.Parameters);
             _port = parameters.Port;
             _server = new TcpListener(IPAddress.Any, _port);
+            _debugLevel = parameters.DebugLevel;
             try
             {
                 _server.Start();
@@ -82,7 +85,7 @@ namespace Tasks
                 return;
             }
 
-            resp = CreateTaskResponse("Started listening on port: " + parameters.Port, false, "listening for connections...");
+            resp = CreateTaskResponse("Started listening on port: " + parameters.Port + "\n", false, "listening for connections...");
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
             WaitHandle[] waiters = new WaitHandle[]
             {
