@@ -100,6 +100,13 @@ namespace Apollo.Management.Rpfwd
             args.State = this;
             _sendRequestsTask = new TT.Task(_sendRequestsAction, args.Client);
             _sendRequestsTask.Start();
+            _agent.GetTaskManager().AddRpfwdDatagramToQueue(MessageDirection.ToMythic, new SocksDatagram()
+            {
+                ServerID = ID,
+                Data = "",
+                Exit = false,
+                Port = _port
+            });
             if(_debugLevel > 0)
             {
                 _agent.GetTaskManager().AddTaskResponseToQueue(_task.CreateTaskResponse($"[Connection {ID}] - New Connection\nClient: {_remoteConnectionString}\n\n", false));
