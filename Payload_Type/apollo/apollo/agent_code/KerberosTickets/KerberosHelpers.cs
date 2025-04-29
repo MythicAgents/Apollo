@@ -497,7 +497,7 @@ internal class KerberosHelpers
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to extract ticket with error: {status} and return status: {returnStatus}");
-                return (null, $"Failed to extract ticket with error: {status} and return status: {returnStatus}");
+                return (null,  $"Failed to extract ticket.\nLsaCallAuthentication returned {status} with protocolStatus {returnStatus}");
             }
             //convert the location of the ticket in memory to a struct
             var response = returnBuffer.CastTo<KERB_RETRIEVE_TKT_RESPONSE>();
@@ -569,8 +569,8 @@ internal class KerberosHelpers
             createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaCallAuthenticationPackage"));
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
-                DebugHelp.DebugWriteLine($"Failed to submit ticket with api status: {status} and return status: {returnStatus}");
-                return (false, $"Failed to submit ticket:\n{returnStatus}");
+                DebugHelp.DebugWriteLine($"Failed to submit ticket with api status: {status} and protocolStatus: {returnStatus}");
+                return (false, $"Failed to submit ticket.\nLsaCallAuthentication returned {status} with protocolStatus {returnStatus}");
             }
             DebugHelp.DebugWriteLine("Ticket submitted");
             return (true, "");
