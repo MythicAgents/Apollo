@@ -16,7 +16,7 @@ class RegisterFileArguments(TaskArguments):
                 parameter_group_info=[ParameterGroupInfo(
                     ui_position=1,
                     required=True,
-                    group_name="Add New File"
+                    group_name="Default"
                 )]
             ),
             CommandParameter(
@@ -78,7 +78,7 @@ class RegisterFileCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        if taskData.args.get_parameter_group_name() == "Add New File":
+        if taskData.args.get_parameter_group_name() == "Default":
             file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
                 TaskID=taskData.Task.ID,
                 AgentFileID=taskData.args.get_arg("file")
@@ -88,10 +88,10 @@ class RegisterFileCommand(CommandBase):
             else:
                 raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
             taskData.args.add_arg("file_name", original_file_name, parameter_group_info=[ParameterGroupInfo(
-                group_name="Add New File"
+                group_name="Default"
             )])
             taskData.args.add_arg("file_id", taskData.args.get_arg("file"), parameter_group_info=[ParameterGroupInfo(
-                group_name="Add New File"
+                group_name="Default"
             )])
             response.DisplayParams = original_file_name
         else:
