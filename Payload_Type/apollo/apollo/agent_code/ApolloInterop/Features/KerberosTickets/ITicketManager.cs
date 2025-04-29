@@ -24,7 +24,7 @@ public interface ITicketManager
     //loads a ticket into memory and should be tracked by the agent session
     public (bool, string) LoadTicketIntoCache(byte[] ticket, string luid);
     //unloads a ticket from memory and should be removed from the agent session
-    public bool UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false);
+    public (bool, string) UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false);
 
     public KerberosTicket? GetTicketDetailsFromKirbi(byte[] kirbi);
    

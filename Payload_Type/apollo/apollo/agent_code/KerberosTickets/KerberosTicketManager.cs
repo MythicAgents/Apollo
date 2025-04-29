@@ -40,7 +40,7 @@ public class KerberosTicketManager : ITicketManager
     
     public (bool, string) LoadTicketIntoCache(byte[] ticket, string luid) => KerberosHelpers.LoadTicket(ticket, WinNTTypes.LUID.FromString(luid));
     
-    public bool UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false) =>  KerberosHelpers.UnloadTicket(serviceName, domainName, WinNTTypes.LUID.FromString(luid), All);
+    public (bool, string) UnloadTicketFromCache(string serviceName, string domainName, string luid, bool All = false) =>  KerberosHelpers.UnloadTicket(serviceName, domainName, WinNTTypes.LUID.FromString(luid), All);
     
     public KerberosTicket? GetTicketDetailsFromKirbi(byte[] kirbi) => KerberosHelpers.TryGetTicketDetailsFromKirbi(kirbi);
     

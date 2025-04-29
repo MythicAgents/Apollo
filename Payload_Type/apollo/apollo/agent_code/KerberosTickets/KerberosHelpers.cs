@@ -226,9 +226,9 @@ internal class KerberosHelpers
         return tickets;
     }
 
-    private static (HANDLE, uint, IEnumerable<LUID>) InitKerberosConnectionAndSessionInfo(bool GetSessions = true)
+    private static (HANDLE, uint, IEnumerable<LUID>, string) InitKerberosConnectionAndSessionInfo(bool GetSessions = true)
     {
-        ValueTuple<HANDLE, uint, IEnumerable<LUID>> connectionInfo = new(new(), 0, []);
+        ValueTuple<HANDLE, uint, IEnumerable<LUID>, string> connectionInfo = new(new(), 0, [], "");
         HANDLE lsaHandle = new();
         try
         {
@@ -236,6 +236,7 @@ internal class KerberosHelpers
             lsaHandle = GetLsaHandleUntrusted();
             if (lsaHandle.IsNull)
             {
+                connectionInfo.Item4 = $"Failed to get LSA Handle: {Marshal.GetLastWin32Error()}";
                 DebugHelp.DebugWriteLine("Failed to get LSA Handle");
                 DebugHelp.DebugWriteLine($"{Marshal.GetLastWin32Error()}");
                 return connectionInfo;
@@ -250,6 +251,7 @@ internal class KerberosHelpers
             uint authPackage = GetAuthPackage(lsaHandle, packageNameHandle);
             if (authPackage == 0)
             {
+                connectionInfo.Item4 = $"Failed to get Kerberos Auth Package: {Marshal.GetLastWin32Error()}";
                 DebugHelp.DebugWriteLine("Failed to get Auth Package");
                 DebugHelp.DebugWriteLine($"{Marshal.GetLastWin32Error()}");
                 return connectionInfo;
@@ -268,6 +270,7 @@ internal class KerberosHelpers
         }
         catch (Exception ex)
         {
+            connectionInfo.Item4 = $"Failed to initialize Kerberos Session: {Marshal.GetLastWin32Error()}\n{ex.Message}\n{ex.StackTrace}";
             DebugHelp.DebugWriteLine($"Error triaging tickets: {ex.Message}");
             DebugHelp.DebugWriteLine(ex.StackTrace);
             DebugHelp.DebugWriteLine($"{Marshal.GetLastWin32Error()}");
@@ -400,10 +403,10 @@ internal class KerberosHelpers
     {
         List<KerberosTicket> allTickets = [];
         DebugHelp.DebugWriteLine("Starting to triage tickets from LSA");
-        (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> logonSessions) =  InitKerberosConnectionAndSessionInfo();
+        (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> logonSessions, string error) =  InitKerberosConnectionAndSessionInfo();
         try
         {
-            if(lsaHandle.IsNull || authPackage == 0 || !logonSessions.Any())
+            if(lsaHandle.IsNull || authPackage == 0 || !logonSessions.Any() || error != "")
             {
                 DebugHelp.DebugWriteLine("Failed to get connection info");
                 return allTickets;
@@ -450,11 +453,15 @@ internal class KerberosHelpers
             targetName = targetName.Trim();
             //needs to be elevated to pass in a logon id so if we aren't we wipe the value here
             //Discarding the logonSessions because we do not need them so we pass false to prevent enumerating them
-            (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> _) =  InitKerberosConnectionAndSessionInfo();
+            (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> _, string error) =  InitKerberosConnectionAndSessionInfo();
             //if we are not an admin user then we cannot send a real lUID so we need to send a null one
+            if(error != "")
+            {
+                return (null, $"Failed to Initialize Kerberos Connection and Session Info\n{error}");
+            }
             if(Agent.GetIdentityManager().GetIntegrityLevel() is <= IntegrityLevel.MediumIntegrity)
             {
-                DebugHelp.DebugWriteLine("Not high integrity, setting targetLuid to null");
+                DebugHelp.DebugWriteLine("Not high integrity, setting target luid to null");
                 targetLuid = new LUID();
             }
             DebugHelp.DebugWriteLine($"Enumerating ticket for {targetName}");
@@ -497,7 +504,7 @@ internal class KerberosHelpers
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to extract ticket with error: {status} and return status: {returnStatus}");
-                return (null,  $"Failed to extract ticket.\nLsaCallAuthentication returned {status} with protocolStatus {returnStatus}");
+               return (null, $"Failed to submit ticket.\nLsaCallAuthentication returned {status} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(status)}) with protocolStatus {returnStatus} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(returnStatus)})");
             }
             //convert the location of the ticket in memory to a struct
             var response = returnBuffer.CastTo<KERB_RETRIEVE_TKT_RESPONSE>();
@@ -531,7 +538,7 @@ internal class KerberosHelpers
         {
             //needs to be elevated to pass in a logon id so if we aren't we wipe the value here
             //Discarding the logonSessions because we do not need them so we pass false to prevent enumerating them
-            (lsaHandle, uint authPackage, IEnumerable<LUID> _) = InitKerberosConnectionAndSessionInfo(false);
+            (lsaHandle, uint authPackage, IEnumerable<LUID> _, string error) = InitKerberosConnectionAndSessionInfo(false);
             //if we are not an admin user then we cannot send a real lUID so we need to send a null one
             //if (Agent.GetIdentityManager().GetIntegrityLevel() <= IntegrityLevel.MediumIntegrity)
             //{
@@ -539,6 +546,10 @@ internal class KerberosHelpers
                // targetLuid = new LUID();
             //}
             //get the size of the request structure
+            if(error != "")
+            {
+                return (false, $"Failed to Initialize Kerberos Connection and Session Info\n{error}");
+            }
             var requestSize = Marshal.SizeOf<KERB_SUBMIT_TKT_REQUEST>();
 
             KERB_SUBMIT_TKT_REQUEST request = new()
@@ -570,7 +581,7 @@ internal class KerberosHelpers
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to submit ticket with api status: {status} and protocolStatus: {returnStatus}");
-                return (false, $"Failed to submit ticket.\nLsaCallAuthentication returned {status} with protocolStatus {returnStatus}");
+                return (false, $"Failed to submit ticket.\nLsaCallAuthentication returned {status} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(status)}) with protocolStatus {returnStatus} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(returnStatus)})");
             }
             DebugHelp.DebugWriteLine("Ticket submitted");
             return (true, "");
@@ -591,7 +602,7 @@ internal class KerberosHelpers
     }
 
     // unload ticket
-    internal static bool UnloadTicket(string serviceName, string domainName, LUID targetLuid, bool All)
+    internal static (bool, string) UnloadTicket(string serviceName, string domainName, LUID targetLuid, bool All)
     {
         HANDLE lsaHandle = new();
         HANDLE requestBuffer = new();
@@ -644,26 +655,25 @@ internal class KerberosHelpers
             Marshal.StructureToPtr(request, requestBuffer, false);
 
             // get the connection info for lsa
-            (lsaHandle, uint authPackage, IEnumerable<LUID> _) = InitKerberosConnectionAndSessionInfo(false);
-            if (lsaHandle.IsNull)
+            (lsaHandle, uint authPackage, IEnumerable<LUID> _, string error) = InitKerberosConnectionAndSessionInfo(false);
+            if(error != "")
             {
-                DebugHelp.DebugWriteLine("Failed to get connection info");
-                return false;
+                return (false, $"Failed to Initialize Kerberos Connection and Session Info\n{error}");
             }
 
             var status = WindowsAPI.LsaCallAuthenticationPackageDelegate(lsaHandle, authPackage, requestBuffer, totalSize, out returnBuffer, out uint returnLength, out NTSTATUS returnStatus);
 
             if (status == NTSTATUS.STATUS_SUCCESS && returnStatus == NTSTATUS.STATUS_SUCCESS)
             {
-                return true;
+                return (true, "");
             }
             DebugHelp.DebugWriteLine($"Failed to remove ticket with error: {status} and return status: {returnStatus}");
-            return false;
+            return (false, $"Failed to submit ticket.\nLsaCallAuthentication returned {status} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(status)}) with protocolStatus {returnStatus} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(returnStatus)})");
         }
         catch (Exception e)
         {
             DebugHelp.DebugWriteLine($"Error unloading ticket: {e.Message}");
-            return false;
+            return (false, $"Error unloading ticket: {e.Message}");
         }
         finally
         {

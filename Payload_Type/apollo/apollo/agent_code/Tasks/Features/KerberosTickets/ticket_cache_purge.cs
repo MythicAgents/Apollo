@@ -43,11 +43,12 @@ public class ticket_cache_purge : Tasking
             string serviceName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('@').First();
             string domainName = String.IsNullOrWhiteSpace(serviceFullName) ? "" : serviceFullName.Split('@').Last();
             bool all = parameters.all;
-            
-            bool ticketRemoved = _agent.GetTicketManager().UnloadTicketFromCache(serviceName,domainName, luid, all);
+            bool ticketRemoved = false;
+            string error = "";
+            (ticketRemoved, error) = _agent.GetTicketManager().UnloadTicketFromCache(serviceName,domainName, luid, all);
             //if true return without error if false return with error
             resp = ticketRemoved ? CreateTaskResponse($"Purged Ticket from Cache", true) 
-                : CreateTaskResponse($"Failed to remove ticket from Cache", true, "error");
+                : CreateTaskResponse($"Failed to remove ticket from Cache\n{error}", true, "error");
 
         }
         catch (Exception e)
