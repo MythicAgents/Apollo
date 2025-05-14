@@ -262,6 +262,7 @@ namespace Apollo.Management.Tasks
             //List<DelegateMessage> delegates = new List<DelegateMessage>();
             List<SocksDatagram> dgs = new List<SocksDatagram>();
             List<SocksDatagram> rpfwdDgs = new List<SocksDatagram>();
+            List<EdgeNode> edgs = new List<EdgeNode>();
             //while(TaskResponseQueue.TryDequeue(out TaskResponse res))
             //{
             //    responses.Add(res);
@@ -289,7 +290,8 @@ namespace Apollo.Management.Tasks
                 Delegates = DelegateMessages.Flush(),
                 Responses = TaskResponseList.Flush(),
                 Socks = dgs.ToArray(),
-                Rpfwd = rpfwdDgs.ToArray()
+                Rpfwd = rpfwdDgs.ToArray(),
+                Edges = edgs.ToArray()
             };
             return onResponse(msg);
         }

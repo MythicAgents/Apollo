@@ -21,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.20"
+    version = "2.3.21"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -91,7 +91,9 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             ))
             if possibleCommands.Success:
                 resp.updated_command_list = [c.Name for c in possibleCommands.Commands]
-        defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
+                defines_commands_upper = [f"#define {x.upper()}" for x in resp.updated_command_list]
+        else:
+            defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
         special_files_map = {
             "Config.cs": {
                 "payload_uuid": self.uuid,

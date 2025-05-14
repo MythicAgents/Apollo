@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.21] - 2025-05-14
+
+### Changed
+
+- Updated the builder to include all commands when building a debug version of apollo
+- Updated the p2p code to initializes the edges array so checks for edge lengths don't crash
+
 ## [v2.3.20] - 2025-04-29
 
 ### Changed
