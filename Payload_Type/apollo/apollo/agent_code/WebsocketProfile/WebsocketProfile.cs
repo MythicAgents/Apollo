@@ -312,6 +312,7 @@ namespace WebsocketTransport
             Client = new WebSocket(Endpoint + PostUri);
             Client.WaitTime = TimeSpan.FromHours(8);
 
+
             List<KeyValuePair<string,string>> headers = new List<KeyValuePair<string, string>>();
             if (TaskingType == "Push")
             {
@@ -336,7 +337,9 @@ namespace WebsocketTransport
                 NetworkCredential credential = CredentialCache.DefaultCredentials as NetworkCredential;
                 Client.SetProxy(proxy.GetProxy(new Uri(Endpoint)).AbsoluteUri, credential.UserName, credential.Password);
             }
-
+            
+            //enable TLS 1.2 for networks that enforce 1.2 and wont accept 1.1
+            Client.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             Client.OnOpen += OnAsyncConnect;
             Client.OnMessage += OnAsyncMessageReceived;
             Client.OnError += OnAsyncError;
