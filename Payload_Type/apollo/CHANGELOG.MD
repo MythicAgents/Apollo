@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.22] - 2025-05-28
+
+### Changed
+
+- Updated a reference in the execute_pe task to not reference an exception name in the execute_assembly task
+
 ## [v2.3.21] - 2025-05-14
 
 ### Changed
