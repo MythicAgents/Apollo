@@ -21,7 +21,7 @@ class JobkillCommand(CommandBase):
     description = "Kill a job specified by the job identifier (jid)."
     version = 2
     is_exit = False
-    supported_ui_features = ["jobkill"]
+    supported_ui_features = ["jobkill", "task:job_kill"]
     author = "@djhohnstein"
     argument_class = JobkillArguments
     attackmapping = []
