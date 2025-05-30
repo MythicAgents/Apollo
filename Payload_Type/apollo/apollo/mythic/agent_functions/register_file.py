@@ -66,12 +66,16 @@ class RegisterFileArguments(TaskArguments):
 class RegisterFileCommand(CommandBase):
     cmd = "register_file"
     needs_admin = False
-    help_cmd = "register_assembly (modal popup)"
+    help_cmd = "register_file (modal popup)"
     description = "Register a file to later use in the agent."
     version = 2
     author = "@djhohnstein"
     argument_class = RegisterFileArguments
     attackmapping = ["T1547"]
+    attributes = CommandAttributes(
+        builtin=True,
+        suggested_command=True
+    )
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(

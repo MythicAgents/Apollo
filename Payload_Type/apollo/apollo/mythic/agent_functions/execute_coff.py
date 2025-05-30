@@ -178,7 +178,8 @@ class ExecuteCoffCommand(CommandBase):
         supported_os=[SupportedOS.Windows],
         builtin=False,
         load_only=False,
-        suggested_command=False
+        suggested_command=False,
+        dependencies=["register_file"],
     )
 
     async def registered_runof(self, taskData: PTTaskMessageAllData) -> str:
@@ -232,7 +233,7 @@ class ExecuteCoffCommand(CommandBase):
                 # we need to register this file with apollo first
                 subtaskCreationResp = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
                     TaskID=taskData.Task.ID,
-                    CommandName="register_coff",
+                    CommandName="register_file",
                     Params=json.dumps({"file": taskData.args.get_arg("bof_file")})
                 ))
                 if not subtaskCreationResp.Success:

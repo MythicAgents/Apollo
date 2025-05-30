@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.23] - 2025-05-29
+
+### Changed
+
+- Updated the file download to report back the file id sooner
+- Updated download browser script to display media as the file is downloading
+- Updated execute_coff and execute_assembly to have register_file as dependencies
+- Updated execute_coff to call execute_file instead of execute_coff command
+
 ## [v2.3.22] - 2025-05-28
 
 ### Changed

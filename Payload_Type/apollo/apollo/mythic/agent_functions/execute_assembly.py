@@ -110,6 +110,13 @@ class ExecuteAssemblyCommand(CommandBase):
     author = "@djhohnstein"
     argument_class = ExecuteAssemblyArguments
     attackmapping = ["T1547"]
+    attributes = CommandAttributes(
+        supported_os=[SupportedOS.Windows],
+        builtin=False,
+        load_only=False,
+        suggested_command=False,
+        dependencies=["register_file"],
+    )
 
     async def build_exeasm(self):
         try:

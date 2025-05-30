@@ -133,7 +133,7 @@ class AssemblyInjectCommand(CommandBase):
         if file_resp.Success:
             taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
-            raise Exception("Failed to register execute-assembly DLL: " + file_resp.Error)
+            raise Exception("Failed to register assembly_inject DLL: " + file_resp.Error)
 
         response.DisplayParams = "-PID {} -Assembly {} -Arguments {}".format(
             taskData.args.get_arg("pid"),
