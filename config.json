@@ -5,6 +5,6 @@
   "exclude_documentation_c2": false,
   "exclude_agent_icons": false,
   "remote_images": {
-    "apollo": "ghcr.io/mythicagents/apollo:v0.0.0.42"
+    "apollo": "ghcr.io/mythicagents/apollo:v0.0.0.43"
   }
 }
