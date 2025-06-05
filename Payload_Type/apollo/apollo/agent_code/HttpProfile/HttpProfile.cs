@@ -31,6 +31,25 @@ namespace HttpTransport
         private bool _uuidNegotiated = false;
         private RSAKeyGenerator rsa = null;
 
+        private string ParseURLAndPort(string host, int port)
+        {
+            string final_url = "";
+            int last_slash = -1;
+            if(port == 443 && host.StartsWith("https://")){
+                final_url = host;
+            } else if(port == 80 && host.StartsWith("http://")){
+                final_url = host;
+            } else {
+                last_slash = host.Substring(8).IndexOf("/");
+                if(last_slash == -1){
+                    final_url = string.Format("{0}:{1}", host, port);
+                } else {
+                    last_slash += 8;
+                    final_url = host.Substring(0, last_slash) + $":{port}" + host.Substring(last_slash);
+                }
+            }
+            return final_url;
+        }
         public HttpProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             CallbackInterval = int.Parse(data["callback_interval"]);
@@ -42,20 +61,16 @@ namespace HttpTransport
             ProxyHost = data["proxy_host"];
             ProxyPort = data["proxy_port"];
             rsa = agent.GetApi().NewRSAKeyPair(4096);
-            if (!string.IsNullOrEmpty(ProxyPort))
-            {
-                ProxyAddress = string.Format("{0}:{1}", ProxyHost, ProxyPort);
-            }
-            else
-            {
-                ProxyAddress = ProxyHost;
+            if(ProxyHost.Length > 0){
+                ProxyAddress = this.ParseURLAndPort(ProxyHost, ProxyPort);
             }
 
             if (PostUri[0] != '/')
             {
                 PostUri = $"/{PostUri}";
             }
-            Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
+            Endpoint = this.ParseURLAndPort(CallbackHost, CallbackPort);
+            //Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
             ProxyUser = data["proxy_user"];
             ProxyPass = data["proxy_pass"];
             KillDate = data["killdate"];
