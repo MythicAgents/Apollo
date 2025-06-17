@@ -185,7 +185,7 @@ class ExecuteCoffCommand(CommandBase):
     async def registered_runof(self, taskData: PTTaskMessageAllData) -> str:
         global RUNOF_HOST_PATH
         if not path.exists(RUNOF_HOST_PATH):
-            shutil.move(f"apollo/agent_code/COFFLoader.dll", RUNOF_HOST_PATH)
+            shutil.copy(f"apollo/agent_code/COFFLoader.dll", RUNOF_HOST_PATH)
         fileSearch = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
             TaskID=taskData.Task.ID,
             Filename="COFFLoader.dll",

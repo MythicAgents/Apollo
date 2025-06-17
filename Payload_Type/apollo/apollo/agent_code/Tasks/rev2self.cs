@@ -26,7 +26,9 @@ namespace Tasks
             var current = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
             _agent.GetTaskManager().AddTaskResponseToQueue(
                 CreateTaskResponse(
-                    $"Reverted identity to {current.Name}", true));
+                    $"Reverted identity to {current.Name}", true, "", new IMythicMessage[] {
+                            new CallbackUpdate{  ImpersonationContext = "" }
+                        }));
         }
 
     }

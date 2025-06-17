@@ -60,14 +60,20 @@ namespace Tasks
                         $"Successfully impersonated {cur.Name} for local access and {parameters.Credential.Realm}\\{parameters.Credential.Account} for remote access",
                         true,
                         "completed",
-                        new IMythicMessage[] { Artifact.PlaintextLogon(cur.Name, true) });
+                        new IMythicMessage[] {
+                            Artifact.PlaintextLogon(cur.Name, true),
+                            new CallbackUpdate{  ImpersonationContext = $"{parameters.Credential.Realm}\\{parameters.Credential.Account}" }
+                        });
                     } else
                     {
                         resp = CreateTaskResponse(
                         $"Successfully impersonated {cur.Name} for local and remote access",
                         true,
                         "completed",
-                        new IMythicMessage[] { Artifact.PlaintextLogon(cur.Name, true) });
+                        new IMythicMessage[] {
+                            Artifact.PlaintextLogon(cur.Name, true) ,
+                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}" }
+                        });
                     }
                 }
                 else

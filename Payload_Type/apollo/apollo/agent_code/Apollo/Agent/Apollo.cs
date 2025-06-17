@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using Microsoft.Win32;
 using System.Net.NetworkInformation;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Apollo.Agent
 {
@@ -133,6 +134,7 @@ namespace Apollo.Agent
                 // Modify this later.
                 IntegrityLevel = IdentityManager.GetIntegrityLevel(),
                 ExternalIP = "",
+                Cwd= Directory.GetCurrentDirectory(),
             };
             IC2Profile connectProfile = null;
             bool bRet = false;

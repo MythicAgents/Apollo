@@ -41,7 +41,12 @@ namespace Tasks
                 Directory.SetCurrentDirectory(parameters.Path);
                 _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                     $"Working directory set to {Directory.GetCurrentDirectory()}",
-                    true));
+                    true, "",
+                    new IMythicMessage[]
+                    {
+                        new CallbackUpdate{  Cwd = parameters.Path }
+                    }
+                    ));
             }
         }
     }

@@ -83,7 +83,8 @@
             ProcessInformation,
             CommandInformation,
             ScreenshotInformation,
-            KeylogInformation
+            KeylogInformation,
+            CallbackUpdate
         }
     }
 }

@@ -10,7 +10,7 @@
   "payload_output": ["exe", "shellcode", "service"],
   "architectures": ["x86_64"],
   "c2": ["http", "smb", "tcp", "websocket"],
-  "mythic_version": "3.3.1-rc66",
-  "agent_version": "2.3.21",
+  "mythic_version": "3.3.1-rc75",
+  "agent_version": "2.3.26",
   "supported_wrappers": ["service_wrapper", "scarecrow_wrapper"]
 }

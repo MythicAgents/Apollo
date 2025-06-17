@@ -95,6 +95,9 @@ namespace ApolloInterop.Classes
                         case MessageType.KeylogInformation:
                             keylogs.Add((KeylogInformation)msg);
                             break;
+                        case MessageType.CallbackUpdate:
+                            resp.Callback = (CallbackUpdate)msg;
+                            break;
                         default:
                             throw new Exception($"Unhandled message type while generating response: {msg.GetTypeCode()}");
                     }

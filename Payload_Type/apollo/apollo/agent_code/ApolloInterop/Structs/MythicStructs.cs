@@ -838,6 +838,8 @@ namespace ApolloInterop.Structs
             public ProcessResponse? ProcessResponse;
             [DataMember(Name = "apollo_tracker_uuid")]
             public string ApolloTrackerUUID;
+            [DataMember(Name = "callback")]
+            public CallbackUpdate Callback;
 
             public override bool Equals(object obj)
             {
@@ -1058,8 +1060,8 @@ namespace ApolloInterop.Structs
             public string Host;
             [DataMember(Name = "pid")]
             public int PID;
-
-            [DataMember(Name = "process_name")] public string ProcessName;
+            [DataMember(Name = "process_name")]
+            public string ProcessName;
             [DataMember(Name = "ips")]
             public string[] IPs;
             [DataMember(Name = "uuid")]
@@ -1080,6 +1082,21 @@ namespace ApolloInterop.Structs
             public string PublicKey;
             [DataMember(Name = "session_id")]
             public string SessionID;
+            [DataMember(Name = "cwd")]
+            public string Cwd;
+        }
+
+        [DataContract]
+        public struct CallbackUpdate : IMythicMessage
+        {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.CallbackUpdate;
+            }
+            [DataMember(Name = "cwd")]
+            public string Cwd;
+            [DataMember(Name = "impersonation_context")]
+            public string ImpersonationContext;
         }
 
         [DataContract]
