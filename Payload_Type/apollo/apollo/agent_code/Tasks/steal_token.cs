@@ -90,9 +90,38 @@ namespace Tasks
                     }
                     else
                     {
+                        var old = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
                         _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
                         var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        resp = CreateTaskResponse($"Successfully impersonated {cur.Name}", true);
+                        var stringOutput = $"Old Claims (Authenticated: {old.IsAuthenticated}, AuthType: ";
+                        try
+                        {
+                            stringOutput += $"{old.AuthenticationType}):\n";
+                        }
+                        catch
+                        {
+                            stringOutput += $"AccessDenied):\n";
+                        }
+                        foreach (var item in old.Claims)
+                        {
+                            stringOutput += item.ToString() + "\n";
+                        }
+                        stringOutput += $"\nNew Claims (Authenticated: {cur.IsAuthenticated}, AuthType: ";
+                        try
+                        {
+                            stringOutput += $"{cur.AuthenticationType}):\n";
+                        }
+                        catch
+                        {
+                            stringOutput += $"AccessDenied):\n";
+                        }
+                        foreach (var item in old.Claims)
+                        {
+                            stringOutput += item.ToString() + "\n";
+                        }
+                        resp = CreateTaskResponse($"Successfully impersonated {cur.Name}\n{stringOutput}", true, "", new IMythicMessage[] {
+                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}" }
+                        });
                     }
                 }
             }

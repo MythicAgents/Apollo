@@ -9,6 +9,7 @@ function(task, responses){
         let data = "";
         let rows = [];
         let headers = [
+            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "ppid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
             {"plaintext": "pid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
             {"plaintext": "arch", "type": "string", "cellStyle": {}, "width": 100},
@@ -16,7 +17,6 @@ function(task, responses){
             {"plaintext": "user", "type": "string", "cellStyle": {}, "fillWidth": 250},
             {"plaintext": "session", "type": "number", "cellStyle": {}, "width": 100},
             {"plaintext": "signer", "type": "string", "cellStyle": {}, "fillWidth": true},
-            {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
         ];
         for(let i = 0; i < responses.length; i++)
         {

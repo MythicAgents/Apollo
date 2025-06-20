@@ -46,6 +46,7 @@ namespace Tasks
             }
             else
             {
+                var old = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
                 ApolloLogonInformation info = new ApolloLogonInformation(
                     parameters.Credential.Account,
                     parameters.Credential.CredentialMaterial,
@@ -54,20 +55,47 @@ namespace Tasks
                 if (_agent.GetIdentityManager().SetIdentity(info))
                 {
                     var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                    var stringOutput = $"Old Claims (Authenticated: {old.IsAuthenticated}, AuthType: ";
+                    try
+                    {
+                        stringOutput += $"{old.AuthenticationType}):\n";
+                    }
+                    catch
+                    {
+                        stringOutput += $"AccessDenied):\n";
+                    }
+                    foreach (var item in old.Claims)
+                    {
+                        stringOutput += item.ToString() + "\n";
+                    }
+                    stringOutput += $"\nNew Claims (Authenticated: {cur.IsAuthenticated}, AuthType: ";
+                    try
+                    {
+                        stringOutput += $"{cur.AuthenticationType}):\n";
+                    }
+                    catch
+                    {
+                        stringOutput += $"AccessDenied):\n";
+                    }
+                    foreach (var item in old.Claims)
+                    {
+                        stringOutput += item.ToString() + "\n";
+                    }
                     if (parameters.NetOnly)
                     {
                         resp = CreateTaskResponse(
-                        $"Successfully impersonated {cur.Name} for local access and {parameters.Credential.Realm}\\{parameters.Credential.Account} for remote access",
+                        $"Successfully impersonated {cur.Name} for local access and {parameters.Credential.Realm}\\{parameters.Credential.Account} for remote access.\n{stringOutput}",
                         true,
                         "completed",
                         new IMythicMessage[] {
                             Artifact.PlaintextLogon(cur.Name, true),
                             new CallbackUpdate{  ImpersonationContext = $"{parameters.Credential.Realm}\\{parameters.Credential.Account}" }
                         });
-                    } else
+                    }
+                    else
                     {
                         resp = CreateTaskResponse(
-                        $"Successfully impersonated {cur.Name} for local and remote access",
+                        $"Successfully impersonated {cur.Name} for local and remote access.\n{stringOutput}",
                         true,
                         "completed",
                         new IMythicMessage[] {
