@@ -36,9 +36,9 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         BuildParameter(
             name="output_type",
             parameter_type=BuildParameterType.ChooseOne,
-            choices=["WinExe", "Shellcode", "Service"],
+            choices=["WinExe", "Shellcode", "Service", "Source"],
             default_value="WinExe",
-            description="Output as shellcode, executable, or service.",
+            description="Output as shellcode, executable, sourcecode, or service.",
         ),
         BuildParameter(
             name="shellcode_format",
@@ -204,7 +204,25 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 shutil.move(f"{agent_build_path.name}/{buildPath}/KeylogInject.exe", targetKeylogInjectPath)
                 shutil.move(f"{agent_build_path.name}/{buildPath}/ExecutePE.exe", targetExecutePEPath)
                 shutil.move(f"{agent_build_path.name}/{buildPath}/ApolloInterop.dll", targetInteropPath)
-                if self.get_parameter('output_type') == "WinExe":
+                if self.get_parameter('output_type') == "Source":
+                    shutil.make_archive(f"/tmp/{agent_build_path.name}/source", "zip", f"{agent_build_path.name}")
+                    await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                        PayloadUUID=self.uuid,
+                        StepName="Donut",
+                        StepStdout="Not converting to Shellcode through donut, passing through.",
+                        StepSuccess=True
+                    ))
+                    resp.payload = open(f"/tmp/{agent_build_path.name}/source.zip", 'rb').read()
+                    resp.build_message = success_message
+                    resp.status = BuildStatus.Success
+                    resp.build_stdout = stdout_err
+                    resp.updated_filename = adjust_file_name(self.filename,
+                                                             self.get_parameter("shellcode_format"),
+                                                             self.get_parameter("output_type"),
+                                                             self.get_parameter("adjust_filename"))
+                    #need to cleanup zip folder
+                    shutil.rmtree(f"/tmp/tmp")
+                elif self.get_parameter('output_type') == "WinExe":
                     await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                         PayloadUUID=self.uuid,
                         StepName="Donut",
@@ -404,6 +422,8 @@ def adjust_file_name(filename, shellcode_format, output_type, adjust_filename):
         return original_filename + ".exe"
     elif output_type == "Service":
         return original_filename + ".exe"
+    elif output_type == "Source":
+        return original_filename + ".zip"
     elif shellcode_format == "Binary":
         return original_filename + ".bin"
     elif shellcode_format == "Base64":
