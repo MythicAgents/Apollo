@@ -41,6 +41,17 @@ class ExecutePEArguments(TaskArguments):
                 ],
             ),
             CommandParameter(
+                name="pe_file",
+                display_name="New PE",
+                type=ParameterType.File,
+                description="A new PE to execute. After uploading once, you can just supply the pe_name parameter",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True, group_name="New PE", ui_position=1,
+                    )
+                ]
+            ),
+            CommandParameter(
                 name="pe_arguments",
                 cli_name="Arguments",
                 display_name="Arguments",
@@ -49,6 +60,9 @@ class ExecutePEArguments(TaskArguments):
                 parameter_group_info=[
                     ParameterGroupInfo(
                         required=False, group_name="Default", ui_position=2
+                    ),
+                    ParameterGroupInfo(
+                        required=False, group_name="New PE", ui_position=2
                     ),
                 ],
             ),
@@ -61,7 +75,7 @@ class ExecutePEArguments(TaskArguments):
         file_resp = await SendMythicRPCFileSearch(
             MythicRPCFileSearchMessage(
                 CallbackID=inputMsg.Callback,
-                LimitByCallback=True,
+                LimitByCallback=False,
                 Filename="",
             )
         )
@@ -220,47 +234,72 @@ class ExecutePECommand(CommandBase):
                     "Failed to register ExecutePE shellcode: " + file_resp.Error
                 )
 
-        # I know I could abstract these routines out but I'm rushing
-        if taskData.args.get_arg("pe_name") == "mimikatz.exe":
-            if MIMIKATZ_FILE_ID != "":
-                taskData.args.add_arg(PE_VARNAME, MIMIKATZ_FILE_ID)
-            else:
-                with open(mimikatz_path, "rb") as f:
-                    mimibytes = f.read()
-                file_resp = await SendMythicRPCFileCreate(
-                    MythicRPCFileCreateMessage(
-                        TaskID=taskData.Task.ID,
-                        Filename="execute_pe mimikatz",
-                        DeleteAfterFetch=False,
-                        FileContents=mimibytes,
-                    )
-                )
-                if file_resp.Success:
-                    taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
-                    MIMIKATZ_FILE_ID = file_resp.AgentFileId
+        if taskData.args.get_parameter_group_name() == "New PE":
+            fileSearchResp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                AgentFileID=taskData.args.get_arg("pe_file")
+            ))
+            if not fileSearchResp.Success:
+                raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
+            if len(fileSearchResp.Files) == 0:
+                raise Exception(f"Failed to find matching file, was it deleted?")
+
+            taskData.args.add_arg("pe_name", fileSearchResp.Files[0].Filename)
+            taskData.args.remove_arg("pe_file")
+            taskData.args.add_arg(PE_VARNAME, fileSearchResp.Files[0].AgentFileId)
+        else:
+            if taskData.args.get_arg("pe_name") == "mimikatz.exe":
+                if MIMIKATZ_FILE_ID != "":
+                    taskData.args.add_arg(PE_VARNAME, MIMIKATZ_FILE_ID)
                 else:
-                    raise Exception("Failed to register Mimikatz: " + file_resp.Error)
-        elif taskData.args.get_arg("pe_name") == "printspoofer.exe":
-            if PRINTSPOOFER_FILE_ID != "":
-                taskData.args.add_arg(PE_VARNAME, PRINTSPOOFER_FILE_ID)
-            else:
-                with open(printspoofer_path, "rb") as f:
-                    psbytes = f.read()
-                file_resp = await SendMythicRPCFileCreate(
-                    MythicRPCFileCreateMessage(
-                        TaskID=taskData.Task.ID,
-                        Filename="execute_pe printspoofer",
-                        DeleteAfterFetch=False,
-                        FileContents=psbytes,
+                    with open(mimikatz_path, "rb") as f:
+                        mimibytes = f.read()
+                    file_resp = await SendMythicRPCFileCreate(
+                        MythicRPCFileCreateMessage(
+                            TaskID=taskData.Task.ID,
+                            Filename="execute_pe mimikatz",
+                            DeleteAfterFetch=False,
+                            FileContents=mimibytes,
+                        )
                     )
-                )
-                if file_resp.Success:
-                    taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
-                    PRINTSPOOFER_FILE_ID = file_resp.AgentFileId
+                    if file_resp.Success:
+                        taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
+                        MIMIKATZ_FILE_ID = file_resp.AgentFileId
+                    else:
+                        raise Exception("Failed to register Mimikatz: " + file_resp.Error)
+            elif taskData.args.get_arg("pe_name") == "printspoofer.exe":
+                if PRINTSPOOFER_FILE_ID != "":
+                    taskData.args.add_arg(PE_VARNAME, PRINTSPOOFER_FILE_ID)
                 else:
-                    raise Exception(
-                        "Failed to register PrintSpoofer: " + file_resp.Error
+                    with open(printspoofer_path, "rb") as f:
+                        psbytes = f.read()
+                    file_resp = await SendMythicRPCFileCreate(
+                        MythicRPCFileCreateMessage(
+                            TaskID=taskData.Task.ID,
+                            Filename="execute_pe printspoofer",
+                            DeleteAfterFetch=False,
+                            FileContents=psbytes,
+                        )
                     )
+                    if file_resp.Success:
+                        taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
+                        PRINTSPOOFER_FILE_ID = file_resp.AgentFileId
+                    else:
+                        raise Exception(
+                            "Failed to register PrintSpoofer: " + file_resp.Error
+                        )
+            else:
+                file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                    Filename=taskData.args.get_arg("pe_name"),
+                    TaskID=taskData.Task.ID,
+                    MaxResults=1
+                ))
+                if not file_resp.Success:
+                    raise Exception(f"failed to find PE File: {file_resp.Error}")
+                if len(file_resp.Files) == 0:
+                    raise Exception(f"no PE file by that name that's not deleted")
+                else:
+                    taskData.args.add_arg(PE_VARNAME, file_resp.Files[0].AgentFileId)
 
         imageName = taskData.args.get_arg("pe_name")
         arguments = taskData.args.get_arg("pe_arguments")

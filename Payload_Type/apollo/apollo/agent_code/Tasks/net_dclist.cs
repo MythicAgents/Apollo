@@ -49,41 +49,49 @@ namespace Tasks
                 ctx = new DirectoryContext(DirectoryContextType.Domain);
             else
                 ctx = new DirectoryContext(DirectoryContextType.Domain, _data.Parameters.Trim());
-            dcCollection = DomainController.FindAll(ctx);
-            foreach (DomainController dc in dcCollection)
+            try
             {
-                var result = new NetDomainController();
-                result.ComputerName = dc.Name;
-                result.Domain = dc.Domain.ToString();
-                try
+                dcCollection = DomainController.FindAll(ctx);
+                foreach (DomainController dc in dcCollection)
                 {
-                    var ips = Dns.GetHostAddresses(result.ComputerName);
-                    string ipList = "";
-                    for (int i = 0; i < ips.Length; i++)
+                    var result = new NetDomainController();
+                    result.ComputerName = dc.Name;
+                    result.Domain = dc.Domain.ToString();
+                    try
                     {
-                        if (i == ips.Length - 1)
-                            ipList += $"{ips[i].ToString()}";
-                        else
-                            ipList += $"{ips[i].ToString()}, ";
+                        var ips = Dns.GetHostAddresses(result.ComputerName);
+                        string ipList = "";
+                        for (int i = 0; i < ips.Length; i++)
+                        {
+                            if (i == ips.Length - 1)
+                                ipList += $"{ips[i].ToString()}";
+                            else
+                                ipList += $"{ips[i].ToString()}, ";
+                        }
+
+                        result.IPAddress = ipList;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.IPAddress = dc.IPAddress;
                     }
 
-                    result.IPAddress = ipList;
-                }
-                catch (Exception ex)
-                {
-                    result.IPAddress = dc.IPAddress;
+                    result.Forest = dc.Forest.ToString();
+                    result.OSVersion = dc.OSVersion;
+                    result.IsGlobalCatalog = dc.IsGlobalCatalog();
+                    results.Add(result);
                 }
 
-                result.Forest = dc.Forest.ToString();
-                result.OSVersion = dc.OSVersion;
-                result.IsGlobalCatalog = dc.IsGlobalCatalog();
-                results.Add(result);
+                resp = CreateTaskResponse(
+                    _jsonSerializer.Serialize(results.ToArray()),
+                    true);
             }
-
-            resp = CreateTaskResponse(
-                _jsonSerializer.Serialize(results.ToArray()),
-                true);
+            catch(Exception ex)
+            {
+                resp = CreateTaskResponse(ex.Message, true, "error");
+            }
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+
         }
     }
 }

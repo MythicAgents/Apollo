@@ -102,7 +102,7 @@ namespace Tasks
             }
             else
             {
-                throw new ArgumentException($"{uploadPath} does not exist.");
+                throw new ArgumentException($"{uploadPathInfo.Parent.FullName} does not exist.");
             }
 
             var parentPath = Path.GetDirectoryName(unresolvedFilePath);

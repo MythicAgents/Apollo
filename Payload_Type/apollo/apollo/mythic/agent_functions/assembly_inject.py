@@ -28,6 +28,9 @@ class AssemblyInjectArguments(TaskArguments):
                         required=True,
                         ui_position=1,
                         group_name="Default",
+                    ),
+                    ParameterGroupInfo(
+                        required=True, group_name="New Assembly", ui_position=1,
                     )
                 ]),
             CommandParameter(
@@ -45,6 +48,17 @@ class AssemblyInjectArguments(TaskArguments):
                     ),
                 ]),
             CommandParameter(
+                name="assembly_file",
+                display_name="New Assembly",
+                type=ParameterType.File,
+                description="A new assembly to execute. After uploading once, you can just supply the assembly_name parameter",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=True, group_name="New Assembly", ui_position=2,
+                    )
+                ]
+            ),
+            CommandParameter(
                 name="assembly_arguments",
                 cli_name="Arguments",
                 display_name="Arguments",
@@ -56,6 +70,9 @@ class AssemblyInjectArguments(TaskArguments):
                         ui_position=3,
                         group_name="Default",
                     ),
+                    ParameterGroupInfo(
+                        required=False, group_name="New Assembly", ui_position=3,
+                    )
                 ]),
         ]
 
@@ -134,6 +151,33 @@ class AssemblyInjectCommand(CommandBase):
             taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
             raise Exception("Failed to register assembly_inject DLL: " + file_resp.Error)
+        originalGroupNameIsDefault = taskData.args.get_parameter_group_name() == "Default"
+        if taskData.args.get_parameter_group_name() == "New Assembly":
+            fileSearchResp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                TaskID=taskData.Task.ID,
+                AgentFileID=taskData.args.get_arg("assembly_file")
+            ))
+            if not fileSearchResp.Success:
+                raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
+            if len(fileSearchResp.Files) == 0:
+                raise Exception(f"Failed to find matching file, was it deleted?")
+
+            taskData.args.add_arg("assembly_name", fileSearchResp.Files[0].Filename)
+            taskData.args.remove_arg("assembly_file")
+            taskData.args.add_arg("assembly_id", fileSearchResp.Files[0].AgentFileId)
+
+        if originalGroupNameIsDefault:
+            file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                Filename=taskData.args.get_arg("assembly_name"),
+                TaskID=taskData.Task.ID,
+                MaxResults=1
+            ))
+            if not file_resp.Success:
+                raise Exception(f"failed to find assembly: {file_resp.Error}")
+            if len(file_resp.Files) == 0:
+                raise Exception(f"no assembly by that name that's not deleted")
+            else:
+                taskData.args.add_arg("assembly_id", file_resp.Files[0].AgentFileId)
 
         response.DisplayParams = "-PID {} -Assembly {} -Arguments {}".format(
             taskData.args.get_arg("pid"),

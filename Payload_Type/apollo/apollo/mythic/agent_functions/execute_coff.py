@@ -142,7 +142,7 @@ class ExecuteCoffArguments(TaskArguments):
         fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
         file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
             CallbackID=inputMsg.Callback,
-            LimitByCallback=True,
+            LimitByCallback=False,
             Filename="",
         ))
         if file_resp.Success:
@@ -221,23 +221,6 @@ class ExecuteCoffCommand(CommandBase):
                 raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
             if len(fileSearchResp.Files) == 0:
                 raise Exception(f"Failed to find matching file, was it deleted?")
-            searchedTaskResp = await SendMythicRPCTaskSearch(MythicRPCTaskSearchMessage(
-                TaskID=taskData.Task.ID,
-                SearchCallbackID=taskData.Callback.ID,
-                SearchCommandNames=["register_file"],
-                SearchParams=taskData.args.get_arg("bof_file")
-            ))
-            if not searchedTaskResp.Success:
-                raise Exception(f"Failed to search for matching tasks: {searchedTaskResp.Error}")
-            if len(searchedTaskResp.Tasks) == 0:
-                # we need to register this file with apollo first
-                subtaskCreationResp = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-                    TaskID=taskData.Task.ID,
-                    CommandName="register_file",
-                    Params=json.dumps({"file": taskData.args.get_arg("bof_file")})
-                ))
-                if not subtaskCreationResp.Success:
-                    raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
 
             taskData.args.add_arg("coff_name", fileSearchResp.Files[0].Filename)
             taskData.args.add_arg("bof_id", taskData.args.get_arg("bof_file"))

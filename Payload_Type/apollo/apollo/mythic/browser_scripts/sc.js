@@ -117,7 +117,7 @@ function(task, responses){
                                 },
                                 "leftColumnTitle": "Attribute",
                                 "rightColumnTitle": "Values",
-                                "title": "Information for " + jinfo["name"],
+                                "title": "Information for " + jinfo["display_name"],
                                 "hoverText": "More Info"
                             }
                         ]
