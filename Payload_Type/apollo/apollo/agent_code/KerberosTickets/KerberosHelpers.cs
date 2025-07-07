@@ -421,14 +421,19 @@ internal class KerberosHelpers
             foreach (var logonSession in logonSessions)
             {
                 //if we're not high integrity, only get tickets for our current sessionID
-                if(!highIntegrity && logonSession.ToString() != currentLuid)
+                if(!highIntegrity)
                 {
-                    continue;
+                    if(logonSession.ToString() != currentLuid)
+                    {
+                        continue;
+                    }
                 }
-                // we are high integrity, so only skip tickets that aren't the target id if we don't want all tickets
-                if(!getSystemTickets && logonSession.ToString() != targetLuid)
+                else
                 {
-                    continue;
+                    if(!getSystemTickets && logonSession.ToString() != targetLuid)
+                    {
+                        continue;
+                    }
                 }
                 var sessionData = GetLogonSessionData(new(logonSession));
                 //should skip any non-user accounts by checking the session id
