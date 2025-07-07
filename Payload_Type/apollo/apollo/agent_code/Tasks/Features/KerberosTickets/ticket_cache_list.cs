@@ -41,8 +41,8 @@ public class ticket_cache_list : Tasking
         bool getSystemTickets = parameters.getSystemTickets ?? false;
         try
         {
-            var tickets = _agent.GetTicketManager().EnumerateTicketsInCache(getSystemTickets, luid);
             string currentLuid = _agent.GetTicketManager().GetCurrentLuid();
+            var tickets = _agent.GetTicketManager().EnumerateTicketsInCache(getSystemTickets, luid);
             List<KerberosTicketInfoDTO> ticketList = new List<KerberosTicketInfoDTO>();
             for(int i = 0; i < tickets.Count; i++)
             {

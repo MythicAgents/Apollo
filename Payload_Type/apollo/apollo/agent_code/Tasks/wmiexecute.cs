@@ -337,7 +337,7 @@ namespace Tasks
                     }
                     else
                     {
-                        resp = CreateTaskResponse($"failed with error code: {coCreateResult}", true, "error");
+                        resp = CreateTaskResponse($"failed with error code: {coCreateResult.ToString("X")}", true, "error");
                     }
                     _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     return;

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.31] - 2025-07-07
+
+### Changed
+
+- Updated the processing for ticket_cache_list to better account for high/medium context
+- Updated wmiexecute error code to be in hex not int
+- Updated WebSocketClient code to reconnect on disconnect and added a few more checks for Proxy configs
+
 ## [v2.3.30] - 2025-07-03
 
 ### Changed

