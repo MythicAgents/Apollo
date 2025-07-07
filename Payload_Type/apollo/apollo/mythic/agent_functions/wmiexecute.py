@@ -24,7 +24,7 @@ class WmiExecuteArguments(TaskArguments):
                 ]),
             CommandParameter(
                 name="host",
-                cli_name="Host",
+                cli_name="host",
                 display_name="Host",
                 type=ParameterType.String,
                 description="Computer to execute the command on. If empty, the current computer.",
@@ -96,6 +96,12 @@ class wmiexecuteCommand(CommandBase):
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID,Success=True)
+        display_params = f"-command {taskData.args.get_arg('command')}"
+        if taskData.args.get_arg('host') != "":
+            display_params += f" -host {taskData.args.get_arg('host')}"
+        if taskData.args.get_arg("username") != "":
+            display_params += f" -username {taskData.args.get_arg('username')} -domain {taskData.args.get_arg('domain')} -password {taskData.args.get_arg('password')}"
+        response.DisplayParams = display_params
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
