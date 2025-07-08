@@ -523,7 +523,7 @@ internal class KerberosHelpers
             if (status != NTSTATUS.STATUS_SUCCESS || returnStatus != NTSTATUS.STATUS_SUCCESS)
             {
                 DebugHelp.DebugWriteLine($"Failed to extract ticket with error: {status} and return status: {returnStatus}");
-               return (null, $"Failed to submit ticket.\nLsaCallAuthentication returned {status} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(status)}) with protocolStatus {returnStatus} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(returnStatus)})");
+               return (null, $"Failed to extract ticket.\nLsaCallAuthentication returned {status} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(status)}) with protocolStatus {returnStatus} (0x{WindowsAPI.LsaNtStatusToWinErrorDelegate(returnStatus)})");
             }
             //convert the location of the ticket in memory to a struct
             var response = returnBuffer.CastTo<KERB_RETRIEVE_TKT_RESPONSE>();

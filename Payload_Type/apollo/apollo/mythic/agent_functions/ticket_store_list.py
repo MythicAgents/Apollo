@@ -35,7 +35,7 @@ class ticket_store_listArguments(TaskArguments):
 class ticket_store_listCommand(CommandBase):
     cmd = "ticket_store_list"
     needs_admin = False
-    help_cmd = "ticket_store_list [luid]"
+    help_cmd = "ticket_store_list -luid [luid]"
     description = "List all kerberos tickets in the agents ticket store, optionally a single luid can be provided to limit the items returned from the store"
     version = 2
     author = "@drago-qcc"

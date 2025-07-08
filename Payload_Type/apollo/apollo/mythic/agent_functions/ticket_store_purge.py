@@ -49,7 +49,7 @@ class ticket_store_purgeArguments(TaskArguments):
 class ticket_store_purgeCommand(CommandBase):
     cmd = "ticket_store_purge"
     needs_admin = False
-    help_cmd = "ticket_store_purge [b64ticket] [all]"
+    help_cmd = "ticket_store_purge -all false -serviceName [service name]"
     description = "Remove the specified ticket from the ticket store"
     version = 2
     author = "@drago-qcc"

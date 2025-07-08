@@ -66,7 +66,7 @@ class ticket_cache_addArguments(TaskArguments):
 class ticket_cache_addCommand(CommandBase):
     cmd = "ticket_cache_add"
     needs_admin = False
-    help_cmd = "ticket_cache_add [b64Ticket] [luid]"
+    help_cmd = "ticket_cache_add -b64ticket [b64Ticket] -luid [luid]"
     description = "Add a kerberos ticket to the current luid, or if elevated and a luid is provided load the ticket into that logon session instead. This modifies the tickets in the current logon session."
     version = 2
     author = "@drago-qcc"

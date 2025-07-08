@@ -63,7 +63,7 @@ class ticket_cache_purgeArguments(TaskArguments):
 class ticket_cache_purgeCommand(CommandBase):
     cmd = "ticket_cache_purge"
     needs_admin = False
-    help_cmd = "ticket_cache_purge -serviceName=krbtgt/domain.com"
+    help_cmd = "ticket_cache_purge -serviceName krbtgt/domain.com"
     description = "Remove the specified ticket from the system. This modifies your current logon session tickets, so be careful if purging all."
     version = 2
     author = "@drago-qcc"

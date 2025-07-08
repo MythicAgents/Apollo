@@ -48,7 +48,7 @@ class ticket_cache_listArguments(TaskArguments):
 class ticket_cache_listCommand(CommandBase):
     cmd = "ticket_cache_list"
     needs_admin = False
-    help_cmd = "ticket_cache_list -getSystemTickets true"
+    help_cmd = "ticket_cache_list -getSystemTickets true -luid [luid]"
     description = "List all kerberos tickets in the current logon session, or if elevated list all tickets for all logon sessions, optionally while elevated a single luid can be provided to limit the enumeration"
     version = 2
     author = "@drago-qcc"
