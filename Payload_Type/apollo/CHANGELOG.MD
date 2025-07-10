@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.34] - 2025-07-10
+
+### Changed
+
+- Fixing keylog_inject
+  - adding keylog_inject browser script to go with it for basic conversion
+  
 ## [v2.3.33] - 2025-07-10
 
 ### Changed
