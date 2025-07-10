@@ -107,6 +107,9 @@ namespace ApolloInterop.Classes
         {
             return UUID;
         }
+        public void SetUUID(string newUUID){
+            UUID = newUUID;
+        }
 
     }
 }
