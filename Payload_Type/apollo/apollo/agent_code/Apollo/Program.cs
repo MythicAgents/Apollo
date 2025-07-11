@@ -13,6 +13,7 @@ using ApolloInterop.Classes.Core;
 using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Runtime.InteropServices;
+using ApolloInterop.Utils;
 
 namespace Apollo
 {
@@ -30,56 +31,30 @@ namespace Apollo
         private static AutoResetEvent _complete  = new AutoResetEvent(false);
         private static bool _completed;
         private static Action<object> _flushMessages;
+        public enum RPC_AUTHN_LEVEL
+        {
+            PKT_PRIVACY = 6
+        }
+
+        public enum RPC_IMP_LEVEL
+        {
+            IMPERSONATE = 3
+        }
+
+        public enum EOLE_AUTHENTICATION_CAPABILITIES
+        {
+            DYNAMIC_CLOAKING = 0x40
+        }
+        [DllImport("ole32.dll")]
+        static extern int CoInitializeSecurity(IntPtr pSecDesc, int cAuthSvc, IntPtr asAuthSvc, IntPtr pReserved1, RPC_AUTHN_LEVEL dwAuthnLevel, RPC_IMP_LEVEL dwImpLevel, IntPtr pAuthList, EOLE_AUTHENTICATION_CAPABILITIES dwCapabilities, IntPtr pReserved3);
+        // we need this to happen first so we can use impersonation tokens with wmiexecute
+        static readonly int _security_init = CoInitializeSecurity(IntPtr.Zero, -1, IntPtr.Zero, IntPtr.Zero, RPC_AUTHN_LEVEL.PKT_PRIVACY, RPC_IMP_LEVEL.IMPERSONATE, IntPtr.Zero, EOLE_AUTHENTICATION_CAPABILITIES.DYNAMIC_CLOAKING, IntPtr.Zero);
         public static void Main(string[] args)
         {
-            //_sendAction = (object p) =>
-            //{
-            //    PipeStream ps = (PipeStream)p;
-            //    while (ps.IsConnected && !_cancellationToken.IsCancellationRequested)
-            //    {
-            //        WaitHandle.WaitAny(new WaitHandle[]
-            //        {
-            //        _senderEvent,
-            //        _cancellationToken.Token.WaitHandle
-            //        });
-            //        if (!_cancellationToken.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
-            //        {
-            //            ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
-            //        }
-            //    }
-            //    ps.Close();
-            //    _complete.Set();
-            //};
-
-            //AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", "exetest");
-            //client.ConnectionEstablished += Client_ConnectionEstablished;
-            //client.MessageReceived += OnAsyncMessageReceived;
-            //client.Disconnect += Client_Disconnect;
-            //IPCCommandArguments cmdargs = new IPCCommandArguments
-            //{
-            //    ByteData = System.IO.File.ReadAllBytes(@"C:\PrintSpoofer\x64\Release\PrintSpoofer.exe"),
-            //    StringData = "PrintSpoofer.exe --help"
-            //};
-            //if (client.Connect(3000))
-            //{
-            //    IPCChunkedData[] chunks = _jsonSerializer.SerializeIPCMessage(cmdargs);
-            //    foreach (IPCChunkedData chunk in chunks)
-            //    {
-            //        _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_jsonSerializer.Serialize(chunk)));
-            //    }
-            //    _senderEvent.Set();
-            //    WaitHandle.WaitAny(new WaitHandle[]
-            //    {
-            //                                    _complete,
-            //                                    _cancellationToken.Token.WaitHandle
-            //    });
-            //}
-            //else
-            //{
-            //    Debugger.Break();
-            //}
-
-            // This is main execution.
+            if (_security_init != 0)
+            {
+                DebugHelp.DebugWriteLine($"CoInitializeSecurity status: {_security_init}");
+            }
             Agent.Apollo ap = new Agent.Apollo(Config.PayloadUUID);
             ap.Start();
         }

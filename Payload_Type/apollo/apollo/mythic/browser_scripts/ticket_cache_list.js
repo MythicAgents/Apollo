@@ -58,7 +58,7 @@ function(task, responses) {
                     "service": { "plaintext": jinfo["service_name"] + "@" + jinfo["service_realm"], "cellStyle": {}, copyIcon: true },
                     "luid": { "plaintext": jinfo["luid"], "cellStyle": {} },
                     "end": { "plaintext": jinfo["end_time"], "cellStyle": {} },
-                    "rowStyle": {backgroundColor: jinfo["luid"] === jinfo["current_luid"] ? "#7fce70": ""}
+                    "rowStyle": {backgroundColor: jinfo["luid"] === jinfo["current_luid"] ? "#85b089": ""}
                 };
                 rows.push(row);
             }
