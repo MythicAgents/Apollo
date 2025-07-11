@@ -67,8 +67,9 @@ class ticket_cache_listCommand(CommandBase):
         getSystemTickets = taskData.args.get_arg("getSystemTickets")
         response.DisplayParams = ""
         luid = taskData.args.get_arg("luid")
-        response.DisplayParams += f" -getSystemTickets {getSystemTickets}"
-        if luid != "":
+        if getSystemTickets:
+            response.DisplayParams += f" -getSystemTickets {getSystemTickets}"
+        if luid != "" and luid is not None:
             response.DisplayParams += f" -luid {luid}"
         return response
 
