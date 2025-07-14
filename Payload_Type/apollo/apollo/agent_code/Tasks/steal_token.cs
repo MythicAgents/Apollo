@@ -93,7 +93,7 @@ namespace Tasks
                         var old = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
                         _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
                         var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        var stringOutput = $"Old Claims (Authenticated: {old.IsAuthenticated}, AuthType: ";
+                        var stringOutput = $"Old Claims (Authenticated: {old.IsAuthenticated}, ImpersonationLevel: {old.ImpersonationLevel}, AuthType: ";
                         try
                         {
                             stringOutput += $"{old.AuthenticationType}):\n";
@@ -106,7 +106,7 @@ namespace Tasks
                         {
                             stringOutput += item.ToString() + "\n";
                         }
-                        stringOutput += $"\nNew Claims (Authenticated: {cur.IsAuthenticated}, AuthType: ";
+                        stringOutput += $"\nNew Claims (Authenticated: {cur.IsAuthenticated}, ImpersonationLevel: {cur.ImpersonationLevel}, AuthType: ";
                         try
                         {
                             stringOutput += $"{cur.AuthenticationType}):\n";
@@ -115,7 +115,7 @@ namespace Tasks
                         {
                             stringOutput += $"AccessDenied):\n";
                         }
-                        foreach (var item in old.Claims)
+                        foreach (var item in cur.Claims)
                         {
                             stringOutput += item.ToString() + "\n";
                         }
