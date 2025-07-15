@@ -28,9 +28,15 @@ class LsArguments(TaskArguments):
         self.load_args_from_dictionary(dictionary_arguments)
         if "host" in dictionary_arguments:
             if "full_path" in dictionary_arguments:
-                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
+                if dictionary_arguments["full_path"].startswith("\\\\"):
+                    self.add_arg("host", "")
+                else:
+                    self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
             elif "path" in dictionary_arguments:
-                self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
+                if dictionary_arguments["path"].startswith("\\\\"):
+                    self.add_arg("host", "")
+                else:
+                    self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
             elif "file" in dictionary_arguments:
                 self.add_arg("path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
             else:
