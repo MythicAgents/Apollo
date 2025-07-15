@@ -228,7 +228,7 @@ namespace Tasks
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            if (proc != null && !proc.HasExited)
+            if (proc != null && proc.PID > 0 && !proc.HasExited)
             {
                 proc.Kill();
                 _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", true, "", new IMythicMessage[]

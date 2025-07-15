@@ -430,9 +430,13 @@ internal class KerberosHelpers
                 }
                 else
                 {
-                    if(!getSystemTickets && logonSession.ToString() != targetLuid)
+                    if (!getSystemTickets)
                     {
-                        continue;
+                        if((targetLuid == "" && logonSession.ToString() != currentLuid) || (targetLuid != "" && logonSession.ToString() != targetLuid))
+                        {
+                            continue;
+                        }
+
                     }
                 }
                 var sessionData = GetLogonSessionData(new(logonSession));

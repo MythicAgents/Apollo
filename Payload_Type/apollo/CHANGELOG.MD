@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.38] - 2025-07-15
+
+### Changed
+
+- Updated `socks` and `rpfwd` tasks to auto-issue `sleep 0` tasks when starting
+- Updated `socks` task to auto-issue `sleep 1` when stopping
+- Updated `socks` and `rpfwd` task display parameters
+- Updated `jobkill` display parameters to be more meaningful
+- Updated `jump_psexec` output to make sc output prettier
+- Updated `powerpick`, `execute_assembly`, and `execute_pe` to check for sacrificial process pid > 0 rather than exit
+  - this fixes a bug where access denied when spawning would lock when trying to kill a non-existent pid
+- Updated logic in high integrity to only list out ticket cache values for current logon if no luid specified
+- Updated ticket_cache_list to report back the current LUID even if there are no tickets available
+  - Updated the associated browser script to account for this
+  
 ## [v2.3.37] - 2025-07-14
 
 ### Changed

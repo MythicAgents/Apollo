@@ -50,7 +50,13 @@ public class ticket_cache_list : Tasking
                 currentTicket.CurrentLuid = currentLuid;
                 ticketList.Add(currentTicket);
             }
-            resp = CreateTaskResponse(_jsonSerializer.Serialize(ticketList), true);
+            if(ticketList.Count == 0)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse($"{currentLuid}\n", true));
+            } else
+            {
+                resp = CreateTaskResponse(_jsonSerializer.Serialize(ticketList), true);
+            }
         }
         catch (Exception e)
         {

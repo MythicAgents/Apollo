@@ -21,6 +21,10 @@ function(task, responses) {
             try {
                 data = JSON.parse(responses[i]);
             } catch (error) {
+                if(i === 0){
+                    currentLUID = responses[i];
+                    continue;
+                }
                 console.log(error);
                 const combined = responses.reduce((prev, cur) => {
                     return prev + cur;
@@ -62,28 +66,28 @@ function(task, responses) {
                 };
                 rows.push(row);
             }
-            rows.push({
-                action: {
-                    button: {
-                        name: "add",
-                        startIcon: "add",
-                        startIconColor: "success",
-                        type: "task",
-                        openDialog: true,
-                        ui_feature: "apollo:ticket_cache_add",
-                    }
-                },
-                client: {plaintext: ""},
-                service: {plaintext: ""},
-                luid: {plaintext: ""},
-                end: {plaintext: ""}
-            })
         }
+        rows.push({
+            action: {
+                button: {
+                    name: "add",
+                    startIcon: "add",
+                    startIconColor: "success",
+                    type: "task",
+                    openDialog: true,
+                    ui_feature: "apollo:ticket_cache_add",
+                }
+            },
+            client: {plaintext: ""},
+            service: {plaintext: ""},
+            luid: {plaintext: ""},
+            end: {plaintext: ""}
+        })
         return {
             "table": [{
                 "headers": headers,
                 "rows": rows,
-                "title": "Cached Kerberos Tickets" + (currentLUID !== "" ? ": current LUID: " + currentLUID : ""),
+                "title": "Cached Kerberos Tickets" + (currentLUID !== "" ? " - current LUID: " + currentLUID : ""),
             }]
         };
     }

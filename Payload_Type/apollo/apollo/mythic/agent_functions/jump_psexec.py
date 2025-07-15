@@ -137,10 +137,17 @@ async def mirror_up_output(task: PTTaskCompletionFunctionMessage):
     ))
     if response_search.Success:
         for r in response_search.Responses:
-            await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
-                TaskID=task.TaskData.Task.ID,
-                Response=r.Response.encode()
-            ))
+            try:
+                json_data = json.loads(r.Response)
+                await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                    TaskID=task.TaskData.Task.ID,
+                    Response=json.dumps(json_data, indent=2, sort_keys=True).encode()
+                ))
+            except:
+                await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                    TaskID=task.TaskData.Task.ID,
+                    Response=r.Response.encode()
+                ))
         await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
             TaskID=task.TaskData.Task.ID,
             Response="\n".encode()

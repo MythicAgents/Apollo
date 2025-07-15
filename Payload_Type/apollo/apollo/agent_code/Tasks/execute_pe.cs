@@ -265,7 +265,7 @@ namespace Tasks
 
             if (proc is Process procHandle)
             {
-                if (!procHandle.HasExited)
+                if (!procHandle.HasExited && procHandle.PID > 0)
                 {
                     procHandle.Kill();
                     resp.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];

@@ -271,7 +271,7 @@ namespace Tasks
                 resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
             }
 
-            if (proc != null && !proc.HasExited)
+            if (proc != null && proc.PID > 0 && !proc.HasExited)
             {
                 proc.Kill();
                 resp.Artifacts = [Artifact.ProcessKill((int)proc.PID)];
