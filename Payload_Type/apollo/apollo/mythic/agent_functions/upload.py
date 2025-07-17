@@ -33,14 +33,22 @@ class UploadArguments(TaskArguments):
     async def parse_dictionary(self, dictionary_arguments):
         self.load_args_from_dictionary(dictionary_arguments)
         if "host" in dictionary_arguments:
-            if "full_path" in dictionary_arguments:
-                self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
-            elif "path" in dictionary_arguments:
-                self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
-            elif "file" in dictionary_arguments:
-                self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
+            if 'remote_path' in dictionary_arguments:
+                if dictionary_arguments['remote_path'].startswith("\\\\") or ":\\" in dictionary_arguments['remote_path']:
+                    # remote_path includes UNC path or some full directory, just use it
+                    pass
+                else:
+                    new_path = dictionary_arguments["full_path"].rstrip("\\") + "\\" + dictionary_arguments["remote_path"]
+                    self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{new_path}')
             else:
-                logger.info("unknown dictionary args")
+                if "full_path" in dictionary_arguments:
+                    self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["full_path"]}')
+                elif "path" in dictionary_arguments:
+                    self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["path"]}')
+                elif "file" in dictionary_arguments:
+                    self.add_arg("remote_path", f'\\\\{dictionary_arguments["host"]}\\{dictionary_arguments["file"]}')
+                else:
+                    logger.info("unknown dictionary args")
 
     async def parse_arguments(self):
         if len(self.command_line) == 0:
