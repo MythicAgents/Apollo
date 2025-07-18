@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using ApolloInterop.Classes.Cryptography;
+using Newtonsoft.Json.Serialization;
 
 namespace Apollo.Management.Files
 {
@@ -37,16 +38,22 @@ namespace Apollo.Management.Files
             internal ChunkedMessageStore<MythicTaskStatus> MessageStore;
             internal byte[] Data;
             private CancellationToken _ct;
+            internal bool error;
             internal UploadMessageTracker(CancellationToken ct, bool initialState = false, ChunkedMessageStore<MythicTaskStatus> store = null, byte[] data = null)
             {
                 _ct = ct;
                 Complete = new AutoResetEvent(initialState);
                 MessageStore = store == null ? new ChunkedMessageStore<MythicTaskStatus>() : store;
                 Data = data;
+                error = false;
+            }
+            internal void MarkError()
+            {
+                error = true;
             }
         }
 
-        // Annoyingly, we need a separate struct as Download task responses don't have 
+        // Annoyingly, we need a separate struct as Download task responses don't have
         public class DownloadMessageTracker
         {
             public AutoResetEvent Complete = new AutoResetEvent(false);
@@ -100,7 +107,7 @@ namespace Apollo.Management.Files
 
         private ConcurrentDictionary<string, UploadMessageTracker> _uploadMessageStore = new ConcurrentDictionary<string, UploadMessageTracker>();
         private ConcurrentDictionary<string, DownloadMessageTracker> _downloadMessageStore = new ConcurrentDictionary<string, DownloadMessageTracker>();
-        
+
         public string[] GetPendingTransfers()
         {
             return _uploadMessageStore.Keys.Concat(_downloadMessageStore.Keys).ToArray();
@@ -190,7 +197,7 @@ namespace Apollo.Management.Files
             _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
             {
                 TaskID = taskID,
-                Status = "Fetching file...",
+                Status = $"Fetching File Chunk 1...",
                 Upload = new UploadMessage()
                 {
                     TaskID = taskID,
@@ -206,30 +213,38 @@ namespace Apollo.Management.Files
                 ct.WaitHandle
             });
             bool bRet = false;
-            if (_uploadMessageStore[uuid].Data != null)
+            if (_uploadMessageStore[uuid].Data != null && !_uploadMessageStore[uuid].error)
             {
                 fileBytes = _uploadMessageStore[uuid].Data;
                 bRet = true;
+                _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
+                {
+                    TaskID = taskID,
+                    Status = "Using file...",
+                });
             } else
             {
                 fileBytes = null;
                 bRet = false;
             }
             _uploadMessageStore.TryRemove(uuid, out UploadMessageTracker _);
-            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
-            {
-                TaskID = taskID,
-                Status = "Using file...",
-            });
+
             return bRet;
         }
 
         private void MessageStore_ChunkAdd(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
         {
             MythicTaskStatus msg = e.Chunks[0];
+            if(msg.StatusMessage != "success")
+            {
+                _uploadMessageStore[msg.ApolloTrackerUUID].MarkError();
+                _uploadMessageStore[msg.ApolloTrackerUUID].Complete.Set();
+                return;
+            }
             _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
             {
                 TaskID = msg.TaskID,
+                Status = $"Fetching File Chunk {msg.ChunkNumber + 1} / {msg.TotalChunks}",
                 Upload = new UploadMessage()
                 {
                     TaskID = msg.TaskID,
@@ -247,6 +262,7 @@ namespace Apollo.Management.Files
             var msg = new MythicTaskResponse()
                   {
                       TaskID = e.Chunks[0].TaskID,
+                      Status = $"Transferring chunk {tracker.ChunksSent + 1} / {e.Chunks[0].TotalChunks}",
                       Download = new DownloadMessage
                       {
                           ChunkNumber = tracker.ChunksSent + 1,
