@@ -10,6 +10,7 @@ from distutils.dir_util import copy_tree
 import shutil
 import os
 import asyncio
+import donut
 
 SCREENSHOT_INJECT = "/srv/ScreenshotInject.exe"
 
@@ -100,30 +101,21 @@ class ScreenshotInjectCommand(CommandBase):
             TaskID=taskData.Task.ID,
             UpdateStatus=f"generating stub shellcode"
         ))
-        donutPath = os.path.abspath(self.agent_code_path / "donut")
-        if not path.exists(donutPath):
-            raise Exception("Could not find {}".format(donutPath))
-        command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
-        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        
-        command = "{} -f 1 -p \"{}\" {}".format(donutPath, taskData.args.get_arg("pipe_name"), SCREENSHOT_INJECT)
-        # need to go through one more step to turn our exe into shellcode
-        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
-                                        stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
-        stdout, stderr = await proc.communicate()
-        if os.path.exists("/tmp/loader.bin"):
-            file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
-                TaskID=taskData.Task.ID,
-                FileContents=open("/tmp/loader.bin", 'rb').read(),
-                DeleteAfterFetch=True
-            ))
-            if file_resp.Success:
-                taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
-            else:
-                raise Exception("Failed to register screenshot assembly: " + file_resp.Error)
+        donutPic = donut.create(
+            file=SCREENSHOT_INJECT, params=taskData.args.get_arg("pipe_name")
+        )
+        file_resp = await SendMythicRPCFileCreate(
+            MythicRPCFileCreateMessage(
+                TaskID=taskData.Task.ID, FileContents=donutPic, DeleteAfterFetch=True
+            )
+        )
+        if file_resp.Success:
+            taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
-            raise Exception("Failed to find loader.bin")
+            raise Exception(
+                "Failed to register execute_assembly binary: " + file_resp.Error
+            )
+        response.DisplayParams = "-PID {}".format(taskData.args.get_arg("pid"))
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
