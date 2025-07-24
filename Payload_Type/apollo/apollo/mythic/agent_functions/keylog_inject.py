@@ -93,7 +93,7 @@ class KeylogInjectCommand(CommandBase):
             taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
             raise Exception(
-                "Failed to register execute_assembly binary: " + file_resp.Error
+                "Failed to register keylog_inject stub binary: " + file_resp.Error
             )
         response.DisplayParams = "-PID {}".format(taskData.args.get_arg("pid"))
         return response

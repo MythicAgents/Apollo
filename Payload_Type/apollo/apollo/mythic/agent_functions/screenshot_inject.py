@@ -76,7 +76,7 @@ class ScreenshotInjectCommand(CommandBase):
         outputPath = "{}/ScreenshotInject/bin/Release/ScreenshotInject.exe".format(agent_build_path.name)
             # shutil to copy payload files over
         copy_tree(str(self.agent_code_path), agent_build_path.name)
-        shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ScreenshotInject/ScreenshotInject.csproj -o {}/ScreenshotInject/ScreenshotInject.exe".format(agent_build_path.name, agent_build_path.name)
+        shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ScreenshotInject/ScreenshotInject.csproj -o {}/ScreenshotInject/bin/Release/".format(agent_build_path.name, agent_build_path.name)
         proc = await asyncio.create_subprocess_shell(shell_cmd, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
         stdout, stderr = await proc.communicate()
@@ -113,7 +113,7 @@ class ScreenshotInjectCommand(CommandBase):
             taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
             raise Exception(
-                "Failed to register execute_assembly binary: " + file_resp.Error
+                "Failed to register screenshot_inject stub binary: " + file_resp.Error
             )
         response.DisplayParams = "-PID {}".format(taskData.args.get_arg("pid"))
         return response

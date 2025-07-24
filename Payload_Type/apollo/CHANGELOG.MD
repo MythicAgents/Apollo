@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.43] - 2025-07-24
+
+### Changed
+
+- Updated reg_write_value to allow you to specify the type of data to write
+- Updated screenshot and screenshot_inject to not send extra file_ids to user output since PutFile does that automaically
+
 ## [v2.3.42] - 2025-07-24
 
 ### Changed

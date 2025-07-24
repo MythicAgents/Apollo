@@ -1,6 +1,15 @@
 from mythic_container.MythicCommandBase import *
 import json
 
+ValueTypeMap = {
+    "REG_SZ": 1,
+    "REG_EXPAND_SZ": 2,
+    "REG_BINARY": 3,
+    "REG_DWORD": 4,
+    "REG_MULTI_SZ": 7,
+    "REG_QWORD": 11,
+    "UNKNOWN": 0
+}
 
 class RegWriteValueArguments(TaskArguments):
 
@@ -45,7 +54,7 @@ class RegWriteValueArguments(TaskArguments):
                 default_value='',
                 parameter_group_info=[
                     ParameterGroupInfo(
-                        required=False,
+                        required=True,
                         ui_position=3
                     ),
                 ]),
@@ -62,6 +71,21 @@ class RegWriteValueArguments(TaskArguments):
                         ui_position=4
                     ),
                 ]),
+            CommandParameter(
+                name="value_type",
+                cli_name="ValueType",
+                display_name="Value Type",
+                type=ParameterType.ChooseOne,
+                description="The Type of value to write into the registry",
+                default_value="REG_SZ",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=5
+                    ),
+                ],
+                choices=["REG_SZ", "REG_EXPAND_SZ", "REG_BINARY", "REG_DWORD", "REG_MULTI_SZ", "REG_QWORD", "UNKNOWN"]
+            ),
         ]
 
     def split_commandline(self):
@@ -100,6 +124,7 @@ class RegWriteValueArguments(TaskArguments):
         "HKEY_CURRENT_CONFIG": "HKCC"
     }
 
+
     async def parse_dictionary(self, dictionary_arguments):
         self.load_args_from_dictionary(dictionary=dictionary_arguments)
         hive = self.get_arg("hive")
@@ -134,6 +159,7 @@ class RegWriteValueArguments(TaskArguments):
         self.add_arg("value_value", cmds[2])
 
 
+
 class RegWriteValueBase(CommandBase):
     cmd = "reg_write_value"
     needs_admin = False
@@ -149,10 +175,17 @@ class RegWriteValueBase(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}'".format(taskData.args.get_arg("hive"),
+        valueType = taskData.args.get_arg("value_type")
+        if valueType in ValueTypeMap:
+            taskData.args.add_arg("value_type", type=ParameterType.Number, value=ValueTypeMap[valueType])
+        else:
+            raise Exception("unknown value type supplied")
+
+        response.DisplayParams = "-Hive {} -Key {} -Name '{}' -Value '{}' -ValueType".format(taskData.args.get_arg("hive"),
                                                                                 taskData.args.get_arg("key"),
                                                                                 taskData.args.get_arg("value_name"),
-                                                                                taskData.args.get_arg("value_value"))
+                                                                                taskData.args.get_arg("value_value"),
+                                                                                 valueType)
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
