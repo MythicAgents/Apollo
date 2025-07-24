@@ -40,7 +40,15 @@ namespace Tasks
         {
             using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey, true))
             {
-                regKey.SetValue(valueName, valueValue, RegType);
+                if(RegType == RegistryValueKind.MultiString)
+                {
+                    var stringPieces = valueValue.ToString().Split('\n');
+                    regKey.SetValue(valueName, stringPieces, RegType);
+                } else
+                {
+                    regKey.SetValue(valueName, valueValue, RegType);
+                }
+
                 return true;
             }
         }
@@ -51,7 +59,16 @@ namespace Tasks
             MythicTaskResponse resp;
             RegWriteParameters parameters = _jsonSerializer.Deserialize<RegWriteParameters>(_data.Parameters);
             bool bRet;
-            bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue, (RegistryValueKind)parameters.ValueType);
+
+            if (int.TryParse(parameters.ValueValue, out int dword))
+            {
+                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword, RegistryValueKind.DWord);
+            }
+            else
+            {
+                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue, (RegistryValueKind)parameters.ValueType);
+            }
+
             if (bRet)
             {
                 resp = CreateTaskResponse(
