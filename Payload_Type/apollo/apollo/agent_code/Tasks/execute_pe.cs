@@ -272,7 +272,7 @@ namespace Tasks
                     procHandle.Kill();
                     resp.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];
                 }
-
+                /*
                 if (procHandle.ExitCode != 0)
                 {
                     if ((procHandle.ExitCode & 0xc0000000) != 0
@@ -290,6 +290,8 @@ namespace Tasks
                 {
                     resp.UserOutput += $"\n[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x}";
                 }
+                */
+                resp.UserOutput += $"\n[*] Process exited";
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);

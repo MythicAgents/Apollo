@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.46] - 2025-08-19
+
+### Changed
+
+- Updated inline_assembly to check thread execution with timeouts to be able to detect kill jobs for threads better
+- Updated execute_pe to just report back process exit instead of misleading error codes
+
 ## [v2.3.45] - 2025-08-11
 
 ### Changed

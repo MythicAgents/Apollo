@@ -318,7 +318,15 @@ namespace Tasks
                         isolationDomain.DoCallBack(sleeve);
                     });
                     _assemblyThread.Start();
-                    _assemblyThread.Join();
+                    while (!_completed && !_cancellationToken.IsCancellationRequested)
+                    {
+                        // periodically check this so we can break out if needed
+                        _assemblyThread.Join(1000);
+                        if(_assemblyThread.ThreadState == ThreadState.Stopped)
+                        {
+                            break;
+                        }
+                    }
                     bRet = true;
                 }
                 catch (Exception ex)
