@@ -44,6 +44,11 @@ class ticket_store_addArguments(TaskArguments):
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
 
+def get_ticket_time(credential, key) -> str:
+    try:
+        return datetime.fromtimestamp(credential.__getitem__('time')[key]).isoformat()
+    except:
+        return ""
 
 class ticket_store_addCommand(CommandBase):
     cmd = "ticket_store_add"
@@ -75,9 +80,9 @@ class ticket_store_addCommand(CommandBase):
         #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()
         #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()
         formattedComment = f"Service: {ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8')}\n"
-        formattedComment += f"Start: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()}\n"
-        formattedComment += f"End: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()}\n"
-        formattedComment += f"Renew: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()}\n"
+        formattedComment += f"Start: {get_ticket_time(ccache.credentials[0], 'starttime')}\n"
+        formattedComment += f"End: {get_ticket_time(ccache.credentials[0],'endtime')}\n"
+        formattedComment += f"Renew: {get_ticket_time(ccache.credentials[0],'renew_till')}\n"
         if current_group_name == "Add New Ticket":
             resp = await SendMythicRPCCredentialCreate(MythicRPCCredentialCreateMessage(
                 TaskID=taskData.Task.ID,
