@@ -50,6 +50,12 @@ def get_ticket_time(credential, key) -> str:
     except:
         return ""
 
+def get_ticket_time_int(credential, key) -> int:
+    try:
+        return credential.__getitem__('time')[key]
+    except:
+        return 0
+
 class ticket_store_addCommand(CommandBase):
     cmd = "ticket_store_add"
     needs_admin = False
@@ -120,15 +126,15 @@ class ticket_store_addCommand(CommandBase):
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("StartTime",
                               type=ParameterType.Number,
-                              value=ccache.credentials[0].__getitem__('time')['starttime'],
+                              value=get_ticket_time_int(ccache.credentials[0],'starttime'),
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("EndTime",
                               type=ParameterType.Number,
-                              value=ccache.credentials[0].__getitem__('time')['endtime'],
+                              value=get_ticket_time_int(ccache.credentials[0],'endtime'),
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("RenewTime",
                               type=ParameterType.Number,
-                              value=ccache.credentials[0].__getitem__('time')['renew_till'],
+                              value=get_ticket_time_int(ccache.credentials[0],'renew_till'),
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("TicketFlags",
                               type=ParameterType.Number,
