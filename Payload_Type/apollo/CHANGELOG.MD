@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.49] - 2025-09-10
+
+### Changed
+
+- Updated apollo's `ls` functionality to check if a path ends in `:` and update it to `:\` instead
+  - this fixes an issue with windows resolving `C:` as the current working directory compared to `C:\`
+  
 ## [v2.3.48] - 2025-08-25
 
 ### Changed
