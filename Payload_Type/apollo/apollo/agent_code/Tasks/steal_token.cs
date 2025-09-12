@@ -121,8 +121,9 @@ namespace Tasks
                         {
                             stringOutput += item.ToString() + "\n";
                         }
+                        var integrityMessage = newIntegrity != oldIntegrity ? $" ( {newIntegrity} )" : "";
                         resp = CreateTaskResponse($"Successfully impersonated {cur.Name}\n{stringOutput}", true, "", new IMythicMessage[] {
-                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}", IntegrityLevel = ((int)newIntegrity) }
+                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}{integrityMessage}" , IntegrityLevel = ((int)newIntegrity) }
                         });
                     }
                 }
