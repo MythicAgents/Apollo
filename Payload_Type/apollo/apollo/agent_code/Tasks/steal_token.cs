@@ -91,9 +91,11 @@ namespace Tasks
                     else
                     {
                         var old = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                        var oldIntegrity = _agent.GetIdentityManager().GetIntegrityLevel();
                         _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
                         var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        var stringOutput = $"Old Claims (Authenticated: {old.IsAuthenticated}, ImpersonationLevel: {old.ImpersonationLevel}, AuthType: ";
+                        var newIntegrity = _agent.GetIdentityManager().GetIntegrityLevel();
+                        var stringOutput = $"Old Claims (IntegrityLevel: {oldIntegrity}, Authenticated: {old.IsAuthenticated}, ImpersonationLevel: {old.ImpersonationLevel}, AuthType: ";
                         try
                         {
                             stringOutput += $"{old.AuthenticationType}):\n";
@@ -106,7 +108,7 @@ namespace Tasks
                         {
                             stringOutput += item.ToString() + "\n";
                         }
-                        stringOutput += $"\nNew Claims (Authenticated: {cur.IsAuthenticated}, ImpersonationLevel: {cur.ImpersonationLevel}, AuthType: ";
+                        stringOutput += $"\nNew Claims (IntegrityLevel: {newIntegrity}, Authenticated: {cur.IsAuthenticated}, ImpersonationLevel: {cur.ImpersonationLevel}, AuthType: ";
                         try
                         {
                             stringOutput += $"{cur.AuthenticationType}):\n";
@@ -120,7 +122,7 @@ namespace Tasks
                             stringOutput += item.ToString() + "\n";
                         }
                         resp = CreateTaskResponse($"Successfully impersonated {cur.Name}\n{stringOutput}", true, "", new IMythicMessage[] {
-                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}" }
+                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}", IntegrityLevel = ((int)newIntegrity) }
                         });
                     }
                 }

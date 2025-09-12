@@ -54,7 +54,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "update_deleted")]
             public bool UpdateDeleted;
         }
-//
+        //
         [DataContract]
         public struct PeerInformation
         {
@@ -91,8 +91,8 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "uuid")] public string UUID;
             [DataMember(Name = "__typename")] public string PyType;
         }
-        
-        
+
+
         [DataContract]
         public struct PyC2Profile
         {
@@ -124,8 +124,8 @@ namespace ApolloInterop.Structs
 
             [DataMember(Name = "__typename")] public string PyType;
         }
-        
-        
+
+
         [DataContract]
         public struct LinkInformation
         {
@@ -291,7 +291,7 @@ namespace ApolloInterop.Structs
             public bool Hidden;
             [DataMember(Name = "is_file")]
             public bool IsFile;
-            
+
             public FileInformation(FileInfo finfo, ACE[] perms = null)
             {
                 DateTime unixEpoc = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -306,7 +306,7 @@ namespace ApolloInterop.Structs
                 {
                     ExtendedAttributes = finfo.Attributes.ToString();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ExtendedAttributes = "";
                 }
@@ -341,7 +341,7 @@ namespace ApolloInterop.Structs
                 {
                     ExtendedAttributes = finfo.Attributes.ToString();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ExtendedAttributes = "";
                 }
@@ -353,7 +353,8 @@ namespace ApolloInterop.Structs
                     Owner = File.GetAccessControl(finfo.FullName).
                                         GetOwner(typeof(System.Security.Principal.NTAccount)).ToString();
 
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Owner = "";
                 }
@@ -370,7 +371,7 @@ namespace ApolloInterop.Structs
             {
                 if (this.Permissions.Length != obj.Permissions.Length)
                     return false;
-                for(int i = 0; i < this.Permissions.Length; i++)
+                for (int i = 0; i < this.Permissions.Length; i++)
                 {
                     if (!this.Permissions[i].Equals(obj.Permissions[i]))
                         return false;
@@ -467,7 +468,7 @@ namespace ApolloInterop.Structs
                 Success = success;
                 Files = files;
             }
-            
+
             public FileBrowser(FileInfo finfo, bool success = true, FileInformation[] files = null)
             {
                 FileInformation finfo2 = new FileInformation(finfo);
@@ -505,7 +506,7 @@ namespace ApolloInterop.Structs
                         return false;
                     }
                 }
-                for(int i = 0; i <  this.Permissions.Length; i++)
+                for (int i = 0; i < this.Permissions.Length; i++)
                 {
                     if (!this.Permissions[i].Equals(obj.Permissions[i]))
                         return false;
@@ -619,7 +620,7 @@ namespace ApolloInterop.Structs
                     ArtifactDetails = $"Deleted {path}"
                 };
             }
-            
+
             public static Artifact FileCreate(string path)
             {
                 return new Artifact
@@ -703,7 +704,7 @@ namespace ApolloInterop.Structs
                     ArtifactDetails = subkey.StartsWith("\\") ? $"{hive}:{subkey} {name} {val}" : $"{hive}:\\{subkey} {name} {val}"
                 };
             }
-            
+
             public static Artifact PrivilegeEscalation(string privilege)
             {
                 return new Artifact
@@ -712,7 +713,7 @@ namespace ApolloInterop.Structs
                     ArtifactDetails = $"Escalated to {privilege}"
                 };
             }
-            
+
             public static Artifact WindowsAPIInvoke(string api)
             {
                 return new Artifact
@@ -805,7 +806,7 @@ namespace ApolloInterop.Structs
                 return MessageType.TaskResponse;
             }
             [DataMember(Name = "user_output")]
-            public object UserOutput;
+            public object? UserOutput;
             [DataMember(Name = "completed")]
             public bool? Completed;
             [DataMember(Name = "task_id")]
@@ -813,33 +814,33 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "status")]
             public string? Status;
             [DataMember(Name = "keylogs")]
-            public KeylogInformation[] Keylogs;
+            public KeylogInformation[]? Keylogs;
             [DataMember(Name = "edges")]
-            public EdgeNode[] Edges;
+            public EdgeNode[]? Edges;
             [DataMember(Name = "file_browser")]
             public FileBrowser? FileBrowser;
             [DataMember(Name = "processes")]
-            public ProcessInformation[] Processes;
+            public ProcessInformation[]? Processes;
             [DataMember(Name = "upload")]
             public UploadMessage? Upload;
             [DataMember(Name = "download")]
             public DownloadMessage? Download;
             [DataMember(Name = "message_id")]
-            public string MessageID;
+            public string? MessageID;
             [DataMember(Name = "credentials")]
-            public Credential[] Credentials;
+            public Credential[]? Credentials;
             [DataMember(Name = "removed_files")]
-            public RemovedFileInformation[] RemovedFiles;
+            public RemovedFileInformation[]? RemovedFiles;
             [DataMember(Name = "artifacts")]
-            public Artifact[] Artifacts;
+            public Artifact[]? Artifacts;
             [DataMember(Name = "commands")]
-            public CommandInformation[] Commands;
+            public CommandInformation[]? Commands;
             [DataMember(Name = "process_response")]
             public ProcessResponse? ProcessResponse;
             [DataMember(Name = "apollo_tracker_uuid")]
-            public string ApolloTrackerUUID;
+            public string? ApolloTrackerUUID;
             [DataMember(Name = "callback")]
-            public CallbackUpdate Callback;
+            public CallbackUpdate? Callback;
 
             public override bool Equals(object obj)
             {
@@ -1093,10 +1094,12 @@ namespace ApolloInterop.Structs
             {
                 return MessageType.CallbackUpdate;
             }
-            [DataMember(Name = "cwd")]
-            public string Cwd;
-            [DataMember(Name = "impersonation_context")]
-            public string ImpersonationContext;
+            [DataMember(Name = "cwd", EmitDefaultValue = false)]
+            public string? Cwd;
+            [DataMember(Name = "impersonation_context", EmitDefaultValue = false)]
+            public string? ImpersonationContext;
+            [DataMember(Name = "integrity_level", EmitDefaultValue = false)]
+            public int? IntegrityLevel;
         }
 
         [DataContract]

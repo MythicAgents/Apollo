@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.51] - 2025-09-12
+
+## Changed
+
+- Updated steal_token to report back the integrity level of the old and new token
+- Updated steal_token to adjust the callback's integrity level 
+- Updated rev2self to adjust the callback's integrity level
+
 ## [v2.3.50] - 2025-09-12
 
 ### Changed
