@@ -24,7 +24,7 @@ class WmiExecuteArguments(TaskArguments):
                 ]),
             CommandParameter(
                 name="host",
-                cli_name="Host",
+                cli_name="host",
                 display_name="Host",
                 type=ParameterType.String,
                 description="Computer to execute the command on. If empty, the current computer.",
@@ -84,7 +84,7 @@ class WmiExecuteArguments(TaskArguments):
 class wmiexecuteCommand(CommandBase):
     cmd = "wmiexecute"
     needs_admin = False
-    help_cmd = "wmiexecute [command] [host] [username] [password] [domain]"
+    help_cmd = "wmiexecute -command [command] -host [host]"
     description = "Use WMI to execute a command on the local or specified remote system, can also be given optional credentials to impersonate a different user."
     version = 2
     author = "@drago-qcc"
@@ -96,6 +96,12 @@ class wmiexecuteCommand(CommandBase):
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse( TaskID=taskData.Task.ID,Success=True)
+        display_params = f"-command {taskData.args.get_arg('command')}"
+        if taskData.args.get_arg('host') != "" and taskData.args.get_arg('host') is not None:
+            display_params += f" -host {taskData.args.get_arg('host')}"
+        if taskData.args.get_arg("username") != "" and taskData.args.get_arg("username") is not None:
+            display_params += f" -username {taskData.args.get_arg('username')} -domain {taskData.args.get_arg('domain')} -password {taskData.args.get_arg('password')}"
+        response.DisplayParams = display_params
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:

@@ -4,6 +4,166 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.3.51] - 2025-09-12
+
+## Changed
+
+- Updated steal_token to report back the integrity level of the old and new token
+- Updated steal_token to adjust the callback's integrity level 
+- Updated rev2self to adjust the callback's integrity level
+
+## [v2.3.50] - 2025-09-12
+
+### Changed
+
+- Fixed an issue with spawning processes after doing a `steal_token`
+  - it was using the primary token instead of the impersonated identity
+  
+## [v2.3.49] - 2025-09-10
+
+### Changed
+
+- Updated apollo's `ls` functionality to check if a path ends in `:` and update it to `:\` instead
+  - this fixes an issue with windows resolving `C:` as the current working directory compared to `C:\`
+  
+## [v2.3.48] - 2025-08-25
+
+### Changed
+
+- Fixed parsing for kerberos tickets in ticket_store_add 
+
+## [v2.3.47] - 2025-08-21
+
+### Changed
+
+- Updated the parsing for kerberos tickets via impacket to handle missing time values in tickets
+
+## [v2.3.46] - 2025-08-19
+
+### Changed
+
+- Updated inline_assembly to check thread execution with timeouts to be able to detect kill jobs for threads better
+- Updated execute_pe to just report back process exit instead of misleading error codes
+
+## [v2.3.45] - 2025-08-11
+
+### Changed
+
+- Fixed a bug in Apollo's P2P code where queued messages could pile up and not get sent
+
+## [v2.3.44] - 2025-07-24
+
+### Changed
+
+- Updated reg_write_value to split input on new lines for multiline input types
+
+## [v2.3.43] - 2025-07-24
+
+### Changed
+
+- Updated reg_write_value to allow you to specify the type of data to write
+- Updated screenshot and screenshot_inject to not send extra file_ids to user output since PutFile does that automaically
+
+## [v2.3.42] - 2025-07-24
+
+### Changed
+
+- Updated the screenshot_inject processing to use donut PyPi package
+
+## [v2.3.41] - 2025-07-18
+
+### Changed
+
+- Updated the file upload messages to show chunk status and bail out on errors
+- Updated the status for execute_coff and execute_assembly to be more informative
+
+## [v2.3.40] - 2025-07-17
+
+### Changed
+
+- Fixed an issue with upload via file browser not respecting pathing
+
+## [v2.3.39] - 2025-07-15
+
+### Changed
+
+- Fixed a bug with ls-ing UNC paths via the file browser for alternative hosts
+
+## [v2.3.38] - 2025-07-15
+
+### Changed
+
+- Updated `socks` and `rpfwd` tasks to auto-issue `sleep 0` tasks when starting
+- Updated `socks` task to auto-issue `sleep 1` when stopping
+- Updated `socks` and `rpfwd` task display parameters
+- Updated `jobkill` display parameters to be more meaningful
+- Updated `jump_psexec` output to make sc output prettier
+- Updated `powerpick`, `execute_assembly`, and `execute_pe` to check for sacrificial process pid > 0 rather than exit
+  - this fixes a bug where access denied when spawning would lock when trying to kill a non-existent pid
+- Updated logic in high integrity to only list out ticket cache values for current logon if no luid specified
+- Updated ticket_cache_list to report back the current LUID even if there are no tickets available
+  - Updated the associated browser script to account for this
+  
+## [v2.3.37] - 2025-07-14
+
+### Changed
+
+- Fixed a small bug in make_token output that was repeating the old token claims instead of the new ones
+- Fixed the same bug in steal_token output
+
+## [v2.3.36] - 2025-07-11
+
+### Changed
+
+- Updated wmiexecute to try two different ways of impersonating user context for remote execution
+- Added CoInitializeSecurity call into apollo main program
+
+## [v2.3.35] - 2025-07-11
+
+### Changed
+
+- Updated display params for wmiexecute
+- Updated display params for ticket_cache_list
+
+## [v2.3.34] - 2025-07-10
+
+### Changed
+
+- Fixing keylog_inject
+  - adding keylog_inject browser script to go with it for basic conversion
+  
+## [v2.3.33] - 2025-07-10
+
+### Changed
+
+- Added a new interface function to update the Agent UUID
+  - Used this interface in HTTP and Websocket profiles
+  - Updated `unlink` command to leverage this for properly reflecting unlinked agents
+- Fixed an issue in P2P code that wouldn't update P2P UUID after negotiating
+
+## [v2.3.32] - 2025-07-08
+
+### Changed
+
+- Updated the help for the ticket commands
+- Updated the error message for ticket_cache_extract
+- Updated the completion function for ticket_cache_extract
+
+## [v2.3.31] - 2025-07-07
+
+### Changed
+
+- Updated the processing for ticket_cache_list to better account for high/medium context
+- Updated wmiexecute error code to be in hex not int
+- Updated WebSocketClient code to reconnect on disconnect and added a few more checks for Proxy configs
+
+## [v2.3.30] - 2025-07-03
+
+### Changed
+
+- Updated execute_coff, execute_assembly, inline_assembly, execute_pe, inline_assembly, and assembly_inject
+  - these no longer require `register_*` commands and will automatically fetch the file if needed first
+
 ## [v2.3.29] - 2025-06-23
 
 ### Changed

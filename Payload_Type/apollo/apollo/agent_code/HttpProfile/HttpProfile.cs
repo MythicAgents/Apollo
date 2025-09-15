@@ -202,6 +202,7 @@ namespace HttpTransport
                     byte[] tmpKey = this.rsa.RSA.Decrypt(Convert.FromBase64String(respHandshake.SessionKey), true);
                     ((ICryptographySerializer)Serializer).UpdateKey(Convert.ToBase64String(tmpKey));
                     ((ICryptographySerializer)Serializer).UpdateUUID(respHandshake.UUID);
+                    Agent.SetUUID(respHandshake.UUID);
                     return true;
                 }))
                 {
@@ -215,6 +216,7 @@ namespace HttpTransport
                 if (!_uuidNegotiated)
                 {
                     ((ICryptographySerializer)Serializer).UpdateUUID(mResp.ID);
+                    Agent.SetUUID(mResp.ID);
                     _uuidNegotiated = true;
                 }
                 return onResp(mResp);

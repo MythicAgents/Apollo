@@ -37,6 +37,7 @@ class JobkillCommand(CommandBase):
         ))
         if killedTaskResp.Success:
             if len(killedTaskResp.Tasks) > 0:
+                response.DisplayParams = f"{killedTaskResp.Tasks[0].CommandName} {killedTaskResp.Tasks[0].DisplayParams}"
                 if killedTaskResp.Tasks[0].CommandName == "rpfwd":
                     try:
                         params = json.loads(killedTaskResp.Tasks[0].Params)

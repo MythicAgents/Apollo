@@ -550,7 +550,7 @@ namespace Process
             }
             else
             {
-                return StartWithCredentials(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
+                return StartWithCredentials(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
             }
             if (!bRet)
                 throw new Win32Exception(Marshal.GetLastWin32Error());

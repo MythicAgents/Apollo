@@ -497,7 +497,7 @@ function(task, responses){
                             {
                                 name: "Access Control Entries",
                                 type: "table",
-                                title: "Viewing Acess Control Lists for " + entry["name"],
+                                title: "Viewing Access Control Lists for " + entry["name"],
                                 leftColumnTitle: "acls",
                                 rightColumnTitle: "Values",
                                 startIcon: "list",
@@ -511,14 +511,17 @@ function(task, responses){
                                         {
                                             plaintext: "type",
                                             type: "string",
+                                            width: 100,
                                         },
                                         {
                                             plaintext: "rights",
                                             type: "string",
+                                            fillWidth: true,
                                         },
                                         {
                                             plaintext: "inherited",
                                             type: "string",
+                                            width: 150,
                                         },
                                     ],
                                     rows: entry["permissions"]?.map((permValue) => ({

@@ -68,8 +68,7 @@ namespace ApolloInterop.Classes.P2P
         public virtual void ProcessMessage(DelegateMessage message)
         {
             if (!string.IsNullOrEmpty(message.MythicUUID) &&
-                message.MythicUUID != _uuid &&
-                string.IsNullOrEmpty(_mythicUUID))
+                message.MythicUUID != _uuid)
             {
                 _mythicUUID = message.MythicUUID;
                 OnUUIDNegotiated(this, new UUIDEventArgs(_mythicUUID));

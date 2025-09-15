@@ -55,7 +55,7 @@ class ticket_cache_purgeArguments(TaskArguments):
         if self.command_line[0] != "{":
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
-        if self.get_arg("all") and self.get_arg("serviceName") == "":
+        if not self.get_arg("all") and self.get_arg("serviceName") == "":
             raise Exception("Need serviceName when specifying to not purge all tickets")
         pass
 
@@ -63,7 +63,7 @@ class ticket_cache_purgeArguments(TaskArguments):
 class ticket_cache_purgeCommand(CommandBase):
     cmd = "ticket_cache_purge"
     needs_admin = False
-    help_cmd = "ticket_cache_purge -serviceName=krbtgt/domain.com"
+    help_cmd = "ticket_cache_purge -serviceName krbtgt/domain.com"
     description = "Remove the specified ticket from the system. This modifies your current logon session tickets, so be careful if purging all."
     version = 2
     author = "@drago-qcc"

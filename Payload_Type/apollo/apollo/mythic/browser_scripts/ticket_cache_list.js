@@ -21,6 +21,10 @@ function(task, responses) {
             try {
                 data = JSON.parse(responses[i]);
             } catch (error) {
+                if(i === 0){
+                    currentLUID = responses[i];
+                    continue;
+                }
                 console.log(error);
                 const combined = responses.reduce((prev, cur) => {
                     return prev + cur;
@@ -58,32 +62,32 @@ function(task, responses) {
                     "service": { "plaintext": jinfo["service_name"] + "@" + jinfo["service_realm"], "cellStyle": {}, copyIcon: true },
                     "luid": { "plaintext": jinfo["luid"], "cellStyle": {} },
                     "end": { "plaintext": jinfo["end_time"], "cellStyle": {} },
-                    "rowStyle": {backgroundColor: jinfo["luid"] === jinfo["current_luid"] ? "#7fce70": ""}
+                    "rowStyle": {backgroundColor: jinfo["luid"] === jinfo["current_luid"] ? "#85b089": ""}
                 };
                 rows.push(row);
             }
-            rows.push({
-                action: {
-                    button: {
-                        name: "add",
-                        startIcon: "add",
-                        startIconColor: "success",
-                        type: "task",
-                        openDialog: true,
-                        ui_feature: "apollo:ticket_cache_add",
-                    }
-                },
-                client: {plaintext: ""},
-                service: {plaintext: ""},
-                luid: {plaintext: ""},
-                end: {plaintext: ""}
-            })
         }
+        rows.push({
+            action: {
+                button: {
+                    name: "add",
+                    startIcon: "add",
+                    startIconColor: "success",
+                    type: "task",
+                    openDialog: true,
+                    ui_feature: "apollo:ticket_cache_add",
+                }
+            },
+            client: {plaintext: ""},
+            service: {plaintext: ""},
+            luid: {plaintext: ""},
+            end: {plaintext: ""}
+        })
         return {
             "table": [{
                 "headers": headers,
                 "rows": rows,
-                "title": "Cached Kerberos Tickets" + (currentLUID !== "" ? ": current LUID: " + currentLUID : ""),
+                "title": "Cached Kerberos Tickets" + (currentLUID !== "" ? " - current LUID: " + currentLUID : ""),
             }]
         };
     }

@@ -23,6 +23,9 @@ namespace ApolloInterop.Interfaces
         // Return the current UUID of the agent.
         string GetUUID();
 
+        // Set a new UUID of the agent.
+        void SetUUID(string newUUID);
+
         // Lock standard handles of the agent.
         void AcquireOutputLock();
 

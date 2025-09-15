@@ -44,11 +44,22 @@ class ticket_store_addArguments(TaskArguments):
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
 
+def get_ticket_time(credential, key) -> str:
+    try:
+        return datetime.fromtimestamp(credential.__getitem__('time')[key]).isoformat()
+    except:
+        return ""
+
+def get_ticket_time_int(credential, key) -> int:
+    try:
+        return credential.__getitem__('time')[key]
+    except:
+        return 0
 
 class ticket_store_addCommand(CommandBase):
     cmd = "ticket_store_add"
     needs_admin = False
-    help_cmd = "ticket_store_add [b64ticket]"
+    help_cmd = "ticket_store_add -b64ticket [b64ticket]"
     description = "Add a kerberos ticket to the agents internal ticket store. Tickets are injected into sacrificial processes when you're impersonating a token (make_token / steal_token). This is because you have a new logon session to put the tickets into without overriding your existing tickets. For safety, do a make_token with junk creds first."
     version = 2
     author = "@drago-qcc"
@@ -75,9 +86,9 @@ class ticket_store_addCommand(CommandBase):
         #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()
         #datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()
         formattedComment = f"Service: {ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8')}\n"
-        formattedComment += f"Start: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()}\n"
-        formattedComment += f"End: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()}\n"
-        formattedComment += f"Renew: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()}\n"
+        formattedComment += f"Start: {get_ticket_time(ccache.credentials[0], 'starttime')}\n"
+        formattedComment += f"End: {get_ticket_time(ccache.credentials[0],'endtime')}\n"
+        formattedComment += f"Renew: {get_ticket_time(ccache.credentials[0],'renew_till')}\n"
         if current_group_name == "Add New Ticket":
             resp = await SendMythicRPCCredentialCreate(MythicRPCCredentialCreateMessage(
                 TaskID=taskData.Task.ID,
@@ -115,15 +126,15 @@ class ticket_store_addCommand(CommandBase):
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("StartTime",
                               type=ParameterType.Number,
-                              value=ccache.credentials[0].__getitem__('time')['starttime'],
+                              value=get_ticket_time_int(ccache.credentials[0],'starttime'),
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("EndTime",
                               type=ParameterType.Number,
-                              value=ccache.credentials[0].__getitem__('time')['endtime'],
+                              value=get_ticket_time_int(ccache.credentials[0],'endtime'),
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("RenewTime",
                               type=ParameterType.Number,
-                              value=ccache.credentials[0].__getitem__('time')['renew_till'],
+                              value=get_ticket_time_int(ccache.credentials[0],'renew_till'),
                               parameter_group_info=[ParameterGroupInfo(group_name=current_group_name)])
         taskData.args.add_arg("TicketFlags",
                               type=ParameterType.Number,

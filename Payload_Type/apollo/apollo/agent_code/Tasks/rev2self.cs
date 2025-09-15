@@ -27,7 +27,7 @@ namespace Tasks
             _agent.GetTaskManager().AddTaskResponseToQueue(
                 CreateTaskResponse(
                     $"Reverted identity to {current.Name}", true, "", new IMythicMessage[] {
-                            new CallbackUpdate{  ImpersonationContext = "" }
+                            new CallbackUpdate{  ImpersonationContext = "", IntegrityLevel= ((int)_agent.GetIdentityManager().GetIntegrityLevel()) }
                         }));
         }
 

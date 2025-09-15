@@ -21,7 +21,10 @@ namespace ApolloInterop.Utils
         {
             bool result = false;
             exactPath = null;
-
+            if (path.EndsWith(":"))
+            {
+                path = path + "\\";
+            }
             // DirectoryInfo accepts either a file path or a directory path, and most of its properties work for either.
             // However, its Exists property only works for a directory path.
             DirectoryInfo directory = new DirectoryInfo(path);

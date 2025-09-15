@@ -86,6 +86,9 @@ class SocksCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
+        response.DisplayParams = f"-Action {taskData.args.get_arg('action')} -Port {taskData.args.get_arg('port')}"
+        if taskData.args.get_arg('username') != "" and taskData.args.get_arg('username') is not None:
+            response.DisplayParams += f" -Username {taskData.args.get_arg('username')} -Password {taskData.args.get_arg('password')}"
         if taskData.args.get_arg("action") == "start":
             resp = await SendMythicRPCProxyStartCommand(MythicRPCProxyStartMessage(
                 TaskID=taskData.Task.ID,
@@ -94,7 +97,6 @@ class SocksCommand(CommandBase):
                 Username=taskData.args.get_arg("username"),
                 Password=taskData.args.get_arg("password")
             ))
-
             if not resp.Success:
                 response.TaskStatus = MythicStatus.Error
                 response.Stderr = resp.Error
@@ -103,9 +105,20 @@ class SocksCommand(CommandBase):
                     Response=resp.Error.encode()
                 ))
             else:
-                response.DisplayParams = "Started SOCKS5 server on port {}".format(taskData.args.get_arg("port"))
                 response.TaskStatus = MythicStatus.Success
                 response.Completed = True
+                await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                    TaskID=taskData.Task.ID,
+                    Response=f"Started SOCKS5 server on port {taskData.args.get_arg('port')}\nUpdating Sleep to 0".encode()
+                ))
+                await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                    TaskID=taskData.Task.ID,
+                    CommandName="sleep",
+                    Params=json.dumps({
+                        "interval": 0,
+                    })
+                ))
+
         else:
             resp = await SendMythicRPCProxyStopCommand(MythicRPCProxyStopMessage(
                 TaskID=taskData.Task.ID,
@@ -123,9 +136,19 @@ class SocksCommand(CommandBase):
                     Response=resp.Error.encode()
                 ))
             else:
-                response.DisplayParams = "Stopped SOCKS5 server on port {}".format(taskData.args.get_arg("port"))
                 response.TaskStatus = MythicStatus.Success
                 response.Completed = True
+                await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+                    TaskID=taskData.Task.ID,
+                    Response=f"Stopped SOCKS5 server on port {taskData.args.get_arg('port')}\nUpdating Sleep to 1".encode()
+                ))
+                await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+                    TaskID=taskData.Task.ID,
+                    CommandName="sleep",
+                    Params=json.dumps({
+                        "interval": 1,
+                    })
+                ))
         return response
 
 

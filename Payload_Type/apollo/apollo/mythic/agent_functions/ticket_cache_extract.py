@@ -44,10 +44,15 @@ class ticket_cache_extractArguments(TaskArguments):
         self.load_args_from_json_string(self.command_line)
         pass
 
-
+def get_ticket_time(credential, key) -> str:
+    try:
+        return datetime.fromtimestamp(credential.__getitem__('time')[key]).isoformat()
+    except:
+        return ""
+    
 async def parse_credentials(task: PTTaskCompletionFunctionMessage, ) -> PTTaskCompletionFunctionMessageResponse:
     response = PTTaskCompletionFunctionMessageResponse(
-        Success=True, TaskStatus="success", Completed=True
+        Success=True, Completed=True
     )
     responses = await SendMythicRPCResponseSearch(
         MythicRPCResponseSearchMessage(TaskID=task.TaskData.Task.ID)
@@ -59,9 +64,9 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage, ) -> PTTaskCo
             ccache = CCache()
             ccache.fromKRBCRED(base64.b64decode(ticket_out['ticket']))
             formattedComment = f"Service: {ccache.credentials[0].__getitem__('server').prettyPrint().decode('utf-8')}\n"
-            formattedComment += f"Start: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['starttime']).isoformat()}\n"
-            formattedComment += f"End: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['endtime']).isoformat()}\n"
-            formattedComment += f"Renew: {datetime.fromtimestamp(ccache.credentials[0].__getitem__('time')['renew_till']).isoformat()}\n"
+            formattedComment += f"Start: {get_ticket_time(ccache.credentials[0], 'starttime')}\n"
+            formattedComment += f"End: {get_ticket_time(ccache.credentials[0],'endtime')}\n"
+            formattedComment += f"Renew: {get_ticket_time(ccache.credentials[0],'renew_till')}\n"
             resp = await SendMythicRPCCredentialCreate(MythicRPCCredentialCreateMessage(
                 TaskID=task.TaskData.Task.ID,
                 Credentials=[
@@ -92,7 +97,7 @@ async def parse_credentials(task: PTTaskCompletionFunctionMessage, ) -> PTTaskCo
 class ticket_cache_extractCommand(CommandBase):
     cmd = "ticket_cache_extract"
     needs_admin = False
-    help_cmd = "ticket_cache_extract [service] [luid]"
+    help_cmd = "ticket_cache_extract -service [service] -luid [luid]"
     description = "extract a ticket for the provided service name from the current or specified luid"
     version = 2
     author = "@drago-qcc"

@@ -42,36 +42,39 @@ namespace Apollo.Peers.SMB
                 while (ps.IsConnected && !_cts.IsCancellationRequested)
                 {
                     _senderEvent.WaitOne();
-                    if (!_cts.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
+                    while (!_senderQueue.IsEmpty && !_cts.IsCancellationRequested && ps.IsConnected)
                     {
-                        UInt32 totalChunksToSend = (UInt32)(result.Length / chunkSize) + 1;
-                        DebugHelp.DebugWriteLine($"have {totalChunksToSend} chunks to send out");
-                        byte[] totalChunkBytes = BitConverter.GetBytes(totalChunksToSend);
-                        Array.Reverse(totalChunkBytes);
-                        for (UInt32 currentChunk = 0; currentChunk < totalChunksToSend; currentChunk++)
+                        if (!_cts.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))
                         {
-                            byte[] chunkData;
-                            if ((currentChunk + 1) * chunkSize > result.Length)
+                            UInt32 totalChunksToSend = (UInt32)(result.Length / chunkSize) + 1;
+                            DebugHelp.DebugWriteLine($"have {totalChunksToSend} chunks to send out");
+                            byte[] totalChunkBytes = BitConverter.GetBytes(totalChunksToSend);
+                            Array.Reverse(totalChunkBytes);
+                            for (UInt32 currentChunk = 0; currentChunk < totalChunksToSend; currentChunk++)
                             {
-                                chunkData = new byte[result.Length - (currentChunk * chunkSize)];
+                                byte[] chunkData;
+                                if ((currentChunk + 1) * chunkSize > result.Length)
+                                {
+                                    chunkData = new byte[result.Length - (currentChunk * chunkSize)];
+                                }
+                                else
+                                {
+                                    chunkData = new byte[chunkSize];
+                                }
+                                Array.Copy(result, currentChunk * chunkSize, chunkData, 0, chunkData.Length);
+                                byte[] sizeBytes = BitConverter.GetBytes((UInt32)chunkData.Length + 8);
+                                Array.Reverse(sizeBytes);
+                                byte[] currentChunkBytes = BitConverter.GetBytes(currentChunk);
+                                Array.Reverse(currentChunkBytes);
+                                DebugHelp.DebugWriteLine($"sending chunk {currentChunk}/{totalChunksToSend} with size {chunkData.Length + 8}");
+                                ps.BeginWrite(sizeBytes, 0, sizeBytes.Length, OnAsyncMessageSent, p);
+                                ps.BeginWrite(totalChunkBytes, 0, totalChunkBytes.Length, OnAsyncMessageSent, p);
+                                ps.BeginWrite(currentChunkBytes, 0, currentChunkBytes.Length, OnAsyncMessageSent, p);
+                                ps.BeginWrite(chunkData, 0, chunkData.Length, OnAsyncMessageSent, p);
                             }
-                            else
-                            {
-                                chunkData = new byte[chunkSize];
-                            }
-                            Array.Copy(result, currentChunk * chunkSize, chunkData, 0, chunkData.Length);
-                            byte[] sizeBytes = BitConverter.GetBytes((UInt32)chunkData.Length + 8);
-                            Array.Reverse(sizeBytes);
-                            byte[] currentChunkBytes = BitConverter.GetBytes(currentChunk);
-                            Array.Reverse(currentChunkBytes);
-                            DebugHelp.DebugWriteLine($"sending chunk {currentChunk}/{totalChunksToSend} with size {chunkData.Length + 8}");
-                            ps.BeginWrite(sizeBytes, 0, sizeBytes.Length, OnAsyncMessageSent, p);
-                            ps.BeginWrite(totalChunkBytes, 0, totalChunkBytes.Length, OnAsyncMessageSent, p);
-                            ps.BeginWrite(currentChunkBytes, 0, currentChunkBytes.Length, OnAsyncMessageSent, p);
-                            ps.BeginWrite(chunkData, 0, chunkData.Length, OnAsyncMessageSent, p);
+                            DebugHelp.DebugWriteLine($"finished sending data from _senderQueue");
+                            //ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                         }
-                        DebugHelp.DebugWriteLine($"finished sending data from _senderQueue");
-                        //ps.BeginWrite(result, 0, result.Length, OnAsyncMessageSent, p);
                     }
                 }
             };

@@ -11,6 +11,7 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
 using Microsoft.Win32;
+using System;
 using System.Runtime.Serialization;
 
 namespace Tasks
@@ -28,16 +29,26 @@ namespace Tasks
             public string ValueName;
             [DataMember(Name = "value_value")]
             public string ValueValue;
+            [DataMember(Name = "value_type")]
+            public int ValueType;
         }
         public reg_write_value(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
-        private bool SetValue(string hive, string subkey, string valueName, object valueValue)
+        private bool SetValue(string hive, string subkey, string valueName, object valueValue, RegistryValueKind RegType)
         {
             using (RegistryKey regKey = RegistryUtils.GetRegistryKey(hive, subkey, true))
             {
-                regKey.SetValue(valueName, valueValue);
+                if(RegType == RegistryValueKind.MultiString)
+                {
+                    var stringPieces = valueValue.ToString().Split('\n');
+                    regKey.SetValue(valueName, stringPieces, RegType);
+                } else
+                {
+                    regKey.SetValue(valueName, valueValue, RegType);
+                }
+
                 return true;
             }
         }
@@ -51,11 +62,11 @@ namespace Tasks
 
             if (int.TryParse(parameters.ValueValue, out int dword))
             {
-                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword);
+                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, dword, RegistryValueKind.DWord);
             }
             else
             {
-                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue);
+                bRet = SetValue(parameters.Hive, parameters.Key, parameters.ValueName, parameters.ValueValue, (RegistryValueKind)parameters.ValueType);
             }
 
             if (bRet)

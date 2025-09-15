@@ -443,8 +443,8 @@ public static class PERunner
 
                 // Get ntdll functions
                 functionsToPatch["ntdll"]["NtTerminateProcess"] = GetProcAddress(modules["ntdll"], "NtTerminateProcess");
-                functionsToPatch["ntdll"]["RtlExitUserProcess"] = GetProcAddress(modules["ntdll"], "RtlExitUserProcess");
-                functionsToPatch["ntdll"]["ZwTerminateProcess"] = GetProcAddress(modules["ntdll"], "ZwTerminateProcess");
+                //unctionsToPatch["ntdll"]["RtlExitUserProcess"] = GetProcAddress(modules["ntdll"], "RtlExitUserProcess");
+                //functionsToPatch["ntdll"]["ZwTerminateProcess"] = GetProcAddress(modules["ntdll"], "ZwTerminateProcess");
 
                 // Check if mscoree is loaded, and if so, get CorExitProcess
                 if (modules["mscoree"] != IntPtr.Zero)
@@ -527,11 +527,10 @@ public static class PERunner
         {
             // Create redirection that preserves the exit code parameter
             byte[] redirection = new byte[] {
-        0x48, 0x89, 0xC8,          // mov rax, rcx (preserve exit code)
-        0x48, 0x31, 0xC9,          // xor rcx, rcx (zero out rcx)
-        0x48, 0x89, 0xC1,          // mov rcx, rax (restore exit code to first param)
-        0x48, 0xB8                 // mov rax, [ExitThread address]
-    };
+                // RCX already contains the exit code parameter from the original function
+                // For ExitThread, this is exactly what we want
+                0x48, 0xB8                 // mov rax, [ExitThread address]
+            };
 
             // Append the ExitThread address
             byte[] addressBytes = BitConverter.GetBytes(exitThreadAddr.ToInt64());

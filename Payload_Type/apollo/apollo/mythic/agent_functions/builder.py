@@ -21,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.29"
+    version = "2.3.51"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -85,6 +85,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         # resp.status = BuildStatus.Success
         # return resp
         #end debugging
+        defines_commands_upper = ["#define EXIT"]
         if self.get_parameter('debug'):
             possibleCommands = await SendMythicRPCCommandSearch(MythicRPCCommandSearchMessage(
                 SearchPayloadTypeName="apollo",
@@ -164,6 +165,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
+            output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
             if self.get_parameter('debug'):
                 command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -o {agent_build_path.name}/{buildPath}/"
             else:
@@ -182,7 +184,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 stdout_err += f'\n[stdout]\n{stdout.decode()}\n'
             if stderr:
                 stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
-            output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
 
             if os.path.exists(output_path):
                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(

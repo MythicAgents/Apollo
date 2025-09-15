@@ -28,7 +28,7 @@ class ticket_cache_listArguments(TaskArguments):
                 cli_name="getSystemTickets",
                 display_name="Get System Tickets",
                 type=ParameterType.Boolean,
-                default_value=True,
+                default_value=False,
                 description="Set this to false to filter out tickets for the SYSTEM context",
                 parameter_group_info=[
                     ParameterGroupInfo(
@@ -43,13 +43,12 @@ class ticket_cache_listArguments(TaskArguments):
         if self.command_line[0] != "{":
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
-        pass
 
 
 class ticket_cache_listCommand(CommandBase):
     cmd = "ticket_cache_list"
     needs_admin = False
-    help_cmd = "ticket_cache_list [luid]"
+    help_cmd = "ticket_cache_list -getSystemTickets true -luid [luid]"
     description = "List all kerberos tickets in the current logon session, or if elevated list all tickets for all logon sessions, optionally while elevated a single luid can be provided to limit the enumeration"
     version = 2
     author = "@drago-qcc"
@@ -68,8 +67,9 @@ class ticket_cache_listCommand(CommandBase):
         getSystemTickets = taskData.args.get_arg("getSystemTickets")
         response.DisplayParams = ""
         luid = taskData.args.get_arg("luid")
-        response.DisplayParams += f" -getSystemTickets {getSystemTickets}"
-        if luid != "":
+        if getSystemTickets:
+            response.DisplayParams += f" -getSystemTickets {getSystemTickets}"
+        if luid != "" and luid is not None:
             response.DisplayParams += f" -luid {luid}"
         return response
 

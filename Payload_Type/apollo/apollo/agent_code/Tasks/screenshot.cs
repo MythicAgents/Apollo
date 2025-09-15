@@ -45,7 +45,7 @@ namespace Tasks
                         break;
                     }
                     //add the valid mythicFileId to the response and then add it to the queue
-                    _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(mythicFileId, false, ""));
+                    //_agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(mythicFileId, false, ""));
                 }
                 //if this is reached without the loop breaking then it will be a success state
                 _agent.GetTaskManager().AddTaskResponseToQueue(resp);

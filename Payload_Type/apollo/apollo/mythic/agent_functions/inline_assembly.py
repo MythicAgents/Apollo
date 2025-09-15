@@ -82,7 +82,7 @@ class InlineAssemblyArguments(TaskArguments):
         fileResponse = PTRPCDynamicQueryFunctionMessageResponse(Success=False)
         file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
             CallbackID=inputMsg.Callback,
-            LimitByCallback=True,
+            LimitByCallback=False,
             Filename="",
         ))
         if file_resp.Success:
@@ -167,29 +167,24 @@ class InlineAssemblyCommand(CommandBase):
                 raise Exception(f"Failed to find uploaded file: {fileSearchResp.Error}")
             if len(fileSearchResp.Files) == 0:
                 raise Exception(f"Failed to find matching file, was it deleted?")
-            searchedTaskResp = await SendMythicRPCTaskSearch(MythicRPCTaskSearchMessage(
-                TaskID=taskData.Task.ID,
-                SearchCallbackID=taskData.Callback.ID,
-                SearchCommandNames=["register_file"],
-                SearchParams=taskData.args.get_arg("assembly_file")
-            ))
-            if not searchedTaskResp.Success:
-                raise Exception(f"Failed to search for matching tasks: {searchedTaskResp.Error}")
-            if len(searchedTaskResp.Tasks) == 0:
-                # we need to register this file with apollo first
-                subtaskCreationResp = await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
-                    TaskID=taskData.Task.ID,
-                    CommandName="register_file",
-                    Params=json.dumps({"file": taskData.args.get_arg("assembly_file")})
-                ))
-                if not subtaskCreationResp.Success:
-                    raise Exception(f"Failed to create register_file subtask: {subtaskCreationResp.Error}")
 
             taskData.args.add_arg("assembly_name", fileSearchResp.Files[0].Filename)
             taskData.args.remove_arg("assembly_file")
+            taskData.args.add_arg("assembly_id", fileSearchResp.Files[0].AgentFileId)
 
         taskData.args.add_arg("interop_id", INTEROP_FILE_ID)
         if originalGroupNameIsDefault:
+            file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+                Filename=taskData.args.get_arg("assembly_name"),
+                TaskID=taskData.Task.ID,
+                MaxResults=1
+            ))
+            if not file_resp.Success:
+                raise Exception(f"failed to find assembly: {file_resp.Error}")
+            if len(file_resp.Files) == 0:
+                raise Exception(f"no assembly by that name that's not deleted")
+            else:
+                taskData.args.add_arg("assembly_id", file_resp.Files[0].AgentFileId)
             response.DisplayParams = "-Assembly {} -Arguments {}".format(
                 taskData.args.get_arg("assembly_name"),
                 taskData.args.get_arg("assembly_arguments")

@@ -126,11 +126,10 @@ class RpfwdCommand(CommandBase):
                 Response=resp.Error.encode()
             ))
             response.Completed = True
-            response.TaskStatus = MythicStatus.Success
         else:
-            response.DisplayParams = f"on port {taskData.args.get_arg('port')} sending to {taskData.args.get_arg('remote_ip')}:{taskData.args.get_arg('remote_port')}"
+            response.DisplayParams = f"-Port {taskData.args.get_arg('port')} -RemoteIP {taskData.args.get_arg('remote_ip')} -RemotePort {taskData.args.get_arg('remote_port')}"
             if taskData.args.get_arg("debugLevel") != "None":
-                response.DisplayParams += f" with debug level of \"{taskData.args.get_arg('debugLevel')}\""
+                response.DisplayParams += f" -DebugLevel \"{taskData.args.get_arg('debugLevel')}\""
         debugLevel = taskData.args.get_arg("debugLevel")
         if debugLevel == "None":
             taskData.args.add_arg("debugLevel", value=0, type=ParameterType.Number)
@@ -140,6 +139,17 @@ class RpfwdCommand(CommandBase):
             taskData.args.add_arg("debugLevel", value=2, type=ParameterType.Number)
         else:
             taskData.args.add_arg("debugLevel", value=3, type=ParameterType.Number)
+        await SendMythicRPCResponseCreate(MythicRPCResponseCreateMessage(
+            TaskID=taskData.Task.ID,
+            Response=f"Starting server on port {taskData.args.get_arg('port')} where Apollo is running.\nUpdating Sleep to 0\n".encode()
+        ))
+        await SendMythicRPCTaskCreateSubtask(MythicRPCTaskCreateSubtaskMessage(
+            TaskID=taskData.Task.ID,
+            CommandName="sleep",
+            Params=json.dumps({
+                "interval": 0,
+            })
+        ))
         return response
 
 
