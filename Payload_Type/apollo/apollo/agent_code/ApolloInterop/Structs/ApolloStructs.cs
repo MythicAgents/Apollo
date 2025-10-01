@@ -54,8 +54,8 @@ namespace ApolloInterop.Structs.ApolloStructs
         {
             if (string.IsNullOrEmpty(username))
                 throw new Exception("Username cannot be null or empty.");
-            if (string.IsNullOrEmpty(password))
-                throw new Exception("Password cannot be null or empty.");
+            if (password == null)
+                throw new Exception("Password cannot be null.");
             SecurePassword = new SecureString();
             foreach (char c in password)
                 SecurePassword.AppendChar(c);

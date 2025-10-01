@@ -36,7 +36,7 @@ namespace Tasks
             {
                 resp = CreateTaskResponse("Account name is empty.", true, "error");
             }
-            else if (string.IsNullOrEmpty(parameters.Credential.CredentialMaterial))
+            else if (parameters.Credential.CredentialMaterial == null)
             {
                 resp = CreateTaskResponse("Password is empty.", true, "error");
             }
