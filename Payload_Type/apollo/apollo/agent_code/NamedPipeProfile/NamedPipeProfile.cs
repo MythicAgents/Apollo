@@ -62,7 +62,11 @@ namespace NamedPipeTransport
                 PipeStream pipe = ((AsyncPipeState)p).Pipe;
                 while (pipe.IsConnected && !cts.IsCancellationRequested)
                 {
-                    _senderEvent.WaitOne();
+                    // Check queue before waiting to avoid race condition
+                    if (_senderQueue.IsEmpty)
+                    {
+                        _senderEvent.WaitOne();
+                    }
                     if (!cts.IsCancellationRequested && _senderQueue.TryDequeue(out byte[] result))
                     {
                         UInt32 totalChunksToSend = (UInt32)(result.Length / chunkSize) + 1;
