@@ -272,7 +272,7 @@ namespace Apollo.Management.Files
                       },
                       ApolloTrackerUUID = e.Chunks[0].ApolloTrackerUUID
                   };
-            if(tracker.ChunksSent == 1){
+            if(tracker.ChunksSent == 0){
                 msg.UserOutput = $"{{\"file_id\": \"{tracker.FileID}\"}}";
             }
             _agent.GetTaskManager().AddTaskResponseToQueue(msg);

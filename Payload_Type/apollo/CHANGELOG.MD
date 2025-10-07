@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.0] - 2025-10-07
+
+### Changed
+
+- Updated to mythic-container==v0.6.0 for dynamic parameters
+- Updated build parameters to hide shellcode parameters when output type is not shellcode
+- Updated c2 deviations to hide get-based parameters that aren't used by this profile
+- Updated make_token to allow blank passwords
+- Updated ticket_store_purge to process `all` flag properly
+
 ## [v2.3.51] - 2025-09-12
 
 ## Changed

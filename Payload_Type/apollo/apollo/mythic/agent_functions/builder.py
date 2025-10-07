@@ -21,17 +21,29 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    version = "2.3.51"
+    semver = "2.3.51"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
 NOTE: P2P Not compatible with v2.2 agents! 
 NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since their arguments are different
-    """.format(version)
+    """.format(semver)
     supports_dynamic_loading = True
     shellcode_format_options = ["Binary", "Base64", "C", "Ruby", "Python", "Powershell", "C#", "Hex"]
     shellcode_bypass_options = ["None", "Abort on fail", "Continue on fail"]
+    supports_multiple_c2_instances_in_build = False
+    supports_multiple_c2_in_build = False
+    c2_parameter_deviations = {
+        "http": {
+            "get_uri": C2ParameterDeviation(supported=False),
+            "query_path_name": C2ParameterDeviation(supported=False),
+            #"headers": C2ParameterDeviation(supported=True, dictionary_choices=[
+            #    DictionaryChoice(name="User-Agent", default_value="Hello", default_show=True),
+            #    DictionaryChoice(name="HostyHost", default_show=False, default_value=""),
+            #])
+        }
+    }
     build_parameters = [
         BuildParameter(
             name="output_type",
@@ -46,6 +58,10 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             choices=shellcode_format_options,
             default_value="Binary",
             description="Donut shellcode format options.",
+            group_name="Shellcode Options",
+            hide_conditions=[
+                HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="Shellcode")
+            ]
         ),
         BuildParameter(
             name="shellcode_bypass",
@@ -53,6 +69,10 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             choices=shellcode_bypass_options,
             default_value="Continue on fail",
             description="Donut shellcode AMSI/WLDP/ETW Bypass options.",
+            group_name="Shellcode Options",
+            hide_conditions=[
+                HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="Shellcode")
+            ]
         ),
         BuildParameter(
             name="adjust_filename",
@@ -77,6 +97,10 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         BuildStep(step_name="Donut", step_description="Converting to Shellcode"),
         BuildStep(step_name="Creating Service", step_description="Creating Service EXE from Shellcode")
     ]
+
+    #async def command_help_function(self, msg: HelpFunctionMessage) -> HelpFunctionMessageResponse:
+    #    return HelpFunctionMessageResponse(output=f"we did it!\nInput: {msg}", success=False)
+
 
     async def build(self) -> BuildResponse:
         # this function gets called to create an instance of your payload

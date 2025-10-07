@@ -109,7 +109,7 @@ namespace Tasks
                             false,
                             host))
                     {
-                        resp = CreateTaskResponse(mythicFileId, true, "completed", artifacts);
+                        resp = CreateTaskResponse("", true, "completed", artifacts);
                     }
                     else
                     {

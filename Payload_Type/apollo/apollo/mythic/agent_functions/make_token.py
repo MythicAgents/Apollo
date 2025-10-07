@@ -35,7 +35,7 @@ class MakeTokenArguments(TaskArguments):
                 display_name="Password",
                 type=ParameterType.String,
                 parameter_group_info=[ParameterGroupInfo(
-                    required=True,
+                    required=False,
                     ui_position=2
                 )]
             ),
@@ -93,7 +93,7 @@ class MakeTokenCommand(CommandBase):
             cred = {
                 "type": "plaintext",
                 "realm": usernamePieces[0],
-                "credential": password,
+                "credential": password if password is not None else "",
                 "account": usernamePieces[1]
             }
             taskData.args.add_arg("credential", cred, type=ParameterType.Credential_JSON)

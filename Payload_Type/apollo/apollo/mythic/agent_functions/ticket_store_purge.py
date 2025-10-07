@@ -41,7 +41,7 @@ class ticket_store_purgeArguments(TaskArguments):
         if self.command_line[0] != "{":
             raise Exception("Require JSON blob, but got raw command line.")
         self.load_args_from_json_string(self.command_line)
-        if self.get_arg("all") and self.get_arg("serviceName") == "":
+        if not self.get_arg("all") and self.get_arg("serviceName") == "":
             raise Exception("Need serviceName when specifying to not purge all tickets")
         pass
 
