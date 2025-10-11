@@ -41,7 +41,12 @@ namespace Apollo.Peers.SMB
                 PipeStream ps = (PipeStream)p;
                 while (ps.IsConnected && !_cts.IsCancellationRequested)
                 {
-                    _senderEvent.WaitOne();
+                    // Check queue before waiting to avoid race condition
+                    if (_senderQueue.IsEmpty)
+                    {
+                        _senderEvent.WaitOne();
+                    }
+
                     while (!_senderQueue.IsEmpty && !_cts.IsCancellationRequested && ps.IsConnected)
                     {
                         if (!_cts.IsCancellationRequested && ps.IsConnected && _senderQueue.TryDequeue(out byte[] result))

@@ -48,7 +48,11 @@ namespace Apollo.Peers.TCP
                 TcpClient c = (TcpClient)p;
                 while (c.Connected && !_cts.IsCancellationRequested)
                 {
-                    _senderEvent.WaitOne();
+                    // Check queue before waiting to avoid race condition
+                    if (_senderQueue.IsEmpty)
+                    {
+                        _senderEvent.WaitOne();
+                    }
                     while(!_senderQueue.IsEmpty && !_cts.IsCancellationRequested && c.Connected)
                     {
                         if (!_cts.IsCancellationRequested && c.Connected && _senderQueue.TryDequeue(out byte[] result))
