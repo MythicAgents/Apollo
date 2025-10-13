@@ -113,7 +113,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             group_name="Keying Options",
             hide_conditions=[
                 HideCondition(name="enable_keying", operand=HideConditionOperand.NotEQ, value=True),
-                HideCondition(name="keying_method", operand=HideConditionOperand.Equals, value="Registry")
+                HideCondition(name="keying_method", operand=HideConditionOperand.EQ, value="Registry")
             ]
         ),
         BuildParameter(
@@ -201,7 +201,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         keying_value_hash = ""
         registry_path = ""
         registry_value = ""
-        registry_comparison = ""
+        registry_comparison = "0"  # Default to 0 for numeric field
         
         if enable_keying:
             if keying_method_str == "Registry":
