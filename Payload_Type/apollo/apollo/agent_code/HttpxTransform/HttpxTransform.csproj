@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net40</TargetFramework>
+    <AssemblyName>HttpxTransform</AssemblyName>
+    <RootNamespace>HttpxTransform</RootNamespace>
+    <OutputType>Library</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Transforms.cs" />
+    <Compile Include="TransformChain.cs" />
+    <Compile Include="HttpxConfig.cs" />
+  </ItemGroup>
+
+</Project>

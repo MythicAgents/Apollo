@@ -43,6 +43,16 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             #    DictionaryChoice(name="User-Agent", default_value="Hello", default_show=True),
             #    DictionaryChoice(name="HostyHost", default_show=False, default_value=""),
             #])
+        },
+        "httpx": {
+            "raw_c2_config": C2ParameterDeviation(supported=True),
+            "callback_domains": C2ParameterDeviation(supported=True),
+            "domain_rotation": C2ParameterDeviation(supported=True),
+            "failover_threshold": C2ParameterDeviation(supported=True),
+            "encrypted_exchange_check": C2ParameterDeviation(supported=True),
+            "callback_jitter": C2ParameterDeviation(supported=True),
+            "callback_interval": C2ParameterDeviation(supported=True),
+            "killdate": C2ParameterDeviation(supported=True),
         }
     }
     build_parameters = [
@@ -278,6 +288,14 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     special_files_map["Config.cs"][prefixed_key] = "true" if val else "false"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
+                elif key == "raw_c2_config" and profile['name'] == "httpx":
+                    # Handle httpx raw_c2_config file parameter
+                    if val and val != "":
+                        # Store the config content for embedding
+                        special_files_map["Config.cs"][prefixed_key] = val
+                    else:
+                        # Use default config
+                        special_files_map["Config.cs"][prefixed_key] = ""
                 else:
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
         try:
