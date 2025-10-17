@@ -23,6 +23,7 @@ class Apollo(PayloadType):
         SupportedOS.Windows
     ]
     semver = "2.3.51"
+    c2_profiles = ["http", "httpx", "smb", "tcp", "websocket"]
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     translation_container = "ApolloTranslator"
@@ -162,7 +163,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             ]
         )
     ]
-    c2_profiles = ["http", "httpx", "smb", "tcp", "websocket"]
     agent_path = pathlib.Path(".") / "apollo" / "mythic"
     agent_code_path = pathlib.Path(".") / "apollo" / "agent_code"
     agent_icon_path = agent_path / "agent_functions" / "apollo.svg"
