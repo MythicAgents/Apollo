@@ -26,7 +26,6 @@ class Apollo(PayloadType):
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     c2_profiles = ["http", "httpx", "smb", "tcp", "websocket"]
-    translation_container = None
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
 NOTE: P2P Not compatible with v2.2 agents! 
