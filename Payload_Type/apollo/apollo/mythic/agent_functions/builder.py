@@ -162,7 +162,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             ]
         )
     ]
-    c2_profiles = ["http", "smb", "tcp", "websocket"]
+    c2_profiles = ["http", "httpx", "smb", "tcp", "websocket"]
     agent_path = pathlib.Path(".") / "apollo" / "mythic"
     agent_code_path = pathlib.Path(".") / "apollo" / "agent_code"
     agent_icon_path = agent_path / "agent_functions" / "apollo.svg"
