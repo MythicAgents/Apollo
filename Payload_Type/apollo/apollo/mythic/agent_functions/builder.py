@@ -25,6 +25,7 @@ class Apollo(PayloadType):
     semver = "2.3.51"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
+    translation_container = "ApolloTranslator"
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
 NOTE: P2P Not compatible with v2.2 agents! 
