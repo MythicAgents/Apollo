@@ -84,8 +84,17 @@ namespace HttpxTransport
                 }
                 else
                 {
-                    // Load default configuration from embedded resource
-                    Config = HttpxConfig.FromResource("Apollo.HttpxProfile.default_config.json");
+                    // Try to load default configuration from embedded resource
+                    try
+                    {
+                        Config = HttpxConfig.FromResource("Apollo.HttpxProfile.default_config.json");
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Embedded resource doesn't exist (user provided custom config)
+                        // Fall back to minimal config
+                        Config = CreateMinimalConfig();
+                    }
                 }
                 
                 Config.Validate();

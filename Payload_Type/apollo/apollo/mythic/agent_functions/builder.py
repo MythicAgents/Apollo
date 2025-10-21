@@ -294,6 +294,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         special_files_map["Config.cs"][prefixed_key] = ""
                 else:
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
+        
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
@@ -318,12 +319,28 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
+            
+            # Determine if we need to embed the default config
+            embed_default_config = True
+            for c2 in self.c2info:
+                profile = c2.get_c2profile()
+                if profile['name'] == 'httpx':
+                    raw_config = c2.get_parameters_dict().get('raw_c2_config', '')
+                    if raw_config and raw_config != "":
+                        embed_default_config = False
+                        stdout_err += f"Custom httpx config provided, skipping default config embedding\n"
+                        break
+            
+            if embed_default_config:
+                stdout_err += f"Using embedded default httpx config\n"
+            
             output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
+            
+            # Build command with conditional embedding
             if self.get_parameter('debug'):
-                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -o {agent_build_path.name}/{buildPath}/"
+                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/"
             else:
-                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:Platform=\"Any CPU\" -o {agent_build_path.name}/{buildPath}/"
-            #command = "rm -rf packages/*; nuget restore -NoCache -Force; msbuild -p:Configuration=Release -p:Platform=\"Any CPU\""
+                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/"
             await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                 PayloadUUID=self.uuid,
                 StepName="Gathering Files",
