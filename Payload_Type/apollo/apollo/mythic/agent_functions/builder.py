@@ -50,68 +50,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             #    DictionaryChoice(name="User-Agent", default_value="Hello", default_show=True),
             #    DictionaryChoice(name="HostyHost", default_show=False, default_value=""),
             #])
-        },
-        "httpx": {
-            # File parameter - requires raw_c2_config file upload
-            "raw_c2_config": C2ParameterDeviation(
-                supported=True,
-                choices=[]  # File parameters don't need choices, but frontend expects array
-            ),
-            
-            # Array parameter - callback domains
-            "callback_domains": C2ParameterDeviation(
-                supported=True,
-                choices=[]  # Array parameters don't need choices, but frontend expects array
-            ),
-            
-            # Choice parameter - domain rotation strategy
-            "domain_rotation": C2ParameterDeviation(
-                supported=True,
-                choices=["fail-over", "round-robin", "random"],
-                default_value="fail-over"
-            ),
-            
-            # Number parameter - failover threshold
-            "failover_threshold": C2ParameterDeviation(
-                supported=True,
-                default_value=5,
-                choices=[]  # Number parameters don't need choices, but frontend expects array
-            ),
-            
-            # Boolean parameter - encryption check
-            "encrypted_exchange_check": C2ParameterDeviation(
-                supported=True,
-                default_value=True,
-                choices=[]  # Boolean parameters don't need choices, but frontend expects array
-            ),
-            
-            # Number parameter - callback jitter percentage
-            "callback_jitter": C2ParameterDeviation(
-                supported=True,
-                default_value=23,
-                choices=[]  # Number parameters don't need choices, but frontend expects array
-            ),
-            
-            # Number parameter - callback interval in seconds
-            "callback_interval": C2ParameterDeviation(
-                supported=True,
-                default_value=10,
-                choices=[]  # Number parameters don't need choices, but frontend expects array
-            ),
-            
-            # Date parameter - kill date
-            "killdate": C2ParameterDeviation(
-                supported=True,
-                default_value=365,
-                choices=[]  # Date parameters don't need choices, but frontend expects array
-            ),
-            
-            # Choice parameter - encryption type
-            "AESPSK": C2ParameterDeviation(
-                supported=True,
-                choices=["aes256_hmac", "none"],
-                default_value="aes256_hmac"
-            ),
         }
     }
     build_parameters = [

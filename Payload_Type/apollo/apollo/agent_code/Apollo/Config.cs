@@ -202,7 +202,7 @@ namespace Apollo
 #elif TCP
         public static string StagingRSAPrivateKey = "Zq24zZvWPRGdWwEQ79JXcHunzvcOJaKLH7WtR+gLiGg=";
 #elif HTTPX
-        public static string StagingRSAPrivateKey = "HttpxApolloKey2024SecureRandomString123456789";
+        public static string StagingRSAPrivateKey = "K4FLVfFwCPj3zBC+5l9WLCKqsmrtzkk/E8VcVY6iK/o=";
 #endif
 #if HTTP
         public static string PayloadUUID = "b40195db-22e5-4f9f-afc5-2f170c3cc204";
@@ -213,7 +213,7 @@ namespace Apollo
 #elif TCP
         public static string PayloadUUID = "bfc167ea-9142-4da3-b807-c57ae054c544";
 #elif HTTPX
-        public static string PayloadUUID = "httpx-apollo-uuid-2024-12345678-90ab-cdef-1234-567890abcdef";
+        public static string PayloadUUID = "7f2a0f77-51ca-4afc-a7a9-5ea9717e73c3";
 #endif
 #else
         // TODO: Make the AES key a config option specific to each profile
