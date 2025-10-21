@@ -380,26 +380,19 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
                                                          stderr=asyncio.subprocess.PIPE, cwd=agent_build_path.name)
             stdout, stderr = await proc.communicate()
-            if stdout:
-                stdout_err += f'\n[stdout]\n{stdout.decode()}\n'
-            if stderr:
-                stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
-
-            # Check if dotnet build command succeeded
+            
+            build_success = True
             if proc.returncode != 0:
-                await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
-                    PayloadUUID=self.uuid,
-                    StepName="Compiling",
-                    StepStdout=f"dotnet build failed with exit code {proc.returncode}\nCommand: {command}\n{stdout_err}",
-                    StepSuccess=False
-                ))
-                resp.status = BuildStatus.Error
-                resp.payload = b""
-                resp.build_message = f"dotnet build failed with exit code {proc.returncode}"
-                resp.build_stderr = stdout_err
-                return resp
+                build_success = False
+                logging.error(f"Command failed with exit code {proc.returncode}")
+                logging.error(f"[stderr]: {stderr.decode()}")
+                stdout_err += f'[stderr]\n{stderr.decode()}' + "\n" + command
+            else:
+                logging.info(f"[stdout]: {stdout.decode()}")
+                stdout_err += f'\n[stdout]\n{stdout.decode()}\n'
+                logging.info(f"[+] Compiled agent written to {output_path}")
 
-            if os.path.exists(output_path):
+            if build_success and os.path.exists(output_path):
                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                     PayloadUUID=self.uuid,
                     StepName="Compiling",
@@ -407,6 +400,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     StepSuccess=True
                 ))
                 resp.status = BuildStatus.Success
+                
                 targetExeAsmPath = "/srv/ExecuteAssembly.exe"
                 targetPowerPickPath = "/srv/PowerShellHost.exe"
                 targetScreenshotInjectPath = "/srv/ScreenshotInject.exe"
@@ -453,11 +447,18 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                                              self.get_parameter("output_type"),
                                                              self.get_parameter("adjust_filename"))
                 else:
-                    shellcode_path = "{}/loader.bin".format(agent_build_path.name)
-                    donutPath = os.path.abspath(self.agent_code_path / "donut")
-                    command = "chmod 777 {}; chmod +x {}".format(donutPath, donutPath)
-                    proc = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE,
-                                                                 stderr=asyncio.subprocess.PIPE)
+                    # Build failed
+                    await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
+                        PayloadUUID=self.uuid,
+                        StepName="Compiling",
+                        StepStdout=f"Build failed with exit code {proc.returncode if 'proc' in locals() else 'unknown'}",
+                        StepSuccess=False
+                    ))
+                    resp.build_message = "Build failed"
+                    resp.status = BuildStatus.Error
+                    resp.payload = b""
+                    resp.build_stderr = stdout_err
+                    return resp
                     stdout, stderr = await proc.communicate()
                     command = "{} -x3 -k2 -o loader.bin -i {}".format(donutPath, output_path)
                     if self.get_parameter('output_type') == "Shellcode":
@@ -471,20 +472,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
 
                     stdout_err += f'[stdout]\n{stdout.decode()}\n'
                     stdout_err += f'[stderr]\n{stderr.decode()}'
-
-                    # Check if donut command succeeded
-                    if proc.returncode != 0:
-                        await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
-                            PayloadUUID=self.uuid,
-                            StepName="Donut",
-                            StepStdout=f"Donut failed with exit code {proc.returncode}\nCommand: {command}\n{stdout_err}",
-                            StepSuccess=False
-                        ))
-                        resp.build_message = f"Donut failed with exit code {proc.returncode}"
-                        resp.status = BuildStatus.Error
-                        resp.payload = b""
-                        resp.build_stderr = stdout_err
-                        return resp
 
                     if not os.path.exists(shellcode_path):
                         await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
@@ -538,21 +525,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 stdout_err += f"[stdout]\n{stdout.decode()}"
                             if stderr:
                                 stdout_err += f"[stderr]\n{stderr.decode()}"
-                            
-                            # Check if service build command succeeded
-                            if proc.returncode != 0:
-                                await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
-                                    PayloadUUID=self.uuid,
-                                    StepName="Service Compiling",
-                                    StepStdout=f"Service build failed with exit code {proc.returncode}\nCommand: {command}\n{stdout_err}",
-                                    StepSuccess=False
-                                ))
-                                resp.status = BuildStatus.Error
-                                resp.payload = b""
-                                resp.build_message = f"Service build failed with exit code {proc.returncode}"
-                                resp.build_stderr = stdout_err
-                                return resp
-                            
                             output_path = (
                                 pathlib.PurePath(agent_build_path.name)
                                 / "Service"
