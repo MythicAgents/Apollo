@@ -1,13 +1,13 @@
 ﻿#define C2PROFILE_NAME_UPPER
 
 //#define LOCAL_BUILD
+#define HTTPX
 
 #if LOCAL_BUILD
 //#define HTTP
 //#define WEBSOCKET
 //#define TCP
 //#define SMB
-//#define HTTPX
 #endif
 
 #if HTTP
