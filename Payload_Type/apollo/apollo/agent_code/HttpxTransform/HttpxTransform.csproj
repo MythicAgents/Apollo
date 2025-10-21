@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net40</TargetFramework>
+    <TargetFramework>net451</TargetFramework>
     <AssemblyName>HttpxTransform</AssemblyName>
     <RootNamespace>HttpxTransform</RootNamespace>
     <OutputType>Library</OutputType>

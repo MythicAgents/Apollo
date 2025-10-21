@@ -30,28 +30,43 @@ namespace HttpxTransform
     public class ClientConfig
     {
         [JsonProperty("headers")]
-        public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Headers { get; set; }
 
         [JsonProperty("parameters")]
-        public Dictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Parameters { get; set; }
 
         [JsonProperty("domain_specific_headers")]
-        public Dictionary<string, Dictionary<string, string>> DomainSpecificHeaders { get; set; } = new Dictionary<string, Dictionary<string, string>>();
+        public Dictionary<string, Dictionary<string, string>> DomainSpecificHeaders { get; set; }
 
         [JsonProperty("message")]
-        public MessageConfig Message { get; set; } = new MessageConfig();
+        public MessageConfig Message { get; set; }
 
         [JsonProperty("transforms")]
-        public List<TransformConfig> Transforms { get; set; } = new List<TransformConfig>();
+        public List<TransformConfig> Transforms { get; set; }
+
+        public ClientConfig()
+        {
+            Headers = new Dictionary<string, string>();
+            Parameters = new Dictionary<string, string>();
+            DomainSpecificHeaders = new Dictionary<string, Dictionary<string, string>>();
+            Message = new MessageConfig();
+            Transforms = new List<TransformConfig>();
+        }
     }
 
     public class ServerConfig
     {
         [JsonProperty("headers")]
-        public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Headers { get; set; }
 
         [JsonProperty("transforms")]
-        public List<TransformConfig> Transforms { get; set; } = new List<TransformConfig>();
+        public List<TransformConfig> Transforms { get; set; }
+
+        public ServerConfig()
+        {
+            Headers = new Dictionary<string, string>();
+            Transforms = new List<TransformConfig>();
+        }
     }
 
     public class VariationConfig
@@ -60,13 +75,20 @@ namespace HttpxTransform
         public string Verb { get; set; }
 
         [JsonProperty("uris")]
-        public List<string> Uris { get; set; } = new List<string>();
+        public List<string> Uris { get; set; }
 
         [JsonProperty("client")]
-        public ClientConfig Client { get; set; } = new ClientConfig();
+        public ClientConfig Client { get; set; }
 
         [JsonProperty("server")]
-        public ServerConfig Server { get; set; } = new ServerConfig();
+        public ServerConfig Server { get; set; }
+
+        public VariationConfig()
+        {
+            Uris = new List<string>();
+            Client = new ClientConfig();
+            Server = new ServerConfig();
+        }
     }
 
     public class HttpxConfig
@@ -75,10 +97,16 @@ namespace HttpxTransform
         public string Name { get; set; }
 
         [JsonProperty("get")]
-        public VariationConfig Get { get; set; } = new VariationConfig();
+        public VariationConfig Get { get; set; }
 
         [JsonProperty("post")]
-        public VariationConfig Post { get; set; } = new VariationConfig();
+        public VariationConfig Post { get; set; }
+
+        public HttpxConfig()
+        {
+            Get = new VariationConfig();
+            Post = new VariationConfig();
+        }
 
         /// <summary>
         /// Load configuration from JSON string

@@ -49,28 +49,38 @@ namespace HttpxTransport
         public HttpxProfile(Dictionary<string, string> data, ISerializer serializer, IAgent agent) : base(data, serializer, agent)
         {
             // Parse basic parameters
-            CallbackInterval = int.Parse(data.GetValueOrDefault("callback_interval", "10"));
-            CallbackJitter = double.Parse(data.GetValueOrDefault("callback_jitter", "23"));
-            CallbackDomains = data.GetValueOrDefault("callback_domains", "https://example.com:443").Split(',');
-            DomainRotation = data.GetValueOrDefault("domain_rotation", "fail-over");
-            FailoverThreshold = int.Parse(data.GetValueOrDefault("failover_threshold", "5"));
-            EncryptedExchangeCheck = bool.Parse(data.GetValueOrDefault("encrypted_exchange_check", "true"));
-            KillDate = data.GetValueOrDefault("killdate", "-1");
+            CallbackInterval = int.Parse(GetValueOrDefault(data, "callback_interval", "10"));
+            CallbackJitter = double.Parse(GetValueOrDefault(data, "callback_jitter", "23"));
+            CallbackDomains = GetValueOrDefault(data, "callback_domains", "https://example.com:443").Split(',');
+            DomainRotation = GetValueOrDefault(data, "domain_rotation", "fail-over");
+            FailoverThreshold = int.Parse(GetValueOrDefault(data, "failover_threshold", "5"));
+            EncryptedExchangeCheck = bool.Parse(GetValueOrDefault(data, "encrypted_exchange_check", "true"));
+            KillDate = GetValueOrDefault(data, "killdate", "-1");
             
             // Parse additional features
-            ProxyHost = data.GetValueOrDefault("proxy_host", "");
-            ProxyPort = int.Parse(data.GetValueOrDefault("proxy_port", "0"));
-            ProxyUser = data.GetValueOrDefault("proxy_user", "");
-            ProxyPass = data.GetValueOrDefault("proxy_pass", "");
-            DomainFront = data.GetValueOrDefault("domain_front", "");
-            TimeoutSeconds = int.Parse(data.GetValueOrDefault("timeout", "240"));
+            ProxyHost = GetValueOrDefault(data, "proxy_host", "");
+            ProxyPort = int.Parse(GetValueOrDefault(data, "proxy_port", "0"));
+            ProxyUser = GetValueOrDefault(data, "proxy_user", "");
+            ProxyPass = GetValueOrDefault(data, "proxy_pass", "");
+            DomainFront = GetValueOrDefault(data, "domain_front", "");
+            TimeoutSeconds = int.Parse(GetValueOrDefault(data, "timeout", "240"));
             
             // Initialize runtime-changeable values
             _currentSleepInterval = CallbackInterval;
             _currentJitter = CallbackJitter;
 
             // Load httpx configuration
-            LoadHttpxConfig(data.GetValueOrDefault("raw_c2_config", ""));
+            LoadHttpxConfig(GetValueOrDefault(data, "raw_c2_config", ""));
+        }
+
+        private string GetValueOrDefault(Dictionary<string, string> dictionary, string key, string defaultValue)
+        {
+            string value;
+            if (dictionary.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            return defaultValue;
         }
 
         private void LoadHttpxConfig(string configData)
@@ -108,67 +118,31 @@ namespace HttpxTransport
 
         private HttpxConfig CreateMinimalConfig()
         {
-            return new HttpxConfig
-            {
-                Name = "Apollo Minimal",
-                Get = new VariationConfig
-                {
-                    Verb = "GET",
-                    Uris = new List<string> { "/api/status" },
-                    Client = new ClientConfig
-                    {
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "User-Agent", "Apollo-Httpx/1.0" }
-                        },
-                        Message = new MessageConfig { Location = "query", Name = "data" },
-                        Transforms = new List<TransformConfig>
-                        {
-                            new TransformConfig { Action = "base64", Value = "" }
-                        }
-                    },
-                    Server = new ServerConfig
-                    {
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "Content-Type", "application/json" }
-                        },
-                        Transforms = new List<TransformConfig>
-                        {
-                            new TransformConfig { Action = "base64", Value = "" }
-                        }
-                    }
-                },
-                Post = new VariationConfig
-                {
-                    Verb = "POST",
-                    Uris = new List<string> { "/api/data" },
-                    Client = new ClientConfig
-                    {
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "User-Agent", "Apollo-Httpx/1.0" },
-                            { "Content-Type", "application/x-www-form-urlencoded" }
-                        },
-                        Message = new MessageConfig { Location = "body", Name = "" },
-                        Transforms = new List<TransformConfig>
-                        {
-                            new TransformConfig { Action = "base64", Value = "" }
-                        }
-                    },
-                    Server = new ServerConfig
-                    {
-                        Headers = new Dictionary<string, string>
-                        {
-                            { "Content-Type", "application/json" }
-                        },
-                        Transforms = new List<TransformConfig>
-                        {
-                            new TransformConfig { Action = "base64", Value = "" }
-                        }
-                    }
-                }
-            };
+            var config = new HttpxConfig();
+            config.Name = "Apollo Minimal";
+            
+            // Configure GET variation
+            config.Get.Verb = "GET";
+            config.Get.Uris.Add("/api/status");
+            config.Get.Client.Headers.Add("User-Agent", "Apollo-Httpx/1.0");
+            config.Get.Client.Message.Location = "query";
+            config.Get.Client.Message.Name = "data";
+            config.Get.Client.Transforms.Add(new TransformConfig { Action = "base64", Value = "" });
+            config.Get.Server.Headers.Add("Content-Type", "application/json");
+            config.Get.Server.Transforms.Add(new TransformConfig { Action = "base64", Value = "" });
+            
+            // Configure POST variation
+            config.Post.Verb = "POST";
+            config.Post.Uris.Add("/api/data");
+            config.Post.Client.Headers.Add("User-Agent", "Apollo-Httpx/1.0");
+            config.Post.Client.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+            config.Post.Client.Message.Location = "body";
+            config.Post.Client.Message.Name = "";
+            config.Post.Client.Transforms.Add(new TransformConfig { Action = "base64", Value = "" });
+            config.Post.Server.Headers.Add("Content-Type", "application/json");
+            config.Post.Server.Transforms.Add(new TransformConfig { Action = "base64", Value = "" });
+            
+            return config;
         }
 
         private string GetCurrentDomain()
