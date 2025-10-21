@@ -11,6 +11,7 @@ import shutil
 import json
 import pathlib
 import hashlib
+import toml
 from mythic_container.MythicRPC import *
 
 
@@ -285,12 +286,41 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
                 elif key == "raw_c2_config" and profile['name'] == "httpx":
-                    # Handle httpx raw_c2_config file parameter
+                    # Handle httpx raw_c2_config file parameter like Xenon does
+                    # Apollo will process it internally AND pass it through to C2 profile
                     if val and val != "":
-                        # Store the config content for embedding
-                        special_files_map["Config.cs"][prefixed_key] = val
+                        try:
+                            # Read configuration file contents
+                            response = await SendMythicRPCFileGetContent(MythicRPCFileGetContentMessage(val))
+                            
+                            if not response.Success:
+                                resp.set_status(BuildStatus.Error)
+                                resp.build_stderr = f"Error reading raw_c2_config file: {response.Error}"
+                                return resp
+                            
+                            raw_config_file_data = response.Content.decode('utf-8')
+                            
+                            # Try parsing the content as JSON first
+                            try:
+                                config_data = json.loads(raw_config_file_data)
+                            except json.JSONDecodeError:
+                                # If JSON fails, try parsing as TOML
+                                try:
+                                    config_data = toml.loads(raw_config_file_data)
+                                except Exception as toml_err:
+                                    resp.set_status(BuildStatus.Error)
+                                    resp.build_stderr = f"Failed to parse raw_c2_config as JSON or TOML: {toml_err}"
+                                    return resp
+                            
+                            # Store the parsed config for Apollo to use
+                            special_files_map["Config.cs"][prefixed_key] = raw_config_file_data
+                            
+                        except Exception as err:
+                            resp.set_status(BuildStatus.Error)
+                            resp.build_stderr = f"Error processing raw_c2_config: {str(err)}"
+                            return resp
                     else:
-                        # Use default config
+                        # Use default config (empty string - Apollo will use embedded default)
                         special_files_map["Config.cs"][prefixed_key] = ""
                 else:
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
