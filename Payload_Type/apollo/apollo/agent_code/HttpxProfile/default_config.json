@@ -1,0 +1,93 @@
+{
+    "name": "Apollo Default",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/api/v1/status",
+            "/health",
+            "/ping"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "Keep-Alive",
+                "Cache-Control": "no-cache",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+            "parameters": {
+                "version": "1.0",
+                "format": "json"
+            },
+            "message": {
+                "location": "query",
+                "name": "data"
+            },
+            "transforms": [
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json",
+                "Server": "nginx/1.18.0",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache"
+            },
+            "transforms": [
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/api/v1/data",
+            "/submit",
+            "/upload"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "Keep-Alive",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+            "parameters": {
+                "version": "1.0",
+                "format": "json"
+            },
+            "message": {
+                "location": "body",
+                "name": ""
+            },
+            "transforms": [
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json",
+                "Server": "nginx/1.18.0",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache"
+            },
+            "transforms": [
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        }
+    }
+}

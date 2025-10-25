@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net451</TargetFramework>
+    <AssemblyName>HttpxProfile</AssemblyName>
+    <RootNamespace>HttpxTransport</RootNamespace>
+    <OutputType>Library</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApolloInterop\ApolloInterop.csproj" />
+    <ProjectReference Include="..\HttpxTransform\HttpxTransform.csproj" />
+    <ProjectReference Include="..\PSKCrypto\PSKCryptography.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="default_config.json" Condition="'$(EmbedDefaultConfig)' == 'true'" />
+  </ItemGroup>
+
+</Project>

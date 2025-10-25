@@ -12,13 +12,13 @@ RUN curl -L -o donut_shellcode-2.0.0.tar.gz https://github.com/MEhrn00/donut/rel
 
 WORKDIR /Mythic/
 RUN python3 -m venv /venv
-RUN /venv/bin/python -m pip install mythic-container==0.6.0  mslex impacket
+RUN /venv/bin/python -m pip install mythic-container==0.6.0 mslex impacket toml
 RUN /venv/bin/python -m pip install git+https://github.com/MEhrn00/donut.git@v2.0.0
 
 COPY [".", "."]
 
 # fetch all dependencies
-RUN cd apollo/agent_code && dotnet restore && rm donut ; cp /donut donut
+RUN cd apollo/agent_code && dotnet restore --verbosity quiet && rm donut ; cp /donut donut
 RUN cd apollo/agent_code && cp COFFLoader.dll /COFFLoader.dll
 
 CMD ["bash", "-c", "cp /donut apollo/agent_code/donut && /venv/bin/python main.py"]

