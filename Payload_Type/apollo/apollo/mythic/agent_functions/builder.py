@@ -368,9 +368,9 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             
             # Build command with conditional embedding
             if self.get_parameter('debug'):
-                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/"
+                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ --verbosity quiet"
             else:
-                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/"
+                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ --verbosity quiet"
             await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                 PayloadUUID=self.uuid,
                 StepName="Gathering Files",
