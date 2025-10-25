@@ -12,10 +12,5 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="Transforms.cs" />
-    <Compile Include="TransformChain.cs" />
-    <Compile Include="HttpxConfig.cs" />
-  </ItemGroup>
 
 </Project>

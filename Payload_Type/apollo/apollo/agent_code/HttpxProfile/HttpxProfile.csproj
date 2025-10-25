@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="HttpxProfile.cs" />
     <EmbeddedResource Include="default_config.json" Condition="'$(EmbedDefaultConfig)' == 'true'" />
   </ItemGroup>
 
