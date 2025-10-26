@@ -273,9 +273,9 @@ namespace HttpxTransport
                 else
                 {
 #if DEBUG
-                    DebugWriteLine("[LoadHttpxConfig] No config data provided and no embedded resource - agent cannot function without C2 config");
+                    DebugWriteLine("[LoadHttpxConfig] No config data provided - agent cannot function without C2 config");
 #endif
-                    throw new InvalidOperationException("Httpx C2 profile requires configuration data. Either provide raw_c2_config parameter or ensure default_config.json is embedded.");
+                    throw new InvalidOperationException("Httpx C2 profile requires configuration data. Please provide the raw_c2_config parameter with a valid configuration.");
                 }
                 
 #if DEBUG

@@ -381,6 +381,25 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
             # shutil to copy payload files over
             copy_tree(str(self.agent_code_path), agent_build_path.name)
+            
+            # Get selected profiles from c2info
+            selected_profiles = [c2.get_c2profile()['name'] for c2 in self.c2info]
+            
+            # Filter Apollo.csproj to include only selected profile projects
+            csproj_path = os.path.join(agent_build_path.name, "Apollo", "Apollo.csproj")
+            if os.path.exists(csproj_path):
+                try:
+                    filter_csproj_profile_references(csproj_path, selected_profiles)
+                    stdout_err += f"\nFiltered Apollo.csproj to include only selected profiles: {', '.join(selected_profiles)}\n"
+                    
+                    # Also filter Config.cs to remove #define statements for unselected profiles
+                    config_path = os.path.join(agent_build_path.name, "Apollo", "Config.cs")
+                    if os.path.exists(config_path):
+                        filter_config_defines(config_path, selected_profiles)
+                        stdout_err += f"\nFiltered Config.cs to remove unselected profile defines\n"
+                except Exception as e:
+                    stdout_err += f"\nWarning: Failed to filter csproj references: {e}. Building with all profiles.\n"
+            
             # first replace everything in the c2 profiles
             for csFile in get_csharp_files(agent_build_path.name):
                 templateFile = open(csFile, "rb").read().decode()
@@ -725,6 +744,90 @@ def get_csharp_files(base_path: str) -> list[str]:
     if len(results) == 0:
         raise Exception("No payload files found with extension .cs")
     return results
+
+
+def filter_config_defines(config_path: str, selected_profiles: list[str]) -> None:
+    """
+    Modify Config.cs to comment out #define statements for unselected profiles.
+    This prevents compilation errors when profile assemblies aren't included.
+    """
+    profile_defines = {
+        'http': '#define HTTP',
+        'httpx': '#define HTTPX',
+        'smb': '#define SMB',
+        'tcp': '#define TCP',
+        'websocket': '#define WEBSOCKET'
+    }
+    
+    # Read lines
+    with open(config_path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    
+    # Filter lines: comment out unselected profile defines
+    filtered_lines = []
+    for line in lines:
+        modified = False
+        for profile_name, define_line in profile_defines.items():
+            if define_line in line and profile_name not in selected_profiles:
+                # Comment out this define
+                filtered_lines.append('//' + line.lstrip())
+                modified = True
+                break
+        
+        if not modified:
+            filtered_lines.append(line)
+    
+    # Write back
+    with open(config_path, 'w', encoding='utf-8') as f:
+        f.writelines(filtered_lines)
+
+
+def filter_csproj_profile_references(csproj_path: str, selected_profiles: list[str]) -> None:
+    """
+    Modify Apollo.csproj to include only ProjectReference entries for selected profiles.
+    Simple line-by-line filtering
+    """
+    # Map profile names to their line content in csproj
+    profile_lines = {
+        'http': '    <ProjectReference Include="..\\HttpProfile\\HttpProfile.csproj" />',
+        'httpx': '    <ProjectReference Include="..\\HttpxProfile\\HttpxProfile.csproj" />',
+        'smb': '    <ProjectReference Include="..\\NamedPipeProfile\\NamedPipeProfile.csproj" />',
+        'tcp': '    <ProjectReference Include="..\\TcpProfile\\TcpProfile.csproj" />',
+        'websocket': '    <ProjectReference Include="..\\WebsocketProfile\\WebsocketProfile.csproj" />'
+    }
+    
+    # Also track HttpxTransform
+    httpx_transform_line = '    <ProjectReference Include="..\\HttpxTransform\\HttpxTransform.csproj" />'
+    
+    # Read lines
+    with open(csproj_path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    
+    # Filter lines: keep core references and selected profile references
+    filtered_lines = []
+    for line in lines:
+        # Check if this is a profile reference line
+        is_profile_line = False
+        for profile_name, profile_line in profile_lines.items():
+            if profile_line in line:
+                # Keep only if this profile is selected
+                if profile_name in selected_profiles:
+                    filtered_lines.append(line)
+                is_profile_line = True
+                break
+        
+        # Check if this is HttpxTransform line
+        if httpx_transform_line in line:
+            # Keep only if httpx is selected
+            if 'httpx' in selected_profiles:
+                filtered_lines.append(line)
+        elif not is_profile_line:
+            # Keep all non-profile lines as-is
+            filtered_lines.append(line)
+    
+    # Write back
+    with open(csproj_path, 'w', encoding='utf-8') as f:
+        f.writelines(filtered_lines)
 
 
 def adjust_file_name(filename, shellcode_format, output_type, adjust_filename):
