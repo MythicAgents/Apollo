@@ -102,10 +102,51 @@ namespace HttpxTransform
         [JsonProperty("post")]
         public VariationConfig Post { get; set; }
 
+        [JsonProperty("put")]
+        public VariationConfig Put { get; set; }
+
+        [JsonProperty("delete")]
+        public VariationConfig Delete { get; set; }
+
+        [JsonProperty("patch")]
+        public VariationConfig Patch { get; set; }
+
+        [JsonProperty("options")]
+        public VariationConfig Options { get; set; }
+
+        [JsonProperty("head")]
+        public VariationConfig Head { get; set; }
+
         public HttpxConfig()
         {
             Get = new VariationConfig();
             Post = new VariationConfig();
+            Put = new VariationConfig();
+            Delete = new VariationConfig();
+            Patch = new VariationConfig();
+            Options = new VariationConfig();
+            Head = new VariationConfig();
+        }
+
+        /// <summary>
+        /// Get variation configuration by HTTP method name (case-insensitive)
+        /// </summary>
+        public VariationConfig GetVariation(string method)
+        {
+            if (string.IsNullOrEmpty(method))
+                return null;
+
+            switch (method.ToLower())
+            {
+                case "get": return Get;
+                case "post": return Post;
+                case "put": return Put;
+                case "delete": return Delete;
+                case "patch": return Patch;
+                case "options": return Options;
+                case "head": return Head;
+                default: return null;
+            }
         }
 
         /// <summary>

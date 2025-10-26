@@ -262,8 +262,69 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         for c2 in self.c2info:
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
+            
+            # Initialize all parameters with empty strings as defaults to ensure placeholders are replaced
+            if profile['name'] == 'httpx':
+                default_httpx_params = ['callback_interval', 'callback_jitter', 'callback_domains', 
+                                        'domain_rotation', 'failover_threshold', 'encrypted_exchange_check',
+                                        'killdate', 'raw_c2_config', 'proxy_host', 'proxy_port', 
+                                        'proxy_user', 'proxy_pass', 'domain_front', 'timeout']
+                for param in default_httpx_params:
+                    prefixed_key = f"{profile['name'].lower()}_{param}"
+                    if prefixed_key not in special_files_map.get("Config.cs", {}):
+                        special_files_map.setdefault("Config.cs", {})[prefixed_key] = ""
+            
             for key, val in c2.get_parameters_dict().items():
                 prefixed_key = f"{profile['name'].lower()}_{key}"
+                
+                # Debug: print the parameter being processed
+                stdout_err += f"\nProcessing {profile['name']} parameter: {key} -> {prefixed_key}\n"
+                
+                # Check for raw_c2_config file parameter FIRST before other type checks
+                if key == "raw_c2_config" and profile['name'] == "httpx":
+                    # Handle httpx raw_c2_config file parameter - REQUIRED for httpx profile
+                    if not val or val == "":
+                        resp.set_status(BuildStatus.Error)
+                        resp.build_stderr = "raw_c2_config is REQUIRED for httpx profile. Please upload a JSON or TOML configuration file."
+                        return resp
+                    
+                    try:
+                        # Read configuration file contents
+                        response = await SendMythicRPCFileGetContent(MythicRPCFileGetContentMessage(val))
+                        
+                        if not response.Success:
+                            resp.set_status(BuildStatus.Error)
+                            resp.build_stderr = f"Error reading raw_c2_config file: {response.Error}"
+                            return resp
+                        
+                        raw_config_file_data = response.Content.decode('utf-8')
+                        
+                        # Try parsing the content as JSON first
+                        try:
+                            config_data = json.loads(raw_config_file_data)
+                        except json.JSONDecodeError:
+                            # If JSON fails, try parsing as TOML
+                            try:
+                                config_data = toml.loads(raw_config_file_data)
+                            except Exception as toml_err:
+                                resp.set_status(BuildStatus.Error)
+                                resp.build_stderr = f"Failed to parse raw_c2_config as JSON or TOML: {toml_err}"
+                                return resp
+                        
+                        # Store the parsed config for Apollo to use
+                        # Base64 encode to avoid C# string escaping issues
+                        import base64
+                        encoded_config = base64.b64encode(raw_config_file_data.encode('utf-8')).decode('ascii')
+                        stdout_err += f"  Reading raw_c2_config file (original length: {len(raw_config_file_data)}, encoded length: {len(encoded_config)})\n"
+                        stdout_err += f"  First 100 chars of encoded: {encoded_config[:100]}...\n"
+                        special_files_map["Config.cs"][prefixed_key] = encoded_config
+                        
+                    except Exception as err:
+                        resp.set_status(BuildStatus.Error)
+                        resp.build_stderr = f"Error processing raw_c2_config: {str(err)}"
+                        return resp
+                    
+                    continue  # Skip to next parameter
 
                 if isinstance(val, dict) and 'enc_key' in val:
                     if val["value"] == "none":
@@ -275,8 +336,35 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
 
                     # TODO: Prefix the AESPSK variable and also make it specific to each profile
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
-                elif isinstance(val, str):
-                    special_files_map["Config.cs"][prefixed_key] = val.replace("\\", "\\\\")
+                elif isinstance(val, list):
+                    # Handle list values (like callback_domains as an array)
+                    val = ', '.join(str(item) for item in val)
+                    stdout_err += f"  Parsing list for '{prefixed_key}', converted to comma-separated: {val[:100]}...\n"
+                
+                # Now process as string if it's a string
+                if isinstance(val, str):
+                    # Check if the value looks like a JSON array string (e.g., '["domain1", "domain2"]')
+                    if val.strip().startswith('[') and val.strip().endswith(']'):
+                        try:
+                            # Parse the JSON array and join with commas for Apollo
+                            json_val = json.loads(val)
+                            if isinstance(json_val, list):
+                                # Join list items with commas
+                                val = ', '.join(json_val)
+                                stdout_err += f"  Parsing JSON array for '{prefixed_key}', converted to comma-separated: {val[:100]}...\n"
+                        except:
+                            # If parsing fails, use as-is
+                            pass
+                    
+                    escaped_val = val.replace("\\", "\\\\")
+                    # Check for newlines in the string that would break C# syntax
+                    if '\n' in escaped_val or '\r' in escaped_val:
+                        stdout_err += f"  WARNING: String '{prefixed_key}' contains newlines! This will break C# syntax.\n"
+                        stdout_err += f"    Contains {escaped_val.count(chr(10))} newlines and {escaped_val.count(chr(13))} carriage returns\n"
+                        # Replace newlines with escaped versions for C# strings
+                        escaped_val = escaped_val.replace('\n', '\\n').replace('\r', '\\r')
+                    special_files_map["Config.cs"][prefixed_key] = escaped_val
+                    stdout_err += f"  Storing string value for '{prefixed_key}' (length {len(escaped_val)}): {escaped_val[:100]}...\n"
                 elif isinstance(val, bool):
                     if key == "encrypted_exchange_check" and not val:
                         resp.set_status(BuildStatus.Error)
@@ -285,43 +373,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     special_files_map["Config.cs"][prefixed_key] = "true" if val else "false"
                 elif isinstance(val, dict):
                     extra_variables = {**extra_variables, **val}
-                elif key == "raw_c2_config" and profile['name'] == "httpx":
-                    # Handle httpx raw_c2_config file parameter like Xenon does
-                    # Apollo will process it internally AND pass it through to C2 profile
-                    if val and val != "":
-                        try:
-                            # Read configuration file contents
-                            response = await SendMythicRPCFileGetContent(MythicRPCFileGetContentMessage(val))
-                            
-                            if not response.Success:
-                                resp.set_status(BuildStatus.Error)
-                                resp.build_stderr = f"Error reading raw_c2_config file: {response.Error}"
-                                return resp
-                            
-                            raw_config_file_data = response.Content.decode('utf-8')
-                            
-                            # Try parsing the content as JSON first
-                            try:
-                                config_data = json.loads(raw_config_file_data)
-                            except json.JSONDecodeError:
-                                # If JSON fails, try parsing as TOML
-                                try:
-                                    config_data = toml.loads(raw_config_file_data)
-                                except Exception as toml_err:
-                                    resp.set_status(BuildStatus.Error)
-                                    resp.build_stderr = f"Failed to parse raw_c2_config as JSON or TOML: {toml_err}"
-                                    return resp
-                            
-                            # Store the parsed config for Apollo to use
-                            special_files_map["Config.cs"][prefixed_key] = raw_config_file_data
-                            
-                        except Exception as err:
-                            resp.set_status(BuildStatus.Error)
-                            resp.build_stderr = f"Error processing raw_c2_config: {str(err)}"
-                            return resp
-                    else:
-                        # Use default config (empty string - Apollo will use embedded default)
-                        special_files_map["Config.cs"][prefixed_key] = ""
                 else:
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
         
@@ -338,8 +389,27 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 for specialFile in special_files_map.keys():
                     if csFile.endswith(specialFile):
                         for key, val in special_files_map[specialFile].items():
-                            templateFile = templateFile.replace(key + "_here", val)
+                            placeholder = key + "_here"
+                            if placeholder in templateFile:
+                                stdout_err += f"  Replacing '{placeholder}' with value (length {len(val)})\n"
+                                # For very long strings (like Base64 encoded configs), show first/last chars
+                                if len(val) > 100:
+                                    stdout_err += f"    Value preview: {val[:50]}...{val[-50:]}\n"
+                                templateFile = templateFile.replace(placeholder, val)
+                                # After replacement, check for syntax issues around the replacement
+                                if csFile.endswith("Config.cs") and len(val) > 500:
+                                    # Check lines around the replacement to detect issues
+                                    lines = templateFile.split('\n')
+                                    for i, line in enumerate(lines):
+                                        if 'raw_c2_config' in line:
+                                            stdout_err += f"    Line {i+1}: {line[:200]}...\n"
                         if specialFile == "Config.cs":
+                            # Debug: Save the Config.cs after all replacements to help debug syntax errors
+                            if "Config.cs" in specialFile:
+                                # Write debug copy of Config.cs to stderr
+                                debug_lines = templateFile.split('\n')
+                                for i in range(max(0, 170), min(len(debug_lines), 180)):
+                                    stdout_err += f"DEBUG Config.cs line {i+1}: {debug_lines[i]}\n"
                             if len(extra_variables.keys()) > 0:
                                 extra_data = ""
                                 for key, val in extra_variables.items():
