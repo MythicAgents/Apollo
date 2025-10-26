@@ -37,9 +37,9 @@ Randomize the callback interval within the specified threshold.
 **Default:** 23
 
 #### Encrypted Exchange Check
-Perform encrypted key exchange with Mythic on check-in. Recommended to keep as true.
+**Required:** Must be true. The HTTPX profile uses RSA-4096 key exchange (EKE) for secure communication and cannot operate without it. This ensures all traffic is encrypted with client-side generated keys.
 
-**Default:** true
+**Default:** true (Cannot be disabled)
 
 #### Kill Date
 The date at which the agent will stop calling back.
@@ -74,6 +74,17 @@ Domain fronting header value. Sets the `Host` header to this value for traffic o
 Request timeout in seconds for HTTP connections.
 
 **Default:** `240`
+
+## Security: RSA Key Exchange (EKE)
+
+The HTTPX profile implements EKE using client-side generated RSA keys for secure communication:
+
+- **RSA Key Size:** 4096-bit key pairs generated on the agent side
+- **Exchange Process:** Agent generates an RSA keypair and sends the public key to Mythic, which responds with an encrypted session key
+- **Security:** All communication is encrypted using this negotiated session key
+- **Requirement:** EKE is mandatory and cannot be disabled in the HTTPX profile
+
+This ensures that even if the communication is intercepted, without the private key on the agent, the traffic remains encrypted.
 
 ## Malleable Profile Configuration
 
