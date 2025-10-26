@@ -14,8 +14,4 @@
     <ProjectReference Include="..\PSKCrypto\PSKCryptography.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="default_config.json" Condition="'$(EmbedDefaultConfig)' == 'true'" />
-  </ItemGroup>
-
 </Project>
