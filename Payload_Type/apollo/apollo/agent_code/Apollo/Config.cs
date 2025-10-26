@@ -216,7 +216,7 @@ namespace Apollo
         public static string PayloadUUID = "7f2a0f77-51ca-4afc-a7a9-5ea9717e73c3";
 #endif
 #else
-        // TODO: Make the AES key a config option specific to each profile
+      
         public static string StagingRSAPrivateKey = "AESPSK_here";
         public static string PayloadUUID = "payload_uuid_here";
 #endif
