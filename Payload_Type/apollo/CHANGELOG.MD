@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.1] - 2025-10-27
+
+### Changed
+
+- Updated PyPi version
+- Merged in hotfix for P2P comms missing messages sometimes
+
 ## [v2.4.0] - 2025-10-07
 
 ### Changed
