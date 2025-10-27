@@ -277,9 +277,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             for key, val in c2.get_parameters_dict().items():
                 prefixed_key = f"{profile['name'].lower()}_{key}"
                 
-                # Debug: print the parameter being processed
-                stdout_err += f"\nProcessing {profile['name']} parameter: {key} -> {prefixed_key}\n"
-                
                 # Check for raw_c2_config file parameter FIRST before other type checks
                 if key == "raw_c2_config" and profile['name'] == "httpx":
                     # Handle httpx raw_c2_config file parameter - REQUIRED for httpx profile
@@ -315,8 +312,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         # Base64 encode to avoid C# string escaping issues
                         import base64
                         encoded_config = base64.b64encode(raw_config_file_data.encode('utf-8')).decode('ascii')
-                        stdout_err += f"  Reading raw_c2_config file (original length: {len(raw_config_file_data)}, encoded length: {len(encoded_config)})\n"
-                        stdout_err += f"  First 100 chars of encoded: {encoded_config[:100]}...\n"
                         special_files_map["Config.cs"][prefixed_key] = encoded_config
                         
                     except Exception as err:
@@ -332,14 +327,11 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         resp.set_build_message("Apollo does not support plaintext encryption")
                         return resp
 
-                    stdout_err += "Setting {} to {}".format(prefixed_key, val["enc_key"] if val["enc_key"] is not None else "")
-
                     # TODO: Prefix the AESPSK variable and also make it specific to each profile
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
                 elif isinstance(val, list):
                     # Handle list values (like callback_domains as an array)
                     val = ', '.join(str(item) for item in val)
-                    stdout_err += f"  Parsing list for '{prefixed_key}', converted to comma-separated: {val[:100]}...\n"
                 
                 # Now process as string if it's a string
                 if isinstance(val, str):
@@ -351,7 +343,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                             if isinstance(json_val, list):
                                 # Join list items with commas
                                 val = ', '.join(json_val)
-                                stdout_err += f"  Parsing JSON array for '{prefixed_key}', converted to comma-separated: {val[:100]}...\n"
                         except:
                             # If parsing fails, use as-is
                             pass
@@ -360,11 +351,9 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     # Check for newlines in the string that would break C# syntax
                     if '\n' in escaped_val or '\r' in escaped_val:
                         stdout_err += f"  WARNING: String '{prefixed_key}' contains newlines! This will break C# syntax.\n"
-                        stdout_err += f"    Contains {escaped_val.count(chr(10))} newlines and {escaped_val.count(chr(13))} carriage returns\n"
                         # Replace newlines with escaped versions for C# strings
                         escaped_val = escaped_val.replace('\n', '\\n').replace('\r', '\\r')
                     special_files_map["Config.cs"][prefixed_key] = escaped_val
-                    stdout_err += f"  Storing string value for '{prefixed_key}' (length {len(escaped_val)}): {escaped_val[:100]}...\n"
                 elif isinstance(val, bool):
                     if key == "encrypted_exchange_check" and not val:
                         resp.set_status(BuildStatus.Error)
@@ -379,6 +368,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
+            
             # shutil to copy payload files over
             copy_tree(str(self.agent_code_path), agent_build_path.name)
             
@@ -390,13 +380,11 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             if os.path.exists(csproj_path):
                 try:
                     filter_csproj_profile_references(csproj_path, selected_profiles)
-                    stdout_err += f"\nFiltered Apollo.csproj to include only selected profiles: {', '.join(selected_profiles)}\n"
                     
                     # Also filter Config.cs to remove #define statements for unselected profiles
                     config_path = os.path.join(agent_build_path.name, "Apollo", "Config.cs")
                     if os.path.exists(config_path):
                         filter_config_defines(config_path, selected_profiles)
-                        stdout_err += f"\nFiltered Config.cs to remove unselected profile defines\n"
                 except Exception as e:
                     stdout_err += f"\nWarning: Failed to filter csproj references: {e}. Building with all profiles.\n"
             
@@ -410,25 +398,8 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         for key, val in special_files_map[specialFile].items():
                             placeholder = key + "_here"
                             if placeholder in templateFile:
-                                stdout_err += f"  Replacing '{placeholder}' with value (length {len(val)})\n"
-                                # For very long strings (like Base64 encoded configs), show first/last chars
-                                if len(val) > 100:
-                                    stdout_err += f"    Value preview: {val[:50]}...{val[-50:]}\n"
                                 templateFile = templateFile.replace(placeholder, val)
-                                # After replacement, check for syntax issues around the replacement
-                                if csFile.endswith("Config.cs") and len(val) > 500:
-                                    # Check lines around the replacement to detect issues
-                                    lines = templateFile.split('\n')
-                                    for i, line in enumerate(lines):
-                                        if 'raw_c2_config' in line:
-                                            stdout_err += f"    Line {i+1}: {line[:200]}...\n"
                         if specialFile == "Config.cs":
-                            # Debug: Save the Config.cs after all replacements to help debug syntax errors
-                            if "Config.cs" in specialFile:
-                                # Write debug copy of Config.cs to stderr
-                                debug_lines = templateFile.split('\n')
-                                for i in range(max(0, 170), min(len(debug_lines), 180)):
-                                    stdout_err += f"DEBUG Config.cs line {i+1}: {debug_lines[i]}\n"
                             if len(extra_variables.keys()) > 0:
                                 extra_data = ""
                                 for key, val in extra_variables.items():
@@ -447,11 +418,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     raw_config = c2.get_parameters_dict().get('raw_c2_config', '')
                     if raw_config and raw_config != "":
                         embed_default_config = False
-                        stdout_err += f"Custom httpx config provided, skipping default config embedding\n"
                         break
-            
-            if embed_default_config:
-                stdout_err += f"Using embedded default httpx config\n"
             
             output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
             
