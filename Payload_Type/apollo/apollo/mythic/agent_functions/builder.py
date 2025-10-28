@@ -21,7 +21,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    semver = "2.4.1"
+    semver = "2.4.2"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     note = """
@@ -51,6 +51,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             choices=["WinExe", "Shellcode", "Service", "Source"],
             default_value="WinExe",
             description="Output as shellcode, executable, sourcecode, or service.",
+            ui_position=1,
         ),
         BuildParameter(
             name="shellcode_format",
@@ -61,7 +62,8 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             group_name="Shellcode Options",
             hide_conditions=[
                 HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="Shellcode")
-            ]
+            ],
+            ui_position=4
         ),
         BuildParameter(
             name="shellcode_bypass",
@@ -72,19 +74,22 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             group_name="Shellcode Options",
             hide_conditions=[
                 HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="Shellcode")
-            ]
+            ],
+            ui_position=5
         ),
         BuildParameter(
             name="adjust_filename",
             parameter_type=BuildParameterType.Boolean,
             default_value=False,
             description="Automatically adjust payload extension based on selected choices.",
+            ui_position=3,
         ),
         BuildParameter(
             name="debug",
             parameter_type=BuildParameterType.Boolean,
             default_value=False,
             description="Create a DEBUG version.",
+            ui_position=2,
         )
     ]
     c2_profiles = ["http", "smb", "tcp", "websocket"]
