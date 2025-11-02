@@ -1,0 +1,149 @@
+{
+    "name": "CDN Asset Delivery Service",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/assets/bootstrap-5.3.2.min.css",
+            "/cdn/bootstrap/5.3.2/css/bootstrap.min.css",
+            "/static/libs/bootstrap/css/bootstrap.min.css"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/css,*/*;q=0.1",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Referer": "https://cdn.example.net/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+            },
+            "parameters": {
+                "v": "5.3.2",
+                "t": "20240415"
+            },
+            "message": {
+                "location": "cookie",
+                "name": "__cdn_session"
+            },
+            "transforms": [
+                {
+                    "action": "netbiosu",
+                    "value": ""
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                },
+                {
+                    "action": "xor",
+                    "value": "cdnAssetDelivery2024"
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "Connection": "keep-alive",
+                "Content-Type": "text/css; charset=utf-8",
+                "Content-Encoding": "gzip",
+                "ETag": "\"5.3.2-abc123\"",
+                "Server": "Cloudflare",
+                "CF-Ray": "8a1b2c3d4e5f6789-ORD"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "/*! Bootstrap v5.3.2 | MIT License | https://getbootstrap.com */"
+                },
+                {
+                    "action": "append",
+                    "value": "@media (min-width: 992px){.container-lg,.container-md,.container-sm,.container{max-width:960px}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}.col-lg{flex:1 0 0%}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}}"
+                },
+                {
+                    "action": "xor",
+                    "value": "cdnResponseKey2024"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "netbiosu",
+                    "value": ""
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/assets/bootstrap-5.3.2.min.css",
+            "/cdn/bootstrap/5.3.2/css/bootstrap.min.css",
+            "/static/libs/bootstrap/css/bootstrap.min.css"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/css,*/*;q=0.1",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "keep-alive",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Origin": "https://cdn.example.net",
+                "Referer": "https://cdn.example.net/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+            },
+            "parameters": null,
+            "message": {
+                "location": "body",
+                "name": ""
+            },
+            "transforms": [
+                {
+                    "action": "netbios",
+                    "value": ""
+                },
+                {
+                    "action": "xor",
+                    "value": "cdnPostDelivery2024"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Connection": "keep-alive",
+                "Content-Type": "text/css; charset=utf-8",
+                "Server": "Cloudflare",
+                "CF-Ray": "8a1b2c3d4e5f6790-ORD",
+                "X-Content-Type-Options": "nosniff"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "/*! Bootstrap v5.3.2 | MIT License | https://getbootstrap.com */"
+                },
+                {
+                    "action": "append",
+                    "value": "@media (min-width: 992px){.container-lg,.container-md,.container-sm,.container{max-width:960px}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}.col-lg{flex:1 0 0%}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}}"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "netbios",
+                    "value": ""
+                },
+                {
+                    "action": "xor",
+                    "value": "cdnPostResponse2024"
+                }
+            ]
+        }
+    }
+}
