@@ -198,46 +198,62 @@ namespace HttpxTransform
             if (string.IsNullOrEmpty(Name))
                 throw new ArgumentException("Configuration name is required");
 
-            if (Get?.Uris == null || Get.Uris.Count == 0)
-                throw new ArgumentException("GET URIs are required");
-
-            if (Post?.Uris == null || Post.Uris.Count == 0)
-                throw new ArgumentException("POST URIs are required");
+            // At least GET or POST must be configured
+            bool hasGet = Get?.Uris != null && Get.Uris.Count > 0;
+            bool hasPost = Post?.Uris != null && Post.Uris.Count > 0;
+            
+            if (!hasGet && !hasPost)
+                throw new ArgumentException("At least GET or POST URIs are required");
 
             // Validate message locations
             var validLocations = new[] { "cookie", "query", "header", "body", "" };
             
-            if (!Array.Exists(validLocations, loc => loc == Get?.Client?.Message?.Location))
-                throw new ArgumentException("Invalid GET message location");
-
-            if (!Array.Exists(validLocations, loc => loc == Post?.Client?.Message?.Location))
-                throw new ArgumentException("Invalid POST message location");
-
             // Validate transform actions
             var validActions = new[] { "base64", "base64url", "netbios", "netbiosu", "xor", "prepend", "append" };
             
-            foreach (var transform in Get?.Client?.Transforms ?? new List<TransformConfig>())
+            // Validate all configured HTTP methods
+            var variations = new Dictionary<string, VariationConfig>
             {
-                if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
-                    throw new ArgumentException($"Invalid GET client transform action: {transform.Action}");
-            }
-
-            foreach (var transform in Get?.Server?.Transforms ?? new List<TransformConfig>())
+                { "GET", Get },
+                { "POST", Post },
+                { "PUT", Put },
+                { "PATCH", Patch },
+                { "DELETE", Delete },
+                { "OPTIONS", Options },
+                { "HEAD", Head }
+            };
+            
+            foreach (var kvp in variations)
             {
-                if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
-                    throw new ArgumentException($"Invalid GET server transform action: {transform.Action}");
-            }
-
-            foreach (var transform in Post?.Client?.Transforms ?? new List<TransformConfig>())
-            {
-                if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
-                    throw new ArgumentException($"Invalid POST client transform action: {transform.Action}");
-            }
-
-            foreach (var transform in Post?.Server?.Transforms ?? new List<TransformConfig>())
-            {
-                if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
-                    throw new ArgumentException($"Invalid POST server transform action: {transform.Action}");
+                var method = kvp.Key;
+                var variation = kvp.Value;
+                
+                if (variation == null) continue; // Method not configured, skip validation
+                
+                // Validate URIs
+                if (variation.Uris == null || variation.Uris.Count == 0)
+                    throw new ArgumentException($"{method} URIs are required if {method} method is configured");
+                
+                // Validate message location
+                if (variation.Client?.Message != null)
+                {
+                    if (!Array.Exists(validLocations, loc => loc == variation.Client.Message.Location))
+                        throw new ArgumentException($"Invalid {method} message location: {variation.Client.Message.Location}");
+                }
+                
+                // Validate client transforms
+                foreach (var transform in variation.Client?.Transforms ?? new List<TransformConfig>())
+                {
+                    if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
+                        throw new ArgumentException($"Invalid {method} client transform action: {transform.Action}");
+                }
+                
+                // Validate server transforms
+                foreach (var transform in variation.Server?.Transforms ?? new List<TransformConfig>())
+                {
+                    if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
+                        throw new ArgumentException($"Invalid {method} server transform action: {transform.Action}");
+                }
             }
         }
     }

@@ -227,6 +227,25 @@ namespace HttpxTransport
             return RestrictedHeaders.Contains(headerName);
         }
 
+        /// <summary>
+        /// Check if a string contains invalid characters for HTTP headers
+        /// HTTP headers should only contain printable ASCII (0x20-0x7E) and no CR/LF
+        /// </summary>
+        private bool ContainsInvalidHeaderChars(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return false;
+            
+            foreach (char c in value)
+            {
+                // Check for non-printable ASCII or CR/LF
+                if (c < 0x20 || c > 0x7E || c == '\r' || c == '\n')
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void LoadHttpxConfig(string configData)
         {
 #if DEBUG
@@ -404,11 +423,27 @@ namespace HttpxTransport
                             }
                         }
                         // Add message parameter
-                        // NOTE: transformedData is already URL-safe (base64url/netbios/netbiosu)
-                        // Do NOT apply Uri.EscapeDataString to avoid double-encoding
-                        if (!string.IsNullOrEmpty(queryParam))
-                            queryParam += "&";
-                        queryParam += $"{variation.Client.Message.Name}={Encoding.UTF8.GetString(transformedData)}";
+                        string transformedString = Encoding.UTF8.GetString(transformedData);
+                        
+                        // Check if the transformed data already contains a query parameter pattern (e.g., "filter=" from prepend transform)
+                        // If it does and matches the message name, use it directly to avoid duplication
+                        string paramPrefix = variation.Client.Message.Name + "=";
+                        if (transformedString.StartsWith(paramPrefix))
+                        {
+                            // Transformed data already includes parameter name (from prepend transform), use as-is
+                            if (!string.IsNullOrEmpty(queryParam))
+                                queryParam += "&";
+                            queryParam += transformedString;
+                        }
+                        else
+                        {
+                            // Standard case: add parameter name
+                            // NOTE: transformedData is already URL-safe (base64url/netbios/netbiosu)
+                            // Do NOT apply Uri.EscapeDataString to avoid double-encoding
+                            if (!string.IsNullOrEmpty(queryParam))
+                                queryParam += "&";
+                            queryParam += $"{variation.Client.Message.Name}={transformedString}";
+                        }
                         url = url.Split('?')[0] + "?" + queryParam;
                         break;
 
@@ -533,11 +568,28 @@ namespace HttpxTransport
                 switch (variation.Client.Message.Location.ToLower())
                 {
                     case "cookie":
-                        request.Headers[HttpRequestHeader.Cookie] = $"{variation.Client.Message.Name}={Uri.EscapeDataString(Encoding.UTF8.GetString(transformedData))}";
+                        // Convert transformed data to string for cookie value
+                        // For netbios/netbiosu, the data is already ASCII-printable letters
+                        // URL encoding is needed for cookies to handle any special characters
+                        string cookieValue = Encoding.UTF8.GetString(transformedData);
+                        request.Headers[HttpRequestHeader.Cookie] = $"{variation.Client.Message.Name}={Uri.EscapeDataString(cookieValue)}";
                         break;
 
                     case "header":
-                        request.Headers[variation.Client.Message.Name] = Encoding.UTF8.GetString(transformedData);
+                        // Convert transformed data to string for header value
+                        // Headers can contain ASCII characters; netbios produces lowercase letters (a-p), netbiosu produces uppercase (A-P)
+                        // These are safe for HTTP headers, but we should validate they're valid header characters
+                        string headerValue = Encoding.UTF8.GetString(transformedData);
+                        
+                        // HTTP headers should only contain printable ASCII characters (0x20-0x7E) and not contain CR/LF
+                        // If the transformed data contains non-printable characters, we might need base64 encoding
+                        // For now, use as-is since netbios/netbiosu produce printable ASCII
+                        if (ContainsInvalidHeaderChars(headerValue))
+                        {
+                            // If header contains invalid characters, base64 encode it
+                            headerValue = Convert.ToBase64String(transformedData);
+                        }
+                        request.Headers[variation.Client.Message.Name] = headerValue;
                         break;
                 }
 
@@ -556,8 +608,10 @@ namespace HttpxTransport
 
                 // Get response
                 string response;
-                using (HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse())
+                HttpWebResponse httpResponse = null;
+                try
                 {
+                    httpResponse = (HttpWebResponse)request.GetResponse();
                     using (Stream responseStream = httpResponse.GetResponseStream())
                     {
                         using (StreamReader reader = new StreamReader(responseStream))
@@ -566,11 +620,15 @@ namespace HttpxTransport
                         }
                     }
                 }
+                finally
+                {
+                    httpResponse?.Close();
+                }
 
                 HandleDomainSuccess();
 
                 // Extract response data based on server configuration
-                byte[] responseBytes = ExtractResponseData(response, variation.Server);
+                byte[] responseBytes = ExtractResponseData(response, httpResponse, variation.Server);
                 
                 // Apply server transforms (reverse)
                 byte[] untransformedData = TransformChain.ApplyServerTransforms(responseBytes, variation.Server.Transforms);
@@ -625,10 +683,65 @@ namespace HttpxTransport
             }
         }
 
-        private byte[] ExtractResponseData(string response, ServerConfig serverConfig)
+        private byte[] ExtractResponseData(string response, HttpWebResponse httpResponse, ServerConfig serverConfig)
         {
-            // For now, assume the entire response body is the data
-            // In a more sophisticated implementation, we could extract specific headers or cookies
+            // Check if server transforms include prepend/append that wrap encoded data
+            // This helps extract the actual payload from JSON/HTML wrappers
+            if (serverConfig?.Transforms != null && serverConfig.Transforms.Count > 0)
+            {
+                // Find prepend and append transforms
+                string prependValue = null;
+                string appendValue = null;
+                bool hasEncodingTransforms = false;
+                
+                foreach (var transform in serverConfig.Transforms)
+                {
+                    if (transform.Action?.ToLower() == "prepend" && !string.IsNullOrEmpty(transform.Value))
+                    {
+                        prependValue = transform.Value;
+                    }
+                    else if (transform.Action?.ToLower() == "append" && !string.IsNullOrEmpty(transform.Value))
+                    {
+                        appendValue = transform.Value;
+                    }
+                    else if (transform.Action?.ToLower() == "base64" || 
+                             transform.Action?.ToLower() == "base64url" ||
+                             transform.Action?.ToLower() == "netbios" ||
+                             transform.Action?.ToLower() == "netbiosu")
+                    {
+                        hasEncodingTransforms = true;
+                    }
+                }
+                
+                // If we have prepend/append wrapping encoded data, try to extract the inner portion
+                if (prependValue != null || appendValue != null)
+                {
+                    // For JSON/HTML wrappers, we need to extract the encoded portion
+                    // The encoded data is typically between the prepend and append values
+                    string extractedData = response;
+                    
+                    // Try to find and extract the encoded portion
+                    if (prependValue != null && extractedData.StartsWith(prependValue))
+                    {
+                        extractedData = extractedData.Substring(prependValue.Length);
+                    }
+                    
+                    if (appendValue != null && extractedData.EndsWith(appendValue))
+                    {
+                        extractedData = extractedData.Substring(0, extractedData.Length - appendValue.Length);
+                    }
+                    
+                    // If we successfully extracted something different, use it
+                    // Otherwise fall back to full response (might be a different pattern)
+                    if (extractedData != response && extractedData.Length > 0)
+                    {
+                        return Encoding.UTF8.GetBytes(extractedData);
+                    }
+                }
+            }
+            
+            // Default: return entire response body as bytes
+            // This works when transforms don't wrap the data, or when extraction above didn't work
             return Encoding.UTF8.GetBytes(response);
         }
 
