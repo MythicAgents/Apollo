@@ -57,7 +57,7 @@
                     "value": "cdnResponseKey2024"
                 },
                 {
-                    "action": "base64",
+                    "action": "base64url",
                     "value": ""
                 },
                 {

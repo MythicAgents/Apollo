@@ -57,7 +57,7 @@
                     "value": "windowsUpdateResponse2025"
                 },
                 {
-                    "action": "base64",
+                    "action": "base64url",
                     "value": ""
                 },
                 {

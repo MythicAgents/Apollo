@@ -279,6 +279,44 @@ namespace HttpxTransform
                     if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
                         throw new ArgumentException($"Invalid {method} server transform action: {transform.Action}");
                 }
+                
+                // Validate encoding consistency: client and server must use matching base64/base64url encoding
+                // Find the last encoding transform in client transforms (base64 or base64url)
+                string clientEncoding = null;
+                if (variation.Client?.Transforms != null)
+                {
+                    foreach (var transform in variation.Client.Transforms)
+                    {
+                        string action = transform.Action?.ToLower();
+                        if (action == "base64" || action == "base64url")
+                        {
+                            clientEncoding = action;
+                        }
+                    }
+                }
+                
+                // Find the first encoding transform in server transforms (base64 or base64url)
+                // Server transforms are applied in reverse order, so we check from the end
+                string serverEncoding = null;
+                if (variation.Server?.Transforms != null)
+                {
+                    // Check transforms in reverse order (as they're applied)
+                    for (int i = variation.Server.Transforms.Count - 1; i >= 0; i--)
+                    {
+                        string action = variation.Server.Transforms[i].Action?.ToLower();
+                        if (action == "base64" || action == "base64url")
+                        {
+                            serverEncoding = action;
+                            break; // Found the first encoding transform (last in list, first applied)
+                        }
+                    }
+                }
+                
+                // If both client and server have encoding transforms, they must match
+                if (clientEncoding != null && serverEncoding != null && clientEncoding != serverEncoding)
+                {
+                    throw new ArgumentException($"{method} encoding mismatch: client uses {clientEncoding} but server uses {serverEncoding}. Client and server encoding transforms must match.");
+                }
             }
         }
     }
