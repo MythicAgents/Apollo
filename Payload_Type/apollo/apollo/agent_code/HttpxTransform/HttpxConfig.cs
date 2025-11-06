@@ -230,6 +230,23 @@ namespace HttpxTransform
                 
                 if (variation == null) continue; // Method not configured, skip validation
                 
+                // Check if method is actually configured (has verb set or has URIs)
+                // If neither, it's just a default initialized object and should be skipped
+                bool isConfigured = !string.IsNullOrEmpty(variation.Verb) || 
+                                   (variation.Uris != null && variation.Uris.Count > 0) ||
+                                   (variation.Client != null && (
+                                       (variation.Client.Headers != null && variation.Client.Headers.Count > 0) ||
+                                       (variation.Client.Parameters != null && variation.Client.Parameters.Count > 0) ||
+                                       (variation.Client.Transforms != null && variation.Client.Transforms.Count > 0) ||
+                                       (variation.Client.Message != null && !string.IsNullOrEmpty(variation.Client.Message.Location))
+                                   )) ||
+                                   (variation.Server != null && (
+                                       (variation.Server.Headers != null && variation.Server.Headers.Count > 0) ||
+                                       (variation.Server.Transforms != null && variation.Server.Transforms.Count > 0)
+                                   ));
+                
+                if (!isConfigured) continue; // Method not actually configured, skip validation
+                
                 // Validate URIs
                 if (variation.Uris == null || variation.Uris.Count == 0)
                     throw new ArgumentException($"{method} URIs are required if {method} method is configured");
