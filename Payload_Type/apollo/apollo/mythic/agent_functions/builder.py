@@ -15,6 +15,123 @@ import toml
 from mythic_container.MythicRPC import *
 
 
+def validate_httpx_config(config_data):
+    """
+    Validate httpx configuration to match C# HttpxConfig.Validate() logic.
+    Returns None if valid, error message string if invalid.
+    """
+    valid_locations = ["cookie", "query", "header", "body", ""]
+    valid_actions = ["base64", "base64url", "netbios", "netbiosu", "xor", "prepend", "append"]
+    
+    # Check name is required
+    if not config_data.get("name"):
+        return "Configuration name is required"
+    
+    # Check at least GET or POST must be configured
+    get_config = config_data.get("get", {})
+    post_config = config_data.get("post", {})
+    
+    get_uris = get_config.get("uris", [])
+    post_uris = post_config.get("uris", [])
+    
+    if not get_uris and not post_uris:
+        return "At least GET or POST URIs are required"
+    
+    # Validate each configured method (GET and POST only)
+    variations = {
+        "GET": get_config,
+        "POST": post_config
+    }
+    
+    for method, variation in variations.items():
+        if not variation:
+            continue
+        
+        # Check if method is actually configured
+        is_configured = (
+            variation.get("verb") or
+            (variation.get("uris") and len(variation.get("uris", [])) > 0) or
+            (variation.get("client") and (
+                (variation["client"].get("headers") and len(variation["client"].get("headers", {})) > 0) or
+                (variation["client"].get("parameters") and len(variation["client"].get("parameters", {})) > 0) or
+                (variation["client"].get("transforms") and len(variation["client"].get("transforms", [])) > 0) or
+                variation["client"].get("message", {}).get("location")
+            )) or
+            (variation.get("server") and (
+                (variation["server"].get("headers") and len(variation["server"].get("headers", {})) > 0) or
+                (variation["server"].get("transforms") and len(variation["server"].get("transforms", [])) > 0)
+            ))
+        )
+        
+        if not is_configured:
+            continue
+        
+        # Validate URIs
+        uris = variation.get("uris", [])
+        if not uris or len(uris) == 0:
+            return f"{method} URIs are required if {method} method is configured"
+        
+        # Validate message location and name
+        client = variation.get("client", {})
+        message = client.get("message", {})
+        if message:
+            location = message.get("location", "")
+            if location not in valid_locations:
+                return f"Invalid {method} message location: {location}"
+            
+            # Message name is required when location is not "body" or empty string
+            if location and location != "body":
+                if not message.get("name"):
+                    return f"Missing name for {method} variation location '{location}'. Message name is required when location is 'cookie', 'query', or 'header'."
+        
+        # Validate client transforms
+        client_transforms = client.get("transforms", [])
+        for transform in client_transforms:
+            action = transform.get("action", "").lower()
+            if action not in valid_actions:
+                return f"Invalid {method} client transform action: {transform.get('action')}"
+            
+            # Prepend/append transforms are not allowed when message location is "query"
+            if message.get("location", "").lower() == "query" and action in ["prepend", "append"]:
+                return (
+                    f"{method} client transforms cannot use '{transform.get('action')}' when message location is 'query'. "
+                    "Prepend/append transforms corrupt query parameter values because the server extracts only the parameter value "
+                    "(without the parameter name), causing transform mismatches. Use prepend/append only for 'body', 'header', or 'cookie' locations."
+                )
+        
+        # Validate server transforms
+        server = variation.get("server", {})
+        server_transforms = server.get("transforms", [])
+        for transform in server_transforms:
+            action = transform.get("action", "").lower()
+            if action not in valid_actions:
+                return f"Invalid {method} server transform action: {transform.get('action')}"
+        
+        # Validate encoding consistency: client and server must use matching base64/base64url encoding
+        client_encoding = None
+        for transform in client_transforms:
+            action = transform.get("action", "").lower()
+            if action in ["base64", "base64url"]:
+                client_encoding = action
+        
+        server_encoding = None
+        # Server transforms are applied in reverse order, so check from the end
+        for transform in reversed(server_transforms):
+            action = transform.get("action", "").lower()
+            if action in ["base64", "base64url"]:
+                server_encoding = action
+                break
+        
+        # If both client and server have encoding transforms, they must match
+        if client_encoding and server_encoding and client_encoding != server_encoding:
+            return (
+                f"{method} encoding mismatch: client uses {client_encoding} but server uses {server_encoding}. "
+                "Client and server encoding transforms must match."
+            )
+    
+    return None  # Validation passed
+
+
 class Apollo(PayloadType):
     name = "apollo"
     file_extension = "exe"
@@ -307,6 +424,13 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 resp.set_status(BuildStatus.Error)
                                 resp.build_stderr = f"Failed to parse raw_c2_config as JSON or TOML: {toml_err}"
                                 return resp
+                        
+                        # Validate the httpx configuration before building
+                        validation_error = validate_httpx_config(config_data)
+                        if validation_error:
+                            resp.set_status(BuildStatus.Error)
+                            resp.build_stderr = f"Invalid httpx configuration: {validation_error}"
+                            return resp
                         
                         # Store the parsed config for Apollo to use
                         # Base64 encode to avoid C# string escaping issues
