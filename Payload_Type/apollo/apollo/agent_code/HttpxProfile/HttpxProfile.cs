@@ -364,7 +364,7 @@ namespace HttpxTransport
 
             // Select HTTP method variation based on message size
             // Default behavior: use POST for large messages (>500 bytes), GET for small messages
-            // Only supports GET, POST, and PUT methods
+            // Only supports GET and POST methods
             VariationConfig variation = null;
 #if DEBUG
             DebugWriteLine($"[SendRecv] Message size: {messageBytes.Length} bytes");
@@ -372,16 +372,16 @@ namespace HttpxTransport
             if (messageBytes.Length > 500)
             {
 #if DEBUG
-                DebugWriteLine("[SendRecv] Large message (>500 bytes), selecting POST/PUT variation");
+                DebugWriteLine("[SendRecv] Large message (>500 bytes), selecting POST variation");
 #endif
-                // Try POST, then PUT in order until we find a valid configuration
-                variation = Config.GetConfiguredVariation("post") ?? Config.GetConfiguredVariation("put");
+                // Try POST for large messages
+                variation = Config.GetConfiguredVariation("post");
                 
-                // Fall back to GET if no large-message methods are configured
+                // Fall back to GET if POST is not configured
                 if (variation == null)
                 {
 #if DEBUG
-                    DebugWriteLine("[SendRecv] No POST/PUT configured, falling back to GET");
+                    DebugWriteLine("[SendRecv] No POST configured, falling back to GET");
 #endif
                     variation = Config.GetConfiguredVariation("get");
                 }
@@ -650,7 +650,7 @@ namespace HttpxTransport
                         break;
                 }
 
-                // Write request body for POST/PUT
+                // Write request body for POST
                 if (requestBodyBytes != null && requestBodyBytes.Length > 0)
                 {
 #if DEBUG

@@ -102,19 +102,15 @@ namespace HttpxTransform
         [JsonProperty("post")]
         public VariationConfig Post { get; set; }
 
-        [JsonProperty("put")]
-        public VariationConfig Put { get; set; }
-
         public HttpxConfig()
         {
             Get = new VariationConfig();
             Post = new VariationConfig();
-            Put = new VariationConfig();
         }
 
         /// <summary>
         /// Get variation configuration by HTTP method name (case-insensitive)
-        /// Only supports GET, POST, and PUT methods
+        /// Only supports GET and POST methods
         /// </summary>
         public VariationConfig GetVariation(string method)
         {
@@ -125,7 +121,6 @@ namespace HttpxTransform
             {
                 case "get": return Get;
                 case "post": return Post;
-                case "put": return Put;
                 default: return null;
             }
         }
@@ -223,12 +218,11 @@ namespace HttpxTransform
             // Validate transform actions
             var validActions = new[] { "base64", "base64url", "netbios", "netbiosu", "xor", "prepend", "append" };
             
-            // Validate all configured HTTP methods (only GET, POST, PUT are supported)
+            // Validate all configured HTTP methods (only GET and POST are supported)
             var variations = new Dictionary<string, VariationConfig>
             {
                 { "GET", Get },
-                { "POST", Post },
-                { "PUT", Put }
+                { "POST", Post }
             };
             
             foreach (var kvp in variations)
@@ -264,6 +258,14 @@ namespace HttpxTransform
                 {
                     if (!Array.Exists(validLocations, loc => loc == variation.Client.Message.Location))
                         throw new ArgumentException($"Invalid {method} message location: {variation.Client.Message.Location}");
+                    
+                    // Message name is required when location is not "body" or empty string
+                    string location = variation.Client.Message.Location?.ToLower() ?? "";
+                    if (location != "body" && location != "")
+                    {
+                        if (string.IsNullOrEmpty(variation.Client.Message.Name))
+                            throw new ArgumentException($"Missing name for {method} variation location '{variation.Client.Message.Location}'. Message name is required when location is 'cookie', 'query', or 'header'.");
+                    }
                 }
                 
                 // Validate client transforms
@@ -271,6 +273,20 @@ namespace HttpxTransform
                 {
                     if (!Array.Exists(validActions, action => action == transform.Action?.ToLower()))
                         throw new ArgumentException($"Invalid {method} client transform action: {transform.Action}");
+                    
+                    // Prepend/append transforms are not allowed when message location is "query"
+                    // The query parameter name is handled separately, and prepend/append would corrupt the data
+                    // when the server extracts only the query value (without the parameter name)
+                    string transformAction = transform.Action?.ToLower();
+                    if (variation.Client?.Message != null && 
+                        variation.Client.Message.Location?.ToLower() == "query" &&
+                        (transformAction == "prepend" || transformAction == "append"))
+                    {
+                        throw new ArgumentException(
+                            $"{method} client transforms cannot use '{transform.Action}' when message location is 'query'. " +
+                            "Prepend/append transforms corrupt query parameter values because the server extracts only the parameter value " +
+                            "(without the parameter name), causing transform mismatches. Use prepend/append only for 'body', 'header', or 'cookie' locations.");
+                    }
                 }
                 
                 // Validate server transforms

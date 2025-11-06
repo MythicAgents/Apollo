@@ -32,10 +32,6 @@
             },
             "transforms": [
                 {
-                    "action": "prepend",
-                    "value": "filter="
-                },
-                {
                     "action": "xor",
                     "value": "analyticsQueryKey2024"
                 },
