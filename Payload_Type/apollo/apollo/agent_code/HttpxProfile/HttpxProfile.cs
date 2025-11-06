@@ -366,25 +366,40 @@ namespace HttpxTransport
             // Default behavior: use POST for large messages (>500 bytes), GET for small messages
             // This supports any HTTP method (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD) from config
             VariationConfig variation = null;
+#if DEBUG
+            DebugWriteLine($"[SendRecv] Message size: {messageBytes.Length} bytes");
+#endif
             if (messageBytes.Length > 500)
             {
+#if DEBUG
+                DebugWriteLine("[SendRecv] Large message (>500 bytes), selecting POST/PUT/PATCH variation");
+#endif
                 // Try POST, PUT, PATCH in order until we find a valid configuration
                 variation = Config.GetConfiguredVariation("post") ?? Config.GetConfiguredVariation("put") ?? Config.GetConfiguredVariation("patch");
                 
                 // Fall back to GET if no large-message methods are configured
                 if (variation == null)
                 {
+#if DEBUG
+                    DebugWriteLine("[SendRecv] No POST/PUT/PATCH configured, falling back to GET");
+#endif
                     variation = Config.GetConfiguredVariation("get");
                 }
             }
             else
             {
+#if DEBUG
+                DebugWriteLine("[SendRecv] Small message (<=500 bytes), selecting GET/HEAD/OPTIONS variation");
+#endif
                 // Small messages: use GET, HEAD, or OPTIONS
                 variation = Config.GetConfiguredVariation("get") ?? Config.GetConfiguredVariation("head") ?? Config.GetConfiguredVariation("options");
                 
                 // Fall back to POST if no small-message methods are configured
                 if (variation == null)
                 {
+#if DEBUG
+                    DebugWriteLine("[SendRecv] No GET/HEAD/OPTIONS configured, falling back to POST");
+#endif
                     variation = Config.GetConfiguredVariation("post");
                 }
             }
@@ -395,14 +410,27 @@ namespace HttpxTransport
                 throw new InvalidOperationException("No valid HTTP method variation found in configuration. Please ensure your Httpx config defines at least GET or POST methods.");
             }
 
+#if DEBUG
+            DebugWriteLine($"[SendRecv] Selected variation: {variation.Verb}");
+            DebugWriteLine($"[SendRecv] Available URIs: [{string.Join(", ", variation.Uris)}]");
+            DebugWriteLine($"[SendRecv] Message location: {variation.Client?.Message?.Location ?? "none"}");
+            DebugWriteLine($"[SendRecv] Message name: {variation.Client?.Message?.Name ?? "none"}");
+#endif
+
             // Apply client transforms
             byte[] transformedData = TransformChain.ApplyClientTransforms(messageBytes, variation.Client.Transforms);
 
+            string url = null; // Declare outside try block for error logging
             try
             {
                 string domain = GetCurrentDomain();
                 string uri = variation.Uris[Random.Next(variation.Uris.Count)];
-                string url = domain + uri;
+                url = domain + uri;
+#if DEBUG
+                DebugWriteLine($"[SendRecv] Domain: {domain}");
+                DebugWriteLine($"[SendRecv] Selected URI: {uri}");
+                DebugWriteLine($"[SendRecv] Initial URL: {url}");
+#endif
 
                 // Handle message placement and build final URL with query parameters if needed
                 byte[] requestBodyBytes = null;
@@ -445,6 +473,10 @@ namespace HttpxTransport
                             queryParam += $"{variation.Client.Message.Name}={transformedString}";
                         }
                         url = url.Split('?')[0] + "?" + queryParam;
+#if DEBUG
+                        DebugWriteLine($"[SendRecv] Final URL with query params: {url}");
+                        DebugWriteLine($"[SendRecv] Query param length: {queryParam.Length} chars");
+#endif
                         break;
 
                     case "cookie":
@@ -452,12 +484,30 @@ namespace HttpxTransport
                     case "body":
                     default:
                         requestBodyBytes = variation.Client.Message.Location.ToLower() == "body" ? transformedData : null;
+#if DEBUG
+                        if (variation.Client.Message.Location.ToLower() == "cookie")
+                        {
+                            DebugWriteLine($"[SendRecv] Message will be placed in cookie: {variation.Client.Message.Name}");
+                        }
+                        else if (variation.Client.Message.Location.ToLower() == "header")
+                        {
+                            DebugWriteLine($"[SendRecv] Message will be placed in header: {variation.Client.Message.Name}");
+                        }
+                        else if (variation.Client.Message.Location.ToLower() == "body")
+                        {
+                            DebugWriteLine($"[SendRecv] Message will be placed in body ({transformedData.Length} bytes)");
+                        }
+#endif
                         break;
                 }
 
                 // Create HttpWebRequest for full control over headers
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = variation.Verb;
+#if DEBUG
+                DebugWriteLine($"[SendRecv] HTTP Method: {variation.Verb}");
+                DebugWriteLine($"[SendRecv] Final URL: {url}");
+#endif
                 request.Timeout = TimeoutSeconds * 1000;
                 request.ReadWriteTimeout = TimeoutSeconds * 1000;
                 
@@ -572,7 +622,11 @@ namespace HttpxTransport
                         // For netbios/netbiosu, the data is already ASCII-printable letters
                         // URL encoding is needed for cookies to handle any special characters
                         string cookieValue = Encoding.UTF8.GetString(transformedData);
-                        request.Headers[HttpRequestHeader.Cookie] = $"{variation.Client.Message.Name}={Uri.EscapeDataString(cookieValue)}";
+                        string cookieHeader = $"{variation.Client.Message.Name}={Uri.EscapeDataString(cookieValue)}";
+                        request.Headers[HttpRequestHeader.Cookie] = cookieHeader;
+#if DEBUG
+                        DebugWriteLine($"[SendRecv] Cookie header set: {variation.Client.Message.Name} (value length: {cookieValue.Length} chars)");
+#endif
                         break;
 
                     case "header":
@@ -590,6 +644,9 @@ namespace HttpxTransport
                             headerValue = Convert.ToBase64String(transformedData);
                         }
                         request.Headers[variation.Client.Message.Name] = headerValue;
+#if DEBUG
+                        DebugWriteLine($"[SendRecv] Custom header set: {variation.Client.Message.Name} (value length: {headerValue.Length} chars)");
+#endif
                         break;
                 }
 
@@ -609,9 +666,32 @@ namespace HttpxTransport
                 // Get response
                 string response;
                 HttpWebResponse httpResponse = null;
+#if DEBUG
+                DebugWriteLine($"[SendRecv] Sending {variation.Verb} request to: {url}");
+                DebugWriteLine($"[SendRecv] Request headers count: {request.Headers.Count}");
+                DebugWriteLine($"[SendRecv] Request headers:");
+                foreach (string headerName in request.Headers.AllKeys)
+                {
+                    DebugWriteLine($"[SendRecv]   {headerName}: {request.Headers[headerName]}");
+                }
+                // Also log property-based headers
+                if (!string.IsNullOrEmpty(request.Accept))
+                    DebugWriteLine($"[SendRecv]   Accept (property): {request.Accept}");
+                if (!string.IsNullOrEmpty(request.UserAgent))
+                    DebugWriteLine($"[SendRecv]   User-Agent (property): {request.UserAgent}");
+                if (!string.IsNullOrEmpty(request.Referer))
+                    DebugWriteLine($"[SendRecv]   Referer (property): {request.Referer}");
+                if (requestBodyBytes != null && requestBodyBytes.Length > 0)
+                {
+                    DebugWriteLine($"[SendRecv] Request body size: {requestBodyBytes.Length} bytes");
+                }
+#endif
                 try
                 {
                     httpResponse = (HttpWebResponse)request.GetResponse();
+#if DEBUG
+                    DebugWriteLine($"[SendRecv] Response received: {httpResponse.StatusCode} {httpResponse.StatusDescription}");
+#endif
                     using (Stream responseStream = httpResponse.GetResponseStream())
                     {
                         using (StreamReader reader = new StreamReader(responseStream))
@@ -675,7 +755,48 @@ namespace HttpxTransport
                     {
                         DebugWriteLine($"[SendRecv] HTTP Status Code: {httpResponse.StatusCode}");
                         DebugWriteLine($"[SendRecv] HTTP Status Description: {httpResponse.StatusDescription}");
+                        DebugWriteLine($"[SendRecv] Response Headers:");
+                        foreach (string headerName in httpResponse.Headers.AllKeys)
+                        {
+                            DebugWriteLine($"[SendRecv]   {headerName}: {httpResponse.Headers[headerName]}");
+                        }
+                        
+                        // Try to read response body for additional context
+                        try
+                        {
+                            using (Stream responseStream = httpResponse.GetResponseStream())
+                            {
+                                if (responseStream != null)
+                                {
+                                    using (StreamReader reader = new StreamReader(responseStream))
+                                    {
+                                        string responseBody = reader.ReadToEnd();
+                                        DebugWriteLine($"[SendRecv] Response body length: {responseBody.Length} chars");
+                                        if (responseBody.Length > 0 && responseBody.Length < 500)
+                                        {
+                                            DebugWriteLine($"[SendRecv] Response body: {responseBody}");
+                                        }
+                                        else if (responseBody.Length > 0)
+                                        {
+                                            DebugWriteLine($"[SendRecv] Response body (first 500 chars): {responseBody.Substring(0, Math.Min(500, responseBody.Length))}");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception readEx)
+                        {
+                            DebugWriteLine($"[SendRecv] Could not read response body: {readEx.Message}");
+                        }
                     }
+                    
+                    // Log request details that failed
+                    DebugWriteLine($"[SendRecv] Failed request details:");
+                    DebugWriteLine($"[SendRecv]   Method: {variation?.Verb ?? "unknown"}");
+                    DebugWriteLine($"[SendRecv]   URL: {url ?? "unknown"}");
+                    DebugWriteLine($"[SendRecv]   Message location: {variation?.Client?.Message?.Location ?? "none"}");
+                    DebugWriteLine($"[SendRecv]   Message name: {variation?.Client?.Message?.Name ?? "none"}");
+                    DebugWriteLine($"[SendRecv]   Transformed data length: {transformedData?.Length ?? 0} bytes");
                 }
 #endif
                 HandleDomainFailure();
