@@ -150,6 +150,37 @@ namespace HttpxTransform
         }
 
         /// <summary>
+        /// Check if a variation is actually configured (has verb, URIs, or meaningful config)
+        /// </summary>
+        public bool IsVariationConfigured(VariationConfig variation)
+        {
+            if (variation == null)
+                return false;
+
+            return !string.IsNullOrEmpty(variation.Verb) ||
+                   (variation.Uris != null && variation.Uris.Count > 0) ||
+                   (variation.Client != null && (
+                       (variation.Client.Headers != null && variation.Client.Headers.Count > 0) ||
+                       (variation.Client.Parameters != null && variation.Client.Parameters.Count > 0) ||
+                       (variation.Client.Transforms != null && variation.Client.Transforms.Count > 0) ||
+                       (variation.Client.Message != null && !string.IsNullOrEmpty(variation.Client.Message.Location))
+                   )) ||
+                   (variation.Server != null && (
+                       (variation.Server.Headers != null && variation.Server.Headers.Count > 0) ||
+                       (variation.Server.Transforms != null && variation.Server.Transforms.Count > 0)
+                   ));
+        }
+
+        /// <summary>
+        /// Get a configured variation by HTTP method name, returns null if not configured
+        /// </summary>
+        public VariationConfig GetConfiguredVariation(string method)
+        {
+            var variation = GetVariation(method);
+            return IsVariationConfigured(variation) ? variation : null;
+        }
+
+        /// <summary>
         /// Load configuration from JSON string
         /// </summary>
         public static HttpxConfig FromJson(string json)

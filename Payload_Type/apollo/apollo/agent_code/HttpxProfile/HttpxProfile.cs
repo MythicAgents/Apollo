@@ -369,28 +369,28 @@ namespace HttpxTransport
             if (messageBytes.Length > 500)
             {
                 // Try POST, PUT, PATCH in order until we find a valid configuration
-                variation = Config.GetVariation("post") ?? Config.GetVariation("put") ?? Config.GetVariation("patch");
+                variation = Config.GetConfiguredVariation("post") ?? Config.GetConfiguredVariation("put") ?? Config.GetConfiguredVariation("patch");
                 
                 // Fall back to GET if no large-message methods are configured
-                if (variation == null || string.IsNullOrEmpty(variation.Verb) || variation.Uris == null || variation.Uris.Count == 0)
+                if (variation == null)
                 {
-                    variation = Config.GetVariation("get");
+                    variation = Config.GetConfiguredVariation("get");
                 }
             }
             else
             {
                 // Small messages: use GET, HEAD, or OPTIONS
-                variation = Config.GetVariation("get") ?? Config.GetVariation("head") ?? Config.GetVariation("options");
+                variation = Config.GetConfiguredVariation("get") ?? Config.GetConfiguredVariation("head") ?? Config.GetConfiguredVariation("options");
                 
                 // Fall back to POST if no small-message methods are configured
-                if (variation == null || string.IsNullOrEmpty(variation.Verb) || variation.Uris == null || variation.Uris.Count == 0)
+                if (variation == null)
                 {
-                    variation = Config.GetVariation("post");
+                    variation = Config.GetConfiguredVariation("post");
                 }
             }
             
             // Final fallback to ensure we have a valid variation
-            if (variation == null || string.IsNullOrEmpty(variation.Verb) || variation.Uris == null || variation.Uris.Count == 0)
+            if (variation == null)
             {
                 throw new InvalidOperationException("No valid HTTP method variation found in configuration. Please ensure your Httpx config defines at least GET or POST methods.");
             }
