@@ -28,10 +28,6 @@
             },
             "transforms": [
                 {
-                    "action": "netbiosu",
-                    "value": ""
-                },
-                {
                     "action": "xor",
                     "value": "ghubSecret2024"
                 },
@@ -54,23 +50,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "{\"data\":{\"repository\":{\"commits\":{\"nodes\":["
-                },
-                {
-                    "action": "append",
-                    "value": "]}},\"rateLimit\":{\"limit\":5000,\"remaining\":4999,\"resetAt\":\"2024-04-15T12:00:00Z\"}}}"
-                },
-                {
-                    "action": "base64url",
-                    "value": ""
+                    "value": "{\"data\":"
                 },
                 {
                     "action": "xor",
                     "value": "ghubResponse2024"
                 },
                 {
-                    "action": "netbiosu",
+                    "action": "base64url",
                     "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
                 }
             ]
         }
@@ -104,20 +96,8 @@
                     "value": "ghubPostSecret"
                 },
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
                     "action": "base64",
                     "value": ""
-                },
-                {
-                    "action": "prepend",
-                    "value": "{\"title\":\"Issue\",\"body\":\""
-                },
-                {
-                    "action": "append",
-                    "value": "\",\"labels\":[\"bug\"],\"assignees\":[]}"
                 }
             ]
         },
@@ -134,81 +114,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "{\"id\":12345,\"url\":\"https://api.github.com/repos/owner/repo/issues/123\",\"number\":123,\"state\":\"open\",\"created_at\":\"2024-04-15T12:00:00Z\",\"body\":\""
+                    "value": "{\"id\":12345,\"url\":\"https://api.github.com/repos/owner/repo/issues/123\",\"body\":"
                 },
                 {
-                    "action": "append",
-                    "value": "\",\"user\":{\"login\":\"octocat\",\"id\":1,\"type\":\"User\"}}"
+                    "action": "xor",
+                    "value": "ghubServerKey"
                 },
                 {
                     "action": "base64",
                     "value": ""
                 },
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "ghubServerKey"
-                }
-            ]
-        }
-    },
-    "put": {
-        "verb": "PUT",
-        "uris": [
-            "/api/v3/repos/owner/repo/contents/path/to/file",
-            "/api/v3/user/starred/owner/repo"
-        ],
-        "client": {
-            "headers": {
-                "Accept": "application/vnd.github.v3+json",
-                "Accept-Encoding": "gzip, deflate, br",
-                "Authorization": "token ghp_16C7e42F292c6912E7710c8C0E2b8E1",
-                "Connection": "keep-alive",
-                "Content-Type": "application/json",
-                "User-Agent": "GitHub-Hookshot/461e8be"
-            },
-            "parameters": null,
-            "message": {
-                "location": "body",
-                "name": ""
-            },
-            "transforms": [
-                {
-                    "action": "base64url",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "putContentKey"
-                }
-            ]
-        },
-        "server": {
-            "headers": {
-                "Content-Type": "application/json; charset=utf-8",
-                "Server": "GitHub.com",
-                "X-GitHub-Request-Id": "A1B2:C3D4:E5F6:1234:5679",
-                "ETag": "\"abc123def456\""
-            },
-            "transforms": [
-                {
-                    "action": "prepend",
-                    "value": "{\"content\":{\"name\":\"file.txt\",\"path\":\"path/to/file\",\"sha\":\""
-                },
-                {
                     "action": "append",
-                    "value": "\",\"size\":1024,\"url\":\"https://api.github.com/repos/owner/repo/contents/path/to/file\"}}"
-                },
-                {
-                    "action": "xor",
-                    "value": "putResponseKey"
-                },
-                {
-                    "action": "base64url",
-                    "value": ""
+                    "value": "}"
                 }
             ]
         }

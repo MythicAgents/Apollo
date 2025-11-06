@@ -28,16 +28,12 @@
             },
             "transforms": [
                 {
-                    "action": "netbiosu",
-                    "value": ""
+                    "action": "xor",
+                    "value": "cdnAssetDelivery2024"
                 },
                 {
                     "action": "base64url",
                     "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "cdnAssetDelivery2024"
                 }
             ]
         },
@@ -54,11 +50,7 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "/*! Bootstrap v5.3.2 | MIT License | https://getbootstrap.com */"
-                },
-                {
-                    "action": "append",
-                    "value": "@media (min-width: 992px){.container-lg,.container-md,.container-sm,.container{max-width:960px}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}.col-lg{flex:1 0 0%}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}}"
+                    "value": "/*! Bootstrap v5.3.2 | MIT License */"
                 },
                 {
                     "action": "xor",
@@ -69,8 +61,8 @@
                     "value": ""
                 },
                 {
-                    "action": "netbiosu",
-                    "value": ""
+                    "action": "append",
+                    "value": "/* End Bootstrap */"
                 }
             ]
         }
@@ -100,10 +92,6 @@
             },
             "transforms": [
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
                     "action": "xor",
                     "value": "cdnPostDelivery2024"
                 },
@@ -125,23 +113,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "/*! Bootstrap v5.3.2 | MIT License | https://getbootstrap.com */"
+                    "value": "/*! Bootstrap v5.3.2 | MIT License */"
                 },
                 {
-                    "action": "append",
-                    "value": "@media (min-width: 992px){.container-lg,.container-md,.container-sm,.container{max-width:960px}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}.col-lg{flex:1 0 0%}.row-cols-lg-auto>*{flex:0 0 auto;width:auto}.row-cols-lg-1>*{flex:0 0 auto;width:100%}.row-cols-lg-2>*{flex:0 0 auto;width:50%}.row-cols-lg-3>*{flex:0 0 auto;width:33.3333333333%}.row-cols-lg-4>*{flex:0 0 auto;width:25%}.row-cols-lg-5>*{flex:0 0 auto;width:20%}.row-cols-lg-6>*{flex:0 0 auto;width:16.6666666667%}}"
+                    "action": "xor",
+                    "value": "cdnPostResponse2024"
                 },
                 {
                     "action": "base64",
                     "value": ""
                 },
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "cdnPostResponse2024"
+                    "action": "append",
+                    "value": "/* End Bootstrap */"
                 }
             ]
         }

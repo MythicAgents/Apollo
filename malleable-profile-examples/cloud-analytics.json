@@ -32,16 +32,16 @@
             },
             "transforms": [
                 {
+                    "action": "prepend",
+                    "value": "filter="
+                },
+                {
                     "action": "xor",
                     "value": "analyticsQueryKey2024"
                 },
                 {
                     "action": "base64url",
                     "value": ""
-                },
-                {
-                    "action": "prepend",
-                    "value": "filter="
                 }
             ]
         },
@@ -59,23 +59,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "{\"status\":\"success\",\"data\":{\"metrics\":{\"totalEvents\":"
-                },
-                {
-                    "action": "append",
-                    "value": ",\"uniqueUsers\":1234,\"avgSessionDuration\":180.5,\"timestamp\":\"2024-04-15T12:00:00Z\"},\"meta\":{\"page\":1,\"limit\":100}}}"
-                },
-                {
-                    "action": "base64",
-                    "value": ""
+                    "value": "{\"status\":\"success\",\"data\":"
                 },
                 {
                     "action": "xor",
                     "value": "analyticsResponseKey2024"
                 },
                 {
-                    "action": "netbiosu",
+                    "action": "base64",
                     "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
                 }
             ]
         }
@@ -107,24 +103,12 @@
             },
             "transforms": [
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
                     "action": "xor",
                     "value": "trackEventSecret2024"
                 },
                 {
                     "action": "base64",
                     "value": ""
-                },
-                {
-                    "action": "prepend",
-                    "value": "{\"events\":[{\"type\":\"pageview\",\"properties\":"
-                },
-                {
-                    "action": "append",
-                    "value": ",\"timestamp\":\"2024-04-15T12:00:00Z\",\"userId\":\"user123\"}],\"context\":{\"ip\":\"192.168.1.1\",\"userAgent\":\"Mozilla/5.0\"}}"
                 }
             ]
         },
@@ -140,91 +124,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "{\"status\":\"success\",\"message\":\"Events processed\",\"eventIds\":[\"evt-"
+                    "value": "{\"status\":\"success\",\"message\":\"Events processed\",\"data\":"
                 },
                 {
-                    "action": "append",
-                    "value": "\"],\"processedAt\":\"2024-04-15T12:00:00Z\",\"count\":1}"
+                    "action": "xor",
+                    "value": "trackResponseSecret2024"
                 },
                 {
                     "action": "base64",
                     "value": ""
                 },
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "trackResponseSecret2024"
-                }
-            ]
-        }
-    },
-    "patch": {
-        "verb": "PATCH",
-        "uris": [
-            "/v1/analytics/users/update",
-            "/api/v2/configurations/preferences"
-        ],
-        "client": {
-            "headers": {
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip, deflate, br",
-                "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
-                "Connection": "keep-alive",
-                "Content-Type": "application/json",
-                "If-Match": "\"abc123\"",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            },
-            "parameters": null,
-            "message": {
-                "location": "cookie",
-                "name": "sessionId"
-            },
-            "transforms": [
-                {
-                    "action": "base64url",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "patchUpdateKey2024"
-                },
-                {
-                    "action": "netbiosu",
-                    "value": ""
-                }
-            ]
-        },
-        "server": {
-            "headers": {
-                "Content-Type": "application/json; charset=utf-8",
-                "Server": "nginx/1.24.0",
-                "ETag": "\"xyz789\"",
-                "X-Request-Id": "req-def456ghi789",
-                "Cache-Control": "private, no-cache"
-            },
-            "transforms": [
-                {
-                    "action": "prepend",
-                    "value": "{\"status\":\"updated\",\"resource\":{\"id\":\""
-                },
-                {
                     "action": "append",
-                    "value": "\",\"updatedAt\":\"2024-04-15T12:00:00Z\",\"version\":2}}"
-                },
-                {
-                    "action": "netbiosu",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "patchResponseKey2024"
-                },
-                {
-                    "action": "base64url",
-                    "value": ""
+                    "value": "}"
                 }
             ]
         }

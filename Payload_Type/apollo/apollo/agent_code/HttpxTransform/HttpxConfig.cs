@@ -105,31 +105,16 @@ namespace HttpxTransform
         [JsonProperty("put")]
         public VariationConfig Put { get; set; }
 
-        [JsonProperty("delete")]
-        public VariationConfig Delete { get; set; }
-
-        [JsonProperty("patch")]
-        public VariationConfig Patch { get; set; }
-
-        [JsonProperty("options")]
-        public VariationConfig Options { get; set; }
-
-        [JsonProperty("head")]
-        public VariationConfig Head { get; set; }
-
         public HttpxConfig()
         {
             Get = new VariationConfig();
             Post = new VariationConfig();
             Put = new VariationConfig();
-            Delete = new VariationConfig();
-            Patch = new VariationConfig();
-            Options = new VariationConfig();
-            Head = new VariationConfig();
         }
 
         /// <summary>
         /// Get variation configuration by HTTP method name (case-insensitive)
+        /// Only supports GET, POST, and PUT methods
         /// </summary>
         public VariationConfig GetVariation(string method)
         {
@@ -141,10 +126,6 @@ namespace HttpxTransform
                 case "get": return Get;
                 case "post": return Post;
                 case "put": return Put;
-                case "delete": return Delete;
-                case "patch": return Patch;
-                case "options": return Options;
-                case "head": return Head;
                 default: return null;
             }
         }
@@ -242,16 +223,12 @@ namespace HttpxTransform
             // Validate transform actions
             var validActions = new[] { "base64", "base64url", "netbios", "netbiosu", "xor", "prepend", "append" };
             
-            // Validate all configured HTTP methods
+            // Validate all configured HTTP methods (only GET, POST, PUT are supported)
             var variations = new Dictionary<string, VariationConfig>
             {
                 { "GET", Get },
                 { "POST", Post },
-                { "PUT", Put },
-                { "PATCH", Patch },
-                { "DELETE", Delete },
-                { "OPTIONS", Options },
-                { "HEAD", Head }
+                { "PUT", Put }
             };
             
             foreach (var kvp in variations)
