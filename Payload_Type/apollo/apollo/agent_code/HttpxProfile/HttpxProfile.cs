@@ -129,6 +129,12 @@ namespace HttpxTransport
 #endif
             
             LoadHttpxConfig(rawConfig);
+            
+            // Disable certificate validation on web requests (accept self-signed/invalid certs)
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+            // Enable TLS protocols: TLS 1.2, TLS 1.1, TLS 1.0, and SSL 3.0
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls | SecurityProtocolType.Ssl3;
+            
 #if DEBUG
             DebugWriteLine("[HttpxProfile] Constructor complete");
 #endif
