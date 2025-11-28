@@ -7,10 +7,10 @@
     "custom": ["bofs","key exchange", "killdate", "execute pe", "execute assembly", "inline assembly","mimikatz", "powerpick",
     "donut", "shellcode injection"]
   },
-  "payload_output": ["exe", "shellcode", "service"],
+  "payload_output": ["exe", "shellcode", "service", "source"],
   "architectures": ["x86_64"],
   "c2": ["http", "smb", "tcp", "websocket", "httpx"],
-  "mythic_version": "3.3.1-rc75",
-  "agent_version": "2.3.26",
+  "mythic_version": "3.4.6",
+  "agent_version": "2.4.2",
   "supported_wrappers": ["service_wrapper", "scarecrow_wrapper"]
 }
