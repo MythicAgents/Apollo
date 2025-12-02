@@ -1,4 +1,3 @@
-#FROM itsafeaturemythic/mythic_python_dotnet:latest
 FROM mcr.microsoft.com/dotnet/sdk:8.0
 RUN apt-get update && apt-get install python3 python3-pip python3.11-venv -y
 

