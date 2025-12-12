@@ -39,11 +39,12 @@ class LoadArguments(TaskArguments):
 
         all_cmds_names = set([r.Name for r in all_cmds.Commands])
         loaded_cmds_names = set([r.Name for r in loaded_cmds.Commands])
-        logger.info(all_cmds_names)
-        logger.info(loaded_cmds_names)
+        logger.info(f"all possible commands: {all_cmds_names}")
+        logger.info(f"all loaded commands: {loaded_cmds_names}")
         diff = all_cmds_names.difference(loaded_cmds_names)
         fileResponse.Success = True
         fileResponse.Choices = sorted(diff)
+        logger.info(f"Possible commands for load: {fileResponse.Choices}")
         return fileResponse
 
 
