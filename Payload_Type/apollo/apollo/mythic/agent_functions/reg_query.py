@@ -1,4 +1,5 @@
 from mythic_container.MythicCommandBase import *
+from mythic_container.MythicGoRPC.send_mythic_rpc_handle_agent_message_json import *
 import json
 
 
@@ -31,22 +32,38 @@ class RegQueryArguments(TaskArguments):
 
 
     async def parse_arguments(self):
+        hiveMap = {
+            "HKEY_LOCAL_MACHINE": "HKLM",
+            "HKEY_CURRENT_USER": "HKCU",
+            "HKEY_USERS": "HKU",
+            "HKEY_CLASSES_ROOT": "HKCR",
+            "HKEY_CURRENT_CONFIG": "HKCC"
+        }
         if self.command_line[0] == "{":
+            data = json.loads(self.command_line)
+            if "full_path" in data:
+                parts = data['full_path'].split("\\")
+                hiveClean = parts[0].replace(":", "").strip().upper()
+                if hiveClean in hiveMap.keys():
+                    self.add_arg("hive", hiveMap[hiveClean])
+                elif hiveClean in ["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]:
+                    self.add_arg("hive", hiveClean)
+                elif hiveClean in [".", ""]:
+                    self.add_arg("hive", "")
+                else:
+                    raise Exception("Invalid hive: " + hiveClean)
+                self.add_arg("key", "\\".join(parts[1:]))
+                return
             self.load_args_from_json_string(self.command_line)
         else:
             parts = self.command_line.split("\\")
-            hiveMap = {
-                "HKEY_LOCAL_MACHINE": "HKLM",
-                "HKEY_CURRENT_USER": "HKCU",
-                "HKEY_USERS": "HKU",
-                "HKEY_CLASSES_ROOT": "HKCR",
-                "HKEY_CURRENT_CONFIG": "HKCC"
-            }
             hiveClean = parts[0].replace(":", "").strip().upper()
             if hiveClean in hiveMap.keys():
                 self.add_arg("hive", hiveMap[hiveClean])
             elif hiveClean in ["HKLM", "HKCU", "HKU", "HKCR", "HKCC"]:
                 self.add_arg("hive", hiveClean)
+            elif hiveClean in [".", ""]:
+                self.add_arg("hive", "")
             else:
                 raise Exception("Invalid hive: " + hiveClean)
             self.add_arg("key", "\\".join(parts[1:]))
@@ -61,7 +78,7 @@ class RegQuery(CommandBase):
     author = "@djhohnstein"
     argument_class = RegQueryArguments
     attackmapping = ["T1012", "T1552"]
-    supported_ui_features = ["reg_query"]
+    supported_ui_features = ["reg_query", "registry_browser:list"]
     browser_script = BrowserScript(script_name="reg_query", author="@djhohnstein", for_new_ui=True)
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
@@ -69,6 +86,52 @@ class RegQuery(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
+        if taskData.args.get_arg("hive") == "":
+            response.Completed = True
+            response.DisplayParams = "-Hive ."
+            resp = await SendMythicRPCHandleAgentMessageJson(MythicRPCHandleAgentMessageJsonMessage(
+                CallbackID=taskData.Callback.ID,
+                AgentMessage={
+                    "action": "post_response",
+                    "responses": [
+                        {
+                            "task_id": taskData.Task.AgentTaskID,
+                            "custom_browser": {
+                                "browser_name": "registry_browser",
+                                "entries": [
+                                    {
+                                        "name": "HKLM",
+                                        "parent_path": "",
+                                        "can_have_children": True,
+                                    },
+                                    {
+                                        "name": "HKCU",
+                                        "parent_path": "",
+                                        "can_have_children": True,
+                                    },
+                                    {
+                                        "name": "HKU",
+                                        "parent_path": "",
+                                        "can_have_children": True,
+                                    },
+                                    {
+                                        "name": "HKCR",
+                                        "parent_path": "",
+                                        "can_have_children": True,
+                                    },
+                                    {
+                                        "name": "HKCC",
+                                        "parent_path": "",
+                                        "can_have_children": True,
+                                    }
+                                ]
+                            },
+                            "user_output": "Valid Hives are HKLM, HKCU, HKU, HKCR, and HKCC"
+                        }
+                    ]
+                }
+            ))
+            return response
         if taskData.args.get_arg("key"):
             response.DisplayParams = "-Hive {} -Key {}".format(taskData.args.get_arg("hive"), taskData.args.get_arg("key"))
         else:
