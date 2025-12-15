@@ -7,6 +7,7 @@ using ApolloInterop.Enums.ApolloEnums;
 using System.Net;
 using System.IO;
 using ApolloInterop.Structs.ApolloStructs;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace ApolloInterop.Structs
@@ -841,6 +842,8 @@ namespace ApolloInterop.Structs
             public string? ApolloTrackerUUID;
             [DataMember(Name = "callback")]
             public CallbackUpdate? Callback;
+            [DataMember(Name = "custom_browser")]
+            public CustomBrowser? Browser;
 
             public override bool Equals(object obj)
             {
@@ -1291,6 +1294,52 @@ namespace ApolloInterop.Structs
             public string FQDN;
             public IPAddress Ip;
             public int Port;
+        }
+        [DataContract]
+        public struct CustomBrowserEntryChild
+        {
+            [DataMember(Name = "name")]
+            public string Name;
+            [DataMember(Name = "can_have_children")]
+            public bool CanHaveChildren;
+            [DataMember(Name = "metadata", EmitDefaultValue = false)]
+            public Dictionary<string, object>? Metadata;
+        }
+        [DataContract]
+        public struct CustomBrowserEntry
+        {
+            [DataMember(Name = "name")]
+            public string Name;
+            [DataMember(Name = "parent_path")]
+            public string ParentPath;
+            [DataMember(Name = "display_path")]
+            public string DispalyPath;
+            [DataMember(Name = "success", EmitDefaultValue = false)]
+            public bool? Success;
+            [DataMember(Name = "can_have_children")]
+            public bool CanHaveChildren;
+            [DataMember(Name = "metadata", EmitDefaultValue = false)]
+            public Dictionary<string, object>? Metadata;
+            [DataMember(Name = "children", EmitDefaultValue = false)]
+            public List<CustomBrowserEntryChild>? Children;
+        }
+        [DataContract]
+        public struct CustomBrowser: IMythicMessage
+        {
+            public MessageType GetTypeCode()
+            {
+                return MessageType.CustomBrowser;
+            }
+            [DataMember(Name = "browser_name")]
+            public string BrowserName;
+            [DataMember(Name = "host")]
+            public string Host;
+            [DataMember(Name = "update_deleted")]
+            public bool UpdateDeleted;
+            [DataMember(Name = "set_as_user_output")]
+            public bool SetAsUserOutput;
+            [DataMember(Name = "entries")]
+            public List<CustomBrowserEntry> Entries;
         }
     }
 }
