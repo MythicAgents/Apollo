@@ -309,6 +309,7 @@ namespace Tasks
                     }
 
                     results.Success = bRet;
+                    results.UpdateDeleted = bRet && !results.IsFile;
                     results.Files = ds.GetAll().ToArray();
 
                     resp = CreateTaskResponse(

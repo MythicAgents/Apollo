@@ -447,6 +447,8 @@ namespace ApolloInterop.Structs
             public long Size;
             [DataMember(Name = "files")]
             public FileInformation[] Files;
+            [DataMember(Name = "update_deleted")]
+            public bool UpdateDeleted;
 
             public FileBrowser(FileInformation finfo, bool success = true, FileInformation[] files = null)
             {
