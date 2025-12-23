@@ -168,6 +168,7 @@ namespace Tasks
                         }
 
                         results.Success = true;
+                        results.UpdateDeleted = !results.IsFile;
                         results.Files = tmpStore.ToArray();
                         var tmpResp = CreateTaskResponse(
                             _jsonSerializer.Serialize(results),
@@ -216,6 +217,7 @@ namespace Tasks
                             FileInformation finfo = new FileInformation(dinfo, null);
                             results.IsFile = false;
                             results.Name = finfo.Name;
+                            results.UpdateDeleted = true;
                             results.ParentPath = dinfo.Parent == null
                                 ? ""
                                 : ApolloInterop.Utils.PathUtils.StripPathOfHost(dinfo.Parent.FullName);
