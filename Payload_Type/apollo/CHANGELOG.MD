@@ -50,6 +50,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v2.4.1] - 2025-10-27
 
+### Added
+
+- Added support for the HTTPX Profile C2 transport
+  - Uses client-side generated RSA keys (4096-bit) to perform EKE (Encrypted Key Exchange)
+  - Supports malleable profile transforms: base64, base64url, netbios, netbiosu, xor, prepend, append
+  - Supports all REST HTTP methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD
+  - Supports message placement in query parameters, cookies, headers, and body
+  - Supports proxy configuration with authentication
+  - Supports domain fronting and custom HTTP headers
+  - Supports failover and round-robin domain rotation strategies
+- Added environment keying support for hostname, domain name and registry keys
+- Build process now conditionally includes only selected C2 profile projects
+
 ### Changed
 
 - Updated PyPi version

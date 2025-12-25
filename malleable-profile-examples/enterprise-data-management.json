@@ -1,0 +1,133 @@
+{
+    "name": "Enterprise Data Management",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/v3/storage/datasets/list",
+            "/v3/analytics/reports/export",
+            "/v3/inventory/assets/query"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/json, text/xml",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+                "Connection": "keep-alive",
+                "X-API-Version": "3.2",
+                "X-Client-ID": "enterprise-client-v2.4.1",
+                "User-Agent": "EnterpriseDataClient/2.4.1 (Java/17.0.2; Windows Server 2022)"
+            },
+            "parameters": {
+                "limit": "50",
+                "offset": "0",
+                "sort": "desc"
+            },
+            "message": {
+                "location": "header",
+                "name": "X-Request-ID"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "enterpriseDataKey2024"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json; charset=utf-8",
+                "Server": "Apache/2.4.57",
+                "X-Request-ID": "req-xyz789abc123",
+                "X-Page-Count": "15",
+                "X-Total-Count": "750",
+                "Cache-Control": "private, max-age=300",
+                "Expires": "Wed, 15 Apr 2025 12:05:00 GMT"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "{\"result\":"
+                },
+                {
+                    "action": "xor",
+                    "value": "enterpriseResponseKey2024"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/v3/storage/backup/create",
+            "/v3/logging/events/submit",
+            "/v3/notifications/broadcast"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json",
+                "X-API-Version": "3.2",
+                "X-Client-ID": "enterprise-client-v2.4.1",
+                "User-Agent": "EnterpriseDataClient/2.4.1 (Java/17.0.2; Windows Server 2022)"
+            },
+            "parameters": null,
+            "message": {
+                "location": "body",
+                "name": ""
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "backupCreateSecret2024"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json; charset=utf-8",
+                "Server": "Apache/2.4.57",
+                "X-Request-ID": "req-abc456def789",
+                "Location": "/v3/storage/backup/status/backup-xyz123",
+                "Cache-Control": "no-cache, no-store",
+                "X-Operation-ID": "op-backup-xyz123"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "{\"status\":\"accepted\",\"operationId\":\"backup-xyz123\",\"data\":"
+                },
+                {
+                    "action": "xor",
+                    "value": "backupResponseSecret2024"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
+                }
+            ]
+        }
+    }
+}

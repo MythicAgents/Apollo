@@ -13,6 +13,7 @@ Below are considerations about Apollo's underlying behavior that may affect deci
 - [Evasion](/agents/apollo/opsec/evasion/)
 - [Fork and Run Commands](/agents/apollo/opsec/forkandrun/)
 - [Injection](/agents/apollo/opsec/injection/)
+- [Environmental Keying](/agents/apollo/opsec/keying/)
 
 ## Example Artifacts
 

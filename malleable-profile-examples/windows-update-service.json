@@ -1,0 +1,133 @@
+{
+    "name": "Windows Update Service",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/update/v6/download/package/cab",
+            "/update/v6/wsusscan/package.cab",
+            "/update/v6/content/download/package.cab"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/vnd.microsoft.update.cab, application/octet-stream, */*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "Keep-Alive",
+                "Cache-Control": "no-cache",
+                "User-Agent": "Windows-Update-Agent/10.0.19041.3880 Client-Protocol/2.0"
+            },
+            "parameters": {
+                "pid": "100",
+                "pidver": "10.0",
+                "bld": "19041",
+                "arch": "x64"
+            },
+            "message": {
+                "location": "query",
+                "name": "rev"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "windowsUpdateKey2025"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/vnd.microsoft.update.cab",
+                "Server": "Microsoft-HTTPAPI/2.0",
+                "X-MicrosoftUpdate-Version": "10.0.19041.3880",
+                "Connection": "keep-alive",
+                "Cache-Control": "public, max-age=86400",
+                "X-Powered-By": "ASP.NET",
+                "Content-Disposition": "attachment; filename=update.cab"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "MSCF"
+                },
+                {
+                    "action": "xor",
+                    "value": "windowsUpdateResponse2025"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "\u0000\u0000"
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/update/v6/wsusscan/report.aspx",
+            "/update/v6/content/submit.aspx",
+            "/update/v6/telemetry/report.aspx"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/html, application/xhtml+xml, application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "Keep-Alive",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "Windows-Update-Agent/10.0.19041.3880 Client-Protocol/2.0"
+            },
+            "parameters": null,
+            "message": {
+                "location": "body",
+                "name": "data"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "wsusReportKey2025"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "text/html; charset=utf-8",
+                "Server": "Microsoft-HTTPAPI/2.0",
+                "X-MicrosoftUpdate-Version": "10.0.19041.3880",
+                "X-Powered-By": "ASP.NET",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "<!DOCTYPE html><html><body><div>"
+                },
+                {
+                    "action": "xor",
+                    "value": "wsusResponseKey2025"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "</div></body></html>"
+                }
+            ]
+        }
+    }
+}
