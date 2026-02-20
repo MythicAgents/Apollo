@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.10] - 2026-02-20 
+
+### Changed
+
+- Updated the `upload` command to allow new `-fileName` field and specifying an already uploaded file
+  - this brings `upload` in line with other file-based commands like `execute_assembly` and `execute_coff`
+  
 ## [v2.4.9] - 2026-02-02
 
 ### Changed
