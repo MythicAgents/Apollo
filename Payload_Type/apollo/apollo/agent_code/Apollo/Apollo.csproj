@@ -29,7 +29,7 @@
     <ProjectReference Include="..\Tasks\Tasks.csproj" />
     <ProjectReference Include="..\TcpProfile\TcpProfile.csproj" />
     <ProjectReference Include="..\WebsocketProfile\WebsocketProfile.csproj" />
-    
+    <ProjectReference Include="..\AzureBlobProfile\AzureBlobProfile.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="All" />
