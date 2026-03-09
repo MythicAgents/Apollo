@@ -1,4 +1,4 @@
-﻿using ApolloInterop.Structs;
+using ApolloInterop.Structs;
 using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
 using System;
@@ -20,6 +20,19 @@ namespace ApolloInterop.Classes.Impersonation
     {
         public SafeTokenHandle TokenHandle { get; }
         public ApolloLogonInformation? SourceCredentials { get; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TOKEN_USER
+        {
+            public SID_AND_ATTRIBUTES User;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LUID_AND_ATTRIBUTES
+        {
+            public LUID Luid;
+            public PrivilegeAttributes Attributes;
+        }
 
         public bool IsNetworkOnly => GetTokenSource() == "Seclogo";
 
@@ -140,7 +153,7 @@ namespace ApolloInterop.Classes.Impersonation
             }
         }
 
-        private string LookupPrivilegeName(Win32.LUID luid)
+        private string LookupPrivilegeName(LUID luid)
         {
             int len = 0;
             LookupPrivilegeNameW(null, ref luid, null, ref len);
@@ -229,7 +242,7 @@ namespace ApolloInterop.Classes.Impersonation
                 }
                 else
                 {
-                    yield return ((TokenPrivilege)(-1), enabled);
+                    yield return (TokenPrivilege.Unknown, enabled);
                 }
             }
         }
@@ -373,15 +386,6 @@ namespace ApolloInterop.Classes.Impersonation
             );
         }
 
-        [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool GetTokenInformation(
-        SafeHandle TokenHandle,
-        TokenInformationClass TokenInformationClass,
-        IntPtr TokenInformation,
-        int TokenInformationLength,
-        out int ReturnLength
-            );
-
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern bool LookupAccountSid(
            string lpSystemName,
@@ -395,7 +399,7 @@ namespace ApolloInterop.Classes.Impersonation
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern bool LookupPrivilegeNameW(
             string? lpSystemName,
-            ref Win32.LUID lpLuid,
+            ref LUID lpLuid,
             StringBuilder? lpName,
             ref int cchName
         );

