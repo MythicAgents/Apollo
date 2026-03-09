@@ -75,9 +75,10 @@ int beacon_compatibility_size = 0;
 int beacon_compatibility_offset = 0;
 
 void BeaconDataParse(datap* parser, char* buffer, int size) {
-    if (parser == NULL) {
+    if (parser == NULL || buffer == NULL) {
         return;
     }
+
     parser->original = buffer;
     parser->buffer = buffer;
     parser->length = size - 4;
@@ -87,6 +88,10 @@ void BeaconDataParse(datap* parser, char* buffer, int size) {
 }
 
 int BeaconDataInt(datap* parser) {
+    if (parser == NULL) {
+        return 0;
+    }
+
     int32_t fourbyteint = 0;
     if (parser->length < 4) {
         return 0;
@@ -98,6 +103,10 @@ int BeaconDataInt(datap* parser) {
 }
 
 short BeaconDataShort(datap* parser) {
+    if (parser == NULL) {
+        return 0;
+    }
+
     int16_t retvalue = 0;
     if (parser->length < 2) {
         return 0;
@@ -109,10 +118,18 @@ short BeaconDataShort(datap* parser) {
 }
 
 int BeaconDataLength(datap* parser) {
+    if (parser == NULL) {
+        return 0;
+    }
+
     return parser->length;
 }
 
 char* BeaconDataExtract(datap* parser, int* size) {
+    if (parser == NULL) {
+        return NULL;
+    }
+
     uint32_t length = 0;
     char* outdata = NULL;
     /*Length prefixed binary blob, going to assume uint32_t for this.*/
@@ -141,6 +158,7 @@ void BeaconFormatAlloc(formatp* format, int maxsz) {
     if (format == NULL) {
         return;
     }
+
     format->original = calloc(maxsz, 1);
     format->buffer = format->original;
     format->length = 0;
@@ -149,6 +167,10 @@ void BeaconFormatAlloc(formatp* format, int maxsz) {
 }
 
 void BeaconFormatReset(formatp* format) {
+    if (format == NULL) {
+        return;
+    }
+
     memset(format->original, 0, format->size);
     format->buffer = format->original;
     format->length = format->size;
@@ -170,6 +192,10 @@ void BeaconFormatFree(formatp* format) {
 }
 
 void BeaconFormatAppend(formatp* format, char* text, int len) {
+    if (format == NULL || text == NULL) {
+        return;
+    }
+
     memcpy(format->buffer, text, len);
     format->buffer += len;
     format->length += len;
@@ -177,6 +203,10 @@ void BeaconFormatAppend(formatp* format, char* text, int len) {
 }
 
 void BeaconFormatPrintf(formatp* format, char* fmt, ...) {
+    if (format == NULL || fmt == NULL) {
+        return;
+    }
+
     /*Take format string, and sprintf it into here*/
     va_list args;
     int length = 0;
@@ -184,12 +214,12 @@ void BeaconFormatPrintf(formatp* format, char* fmt, ...) {
     va_start(args, fmt);
     length = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
-    if (format->length + length > format->size) {
+    if (format->length + length + 1 > format->size) {
         return;
     }
 
     va_start(args, fmt);
-    (void)vsnprintf(format->buffer, length, fmt, args);
+    (void)vsnprintf(format->buffer, length + 1, fmt, args);
     va_end(args);
     format->length += length;
     format->buffer += length;
@@ -198,11 +228,19 @@ void BeaconFormatPrintf(formatp* format, char* fmt, ...) {
 
 
 char* BeaconFormatToString(formatp* format, int* size) {
+    if (format == NULL || size == NULL) {
+        return NULL;
+    }
+
     *size = format->length;
     return format->original;
 }
 
 void BeaconFormatInt(formatp* format, int value) {
+    if (format == NULL) {
+        return;
+    }
+
     uint32_t indata = value;
     uint32_t outdata = 0;
     if (format->length + 4 > format->size) {
@@ -218,13 +256,17 @@ void BeaconFormatInt(formatp* format, int value) {
 /* Main output functions */
 
 void BeaconPrintf(int type, char* fmt, ...) {
+    if (fmt == NULL) {
+        return;
+    }
+
     /* Change to maintain internal buffer, and return after done running. */
     int length = 0;
     char* tempptr = NULL;
     va_list args;
-    //va_start(args, fmt);
-    //vprintf(fmt, args);
-    //va_end(args);
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
 
     va_start(args, fmt);
     length = vsnprintf(NULL, 0, fmt, args);
@@ -236,7 +278,7 @@ void BeaconPrintf(int type, char* fmt, ...) {
     beacon_compatibility_output = tempptr;
     memset(beacon_compatibility_output + beacon_compatibility_offset, 0, length + 1);
     va_start(args, fmt);
-    length = vsnprintf(beacon_compatibility_output + beacon_compatibility_offset, length + 1, fmt, args);
+    length = vsnprintf(beacon_compatibility_output + beacon_compatibility_offset, length +1, fmt, args);
     beacon_compatibility_size += length;
     beacon_compatibility_offset += length;
     va_end(args);
@@ -244,6 +286,10 @@ void BeaconPrintf(int type, char* fmt, ...) {
 }
 
 void BeaconOutput(int type, char* data, int len) {
+    if (data == NULL) {
+        return;
+    }
+
     char* tempptr = NULL;
     tempptr = realloc(beacon_compatibility_output, beacon_compatibility_size + len + 1);
     beacon_compatibility_output = tempptr;
@@ -305,7 +351,7 @@ void BeaconGetSpawnTo(BOOL x86, char* buffer, int length) {
     return;
 }
 
-BOOL BeaconSpawnTemporaryProcess(BOOL x86, BOOL ignoreToken, STARTUPINFO* sInfo, PROCESS_INFORMATION* pInfo) {
+BOOL BeaconSpawnTemporaryProcess(BOOL x86, BOOL ignoreToken, STARTUPINFO * sInfo, PROCESS_INFORMATION * pInfo) {
     BOOL bSuccess = FALSE;
     if (x86) {
         bSuccess = CreateProcessA(NULL, (char*)"C:\\Windows\\"X86PATH"\\"DEFAULTPROCESSNAME, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, sInfo, pInfo);
@@ -316,7 +362,7 @@ BOOL BeaconSpawnTemporaryProcess(BOOL x86, BOOL ignoreToken, STARTUPINFO* sInfo,
     return bSuccess;
 }
 
-void BeaconInjectProcess(HANDLE hProc, int pid, char* payload, int p_len, int p_offset, char* arg, int a_len) {
+void BeaconInjectProcess(HANDLE hProc, int pid, char* payload, int p_len, int p_offset, char * arg, int a_len) {
     /* Leaving this to be implemented by people needing/wanting it */
     return;
 }
@@ -327,8 +373,10 @@ void BeaconInjectTemporaryProcess(PROCESS_INFORMATION* pInfo, char* payload, int
 }
 
 void BeaconCleanupProcess(PROCESS_INFORMATION* pInfo) {
-    (void)CloseHandle(pInfo->hThread);
-    (void)CloseHandle(pInfo->hProcess);
+    if (pInfo != NULL) {
+        (void)CloseHandle(pInfo->hThread);
+        (void)CloseHandle(pInfo->hProcess);
+    }
     return;
 }
 
@@ -338,7 +386,11 @@ BOOL toWideChar(char* src, wchar_t* dst, int max) {
     return MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, src, -1, dst, max / sizeof(wchar_t));
 }
 
-char* BeaconGetOutputData(int* outsize) {
+char* BeaconGetOutputData(int *outsize) {
+    if (outsize == NULL) {
+        return NULL;
+    }
+
     char* outdata = beacon_compatibility_output;
     *outsize = beacon_compatibility_size;
     beacon_compatibility_output = NULL;

@@ -168,6 +168,7 @@ class RegWriteValueBase(CommandBase):
     version = 2
     author = "@djhohnstein"
     argument_class = RegWriteValueArguments
+    supported_ui_features = ["registry_browser:set_value"]
     attackmapping = ["T1547", "T1037", "T1546", "T1574", "T1112", "T1003"]
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:

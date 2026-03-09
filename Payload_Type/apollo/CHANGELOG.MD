@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.10] - 2026-02-20 
+
+### Changed
+
+- Updated the `upload` command to allow new `-fileName` field and specifying an already uploaded file
+  - this brings `upload` in line with other file-based commands like `execute_assembly` and `execute_coff`
+  
+## [v2.4.9] - 2026-02-02
+
+### Changed
+
+- Updated `COFFLoader.dll` to be compiled with `Release` to help fix `VCRUNTIME140.dll` issues
+
+## [v2.4.8] - 2025-12-23
+
+### Changed
+
+- Added `update_deleted` to more places within `ls` that do separate processing for better consistency
+
+## [v2.4.7] - 2025-12-23
+
+### Changed
+
+- Added support for `update_deleted` in file browsers to auto mark files as "deleted" if they're not in folder listings
+
+## [v2.4.6] - 2025-12-15
+
+### Changed
+
+- Fixing missing dependency change for custom browsers
+
+## [v2.4.5] - 2025-12-12
+
+### Changed
+
+- Updated the COFFLoader.dll with the latest updates from TrustedSec's COFFLoader
+- Added ldap_query
+- Updated reg_query
+
 ## [v2.4.4] - 2025-12-02
 
 ### Changed
