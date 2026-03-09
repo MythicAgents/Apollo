@@ -84,7 +84,8 @@
             CommandInformation,
             ScreenshotInformation,
             KeylogInformation,
-            CallbackUpdate
+            CallbackUpdate,
+            CustomBrowser
         }
     }
 }
