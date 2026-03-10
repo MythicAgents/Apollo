@@ -1056,7 +1056,7 @@ namespace Tasks
                 {
                     byte[] outDataBytes = new byte[outdataSize];
                     Marshal.Copy(outdata, outDataBytes, 0, outdataSize);
-                    executionState.Output = Encoding.Default.GetString(outDataBytes);
+                    executionState.Output = Encoding.UTF8.GetString(outDataBytes);
                     DebugHelp.DebugWriteLine($"Retrieved {outdataSize} bytes of output data");
                 }
                 else

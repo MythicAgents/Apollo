@@ -144,7 +144,7 @@ namespace ApolloInterop.Classes.Impersonation
                 if (src.SourceName == null)
                     return string.Empty;
 
-                return Encoding.ASCII.GetString(src.SourceName).TrimEnd('\0');
+                return Encoding.UTF8.GetString(src.SourceName).TrimEnd('\0');
             }
             finally
             {

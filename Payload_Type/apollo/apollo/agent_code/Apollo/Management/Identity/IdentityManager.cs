@@ -66,10 +66,11 @@ public class IdentityManager : IIdentityManager
     private delegate IntPtr GetSidSubAuthorityCount(IntPtr pSid);
     private delegate IntPtr GetSidSubAuthority(IntPtr pSid, int nSubAuthority);
 
+    [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet = CharSet.Unicode)]
     private delegate bool LogonUserW(
-        string lpszUsername,
-        string lpszDomain,
-        string lpszPassword,
+        [MarshalAs(UnmanagedType.LPWStr)] string lpszUsername,
+        [MarshalAs(UnmanagedType.LPWStr)] string lpszDomain,
+        [MarshalAs(UnmanagedType.LPWStr)] string lpszPassword,
         LogonType dwLogonType,
         LogonProvider dwLogonProvider,
         out IntPtr phToken);

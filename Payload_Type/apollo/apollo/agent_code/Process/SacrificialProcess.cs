@@ -59,9 +59,9 @@ namespace Process
         #region Delegate Typedefs
         #region ADVAPI32
         private delegate bool LogonUser(
-            String lpszUserName,
-            String lpszDomain,
-            String lpszPassword,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpszUserName,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpszDomain,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpszPassword,
             LogonType dwLogonType,
             LogonProvider dwLogonProvider,
             out IntPtr phToken);
@@ -70,14 +70,14 @@ namespace Process
         private delegate bool CreateProcessAsUser
         (
             IntPtr hToken,
-            String lpApplicationName,
-            String lpCommandLine,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpApplicationName,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpCommandLine,
             IntPtr lpProcessAttributes,
             IntPtr lpThreadAttributes,
             Boolean bInheritHandles,
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
-            String lpCurrentDirectory,
+            [MarshalAs(UnmanagedType.LPWStr)] String lpCurrentDirectory,
             ref StartupInfoEx lpStartupInfo,
             out Win32.ProcessInformation lpProcessInformation
         );
@@ -106,8 +106,8 @@ namespace Process
         #endregion
         #region KERNEL32
 #if SERVER2012_COMPATIBLE
-        private delegate IntPtr GetModuleHandleA(
-            [MarshalAs(UnmanagedType.LPStr)]string lpModuleName);
+        private delegate IntPtr GetModuleHandleW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpModuleName);
 
         private delegate IntPtr GetProcAddress(
             IntPtr hModule,
@@ -147,15 +147,15 @@ namespace Process
             bool bInheritHandle,
             DuplicateOptions dwOptions
         );
-        private delegate bool CreateProcessA(
-            string lpApplicationName,
-            string lpCommandLine,
+        private delegate bool CreateProcessW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpApplicationName,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpCommandLine,
             IntPtr lpProcessAttributes,
             IntPtr lpThreadAttributes,
             bool bInheritHandles,
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
-            string lpCurrentDirectory,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpCurrentDirectory,
             ref StartupInfoEx lpStartupInfo,
             out Win32.ProcessInformation lpProcessInformation);
         private delegate UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilli);
@@ -170,7 +170,7 @@ namespace Process
         private delegate bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
         #endregion
 #if SERVER2012_COMPATIBLE
-        private GetModuleHandleA _pGetModuleHandleA;
+        private GetModuleHandleW _pGetModuleHandleW;
         private GetProcAddress _pGetProcAddress;
 #endif
         private CreateProcessAsUser _pCreateProcessAsUser;
@@ -186,7 +186,7 @@ namespace Process
         private DuplicateHandle _pDuplicateHandle;
         private CreateEnvironmentBlock _pCreateEnvironmentBlock;
         private DestroyEnvironmentBlock _pDestroyEnvironmentBlock;
-        private CreateProcessA _pCreateProcessA;
+        private CreateProcessW _pCreateProcessW;
         private WaitForSingleObject _pWaitForSingleObject;
         private GetExitCodeProcess _pGetExitCodeProcess;
         private LogonUser _pLogonUser;
@@ -209,10 +209,10 @@ namespace Process
             _pCreateProcessWithTokenW = _agent.GetApi().GetLibraryFunction<CreateProcessWithTokenW>(Library.ADVAPI32, "CreateProcessWithTokenW");
 
 #if SERVER2012_COMPATIBLE
-            _pGetModuleHandleA = _agent.GetApi().GetLibraryFunction<GetModuleHandleA>(Library.KERNEL32, "GetModuleHandleA");
+            _pGetModuleHandleW = _agent.GetApi().GetLibraryFunction<GetModuleHandleW>(Library.KERNEL32, "GetModuleHandleW");
             _pGetProcAddress = _agent.GetApi().GetLibraryFunction<GetProcAddress>(Library.KERNEL32, "GetProcAddress");
 
-            IntPtr hKernel32 = _pGetModuleHandleA("kernel32.dll");
+            IntPtr hKernel32 = _pGetModuleHandleW("kernel32.dll");
             IntPtr pInitializeProcThreadAttributeList =
                 _pGetProcAddress(hKernel32, "InitializeProcThreadAttributeList");
             IntPtr pSetHandleInfo = _pGetProcAddress(hKernel32, "SetHandleInformation");
@@ -238,7 +238,7 @@ namespace Process
             _pDeleteProcThreadAttributeList = _agent.GetApi().GetLibraryFunction<DeleteProcThreadAttributeList>(Library.KERNEL32, "DeleteProcThreadAttributeList");
 #endif
 
-            _pCreateProcessA = _agent.GetApi().GetLibraryFunction<CreateProcessA>(Library.KERNEL32, "CreateProcessA");
+            _pCreateProcessW = _agent.GetApi().GetLibraryFunction<CreateProcessW>(Library.KERNEL32, "CreateProcessW");
             _pCreatePipe = _agent.GetApi().GetLibraryFunction<CreatePipe>(Library.KERNEL32, "CreatePipe");
             _pOpenProcess = _agent.GetApi().GetLibraryFunction<OpenProcess>(Library.KERNEL32, "OpenProcess");
             OpenProcessTokenDelegate = _agent.GetApi().GetLibraryFunction<Advapi32APIs.OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
@@ -532,7 +532,7 @@ namespace Process
                 bRet = InitializeStartupEnvironment(_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token);
                 if (bRet)
                 {
-                    bRet = _pCreateProcessA(
+                    bRet = _pCreateProcessW(
                         null,
                         CommandLine,
                         IntPtr.Zero,

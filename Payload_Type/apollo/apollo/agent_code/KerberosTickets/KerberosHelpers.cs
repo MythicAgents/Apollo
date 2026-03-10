@@ -286,21 +286,33 @@ internal class KerberosHelpers
         HANDLE tokenInfo = new();
         try
         {
-            UNICODE_STRING userName = new(WindowsIdentity.GetCurrent().Name);
-            UNICODE_STRING logonDomainName = new(Environment.UserDomainName);
-            UNICODE_STRING password = new("password");
-            HANDLE<UNICODE_STRING> userNameHandle = new(userName);
-            HANDLE<UNICODE_STRING> logonDomainNameHandle = new(logonDomainName);
-            HANDLE<UNICODE_STRING> passwordHandle = new(password);
-            bool didLogon = WindowsAPI.LogonUserADelegate(userNameHandle, logonDomainNameHandle, passwordHandle, Win32.LogonType.LOGON32_LOGON_NEW_CREDENTIALS, Win32.LogonProvider.LOGON32_PROVIDER_WINNT50, out HANDLE token);
-            createdArtifacts.Add(Artifact.WindowsAPIInvoke("LogonUserA"));
+            string currentIdentity = WindowsIdentity.GetCurrent().Name;
+            string userName = currentIdentity;
+            string logonDomainName = Environment.UserDomainName;
+
+            int domainSeparator = currentIdentity.IndexOf('\\');
+            if (domainSeparator > 0 && domainSeparator < currentIdentity.Length - 1)
+            {
+                logonDomainName = currentIdentity.Substring(0, domainSeparator);
+                userName = currentIdentity.Substring(domainSeparator + 1);
+            }
+
+            const string password = "password";
+            bool didLogon = WindowsAPI.LogonUserWDelegate(
+                userName,
+                logonDomainName,
+                password,
+                Win32.LogonType.LOGON32_LOGON_NEW_CREDENTIALS,
+                Win32.LogonProvider.LOGON32_PROVIDER_WINNT50,
+                out HANDLE token);
+            createdArtifacts.Add(Artifact.WindowsAPIInvoke("LogonUserW"));
             if (!didLogon)
             {
                 DebugHelp.DebugWriteLine($"Failed to create new logon session: {Marshal.GetLastWin32Error()}");
                 return new();
             }
 
-            createdArtifacts.Add(Artifact.PlaintextLogon(userName.ToString()));
+            createdArtifacts.Add(Artifact.PlaintextLogon($"{logonDomainName}\\{userName}"));
 
             int tokenInfoSize = Marshal.SizeOf<TOKEN_STATISTICS>();
             tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
