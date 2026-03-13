@@ -140,7 +140,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    semver = "2.4.10"
+    semver = "2.4.11"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     c2_profiles = ["http", "httpx", "smb", "tcp", "websocket", "azure_blob"]
