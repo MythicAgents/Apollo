@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #define WHOAMI
@@ -25,13 +25,13 @@ namespace Tasks
             if (_agent.GetIdentityManager().GetCurrentLogonInformation(out var logonInfo))
             {
                 resp = CreateTaskResponse(
-                    $"Local Identity: {_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name}\n" +
+                    $"Primary Identity: {_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name}\n" +
                     $"Impersonation Identity: {logonInfo.Domain}\\{logonInfo.Username}", true);
             }
             else
             {
                 resp = CreateTaskResponse(
-                    $"Local Identity: {_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name}\n" +
+                    $"Primary Identity: {_agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name}\n" +
                     $"Impersonation Identity: {_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name}", true);
             }
             // Your code here..

@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #define STEAL_TOKEN
@@ -122,7 +122,7 @@ namespace Tasks
                             stringOutput += item.ToString() + "\n";
                         }
                         var integrityMessage = newIntegrity != oldIntegrity ? $" ( {newIntegrity} )" : "";
-                        resp = CreateTaskResponse($"Successfully impersonated {cur.Name}\n{stringOutput}", true, "", new IMythicMessage[] {
+                        resp = CreateTaskResponse($"Successfully set Impersonation Identity to {cur.Name}\n{stringOutput}", true, "", new IMythicMessage[] {
                             new CallbackUpdate{  ImpersonationContext = $"{cur.Name}{integrityMessage}" , IntegrityLevel = ((int)newIntegrity) }
                         });
                     }
