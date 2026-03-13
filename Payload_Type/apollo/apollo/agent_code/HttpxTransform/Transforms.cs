@@ -39,7 +39,7 @@ namespace HttpxTransform
         public static byte[] Base64UrlEncode(byte[] data)
         {
             string base64 = Convert.ToBase64String(data);
-            base64 = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+            base64 = base64.Replace('+', '-').Replace('/', '_');//.TrimEnd('=');
             return Encoding.UTF8.GetBytes(base64);
         }
 

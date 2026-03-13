@@ -22,31 +22,31 @@ def validate_httpx_config(config_data):
     """
     valid_locations = ["cookie", "query", "header", "body", ""]
     valid_actions = ["base64", "base64url", "netbios", "netbiosu", "xor", "prepend", "append"]
-    
+
     # Check name is required
     if not config_data.get("name"):
         return "Configuration name is required"
-    
+
     # Check at least GET or POST must be configured
     get_config = config_data.get("get", {})
     post_config = config_data.get("post", {})
-    
+
     get_uris = get_config.get("uris", [])
     post_uris = post_config.get("uris", [])
-    
+
     if not get_uris and not post_uris:
         return "At least GET or POST URIs are required"
-    
+
     # Validate each configured method (GET and POST only)
     variations = {
         "GET": get_config,
         "POST": post_config
     }
-    
+
     for method, variation in variations.items():
         if not variation:
             continue
-        
+
         # Check if method is actually configured
         is_configured = (
             variation.get("verb") or
@@ -62,15 +62,15 @@ def validate_httpx_config(config_data):
                 (variation["server"].get("transforms") and len(variation["server"].get("transforms", [])) > 0)
             ))
         )
-        
+
         if not is_configured:
             continue
-        
+
         # Validate URIs
         uris = variation.get("uris", [])
         if not uris or len(uris) == 0:
             return f"{method} URIs are required if {method} method is configured"
-        
+
         # Validate message location and name
         client = variation.get("client", {})
         message = client.get("message", {})
@@ -78,19 +78,19 @@ def validate_httpx_config(config_data):
             location = message.get("location", "")
             if location not in valid_locations:
                 return f"Invalid {method} message location: {location}"
-            
+
             # Message name is required when location is not "body" or empty string
             if location and location != "body":
                 if not message.get("name"):
                     return f"Missing name for {method} variation location '{location}'. Message name is required when location is 'cookie', 'query', or 'header'."
-        
+
         # Validate client transforms
         client_transforms = client.get("transforms", [])
         for transform in client_transforms:
             action = transform.get("action", "").lower()
             if action not in valid_actions:
                 return f"Invalid {method} client transform action: {transform.get('action')}"
-            
+
             # Prepend/append transforms are not allowed when message location is "query"
             if message.get("location", "").lower() == "query" and action in ["prepend", "append"]:
                 return (
@@ -98,7 +98,7 @@ def validate_httpx_config(config_data):
                     "Prepend/append transforms corrupt query parameter values because the server extracts only the parameter value "
                     "(without the parameter name), causing transform mismatches. Use prepend/append only for 'body', 'header', or 'cookie' locations."
                 )
-        
+
         # Validate server transforms
         server = variation.get("server", {})
         server_transforms = server.get("transforms", [])
@@ -106,14 +106,14 @@ def validate_httpx_config(config_data):
             action = transform.get("action", "").lower()
             if action not in valid_actions:
                 return f"Invalid {method} server transform action: {transform.get('action')}"
-        
+
         # Validate encoding consistency: client and server must use matching base64/base64url encoding
         client_encoding = None
         for transform in client_transforms:
             action = transform.get("action", "").lower()
             if action in ["base64", "base64url"]:
                 client_encoding = action
-        
+
         server_encoding = None
         # Server transforms are applied in reverse order, so check from the end
         for transform in reversed(server_transforms):
@@ -121,14 +121,14 @@ def validate_httpx_config(config_data):
             if action in ["base64", "base64url"]:
                 server_encoding = action
                 break
-        
+
         # If both client and server have encoding transforms, they must match
         if client_encoding and server_encoding and client_encoding != server_encoding:
             return (
                 f"{method} encoding mismatch: client uses {client_encoding} but server uses {server_encoding}. "
                 "Client and server encoding transforms must match."
             )
-    
+
     return None  # Validation passed
 
 
@@ -316,7 +316,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         enable_keying = self.get_parameter('enable_keying')
         keying_enabled = "true" if enable_keying else "false"
         keying_method_str = self.get_parameter('keying_method') if enable_keying else ""
-        
+
         # Map keying method to numeric value for obfuscation
         # 0 = None, 1 = Hostname, 2 = Domain, 3 = Registry
         keying_method_map = {
@@ -325,24 +325,24 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             "Registry": "3"
         }
         keying_method = keying_method_map.get(keying_method_str, "0")
-        
+
         # Hash the keying value for security (force uppercase before hashing)
         keying_value_hash = ""
         registry_path = ""
         registry_value = ""
         registry_comparison = "0"  # Default to 0 for numeric field
-        
+
         if enable_keying:
             if keying_method_str == "Registry":
                 # Handle registry keying
                 registry_path = self.get_parameter('registry_path') if self.get_parameter('registry_path') else ""
                 registry_comparison_str = self.get_parameter('registry_comparison') if self.get_parameter('registry_comparison') else "Matches"
-                
+
                 # Map registry comparison to numeric value: 1 = Matches, 2 = Contains
                 registry_comparison = "1" if registry_comparison_str == "Matches" else "2"
-                
+
                 registry_value_raw = self.get_parameter('registry_value') if self.get_parameter('registry_value') else ""
-                
+
                 if registry_comparison_str == "Matches":
                     # Hash the registry value for secure matching
                     if registry_value_raw:
@@ -356,7 +356,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 if self.get_parameter('keying_value'):
                     plaintext_value = self.get_parameter('keying_value').upper()
                     keying_value_hash = hashlib.sha256(plaintext_value.encode('utf-8')).hexdigest()
-        
+
         special_files_map = {
             "Config.cs": {
                 "payload_uuid": self.uuid,
@@ -384,21 +384,21 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         for c2 in self.c2info:
             profile = c2.get_c2profile()
             defines_profiles_upper.append(f"#define {profile['name'].upper()}")
-            
+
             # Initialize all parameters with empty strings as defaults to ensure placeholders are replaced
             if profile['name'] == 'httpx':
-                default_httpx_params = ['callback_interval', 'callback_jitter', 'callback_domains', 
+                default_httpx_params = ['callback_interval', 'callback_jitter', 'callback_domains',
                                         'domain_rotation', 'failover_threshold', 'encrypted_exchange_check',
-                                        'killdate', 'raw_c2_config', 'proxy_host', 'proxy_port', 
+                                        'killdate', 'raw_c2_config', 'proxy_host', 'proxy_port',
                                         'proxy_user', 'proxy_pass', 'domain_front', 'timeout']
                 for param in default_httpx_params:
                     prefixed_key = f"{profile['name'].lower()}_{param}"
                     if prefixed_key not in special_files_map.get("Config.cs", {}):
                         special_files_map.setdefault("Config.cs", {})[prefixed_key] = ""
-            
+
             for key, val in c2.get_parameters_dict().items():
                 prefixed_key = f"{profile['name'].lower()}_{key}"
-                
+
                 # Check for raw_c2_config file parameter FIRST before other type checks
                 if key == "raw_c2_config" and profile['name'] == "httpx":
                     # Handle httpx raw_c2_config file parameter - REQUIRED for httpx profile
@@ -406,18 +406,18 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         resp.set_status(BuildStatus.Error)
                         resp.build_stderr = "raw_c2_config is REQUIRED for httpx profile. Please upload a JSON or TOML configuration file."
                         return resp
-                    
+
                     try:
                         # Read configuration file contents
                         response = await SendMythicRPCFileGetContent(MythicRPCFileGetContentMessage(val))
-                        
+
                         if not response.Success:
                             resp.set_status(BuildStatus.Error)
                             resp.build_stderr = f"Error reading raw_c2_config file: {response.Error}"
                             return resp
-                        
+
                         raw_config_file_data = response.Content.decode('utf-8')
-                        
+
                         # Try parsing the content as JSON first
                         try:
                             config_data = json.loads(raw_config_file_data)
@@ -429,25 +429,25 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 resp.set_status(BuildStatus.Error)
                                 resp.build_stderr = f"Failed to parse raw_c2_config as JSON or TOML: {toml_err}"
                                 return resp
-                        
+
                         # Validate the httpx configuration before building
                         validation_error = validate_httpx_config(config_data)
                         if validation_error:
                             resp.set_status(BuildStatus.Error)
                             resp.build_stderr = f"Invalid httpx configuration: {validation_error}"
                             return resp
-                        
+
                         # Store the parsed config for Apollo to use
                         # Base64 encode to avoid C# string escaping issues
                         import base64
-                        encoded_config = base64.b64encode(raw_config_file_data.encode('utf-8')).decode('ascii')
+                        encoded_config = base64.b64encode(json.dumps(config_data).encode('utf-8')).decode('ascii')
                         special_files_map["Config.cs"][prefixed_key] = encoded_config
-                        
+
                     except Exception as err:
                         resp.set_status(BuildStatus.Error)
                         resp.build_stderr = f"Error processing raw_c2_config: {str(err)}"
                         return resp
-                    
+
                     continue  # Skip to next parameter
 
                 if isinstance(val, dict) and 'enc_key' in val:
@@ -461,7 +461,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 elif isinstance(val, list):
                     # Handle list values (like callback_domains as an array)
                     val = ', '.join(str(item) for item in val)
-                
+
                 # Now process as string if it's a string
                 if isinstance(val, str):
                     # Check if the value looks like a JSON array string (e.g., '["domain1", "domain2"]')
@@ -475,7 +475,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         except:
                             # If parsing fails, use as-is
                             pass
-                    
+
                     escaped_val = val.replace("\\", "\\\\")
                     # Check for newlines in the string that would break C# syntax
                     if '\n' in escaped_val or '\r' in escaped_val:
@@ -498,7 +498,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             if profile["name"] == "azure_blob":
                 params = c2.get_parameters_dict()
 
-                
+
                 # Proxy params hardcoded at the minute as the profile doesn't support proxy
                 # Once the profile is updated, this should "magically" work.
                 proxy_host = params.get("proxy_host", "")
@@ -547,30 +547,30 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                 stdout_err += f"\n[azure_blob] Container: {config_data.Result['container_name']}"
                 stdout_err += f"\n[azure_blob] Endpoint: {config_data.Result['blob_endpoint']}"
 
-        
+
         try:
             # make a temp directory for it to live
             agent_build_path = tempfile.TemporaryDirectory(suffix=self.uuid)
-            
+
             # shutil to copy payload files over
             copy_tree(str(self.agent_code_path), agent_build_path.name)
-            
+
             # Get selected profiles from c2info
             selected_profiles = [c2.get_c2profile()['name'] for c2 in self.c2info]
-            
+
             # Filter Apollo.csproj to include only selected profile projects
             csproj_path = os.path.join(agent_build_path.name, "Apollo", "Apollo.csproj")
             if os.path.exists(csproj_path):
                 try:
                     filter_csproj_profile_references(csproj_path, selected_profiles)
-                    
+
                     # Also filter Config.cs to remove #define statements for unselected profiles
                     config_path = os.path.join(agent_build_path.name, "Apollo", "Config.cs")
                     if os.path.exists(config_path):
                         filter_config_defines(config_path, selected_profiles)
                 except Exception as e:
                     stdout_err += f"\nWarning: Failed to filter csproj references: {e}. Building with all profiles.\n"
-            
+
             # first replace everything in the c2 profiles
             for csFile in get_csharp_files(agent_build_path.name):
                 templateFile = open(csFile, "rb").read().decode()
@@ -592,7 +592,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 templateFile = templateFile.replace("HTTP_ADDITIONAL_HEADERS_HERE", "")
                 with open(csFile, "wb") as f:
                     f.write(templateFile.encode())
-            
+
             # Determine if we need to embed the default config
             embed_default_config = True
             for c2 in self.c2info:
@@ -602,9 +602,9 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     if raw_config and raw_config != "":
                         embed_default_config = False
                         break
-            
+
             output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
-            
+
             # Build command with conditional embedding
             if self.get_parameter('debug'):
                 command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ --verbosity quiet"
@@ -777,7 +777,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 stdout_err += f"[stdout]\n{stdout.decode()}"
                             if stderr:
                                 stdout_err += f"[stderr]\n{stderr.decode()}"
-                            
+
                             # Check if service build command succeeded
                             if proc.returncode != 0:
                                 await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
@@ -791,7 +791,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                                 resp.build_message = f"Service build failed with exit code {proc.returncode}"
                                 resp.build_stderr = stdout_err
                                 return resp
-                            
+
                             output_path = (
                                 pathlib.PurePath(agent_build_path.name)
                                 / "Service"
@@ -908,11 +908,11 @@ def filter_config_defines(config_path: str, selected_profiles: list[str]) -> Non
         'tcp': '#define TCP',
         'websocket': '#define WEBSOCKET'
     }
-    
+
     # Read lines
     with open(config_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-    
+
     # Filter lines: comment out unselected profile defines
     filtered_lines = []
     for line in lines:
@@ -923,10 +923,10 @@ def filter_config_defines(config_path: str, selected_profiles: list[str]) -> Non
                 filtered_lines.append('//' + line.lstrip())
                 modified = True
                 break
-        
+
         if not modified:
             filtered_lines.append(line)
-    
+
     # Write back
     with open(config_path, 'w', encoding='utf-8') as f:
         f.writelines(filtered_lines)
@@ -945,14 +945,14 @@ def filter_csproj_profile_references(csproj_path: str, selected_profiles: list[s
         'tcp': '    <ProjectReference Include="..\\TcpProfile\\TcpProfile.csproj" />',
         'websocket': '    <ProjectReference Include="..\\WebsocketProfile\\WebsocketProfile.csproj" />'
     }
-    
+
     # Also track HttpxTransform
     httpx_transform_line = '    <ProjectReference Include="..\\HttpxTransform\\HttpxTransform.csproj" />'
-    
+
     # Read lines
     with open(csproj_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-    
+
     # Filter lines: keep core references and selected profile references
     filtered_lines = []
     for line in lines:
@@ -965,7 +965,7 @@ def filter_csproj_profile_references(csproj_path: str, selected_profiles: list[s
                     filtered_lines.append(line)
                 is_profile_line = True
                 break
-        
+
         # Check if this is HttpxTransform line
         if httpx_transform_line in line:
             # Keep only if httpx is selected
@@ -974,7 +974,7 @@ def filter_csproj_profile_references(csproj_path: str, selected_profiles: list[s
         elif not is_profile_line:
             # Keep all non-profile lines as-is
             filtered_lines.append(line)
-    
+
     # Write back
     with open(csproj_path, 'w', encoding='utf-8') as f:
         f.writelines(filtered_lines)
