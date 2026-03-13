@@ -1,0 +1,141 @@
+{
+    "name": "Cloud Analytics Platform",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/v1/analytics/metrics/dashboard",
+            "/v1/reports/performance/export",
+            "/api/v2/events/aggregate"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                "Connection": "keep-alive",
+                "Origin": "https://analytics.example.com",
+                "Referer": "https://analytics.example.com/dashboard",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-Client-Version": "2.15.3"
+            },
+            "parameters": {
+                "startDate": "2024-04-01",
+                "endDate": "2024-04-15",
+                "timezone": "UTC",
+                "format": "json"
+            },
+            "message": {
+                "location": "query",
+                "name": "filter"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "analyticsQueryKey2024"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json; charset=utf-8",
+                "Server": "nginx/1.24.0",
+                "X-Content-Type-Options": "nosniff",
+                "X-Frame-Options": "DENY",
+                "X-XSS-Protection": "1; mode=block",
+                "Cache-Control": "private, no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "{\"status\":\"success\",\"data\":"
+                },
+                {
+                    "action": "xor",
+                    "value": "analyticsResponseKey2024"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/v1/analytics/events/track",
+            "/v1/reports/generate",
+            "/api/v2/batch"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json",
+                "Origin": "https://analytics.example.com",
+                "Referer": "https://analytics.example.com/dashboard",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-Client-Version": "2.15.3"
+            },
+            "parameters": null,
+            "message": {
+                "location": "body",
+                "name": ""
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "trackEventSecret2024"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json; charset=utf-8",
+                "Server": "nginx/1.24.0",
+                "X-Content-Type-Options": "nosniff",
+                "X-Frame-Options": "DENY",
+                "X-Request-Id": "req-abc123def456",
+                "Cache-Control": "private, no-cache, no-store, must-revalidate"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "{\"status\":\"success\",\"message\":\"Events processed\",\"data\":"
+                },
+                {
+                    "action": "xor",
+                    "value": "trackResponseSecret2024"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
+                }
+            ]
+        }
+    }
+}
+

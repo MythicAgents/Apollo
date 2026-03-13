@@ -17,7 +17,7 @@ RUN /venv/bin/python -m pip install git+https://github.com/MEhrn00/donut.git@v2.
 COPY [".", "."]
 
 # fetch all dependencies
-RUN cd apollo/agent_code && dotnet restore && rm donut ; cp /donut donut
+RUN cd apollo/agent_code && dotnet restore --verbosity quiet && rm donut ; cp /donut donut
 RUN cd apollo/agent_code && cp COFFLoader.dll /COFFLoader.dll
 
 CMD ["bash", "-c", "cp /donut apollo/agent_code/donut && /venv/bin/python main.py"]
