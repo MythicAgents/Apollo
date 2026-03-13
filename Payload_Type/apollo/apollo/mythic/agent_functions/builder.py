@@ -906,7 +906,8 @@ def filter_config_defines(config_path: str, selected_profiles: list[str]) -> Non
         'httpx': '#define HTTPX',
         'smb': '#define SMB',
         'tcp': '#define TCP',
-        'websocket': '#define WEBSOCKET'
+        'websocket': '#define WEBSOCKET',
+        'azure_blob': '#define AZURE_BLOB'
     }
 
     # Read lines
@@ -943,7 +944,8 @@ def filter_csproj_profile_references(csproj_path: str, selected_profiles: list[s
         'httpx': '    <ProjectReference Include="..\\HttpxProfile\\HttpxProfile.csproj" />',
         'smb': '    <ProjectReference Include="..\\NamedPipeProfile\\NamedPipeProfile.csproj" />',
         'tcp': '    <ProjectReference Include="..\\TcpProfile\\TcpProfile.csproj" />',
-        'websocket': '    <ProjectReference Include="..\\WebsocketProfile\\WebsocketProfile.csproj" />'
+        'websocket': '    <ProjectReference Include="..\\WebsocketProfile\\WebsocketProfile.csproj" />',
+        "azure_blob": '    <ProjectReference Include="..\AzureBlobProfile\AzureBlobProfile.csproj" />'
     }
 
     # Also track HttpxTransform
