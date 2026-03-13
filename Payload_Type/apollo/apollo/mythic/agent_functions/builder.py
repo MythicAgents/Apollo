@@ -143,7 +143,7 @@ class Apollo(PayloadType):
     semver = "2.4.10"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
-    c2_profiles = ["http", "httpx", "smb", "tcp", "websocket"]
+    c2_profiles = ["http", "httpx", "smb", "tcp", "websocket", "azure_blob"]
     note = """
 A fully featured .NET 4.0 compatible training agent. Version: {}. 
 NOTE: P2P Not compatible with v2.2 agents! 
@@ -493,6 +493,60 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     extra_variables = {**extra_variables, **val}
                 else:
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
+
+            # Azure Blob: provision container and get SAS token via RPC
+            if profile["name"] == "azure_blob":
+                params = c2.get_parameters_dict()
+
+                
+                # Proxy params hardcoded at the minute as the profile doesn't support proxy
+                # Once the profile is updated, this should "magically" work.
+                proxy_host = params.get("proxy_host", "")
+                proxy_port = str(params.get("proxy_port", 0))
+                proxy_user = params.get("proxy_user", "")
+                proxy_pass = params.get("proxy_pass", "")
+                enable_certificate_check = params.get("enable_certificate_check", "True")
+
+                storage_account = params.get("storage_account", "")
+                account_key_param = params.get("account_key", "")
+                if isinstance(account_key_param, dict):
+                    account_key = account_key_param.get("enc_key", "") or account_key_param.get("value", "")
+                else:
+                    account_key = str(account_key_param) if account_key_param else ""
+
+                if not storage_account or not account_key:
+                    resp.build_stderr = "Missing storage_account or account_key"
+                    resp.set_status(BuildStatus.Error)
+                    return resp
+
+                killdate = params.get("killdate", "")
+                config_data = await SendMythicRPCOtherServiceRPC(MythicRPCOtherServiceRPCMessage(
+                    ServiceName="azure_blob",
+                    ServiceRPCFunction="generate_config",
+                    ServiceRPCFunctionArguments={
+                        "killdate": killdate,
+                        "storage_account": storage_account,
+                        "account_key": account_key,
+                        "payload_uuid": self.uuid,
+                    }
+                ))
+                if not config_data.Success:
+                    build_message = f"Azure Blob container provisioning failed :( : {config_data.Error}"
+                    resp.set_status(BuildStatus.Error)
+                    resp.set_build_message(build_message)
+                    return resp
+                # Stamp RPC results into Config.cs (these are not normal C2 profile parameters)
+                special_files_map["Config.cs"]["azure_blob_blob_endpoint"] = config_data.Result["blob_endpoint"]
+                special_files_map["Config.cs"]["azure_blob_container_name"] = config_data.Result["container_name"]
+                special_files_map["Config.cs"]["azure_blob_sas_token"] = config_data.Result["sas_token"]
+                special_files_map["Config.cs"]["azure_blob_proxy_host"] = proxy_host
+                special_files_map["Config.cs"]["azure_blob_proxy_port"] = proxy_port
+                special_files_map["Config.cs"]["azure_blob_proxy_user"] = proxy_user
+                special_files_map["Config.cs"]["azure_blob_proxy_pass"] = proxy_pass
+                special_files_map["Config.cs"]["enable_certificate_check"] = enable_certificate_check
+                stdout_err += f"\n[azure_blob] Container: {config_data.Result['container_name']}"
+                stdout_err += f"\n[azure_blob] Endpoint: {config_data.Result['blob_endpoint']}"
+
         
         try:
             # make a temp directory for it to live
@@ -955,3 +1009,4 @@ def adjust_file_name(filename, shellcode_format, output_type, adjust_filename):
         return original_filename + ".txt"
     else:
         return filename
+
