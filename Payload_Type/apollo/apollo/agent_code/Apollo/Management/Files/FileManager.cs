@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using ApolloInterop.Classes.Cryptography;
-using Newtonsoft.Json.Serialization;
 
 namespace Apollo.Management.Files
 {

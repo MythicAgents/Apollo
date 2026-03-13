@@ -25,6 +25,9 @@ Once installed, restart Mythic to build a new agent.
 - Unmanged PE, .NET Assembly, and PowerShell Script Execution
 - User Exploitation Suite
 - SOCKSv5 Support
+- Advanced HTTPX Profile with Malleable Configuration Support
+- Message Transform Support (Base64, NetBIOS, XOR, etc.)
+- Domain Rotation and Proxy Support
 
 ## Commands Manual Quick Reference
 
@@ -100,6 +103,10 @@ whoami | `whoami`                                                               
 
 The HTTP profile calls back to the Mythic server over the basic, non-dynamic profile. When selecting options to be stamped into Apollo at compile time, all options are respected with the exception of those parameters relating to GET requests.
 
+### [HTTPX Profile](https://github.com/MythicC2Profiles/httpx)
+
+Advanced HTTP profile with malleable configuration support and message transforms. Provides significantly more flexibility and OPSEC benefits compared to the basic HTTP profile, making it ideal for red team operations.
+
 ### [SMB Profile](https://github.com/MythicC2Profiles/smb)
 
 Establish communications over SMB named pipes. By default, the named pipe name will be a randomly generated GUID.
@@ -107,6 +114,10 @@ Establish communications over SMB named pipes. By default, the named pipe name w
 ### [TCP Profile](https://github.com/MythicC2Profiles/tcp)
 
 Establish communications over a specified network socket. Note: If unelevated, the user may receive a prompt to allow communications from the binary to occur over the network.
+
+### [WebSocket Profile](https://github.com/MythicC2Profiles/websocket)
+
+Establish communications over WebSocket connections for real-time bidirectional communication.
 
 ## SOCKSv5 Support
 
