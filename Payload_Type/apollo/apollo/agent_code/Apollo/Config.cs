@@ -268,15 +268,27 @@ namespace Apollo
         public static string StagingRSAPrivateKey = "AESPSK_here";
         public static string PayloadUUID = "payload_uuid_here";
 #endif
+#if LOCAL_BUILD
+        // Environmental Keying Configuration
+        public static bool KeyingEnabled = false;
+        public static int KeyingMethod = 1; // 1=Hostname, 2=Domain, 3=Registry
+        public static string KeyingValueHash = "keying_value_hash_here";
 
+        // Registry Keying Configuration
+        public static string RegistryPath = "registry_path_here";
+        public static string RegistryValue = "registry_value_here";
+        public static int RegistryComparison = 1; // 1=Matches, 2=Contains
+#else
         // Environmental Keying Configuration
         public static bool KeyingEnabled = keying_enabled_here;
         public static int KeyingMethod = keying_method_here; // 1=Hostname, 2=Domain, 3=Registry
         public static string KeyingValueHash = "keying_value_hash_here";
-        
+
         // Registry Keying Configuration
         public static string RegistryPath = "registry_path_here";
         public static string RegistryValue = "registry_value_here";
         public static int RegistryComparison = registry_comparison_here; // 1=Matches, 2=Contains
+#endif
+
     }
 }
