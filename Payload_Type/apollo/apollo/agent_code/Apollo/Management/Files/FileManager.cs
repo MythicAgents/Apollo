@@ -301,5 +301,14 @@ namespace Apollo.Management.Files
         {
             _fileStore.SetScript(script);
         }
+
+        public string[] ListFiles()
+        {
+            return _fileStore.ListFiles();
+        }
+        public bool RemoveFile(string keyName)
+        {
+            return _fileStore.RemoveFile(keyName);
+        }
     }
 }

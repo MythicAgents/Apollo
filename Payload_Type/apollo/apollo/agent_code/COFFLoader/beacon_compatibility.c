@@ -265,7 +265,7 @@ void BeaconPrintf(int type, char* fmt, ...) {
     char* tempptr = NULL;
     va_list args;
     va_start(args, fmt);
-    vprintf(fmt, args);
+    //vprintf(fmt, args);
     va_end(args);
 
     va_start(args, fmt);

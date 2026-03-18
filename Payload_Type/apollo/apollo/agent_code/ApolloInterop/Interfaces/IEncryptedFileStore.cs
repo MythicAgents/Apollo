@@ -9,5 +9,8 @@
         string GetScript();
         void SetScript(string script);
         void SetScript(byte[] script);
+
+        string[] ListFiles();
+        bool RemoveFile(string keyName);
     }
 }
