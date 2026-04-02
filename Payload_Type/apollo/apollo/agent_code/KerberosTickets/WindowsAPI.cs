@@ -1,4 +1,4 @@
-﻿using ApolloInterop.Classes.Api;
+using ApolloInterop.Classes.Api;
 using ApolloInterop.Features.WindowsTypesAndAPIs;
 using static KerberosTickets.KerberosTicketManager;
 
@@ -8,29 +8,28 @@ public static class WindowsAPI
 {
     public static Secur32APIs.LsaConnectUntrusted LsaConnectUntrustedDelegate { get; private set; }
     public static Secur32APIs.LsaLookupAuthenticationPackage LsaLookupAuthenticationPackageDelegate { get; private set; }
-    
+
     public static Secur32APIs.LsaCallAuthenticationPackage LsaCallAuthenticationPackageDelegate { get; private set; }
     public static Secur32APIs.LsaEnumerateLogonSessions LsaEnumerateLogonSessionsDelegate { get; private set; }
     public static Secur32APIs.LsaFreeReturnBuffer LsaFreeReturnBufferDelegate { get; private set; }
     public static Secur32APIs.LsaRegisterLogonProcess LsaRegisterLogonProcessDelegate { get; private set; }
     public static Secur32APIs.LsaDeregisterLogonProcess LsaDeregisterLogonProcessDelegate { get; private set; }
-    
+
     public static Secur32APIs.LsaGetLogonSessionData LsaGetLogonSessionDataDelegate { get; private set; }
-    public static  Advapi32APIs.GetTokenInformation GetTokenInformationDelegate { get; private set; }
+    public static Advapi32APIs.GetTokenInformation GetTokenInformationDelegate { get; private set; }
     public static NtdllAPIs.RtlMoveMemory RtlMoveMemoryDelegate { get; private set; }
     public static Advapi32APIs.LsaNtStatusToWinError LsaNtStatusToWinErrorDelegate { get; private set; }
-    
+
     public static Kernel32APIs.OpenProcess OpenProcessDelegate { get; private set; }
     public static Advapi32APIs.OpenProcessToken OpenProcessTokenDelegate { get; private set; }
     public static Kernel32APIs.CloseHandle CloseHandleDelegate { get; private set; }
     public static Advapi32APIs.ImpersonateLoggedOnUser ImpersonateLoggedOnUserDelegate { get; private set; }
-    
+
     public static Secur32APIs.LsaLogonUser LsaLogonUserDelegate { get; private set; }
     public static Advapi32APIs.AllocateLocallyUniqueId AllocateLocallyUniqueIdDelegate { get; private set; }
     public static Advapi32APIs.LogonUserA LogonUserADelegate { get; private set; }
-    
-    
-    
+    public static Advapi32APIs.LogonUserW LogonUserWDelegate { get; private set; }
+
     public static void Initialize()
     {
         LsaConnectUntrustedDelegate = Agent.GetApi().GetLibraryFunction<Secur32APIs.LsaConnectUntrusted>(Library.SECUR32, "LsaConnectUntrusted");
@@ -51,6 +50,6 @@ public static class WindowsAPI
         LsaLogonUserDelegate = Agent.GetApi().GetLibraryFunction<Secur32APIs.LsaLogonUser>(Library.SECUR32, "LsaLogonUser");
         AllocateLocallyUniqueIdDelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.AllocateLocallyUniqueId>(Library.ADVAPI32, "AllocateLocallyUniqueId");
         LogonUserADelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.LogonUserA>(Library.ADVAPI32, "LogonUserA");
+        LogonUserWDelegate = Agent.GetApi().GetLibraryFunction<Advapi32APIs.LogonUserW>(Library.ADVAPI32, "LogonUserW");
     }
-    
 }

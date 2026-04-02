@@ -1,4 +1,4 @@
-﻿using ApolloInterop.Interfaces;
+using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Enums.ApolloEnums;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using ApolloInterop.Serializers;
+using ApolloInterop.Classes.Impersonation;
 
 namespace ApolloInterop.Classes
 {
@@ -33,10 +34,8 @@ namespace ApolloInterop.Classes
         {
             return new System.Threading.Tasks.Task(() =>
             {
-                using (_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate())
-                {
-                    Start();   
-                }
+                var impersonationIdentity = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                ImpersonationScope.Run(impersonationIdentity, Start);
             }, _cancellationToken.Token);
         }
 

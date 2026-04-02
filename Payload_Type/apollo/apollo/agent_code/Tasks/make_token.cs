@@ -1,4 +1,4 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #define MAKE_TOKEN
@@ -84,7 +84,7 @@ namespace Tasks
                     if (parameters.NetOnly)
                     {
                         resp = CreateTaskResponse(
-                        $"Successfully impersonated {cur.Name} for local access and {parameters.Credential.Realm}\\{parameters.Credential.Account} for remote access.\n{stringOutput}",
+                        $"Successfully set Primary Identity to {cur.Name} for local access and Impersonation Identity to {parameters.Credential.Realm}\\{parameters.Credential.Account} for remote access.\n{stringOutput}",
                         true,
                         "completed",
                         new IMythicMessage[] {
@@ -95,7 +95,7 @@ namespace Tasks
                     else
                     {
                         resp = CreateTaskResponse(
-                        $"Successfully impersonated {cur.Name} for local and remote access.\n{stringOutput}",
+                        $"Successfully set Impersonation Identity to {cur.Name} for local and remote access.\n{stringOutput}",
                         true,
                         "completed",
                         new IMythicMessage[] {
