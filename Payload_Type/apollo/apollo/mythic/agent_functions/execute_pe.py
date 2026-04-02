@@ -126,7 +126,7 @@ class ExecutePECommand(CommandBase):
                 agent_build_path.name
             )
             copy_tree(str(self.agent_code_path), agent_build_path.name)
-            shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ExecutePE/ExecutePE.csproj -o {}/ExecutePE/bin/Release".format(
+            shell_cmd = "dotnet build -c release -p:DebugType=None -p:DebugSymbols=false -p:Platform=x64 {}/ExecutePE/ExecutePE.csproj -o {}/ExecutePE/bin/Release --verbosity quiet".format(
                 agent_build_path.name, agent_build_path.name
             )
             proc = await asyncio.create_subprocess_shell(

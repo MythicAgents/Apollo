@@ -13,11 +13,13 @@ using ApolloInterop.Structs.MythicStructs;
 using ApolloInterop.Utils;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using static Tasks.execute_coff;
 
 
@@ -1086,12 +1088,12 @@ namespace Tasks
                     _agent.GetTaskManager().AddTaskResponseToQueue(resp);
                     return;
                 }
-                _agent.GetFileManager().GetFileFromStore(parameters.CoffLoaderId, out byte[] coffLoaderDllBytes);
+                _agent.GetFileManager().GetFileFromStore("CoffLoader.dll", out byte[] coffLoaderDllBytes);
                 if (coffLoaderDllBytes is null || coffLoaderDllBytes.Length == 0)
                 {
                     if (_agent.GetFileManager().GetFile(_cancellationToken.Token, _data.ID, parameters.CoffLoaderId, out coffLoaderDllBytes))
                     {
-                        _agent.GetFileManager().AddFileToStore(parameters.CoffLoaderId, coffLoaderDllBytes);
+                        _agent.GetFileManager().AddFileToStore("CoffLoader.dll", coffLoaderDllBytes);
                     }
                     else
                     {

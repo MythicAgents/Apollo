@@ -1,5 +1,6 @@
 ﻿using ApolloInterop.Interfaces;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Text;
 
 namespace EncryptedFileStore
@@ -17,7 +18,7 @@ namespace EncryptedFileStore
         private byte[] EncryptData(byte[] data)
         {
             byte[] cipherText = data;
-            
+
             for(int i = 0; i < _providers.Length; i++)
             {
                 cipherText = _providers[i].Encrypt(cipherText);
@@ -80,6 +81,28 @@ namespace EncryptedFileStore
             }
 
             return false;
+        }
+
+        public string[] ListFiles()
+        {
+            return FileStore.Keys.ToArray();
+        }
+
+        public bool RemoveFile(string keyName)
+        {
+            bool success = FileStore.TryRemove(keyName, out byte[] data);
+            if (success)
+            {
+                if (keyName.EndsWith(".ps1"))
+                {
+                    // check if this is our current script, if so, remove it there too
+                    if(data == CurrentScript)
+                    {
+                        CurrentScript = new byte[0];
+                    }
+                }
+            }
+            return success;
         }
     }
 }

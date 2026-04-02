@@ -1,0 +1,135 @@
+{
+    "name": "GitHub API Integration",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/api/graphql",
+            "/api/v4/graphql",
+            "/api/v3/repos/octocat/Hello-World/commits"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/vnd.github.v3+json",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Authorization": "token ghp_16C7e42F292c6912E7710c8C0E2b8E1",
+                "Connection": "keep-alive",
+                "User-Agent": "GitHub-Hookshot/461e8be",
+                "X-GitHub-Event": "push",
+                "X-GitHub-Delivery": "f246e7f4-8fd8-11eb-bffc-f2216662c3f0"
+            },
+            "parameters": {
+                "per_page": "30",
+                "page": "1",
+                "sort": "updated"
+            },
+            "message": {
+                "location": "header",
+                "name": "X-GitHub-Request-Id"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "ghubSecret2024"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json; charset=utf-8",
+                "Server": "GitHub.com",
+                "X-GitHub-Request-Id": "A1B2:C3D4:E5F6:1234:5678",
+                "X-RateLimit-Limit": "5000",
+                "X-RateLimit-Remaining": "4999",
+                "X-RateLimit-Reset": "1619999999",
+                "Strict-Transport-Security": "max-age=31536000; includeSubdomains"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "{\"data\":"
+                },
+                {
+                    "action": "xor",
+                    "value": "ghubResponse2024"
+                },
+                {
+                    "action": "base64url",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/api/v3/repos/owner/repo/issues",
+            "/api/v3/repos/owner/repo/pulls",
+            "/api/v3/orgs/owner/teams"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "application/vnd.github.v3+json",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Authorization": "token ghp_16C7e42F292c6912E7710c8C0E2b8E1",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json",
+                "User-Agent": "GitHub-Hookshot/461e8be",
+                "X-GitHub-Event": "issues",
+                "X-GitHub-Delivery": "f246e7f4-8fd8-11eb-bffc-f2216662c3f0"
+            },
+            "parameters": null,
+            "message": {
+                "location": "body",
+                "name": ""
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "ghubPostSecret"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/json; charset=utf-8",
+                "Server": "GitHub.com",
+                "X-GitHub-Request-Id": "A1B2:C3D4:E5F6:1234:5678",
+                "X-RateLimit-Limit": "5000",
+                "X-RateLimit-Remaining": "4998",
+                "Location": "https://api.github.com/repos/owner/repo/issues/123",
+                "Strict-Transport-Security": "max-age=31536000; includeSubdomains"
+            },
+            "transforms": [
+                {
+                    "action": "prepend",
+                    "value": "{\"id\":12345,\"url\":\"https://api.github.com/repos/owner/repo/issues/123\",\"body\":"
+                },
+                {
+                    "action": "xor",
+                    "value": "ghubServerKey"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "append",
+                    "value": "}"
+                }
+            ]
+        }
+    }
+}
+

@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using ApolloInterop.Classes.Cryptography;
-using Newtonsoft.Json.Serialization;
 
 namespace Apollo.Management.Files
 {
@@ -301,6 +300,15 @@ namespace Apollo.Management.Files
         public void SetScript(byte[] script)
         {
             _fileStore.SetScript(script);
+        }
+
+        public string[] ListFiles()
+        {
+            return _fileStore.ListFiles();
+        }
+        public bool RemoveFile(string keyName)
+        {
+            return _fileStore.RemoveFile(keyName);
         }
     }
 }

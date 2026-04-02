@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.12] - 2026-03-18
+
+### Changed
+
+- Added in `list_registered_files` and `remove_registered_file` commands to interact with Apollo's internal file store
+
+## [v2.4.11] - 2026-03-13
+
+### Changed
+
+- Merged in PRs to support `httpx` and `azure_blob` C2 profiles
+- Merged in PR to support a few forms of environmental keying (execution checks, not encryption)
+
 ## [v2.4.10] - 2026-02-20 
 
 ### Changed
@@ -62,6 +75,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated PyPi Version to allow build parameters to specify ui position
 
 ## [v2.4.1] - 2025-10-27
+
+### Added
+
+- Added support for the HTTPX Profile C2 transport
+  - Uses client-side generated RSA keys (4096-bit) to perform EKE (Encrypted Key Exchange)
+  - Supports malleable profile transforms: base64, base64url, netbios, netbiosu, xor, prepend, append
+  - Supports all REST HTTP methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD
+  - Supports message placement in query parameters, cookies, headers, and body
+  - Supports proxy configuration with authentication
+  - Supports domain fronting and custom HTTP headers
+  - Supports failover and round-robin domain rotation strategies
+- Added environment keying support for hostname, domain name and registry keys
+- Build process now conditionally includes only selected C2 profile projects
 
 ### Changed
 

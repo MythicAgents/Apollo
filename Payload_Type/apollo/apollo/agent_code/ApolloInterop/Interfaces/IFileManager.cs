@@ -21,5 +21,9 @@ namespace ApolloInterop.Interfaces
         bool AddFileToStore(string keyName, byte[] data);
 
         bool GetFileFromStore(string keyName, out byte[] data);
+
+        string[] ListFiles();
+
+        bool RemoveFile(string keyName);
     }
 }
