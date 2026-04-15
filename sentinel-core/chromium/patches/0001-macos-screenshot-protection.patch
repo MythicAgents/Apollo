@@ -1,0 +1,56 @@
+From 1111111111111111111111111111111111111111 Mon Sep 17 00:00:00 2001
+From: NNSEC Sentinel Engineering <engineering@nnsec.io>
+Date: Wed, 15 Apr 2026 12:00:00 +0000
+Subject: [PATCH] macOS: enforce screen capture protection on Sentinel windows
+
+Target Chromium baseline: 128.0.6613.84
+Threat model note:
+- Mitigates casual and enterprise screen recording via WindowServer capture APIs.
+- Does not block camera-based capture or privileged root-level frame extraction.
+
+---
+ chrome/browser/ui/views/frame/browser_desktop_window_tree_host_mac.mm | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/chrome/browser/ui/views/frame/browser_desktop_window_tree_host_mac.mm b/chrome/browser/ui/views/frame/browser_desktop_window_tree_host_mac.mm
+index abcdef123456..fedcba654321 100644
+--- a/chrome/browser/ui/views/frame/browser_desktop_window_tree_host_mac.mm
++++ b/chrome/browser/ui/views/frame/browser_desktop_window_tree_host_mac.mm
+@@ -18,6 +18,9 @@
+ #import "base/mac/scoped_nsobject.h"
+ #import "base/strings/sys_string_conversions.h"
+ #import "chrome/browser/profiles/profile.h"
++#import <AppKit/NSWindow.h>
++#import <ApplicationServices/ApplicationServices.h>
++#import <Foundation/Foundation.h>
+ 
+ namespace {
+ 
+@@ -121,6 +124,31 @@ void BrowserDesktopWindowTreeHostMac::Init(const Widget::InitParams& params) {
+   DesktopWindowTreeHostMac::Init(params);
+ 
+   // Existing setup omitted for brevity.
++
++  // Sentinel hardening: prevent standard screen-capture APIs from reading
++  // protected browser windows. This setting is best-effort and is paired with
++  // runtime capture detection elsewhere in the Sentinel fork.
++  if ([window() respondsToSelector:@selector(setSharingType:)]) {
++    [window() setSharingType:NSWindowSharingNone];
++  }
++
++  // Runtime detection hook for TCC-approved capture sessions.
++  // This allows future policy actions (blur surface / force logout).
++  if (@available(macOS 10.15, *)) {
++    dispatch_async(dispatch_get_main_queue(), ^{
++      bool capture_allowed = CGPreflightScreenCaptureAccess();
++      if (capture_allowed) {
++        // TODO(project-sentinel): wire to policy bus once browser<->policy
++        // IPC channel is landed. For now, retain deterministic logging point.
++        LOG(WARNING) << "Sentinel window running with active screen-capture permission";
++      }
++    });
++  }
+ }
+ 
+ void BrowserDesktopWindowTreeHostMac::CloseNow() {
+*** End Patch

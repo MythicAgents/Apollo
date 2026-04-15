@@ -1,0 +1,17 @@
+{
+  "name": "@sentinel/nl-policy-compiler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "compile": "npm run build && node dist/index.js",
+    "test": "node --test ./tests/compiler.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

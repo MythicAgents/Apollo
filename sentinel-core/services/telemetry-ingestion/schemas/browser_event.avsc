@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "BrowserEvent",
+  "namespace": "io.nnsec.sentinel.telemetry",
+  "fields": [
+    { "name": "tenant_id", "type": "string" },
+    { "name": "event_id", "type": "string" },
+    { "name": "device_id", "type": "string" },
+    { "name": "user_id", "type": "string" },
+    { "name": "event_type", "type": "string" },
+    { "name": "risk_score", "type": "int" },
+    { "name": "payload", "type": "string" },
+    { "name": "ts_ms", "type": "long" }
+  ]
+}

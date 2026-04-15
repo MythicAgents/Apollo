@@ -1,0 +1,14 @@
+{
+  "name": "@sentinel/password-vault-poc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "node --test ./tests/vault.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,75 @@
+version: "3.9"
+services:
+  opa:
+    image: openpolicyagent/opa:0.67.1
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "/policies"
+    volumes:
+      - ./services/policy-engine/policies:/policies:ro
+    ports:
+      - "8181:8181"
+
+  policy-engine:
+    image: python:3.12-slim
+    working_dir: /app
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8080"
+    volumes:
+      - ./services/policy-engine:/app
+    environment:
+      OPA_URL: http://opa:8181
+    depends_on:
+      - opa
+    ports:
+      - "8080:8080"
+
+  admin-dashboard:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ./services/admin-dashboard:/app
+    environment:
+      NEXT_PUBLIC_POLICY_API: http://localhost:8080
+    depends_on:
+      - policy-engine
+    ports:
+      - "3000:3000"
+
+  redpanda:
+    image: redpandadata/redpanda:v24.2.8
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - "1G"
+      - --reserve-memory
+      - "0M"
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - INTERNAL://redpanda:9092,OUTSIDE://localhost:19092
+    ports:
+      - "19092:19092"
+      - "9644:9644"
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-09-22T00-33-43Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: sentinel
+      MINIO_ROOT_PASSWORD: sentinel123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+

@@ -1,0 +1,17 @@
+{
+  "name": "@nnsec/session-recorder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test ./tests/recorder.test.js"
+  },
+  "dependencies": {
+    "rrweb": "^2.0.0-alpha.18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.7.3"
+  }
+}
