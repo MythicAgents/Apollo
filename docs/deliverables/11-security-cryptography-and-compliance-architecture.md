@@ -16,6 +16,7 @@ Sentinel "enterprise-grade" means all of the following are implemented and measu
 6. Evidence-on-demand for PCI DSS v4.0, ISO 27001:2022, SOC 2 Type II, GDPR, UAE PDPL.
 7. Reproducible build provenance and signed release artifacts (SLSA L3 path).
 8. Incident response runbooks with timeline reconstruction under 30 minutes from alert.
+9. Browser-bound IdP access where unmanaged browsers fail before reaching the IdP login flow.
 
 ## 11.2 Cryptographic Architecture Inventory
 
@@ -52,6 +53,28 @@ Root of Trust (CloudHSM-backed tenant root keys)
 NIST references: FIPS 203 (ML-KEM), FIPS 204 (ML-DSA). Revisit trigger: broad vendor support and FIPS-validated module availability in target runtimes.
 
 ## 11.3 ADRs (Security and Cryptography)
+
+### ADR-SEC-11-000: Four-layer browser-bound IdP enforcement
+
+**Context:** Sentinel must prove that SSO login requests originate from enrolled Sentinel browsers on attested devices, not generic browsers.
+
+**Options considered:**  
+1) Conditional access only (source IP + user-agent)  
+2) mTLS only  
+3) Layered model: mTLS + signed attestation + gateway + conditional access
+
+**Decision:** Use the layered model. mTLS and signed attestation are mandatory; conditional access is auxiliary; gateway enforces checks before forwarding to IdP.
+
+**Consequences:**  
+- Positive: Strong resistance to unmanaged-browser access and token replay.  
+- Negative: Additional integration complexity (gateway + IdP plugin/policy updates).  
+- Neutral: Introduces one additional high-availability component in auth path.
+
+**Alternatives rejected:**  
+- Conditional-access-only is trivially bypassable via spoofed user-agent and proxied traffic.  
+- mTLS-only does not capture posture state and has weaker replay semantics.
+
+**Revisit trigger:** If false-reject rate exceeds 1% p95 over 7 days or mobile-platform constraints require temporary fallback mode.
 
 ### ADR-SEC-11-001: Managed HSM vs self-hosted HSM
 
@@ -142,6 +165,16 @@ NIST references: FIPS 203 (ML-KEM), FIPS 204 (ML-DSA). Revisit trigger: broad ve
 | NIS2 (risk management) | Risk register, incident workflow | Risk dashboard and IR records | Contributes-to |
 | Cyber Essentials Plus controls | Secure config, malware protection, updates | Hardening baselines and vuln scans | Contributes-to |
 
+### 11.4.5 Browser-Bound IdP Control Mapping
+
+| Control | Sentinel Mechanism | Evidence Artifact | Status |
+|---|---|---|---|
+| ISO 27001:2022 A.5.16 Identity management | Device-bound mTLS cert + attestation key registry | cert issuance logs, key enrollment records | Fully |
+| ISO 27001:2022 A.8.16 Monitoring activities | gateway deny reason telemetry + replay alerts | dashboard snapshots, SIEM alerts | Fully |
+| PCI DSS v4.0 Req 8 (Identify users/authenticate) | pre-IdP attestation checks with posture threshold | auth decision logs, policy config export | Fully |
+| SOC 2 CC6 Logical Access | layered access gate before IdP token issuance | gateway audit logs + IdP conditional policy snapshot | Fully |
+| GDPR Art. 32 Security of processing | replay resistance and non-exportable key usage | threat model, architecture docs, test evidence | Contributes-to |
+
 ## 11.5 Threat Model (STRIDE across cryptographic and compliance surfaces)
 
 | Threat | Category | Impact | Mitigation | Residual |
@@ -152,6 +185,8 @@ NIST references: FIPS 203 (ML-KEM), FIPS 204 (ML-DSA). Revisit trigger: broad ve
 | Key metadata leakage through verbose logs | Information disclosure | Key lifecycle intel leak | Structured logging denylist, secret scanners in CI, runtime log scrubbing | Medium |
 | KMS outage blocks new session key generation | DoS | User impact | Local sealed key cache with TTL, fallback region KMS, degrade mode | Medium |
 | Abuse of compliance export endpoint | Elevation of privilege | Bulk sensitive data exfil | Scoped roles, export watermarking, rate-limits, approval for mass export | Medium |
+| Replay of `X-Sentinel-Attestation` header | Replay | Unauthorized login reuse | nonce cache + timestamp freshness <=60s + device-cert subject binding | Low |
+| Unmanaged browser attempts direct IdP login | Spoofing | Policy bypass attempt | mTLS mandatory endpoint + gateway deny-before-IdP | Low |
 
 ## 11.6 Vulnerability Management Program
 
@@ -209,6 +244,7 @@ Tabletop exercises: monthly for security engineering, quarterly cross-functional
 | Control Path | Budget |
 |---|---|
 | mTLS handshake overhead (intra-region) | <15 ms p95 |
+| Attestation verification at gateway | <25 ms p95 |
 | Audit append write latency | <30 ms p95 |
 | Merkle chunking batch finalization | <2 s every 1,000 events |
 | Key unwrap per session | <20 ms p95 |

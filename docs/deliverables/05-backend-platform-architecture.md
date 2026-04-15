@@ -8,6 +8,7 @@ This document specifies the backend architecture for the 22 required Sentinel se
 
 ```mermaid
 flowchart LR
+    AG[Attestation Gateway] --> ID[Identity Broker]
     ID[Identity Broker] --> POL[Policy Engine]
     TEN[Tenant Manager] --> POL
     TEN --> LIC[Billing/Licensing]
@@ -58,6 +59,7 @@ Legend: scale values are initial targets and are revisited quarterly.
 | 20 | Notification | email/slack/teams/webhook/pagerduty dispatch. | notification_rule, dispatch_log | 1M notifications/day | spoofing mitigated via signed templates + domain auth |
 | 21 | Malware Detonation | CAPE/Cuckoo + static scans + triage API. | sample, verdict, behavior_report | 2k samples/hr cluster | sandbox escape mitigated by hardened isolated worker nodes |
 | 22 | Shadow IT Discovery | SaaS catalog, OAuth inventory, risk scoring. REST. | saas_app, oauth_grant, risk_score | 50k events/min parse | OAuth abuse mitigated by grant scope monitoring/revocation |
+| 23 | Attestation Gateway | pre-IdP mTLS + attestation verification. REST endpoint for IdP fronting. | device_key, nonce_cache, attestation_decision | 10k auth checks/min/instance; horizontally scalable | browser spoofing/replay mitigated with Ed25519 checks + nonce cache + CIDR/UA controls |
 
 ## 3. Build-vs-Buy-vs-Integrate Analysis (Key Components)
 
@@ -68,12 +70,14 @@ Legend: scale values are initial targets and are revisited quarterly.
 | RBI | high | Menlo/API | Kasm/Neko | selective integrate first to control cost |
 | UEBA | medium-high | Exabeam/Securonix | Flink + custom models | build incremental due custom browser features |
 | Billing | low | Stripe | Stripe | buy/integrate fully |
+| Attestation gateway | medium | Cloudflare Access | Pomerium/custom | build core validation path; optional managed edge in geo-heavy regions |
 
 ## 4. Performance Budgets
 
 | Service Group | p95 Latency Target | Throughput Target |
 |---|---|---|
 | Identity + Policy | `<200ms` login roundtrip, `<10ms` policy eval | 5k auth/min, 20k decisions/s |
+| Attestation Gateway | `<25ms` added auth latency | 10k attestation checks/min/instance |
 | DLP Sync Path | `<50ms` decision | 10k req/s shard |
 | Session Ingest | `<150ms` chunk acceptance | 5k concurrent sessions |
 | Gateway | `<20ms` added RTT regional | 1Gbps/user target profile |
@@ -83,6 +87,7 @@ Legend: scale values are initial targets and are revisited quarterly.
 | Failure Mode | Detect | Recover |
 |---|---|---|
 | Keycloak outage | auth health checks fail | failover realm/region, cached policy grace period |
+| Attestation nonce cache unavailable | replay checks degrade | fail-closed for high-risk tenants; fail-open with alert for explicitly allowed lower tiers |
 | Kafka lag growth | consumer lag SLO alert | autoscale consumers + backpressure |
 | DLP model timeout | inference timeout metric | fallback to regex+EDM baseline decision |
 | Object storage write latency | ingest ack delay | queue + multi-part retry |
@@ -92,6 +97,7 @@ Legend: scale values are initial targets and are revisited quarterly.
 
 - mTLS for east-west service communication.
 - SPIFFE/SPIRE identities for workloads.
+- Browser-bound IdP controls: mTLS client cert + signed attestation header + gateway nonce checks.
 - Per-service least-privilege IAM and secret scopes.
 - Centralized audit events signed at source.
 - OTel tracing and security events exported to Wazuh/OpenSearch.

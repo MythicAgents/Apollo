@@ -15,6 +15,7 @@ sentinel-core/
     device-posture-agent/
     session-recorder/
     vpn-ztna-gateway/
+    attestation-gateway/
     password-vault-poc/
     nl-policy-compiler/
   docker-compose.yml
@@ -32,6 +33,7 @@ sentinel-core/
 | Device posture agent (Go + osquery integration path) | `services/device-posture-agent` | Complete |
 | Session recording library (rrweb + encrypted upload) | `services/session-recorder` | Complete |
 | VPN/ZTNA gateway PoC (WireGuard + SPIFFE policy artifact) | `services/vpn-ztna-gateway` | Complete |
+| IdP attestation gateway PoC (mTLS + Ed25519 attestation checks) | `services/attestation-gateway` | Complete |
 | Password vault PoC (client-side E2EE) | `services/password-vault-poc` | Complete |
 | NL-to-policy compiler PoC | `services/nl-policy-compiler` | Complete |
 | Full docker compose backend | `sentinel-core/docker-compose.yml` | Complete |
@@ -57,6 +59,7 @@ make test-session-recorder
 make test-password-vault
 make test-nl-compiler
 make test-vpn
+make test-attestation-gateway
 ```
 
 ### 15.4.3 Tear down stack
@@ -97,6 +100,7 @@ make down
 | Device posture spoofing | device-posture-agent | signed transport pathway documented, report schema with timestamps |
 | Prompt injection into NL compiler | nl-policy-compiler | deterministic fallback and constrained generation model |
 | Gateway key theft | vpn-ztna-gateway | session-bounded keys and SPIFFE identity checks documented |
+| Replay of signed attestation header | attestation-gateway | nonce cache + <=60 second freshness checks |
 
 ## 15.7 Performance Budget Snapshot
 
@@ -106,6 +110,7 @@ make down
 | Dashboard route render | <300ms TTFB local dev baseline | Next telemetry + route tests |
 | Telemetry enrichment | <30ms/event processing overhead | sample enrichment script timings |
 | Device posture submit | <1s/report local | Go test + request timing |
+| Attestation decision check | <25ms p95 | gateway handler timing + deny reason counters |
 | NL compiler | <1500ms p95 compile | emitted trace metric placeholder |
 
 ## 15.8 Assumptions and Open Questions

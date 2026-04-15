@@ -229,9 +229,41 @@ flowchart LR
 | Token lifecycle | access token 15 min, refresh token 8h, tenant policy TTL 5 min |
 | Key rotation | signing keys every 30 days; emergency rotation <1h |
 | Device posture | bound to token claims via attestation hash |
+| Browser binding | 4-layer enforcement: mTLS client cert + signed attestation header + attestation gateway + IdP conditional access |
+| Attestation claims | `device_id`, `posture_score`, `timestamp`, `nonce`, `browser_version`, `os_version`; Ed25519 signed, freshness <= 60s |
+| Replay prevention | gateway nonce cache (Redis in production, in-memory for PoC) with 60s TTL |
 | Session revocation | near-real-time deny list propagated through Redis/Kafka |
 
-## 8. STRIDE Threat Model (30 Threats)
+### 7.1 Browser-Bound IdP Access Sequence
+
+```mermaid
+sequenceDiagram
+    participant SB as Sentinel Browser
+    participant AG as Attestation Gateway
+    participant IDP as Keycloak/IdP
+    participant AR as Attestation Registry
+    participant NR as Nonce Cache
+    SB->>AG: TLS handshake + client cert (mTLS)
+    AG->>AG: Validate cert chain and mTLS verify signal
+    SB->>AG: X-Sentinel-Attestation (Ed25519 JWS)
+    AG->>AR: Resolve device public key and enrollment state
+    AG->>AG: Verify JWS signature + posture threshold + freshness <=60s
+    AG->>NR: Check nonce replay; store nonce if new
+    AG->>AG: Apply CIDR and User-Agent policy guardrails
+    AG->>IDP: Forward verified request with attestation context
+    IDP-->>SB: OIDC auth flow + SSO token
+```
+
+### 7.2 Mechanism Coverage Matrix
+
+| Mechanism | Blocks standard browser? | Replay resistant? | Spoof resistance | Implementation effort |
+|---|---|---|---|---|
+| mTLS client cert bound to hardware key | Yes | Medium | High | Medium |
+| Signed attestation header (Ed25519) | Yes | High | High | Medium-High |
+| Dedicated attestation gateway | Yes | High | High | Medium |
+| IdP conditional access (UA + IP) | Partial | Low | Low | Low |
+
+## 8. STRIDE Threat Model (32 Threats)
 
 | # | Surface | STRIDE | Threat | Mitigation | Detection | Recovery |
 |---:|---|---|---|---|---|---|
@@ -265,6 +297,8 @@ flowchart LR
 | 28 | Key management | Elevation | over-privileged KMS roles | least privilege + breakglass workflow | IAM analyzer | revoke role |
 | 29 | On-prem mirror | Tampering | stale package sync | signed manifest verification | mirror freshness checks | rollback bundle |
 | 30 | Support tooling | Info Disclosure | engineer access overreach | JIT access + session recording | access review | credential reset |
+| 31 | IdP login endpoint | Spoofing | unmanaged browser attempts direct SSO | mTLS + attestation gateway hard fail | deny_reason telemetry | gateway policy tighten |
+| 32 | Attestation header | Replay | captured token reused | nonce cache + <=60s freshness + cert-device binding | replay counter alert | nonce cache flush + key rotation |
 
 ## 9. ADR Set (Top 15)
 
@@ -287,6 +321,7 @@ Each ADR includes context, options, decision, consequences, rejected alternative
 | ADR-13 | SLSA L3 supply-chain goal | release signing incidents occur |
 | ADR-14 | Redis for policy cache and revocation fanout | stale policy incidents >0.1% |
 | ADR-15 | Multi-cloud reference architecture from v1 | one cloud reaches >90% customer footprint |
+| ADR-16 | 4-layer browser-bound IdP enforcement stack | attestation-related false rejects >1% over 7 days or bypass observed |
 
 ### ADR Detail Template Applied (example: ADR-04)
 

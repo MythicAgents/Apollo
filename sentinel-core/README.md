@@ -9,17 +9,19 @@ This directory contains runnable proof-of-concept modules for NNSEC Sentinel:
 5. Device posture agent (Go + osquery integration pattern)
 6. Session recording library (rrweb + encrypted upload)
 7. VPN/ZTNA gateway PoC (WireGuard + identity-aware policy)
-8. Password vault PoC (E2EE)
-9. NL-to-policy compiler utility
-10. Local `docker-compose.yml`
-11. `Makefile` for DX
-12. Per-module README files with architecture and threat notes
+8. Attestation gateway PoC (mTLS + signed header + replay checks)
+9. Password vault PoC (E2EE)
+10. NL-to-policy compiler utility
+11. Local `docker-compose.yml`
+12. `Makefile` for DX
+13. Per-module README files with architecture and threat notes
 
 ## Quick start
 
 ```bash
 cd sentinel-core
 make up
+make test-all
 ```
 
 ## Notes

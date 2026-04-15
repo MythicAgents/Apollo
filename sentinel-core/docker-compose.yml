@@ -27,6 +27,22 @@ services:
     ports:
       - "8080:8080"
 
+  attestation-gateway:
+    image: golang:1.22-alpine
+    working_dir: /app
+    command: sh -c "go run ./cmd/gateway"
+    volumes:
+      - ./services/attestation-gateway:/app
+    environment:
+      LISTEN_ADDR: ":8090"
+      SENTINEL_KEYS: "device-123:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      SENTINEL_MIN_POSTURE: "80"
+      SENTINEL_FRESHNESS_SECONDS: "60"
+      SENTINEL_ALLOWED_UA_PREFIX: "NNSECSentinel/"
+      SENTINEL_ALLOWED_CIDRS: "127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    ports:
+      - "8090:8090"
+
   admin-dashboard:
     image: node:22-alpine
     working_dir: /app

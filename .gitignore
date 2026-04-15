@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+
+# Build outputs
+dist/
+bin/
+*.log
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
