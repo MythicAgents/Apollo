@@ -1,3 +1,0 @@
-# Do not format the Apollo Config.cs file
-[Apollo/Config.cs]
-generated_code = true
