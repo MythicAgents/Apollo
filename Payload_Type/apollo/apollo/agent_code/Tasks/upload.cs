@@ -42,7 +42,7 @@ namespace Tasks
         internal string ParsePath(UploadParameters p)
         {
             string uploadPath;
-            string host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            string host = Environment.GetEnvironmentVariable("COMPUTERNAME").ToUpper();
             if (!string.IsNullOrEmpty(p.HostName) && p.HostName != host)
             {
                 if (!string.IsNullOrEmpty(p.RemotePath))
@@ -91,32 +91,55 @@ namespace Tasks
             }
 
             string unresolvedFilePath;
-            var uploadPathInfo = new DirectoryInfo(uploadPath);
-            if (uploadPathInfo.Exists)
+            try
             {
-                unresolvedFilePath = Path.Combine([uploadPathInfo.FullName, p.FileName]);
+                var uploadPathInfo = new DirectoryInfo(uploadPath);
+                if (uploadPathInfo.Exists)
+                {
+                    unresolvedFilePath = Path.Combine([uploadPathInfo.FullName, p.FileName]);
+                }
+                else if (uploadPathInfo.Parent is DirectoryInfo parentInfo && parentInfo.Exists)
+                {
+                    unresolvedFilePath = uploadPathInfo.FullName;
+                }
+                else
+                {
+                    throw new ArgumentException($"{uploadPathInfo.Parent.FullName} does not exist.");
+                }
             }
-            else if (uploadPathInfo.Parent is DirectoryInfo parentInfo && parentInfo.Exists)
+            catch (Exception ex)
             {
-                unresolvedFilePath = uploadPathInfo.FullName;
+                throw new ArgumentException($"Problem with path: {uploadPath}\n{ex.Message}.");
             }
-            else
+            string parentPath;
+            string fileName;
+            try
             {
-                throw new ArgumentException($"{uploadPathInfo.Parent.FullName} does not exist.");
+                parentPath = Path.GetDirectoryName(unresolvedFilePath);
+                fileName = unresolvedFilePath.Split(Path.DirectorySeparatorChar).Last();
             }
-
-            var parentPath = Path.GetDirectoryName(unresolvedFilePath);
-            var fileName = unresolvedFilePath.Split(Path.DirectorySeparatorChar).Last();
-
+            catch(Exception ex)
+            {
+                throw new ArgumentException($"Problem getting parent/file names from path: {unresolvedFilePath}\n{ex.Message}.");
+            }
             string resolvedParent;
-            if (PathUtils.TryGetExactPath(parentPath, out var resolved))
+            try
             {
-                resolvedParent = resolved;
+                if (PathUtils.TryGetExactPath(parentPath, out var resolved))
+                {
+                    resolvedParent = resolved;
+                }
+                else
+                {
+                    resolvedParent = parentPath;
+                }
             }
-            else
+            catch(Exception ex)
             {
-                resolvedParent = parentPath;
+                throw new ArgumentException($"Problem resolving absolute path: {parentPath}\n{ex.Message}.");
             }
+
+
 
             return Path.Combine([resolvedParent, fileName]);
         }
@@ -137,7 +160,7 @@ namespace Tasks
                 {
                     string path = ParsePath(parameters);
                     File.WriteAllBytes(path, fileData);
-                    string host = Environment.GetEnvironmentVariable("COMPUTERNAME");
+                    string host = Environment.GetEnvironmentVariable("COMPUTERNAME").ToUpper();
                     if (!string.IsNullOrEmpty(parameters.HostName))
                     {
                         host = parameters.HostName;
@@ -171,7 +194,7 @@ namespace Tasks
                 }
                 catch (Exception ex)
                 {
-                    resp = CreateTaskResponse($"Failed to upload file: {ex.Message}", true, "error");
+                    resp = CreateTaskResponse($"Failed to upload file:\n{ex.Message}", true, "error");
                 }
             }
             else
