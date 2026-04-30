@@ -28,7 +28,7 @@ namespace ApolloInterop.Interfaces
 
         bool IsOriginalIdentity();
 
-        (bool,IntPtr) GetSystem();
+        bool GetSystem();
 
     }
 }
