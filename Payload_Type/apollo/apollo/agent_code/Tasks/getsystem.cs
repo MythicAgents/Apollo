@@ -21,8 +21,7 @@ namespace Tasks
         public override void Start()
         {
             MythicTaskResponse resp;
-            bool elevated = false;
-            (elevated, _) = _agent.GetIdentityManager().GetSystem();
+            bool elevated = _agent.GetIdentityManager().GetSystem();
             if (elevated)
             {
                 resp = CreateTaskResponse("Elevated to SYSTEM", true, "completed");

