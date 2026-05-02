@@ -21,14 +21,28 @@ namespace ExecutePE.Internals
             Stdout = -11,
             Stderr = -12
         }
-        internal const uint PAGE_EXECUTE_READWRITE = 0x40;
-        internal const uint PAGE_READWRITE = 0x04;
-        internal const uint PAGE_EXECUTE_READ = 0x20;
-        internal const uint PAGE_EXECUTE = 0x10;
-        internal const uint PAGE_EXECUTE_WRITECOPY = 0x80;
-        internal const uint PAGE_NOACCESS = 0x01;
-        internal const uint PAGE_READONLY = 0x02;
-        internal const uint PAGE_WRITECOPY = 0x08;
+
+        internal enum X86BaseRelocationType : byte
+        {
+            IMAGE_REL_BASED_ABSOLUTE = 0,
+            IMAGE_REL_BASED_HIGH = 1,
+            IMAGE_REL_BASED_LOW = 2,
+            IMAGE_REL_BASED_HIGHLOW = 3,
+            IMAGE_REL_BASED_HIGHADJ = 4,
+            IMAGE_REL_BASED_DIR64 = 10,
+        }
+
+        internal enum MemoryProtectionConstant : uint
+        {
+            PAGE_EXECUTE_READWRITE = 0x40,
+            PAGE_READWRITE = 0x04,
+            PAGE_EXECUTE_READ = 0x20,
+            PAGE_EXECUTE = 0x10,
+            PAGE_EXECUTE_WRITECOPY = 0x80,
+            PAGE_NOACCESS = 0x01,
+            PAGE_READONLY = 0x02,
+            PAGE_WRITECOPY = 0x08
+        }
 
         internal const uint MEM_COMMIT = 0x1000;
         internal const uint MEM_RELEASE = 0x00008000;
@@ -59,14 +73,15 @@ namespace ExecutePE.Internals
             }
         }
 
-        internal enum X86BaseRelocationType : byte
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct PROCESS_BASIC_INFORMATION
         {
-            IMAGE_REL_BASED_ABSOLUTE = 0,
-            IMAGE_REL_BASED_HIGH = 1,
-            IMAGE_REL_BASED_LOW = 2,
-            IMAGE_REL_BASED_HIGHLOW = 3,
-            IMAGE_REL_BASED_HIGHADJ = 4,
-            IMAGE_REL_BASED_DIR64 = 10,
+            internal uint ExitStatus;
+            internal IntPtr PebAddress;
+            internal UIntPtr AffinityMask;
+            internal int BasePriority;
+            internal UIntPtr UniqueProcessId;
+            internal UIntPtr InheritedFromUniqueProcessId;
         }
 
         [DllImport("kernel32.dll")]
@@ -77,44 +92,7 @@ namespace ExecutePE.Internals
         internal static extern uint GetLastError();
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern SafeFileHandle CreateNamedPipeA(
-            string lpName,
-            long dwOpenMode,
-            long dwPipeMode,
-            int nMaxInstances,
-            int nOutBufferSize,
-            int nInBufferSize,
-            int nDefaultTimeout,
-            SECURITY_ATTRIBUTES lpSecurityAttributes);
-
-        [DllImport("Kernel32.dll", SetLastError = true)]
-        internal static extern SafeFileHandle CreateFileA(
-            string lpFileName,
-            long dwDesiredAccess,
-            long dwShareMode,
-            SECURITY_ATTRIBUTES lpSecurityAttributes,
-            long dwCreationDisposition,
-            long dwFlagsAndAttributes,
-            IntPtr hTemplateFile);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern IntPtr GetStdHandle(StdHandle nStdHandle);
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct SECURITY_ATTRIBUTES
-        {
-            internal int nLength;
-            internal byte* lpSecurityDescriptor;
-            internal int bInheritHandle;
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool ReadFile(IntPtr hFile, [Out] byte[] lpBuffer,
-            uint nNumberOfBytesToRead, out uint lpNumberOfBytesRead, IntPtr lpOverlapped);
-
-        [DllImport("kernel32.dll")]
-        internal static extern bool CreatePipe(out SafeFileHandle hReadPipe, out SafeFileHandle hWritePipe,
-            ref SECURITY_ATTRIBUTES lpPipeAttributes, uint nSize);
 
         [DllImport("ntdll.dll", SetLastError = true)]
         internal static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass,
@@ -122,7 +100,7 @@ namespace ExecutePE.Internals
 
         [DllImport("kernel32")]
         internal static extern IntPtr VirtualAlloc(IntPtr lpStartAddr, uint size, uint flAllocationType,
-            uint flProtect);
+            MemoryProtectionConstant flProtect);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern IntPtr LoadLibrary(string lpFileName);
@@ -154,41 +132,14 @@ namespace ExecutePE.Internals
         internal static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("kernel32.dll")]
-        internal static extern bool ClosePipe(IntPtr hPipe);
-
-        [DllImport("kernel32")]
-        internal static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress,
-            IntPtr param, uint dwCreationFlags, IntPtr lpThreadId);
-
-        [DllImport("kernel32.dll")]
-        internal static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect,
-            out uint lpFlOldProtect);
+        internal static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, MemoryProtectionConstant flNewProtect,
+            out MemoryProtectionConstant lpFlOldProtect);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         internal static extern IntPtr GetModuleHandle(string lpModuleName);
-        
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        internal static extern bool AllocConsole();
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        internal static extern bool AttachConsole(int pid);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         internal static extern bool VirtualFree(IntPtr pAddress, uint size, uint freeType);
-
-        [DllImport("kernel32")]
-        internal static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct PROCESS_BASIC_INFORMATION
-        {
-            internal uint ExitStatus;
-            internal IntPtr PebAddress;
-            internal UIntPtr AffinityMask;
-            internal int BasePriority;
-            internal UIntPtr UniqueProcessId;
-            internal UIntPtr InheritedFromUniqueProcessId;
-        }
 
         [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
         internal static extern int _open_osfhandle(int osfhandle, int flags);

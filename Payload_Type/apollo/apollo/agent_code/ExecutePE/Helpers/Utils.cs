@@ -15,7 +15,7 @@ namespace ExecutePE.Helpers
             Marshal.Copy(pFunc, originalBytes, 0, patchBytes.Length);
 
             var result = NativeDeclarations.VirtualProtect(pFunc, (UIntPtr)patchBytes.Length,
-                NativeDeclarations.PAGE_EXECUTE_READWRITE, out var oldProtect);
+                NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE_READWRITE, out var oldProtect);
             if (!result)
             {
                 return null;
@@ -32,7 +32,7 @@ namespace ExecutePE.Helpers
         internal static bool PatchAddress(IntPtr pAddress, IntPtr newValue)
         {
             var result = NativeDeclarations.VirtualProtect(pAddress, (UIntPtr)IntPtr.Size,
-                NativeDeclarations.PAGE_EXECUTE_READWRITE, out var oldProtect);
+                NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE_READWRITE, out var oldProtect);
             if (!result)
             {
                 return false;
@@ -49,7 +49,7 @@ namespace ExecutePE.Helpers
 
         internal static bool ZeroOutMemory(IntPtr start, int length)
         {
-            var result = NativeDeclarations.VirtualProtect(start, (UIntPtr)length, NativeDeclarations.PAGE_READWRITE,
+            var result = NativeDeclarations.VirtualProtect(start, (UIntPtr)length, NativeDeclarations.MemoryProtectionConstant.PAGE_READWRITE,
                 out var oldProtect);
             if (!result)
             {
