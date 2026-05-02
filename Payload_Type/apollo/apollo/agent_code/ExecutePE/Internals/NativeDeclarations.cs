@@ -37,6 +37,8 @@ namespace ExecutePE.Internals
         internal const uint IMAGE_SCN_MEM_READ = 0x40000000;
         internal const uint IMAGE_SCN_MEM_WRITE = 0x80000000;
 
+        internal const int _O_TEXT = 0x4000;
+
         [StructLayout(LayoutKind.Sequential)]
         internal struct IMAGE_BASE_RELOCATION
         {
@@ -137,9 +139,9 @@ namespace ExecutePE.Internals
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool DuplicateHandle(
             IntPtr hSourceProcessHandle,
-            SafeFileHandle hSourceHandle,
+            IntPtr hSourceHandle,
             IntPtr hTargetProcessHandle,
-            ref SafeFileHandle lpTargetHandle,
+            out IntPtr lpTargetHandle,
             uint dwDesiredAccess,
             bool bInheritHandle,
             DuplicateOptions dwOptions
@@ -187,5 +189,17 @@ namespace ExecutePE.Internals
             internal UIntPtr UniqueProcessId;
             internal UIntPtr InheritedFromUniqueProcessId;
         }
+
+        [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int _open_osfhandle(int osfhandle, int flags);
+        [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int _dup2(int fd1, int fd2);
+        [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int _dup(int fd);
+        [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int _close(int fd);
+        [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int fflush(IntPtr stream);
+        
     }
 }
