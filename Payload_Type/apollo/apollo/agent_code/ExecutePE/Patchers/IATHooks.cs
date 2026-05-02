@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ApolloInterop.Utils;
+using ExecutePE.Internals;
 
 namespace ExecutePE.Patchers
 {

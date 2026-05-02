@@ -15,7 +15,7 @@ namespace ExecutePE.Internals
             DuplicateSameAccess = 0x00000002
         }
 
-        internal enum StdHandles
+        internal enum StdHandle
         {
             Stdin = -10,
             Stdout = -11,
@@ -40,13 +40,36 @@ namespace ExecutePE.Internals
         [StructLayout(LayoutKind.Sequential)]
         internal struct IMAGE_BASE_RELOCATION
         {
-            internal uint VirtualAdress;
+            internal uint VirtualAddress;
             internal uint SizeOfBlock;
+
+            private IMAGE_BASE_RELOCATION(uint virtualAddress, uint sizeOfBlock)
+            {
+                VirtualAddress = virtualAddress;
+                SizeOfBlock = sizeOfBlock;
+            }
+
+            public static IMAGE_BASE_RELOCATION Parse(byte[] b)
+            {
+                var virtualAddress = BitConverter.ToUInt32(b, 0);
+                var sizeOfBlock = BitConverter.ToUInt32(b, 4);
+                return new IMAGE_BASE_RELOCATION(virtualAddress, sizeOfBlock);
+            }
+        }
+
+        internal enum X86BaseRelocationType : byte
+        {
+            IMAGE_REL_BASED_ABSOLUTE = 0,
+            IMAGE_REL_BASED_HIGH = 1,
+            IMAGE_REL_BASED_LOW = 2,
+            IMAGE_REL_BASED_HIGHLOW = 3,
+            IMAGE_REL_BASED_HIGHADJ = 4,
+            IMAGE_REL_BASED_DIR64 = 10,
         }
 
         [DllImport("kernel32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool SetStdHandle(StdHandles nStdHandle, IntPtr hHandle);
+        internal static extern bool SetStdHandle(StdHandle nStdHandle, IntPtr hHandle);
 
         [DllImport("kernel32.dll")]
         internal static extern uint GetLastError();
@@ -73,7 +96,7 @@ namespace ExecutePE.Internals
             IntPtr hTemplateFile);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr GetStdHandle(StdHandles nStdHandle);
+        internal static extern IntPtr GetStdHandle(StdHandle nStdHandle);
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct SECURITY_ATTRIBUTES
@@ -141,6 +164,12 @@ namespace ExecutePE.Internals
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         internal static extern IntPtr GetModuleHandle(string lpModuleName);
+        
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern bool AttachConsole(int pid);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         internal static extern bool VirtualFree(IntPtr pAddress, uint size, uint freeType);
