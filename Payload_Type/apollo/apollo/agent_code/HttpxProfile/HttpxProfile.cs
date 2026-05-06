@@ -1021,10 +1021,9 @@ namespace HttpxTransport
                 if (!bRet)
                 {
 #if DEBUG
-                    DebugWriteLine("[Start] GetTasking returned false, retrying after sleep");
+                    DebugWriteLine("[Start] GetTasking returned false, breaking loop");
 #endif
-                    Agent.Sleep();
-                    continue;
+                    break;
                 }
 
 #if DEBUG
