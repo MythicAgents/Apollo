@@ -97,6 +97,9 @@ namespace ApolloInterop.Classes
                         case MessageType.CallbackUpdate:
                             resp.Callback = (CallbackUpdate)msg;
                             break;
+	   	        case MessageType.CustomBrowser:
+    			    resp.Browser = (CustomBrowser)msg;
+    			    break;
                         default:
                             throw new Exception($"Unhandled message type while generating response: {msg.GetTypeCode()}");
                     }

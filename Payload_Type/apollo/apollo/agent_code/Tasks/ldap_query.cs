@@ -354,7 +354,7 @@ namespace Tasks
                 {
                     string dnString = dn.ToString();
                     dnString = dnString.Replace("LDAP://", "");
-                    customBrowserEntry.DispalyPath = dnString;
+                    customBrowserEntry.DisplayPath = dnString;
                     string[] dnStringPieces = dnString.Split(',');
                     customBrowserEntry.Name = dnStringPieces[0];
                     dnStringPieces = dnStringPieces.Skip(1).Take(dnStringPieces.Length-1).Reverse().ToArray();
