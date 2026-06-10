@@ -1315,7 +1315,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "parent_path")]
             public string ParentPath;
             [DataMember(Name = "display_path")]
-            public string DispalyPath;
+            public string DisplayPath;
             [DataMember(Name = "success", EmitDefaultValue = false)]
             public bool? Success;
             [DataMember(Name = "can_have_children")]
