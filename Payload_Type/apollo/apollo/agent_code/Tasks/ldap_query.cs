@@ -293,13 +293,15 @@ namespace Tasks
             public string[] attributes;
             [DataMember(Name = "limit")]
             public int limit;
+            [DataMember(Name = "scope")]
+            public string scope;
         }
-
         public ldap_query(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
 
         string[] groupClasses = { "group", "domain", "organizationalUnit", "container" };
+
         public override void Start()
         {
             MythicTaskResponse resp;
@@ -317,6 +319,10 @@ namespace Tasks
             if (ldapBase != "")
             {
                 query = new ActiveDirectoryLdapQuery($"LDAP://{parameters.Base}");
+                string[] domainPieces = parameters.Base.Split(',')
+                    .Where(x => x.Trim().StartsWith("DC=", StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                customBrowser.Host = domainPieces.Length > 0 ? string.Join(",", domainPieces) : parameters.Base;
             } else
             {
                 Domain domain = Domain.GetCurrentDomain();
@@ -333,13 +339,48 @@ namespace Tasks
             {
                 filter = "(&(objectclass=top)(objectclass=container))";
             }
+            SearchScope searchScope = SearchScope.Subtree;
+            if (string.Equals(parameters.scope, "onelevel", StringComparison.OrdinalIgnoreCase))
+            {
+                searchScope = SearchScope.OneLevel;
+            }
+            else if (string.Equals(parameters.scope, "base", StringComparison.OrdinalIgnoreCase))
+            {
+                searchScope = SearchScope.Base;
+            }
             try
             {
                 results = query.Query(
                     filter: filter,
                     attributesToReturn: parameters.attributes,
-                    limit: parameters.limit
+                    limit: parameters.limit,
+                    searchScope: searchScope
                 );
+                if (searchScope == SearchScope.OneLevel && !string.IsNullOrEmpty(ldapBase))
+                {
+                    string[] baseAttributes = (parameters.attributes ?? new string[0])
+                        .Concat(new[] { "cn", "samaccountname", "description", "member", "memberOf", "objectclass", "distinguishedname" })
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    List<Dictionary<string, object>> baseResults = query.Query(
+                        filter: "(objectClass=*)",
+                        attributesToReturn: baseAttributes,
+                        limit: 1,
+                        searchScope: SearchScope.Base
+                    );
+                    bool baseIsGroup = false;
+                    if (baseResults.Count > 0 && baseResults[0].TryGetValue("objectclass", out object baseObjectClass) && baseObjectClass != null)
+                    {
+                        IEnumerable<string> baseClasses = baseObjectClass is IEnumerable<string> baseValues
+                            ? baseValues
+                            : new[] { baseObjectClass.ToString() };
+                        baseIsGroup = baseClasses.Any(x => string.Equals(x, "group", StringComparison.OrdinalIgnoreCase));
+                    }
+                    if (baseIsGroup)
+                    {
+                        results.Insert(0, baseResults[0]);
+                    }
+                }
             }catch (Exception ex)
             {
                 _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
@@ -364,15 +405,45 @@ namespace Tasks
                         item => item.Value is IEnumerable<string> values
                             ? (object)string.Join(" | ", values)
                             : item.Value);
-                    if(user.TryGetValue("objectclass", out object oc))
+                    bool isGroup = false;
+                    if(user.TryGetValue("objectclass", out object oc) && oc != null)
                     {
-                        List<string> classes = (List<string>)oc;
+                        IEnumerable<string> classes = oc is IEnumerable<string> values
+                            ? values
+                            : new[] { oc.ToString() };
 
-                        if (classes.Intersect(groupClasses).Count() > 0)
+                        isGroup = classes.Any(x => string.Equals(x, "group", StringComparison.OrdinalIgnoreCase));
+                        if (classes.Intersect(groupClasses, StringComparer.OrdinalIgnoreCase).Any())
                         {
                             customBrowserEntry.CanHaveChildren = true;
                         }
 
+                    }
+                    List<string> members = new List<string>();
+                    if (user.TryGetValue("member", out object memberValue) && memberValue != null)
+                    {
+                        if (memberValue is IEnumerable<string> memberValues)
+                        {
+                            members = memberValues.ToList();
+                        }
+                        else
+                        {
+                            members.Add(memberValue.ToString());
+                        }
+                    }
+                    if (isGroup && members.Count > 0)
+                    {
+                        customBrowserEntry.Children = members.Select(memberDn => new CustomBrowserEntryChild
+                        {
+                            Name = memberDn.Split(',')[0],
+                            DisplayPath = memberDn,
+                            CanHaveChildren = true,
+                            Metadata = new Dictionary<string, object>
+                            {
+                                { "distinguishedname", memberDn },
+                                { "name", memberDn.Split(',')[0] }
+                            }
+                        }).ToList();
                     }
                     customBrowser.Entries.Add(customBrowserEntry);
                 }

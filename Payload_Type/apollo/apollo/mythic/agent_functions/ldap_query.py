@@ -60,6 +60,20 @@ class LdapQueryArguments(TaskArguments):
                     )
                 ],
                 default_value=100,),
+            CommandParameter(
+                name="scope",
+                cli_name="scope",
+                display_name="Search Scope",
+                type=ParameterType.ChooseOne,
+                choices=["subtree", "onelevel", "base"],
+                description="LDAP search scope",
+                parameter_group_info=[
+                    ParameterGroupInfo(
+                        required=False,
+                        ui_position=5,
+                    )
+                ],
+                default_value="subtree",),
         ]
 
 
@@ -67,11 +81,28 @@ class LdapQueryArguments(TaskArguments):
         if self.command_line[0] == "{":
             data = json.loads(self.command_line)
             if "full_path" in data:
-                self.add_arg("query", data["query"] if "query" in data else "")
-                self.add_arg("base", data["host"] if "host" in data else "")
-                search_attributes = [x.strip() for x in data["attributes"].split(",") if x != ""] if "attributes" in data else []
-                if len(search_attributes) > 0:
-                    self.add_arg("attributes", search_attributes)
+                metadata = data.get("metadata", {})
+                if isinstance(metadata, list):
+                    metadata = {x["Key"]: x["Value"] for x in metadata if "Key" in x and "Value" in x}
+                dn = metadata.get("distinguishedname", metadata.get("DistinguishedName", data.get("display_path", data["full_path"])))
+                if dn.startswith("LDAP://"):
+                    dn = dn[7:]
+                if dn == data["full_path"]:
+                    dn_pieces = [x.strip() for x in dn.split(",") if x.strip()]
+                    if len(dn_pieces) > 0 and dn_pieces[0].lower().startswith("dc="):
+                        dn = ",".join(reversed(dn_pieces))
+                self.add_arg("base", dn)
+                self.add_arg("query", data["query"] if "query" in data and data["query"] else "(objectClass=*)")
+                raw_attributes = data["attributes"] if "attributes" in data else ""
+                if isinstance(raw_attributes, list):
+                    search_attributes = raw_attributes
+                else:
+                    search_attributes = [x.strip() for x in raw_attributes.split(",") if x.strip()]
+                if len(search_attributes) == 0:
+                    search_attributes = ["cn", "samaccountname", "description", "member", "memberOf", "objectclass", "distinguishedname"]
+                self.add_arg("attributes", search_attributes)
+                self.add_arg("limit", data["limit"] if "limit" in data else 100)
+                self.add_arg("scope", data["scope"] if "scope" in data else "onelevel")
                 return
             self.load_args_from_json_string(self.command_line)
         else:

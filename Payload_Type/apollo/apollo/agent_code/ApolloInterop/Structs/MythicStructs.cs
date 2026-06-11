@@ -1304,6 +1304,8 @@ namespace ApolloInterop.Structs
             public string Name;
             [DataMember(Name = "can_have_children")]
             public bool CanHaveChildren;
+            [DataMember(Name = "display_path", EmitDefaultValue = false)]
+            public string? DisplayPath;
             [DataMember(Name = "metadata", EmitDefaultValue = false)]
             public Dictionary<string, object>? Metadata;
         }
