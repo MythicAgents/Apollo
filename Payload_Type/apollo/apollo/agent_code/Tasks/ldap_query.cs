@@ -497,7 +497,7 @@ namespace Tasks
                     {
                         customBrowserEntry.Children = members.Select(memberDn => new CustomBrowserEntryChild
                         {
-                            Name = memberDn.Split(',')[0],
+                            Name = memberDn,
                             DisplayPath = memberDn,
                             CanHaveChildren = true,
                             Metadata = new Dictionary<string, object>

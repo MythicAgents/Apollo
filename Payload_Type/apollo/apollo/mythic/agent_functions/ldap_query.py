@@ -84,7 +84,22 @@ class LdapQueryArguments(TaskArguments):
                 metadata = data.get("metadata", {})
                 if isinstance(metadata, list):
                     metadata = {x["Key"]: x["Value"] for x in metadata if "Key" in x and "Value" in x}
-                dn = data.get("display_path") or metadata.get("distinguishedname") or metadata.get("DistinguishedName") or data["full_path"]
+                file_dn = data.get("file", "")
+                file_dn = file_dn.strip().strip('"') if isinstance(file_dn, str) else ""
+                if file_dn.lower().startswith("ldap://"):
+                    file_dn = file_dn[7:]
+                file_dn_pieces = [x.strip() for x in file_dn.split(",") if x.strip()]
+                path_remainder = ""
+                path_value = data.get("path", "")
+                if isinstance(path_value, str) and path_value and data["full_path"].startswith(path_value + ","):
+                    path_remainder = data["full_path"][len(path_value) + 1:]
+                path_remainder_pieces = [x.strip() for x in path_remainder.split(",") if x.strip()]
+                dn = data.get("display_path") or metadata.get("distinguishedname") or metadata.get("DistinguishedName")
+                if not dn and len(file_dn_pieces) > 1 and all("=" in x for x in file_dn_pieces):
+                    dn = file_dn
+                if not dn and len(path_remainder_pieces) > 1 and all("=" in x for x in path_remainder_pieces):
+                    dn = path_remainder
+                dn = dn or data["full_path"]
                 if dn.lower().startswith("ldap://"):
                     dn = dn[7:]
                 if dn == data["full_path"]:
