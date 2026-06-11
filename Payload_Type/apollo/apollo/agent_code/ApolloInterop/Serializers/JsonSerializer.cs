@@ -29,7 +29,10 @@ namespace ApolloInterop.Serializers
         {
             using (var ms = new MemoryStream())
             {
-                var ser = new DataContractJsonSerializer(msg.GetType());
+                var ser = new DataContractJsonSerializer(msg.GetType(), new DataContractJsonSerializerSettings
+                {
+                    UseSimpleDictionaryFormat = true
+                });
                 ser.WriteObject(ms, msg);
                 ms.Position = 0;
                 using (var sr = new StreamReader(ms))
@@ -44,7 +47,10 @@ namespace ApolloInterop.Serializers
         {
             using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(msg)))
             {
-                var deserializer = new DataContractJsonSerializer(typeof(T));
+                var deserializer = new DataContractJsonSerializer(typeof(T), new DataContractJsonSerializerSettings
+                {
+                    UseSimpleDictionaryFormat = true
+                });
                 return (T)deserializer.ReadObject(ms);
             }
         }
@@ -53,7 +59,10 @@ namespace ApolloInterop.Serializers
         {
             using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(msg)))
             {
-                var deserializer = new DataContractJsonSerializer(t);
+                var deserializer = new DataContractJsonSerializer(t, new DataContractJsonSerializerSettings
+                {
+                    UseSimpleDictionaryFormat = true
+                });
                 return deserializer.ReadObject(ms);
             }
         }
