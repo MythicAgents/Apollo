@@ -467,6 +467,20 @@ namespace Tasks
                             : item.Value is string value
                                 ? (object)NormalizeMetadataString(value)
                                 : item.Value);
+                    int nameEqualsIndex = customBrowserEntry.Name.IndexOf('=');
+                    string displayName = nameEqualsIndex >= 0
+                        ? customBrowserEntry.Name.Substring(nameEqualsIndex + 1).Trim()
+                        : customBrowserEntry.Name;
+                    foreach (string displayKey in new[] { "cn", "name", "samaccountname" })
+                    {
+                        KeyValuePair<string, object> displayItem = user.FirstOrDefault(item =>
+                            string.Equals(item.Key, displayKey, StringComparison.OrdinalIgnoreCase));
+                        if (!string.IsNullOrEmpty(displayItem.Key) && displayItem.Value != null && !string.IsNullOrEmpty(displayItem.Value.ToString()))
+                        {
+                            displayName = displayItem.Value.ToString();
+                            break;
+                        }
+                    }
                     bool isGroup = false;
                     bool isContainer = false;
                     if(user.TryGetValue("objectclass", out object oc) && oc != null)
@@ -481,6 +495,8 @@ namespace Tasks
 
                     }
                     customBrowserEntry.Metadata["ldap_type"] = isGroup ? "group" : isContainer ? "container" : "object";
+                    customBrowserEntry.Metadata["display_name"] = displayName;
+                    customBrowserEntry.Metadata["dn"] = dnString;
                     List<string> members = new List<string>();
                     if (user.TryGetValue("member", out object memberValue) && memberValue != null)
                     {
@@ -495,18 +511,28 @@ namespace Tasks
                     }
                     if (isGroup && members.Count > 0)
                     {
-                        customBrowserEntry.Children = members.Select(memberDn => new CustomBrowserEntryChild
+                        customBrowserEntry.Children = members.Select(memberDn =>
                         {
-                            Name = memberDn,
-                            DisplayPath = memberDn,
-                            CanHaveChildren = false,
-                            Metadata = new Dictionary<string, object>
+                            string memberName = memberDn.Split(',')[0];
+                            int memberEqualsIndex = memberName.IndexOf('=');
+                            string memberDisplayName = memberEqualsIndex >= 0
+                                ? memberName.Substring(memberEqualsIndex + 1).Trim()
+                                : memberName;
+                            return new CustomBrowserEntryChild
                             {
-                                { "ldap_type", "member_link" },
-                                { "target_dn", memberDn },
-                                { "distinguishedname", memberDn },
-                                { "name", memberDn.Split(',')[0] }
-                            }
+                                Name = memberDn,
+                                DisplayPath = memberDn,
+                                CanHaveChildren = false,
+                                Metadata = new Dictionary<string, object>
+                                {
+                                    { "ldap_type", "member_link" },
+                                    { "display_name", memberDisplayName },
+                                    { "dn", memberDn },
+                                    { "target_dn", memberDn },
+                                    { "distinguishedname", memberDn },
+                                    { "name", memberName }
+                                }
+                            };
                         }).ToList();
                     }
                     customBrowser.Entries.Add(customBrowserEntry);
