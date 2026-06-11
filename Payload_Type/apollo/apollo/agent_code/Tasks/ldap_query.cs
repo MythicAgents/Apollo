@@ -300,7 +300,7 @@ namespace Tasks
         {
         }
 
-        string[] groupClasses = { "group", "domain", "domainDNS", "organizationalUnit", "container", "builtinDomain" };
+        string[] containerClasses = { "domain", "domainDNS", "organizationalUnit", "container", "builtinDomain" };
 
         private static string NormalizeLdapDn(string dn)
         {
@@ -410,16 +410,16 @@ namespace Tasks
                         searchScope: SearchScope.Base
                     );
                     bool baseIsGroup = false;
-                    bool baseCanHaveChildren = false;
+                    bool baseIsContainer = false;
                     if (baseResults.Count > 0 && baseResults[0].TryGetValue("objectclass", out object baseObjectClass) && baseObjectClass != null)
                     {
                         IEnumerable<string> baseClasses = baseObjectClass is IEnumerable<string> baseValues
                             ? baseValues
                             : new[] { baseObjectClass.ToString() };
                         baseIsGroup = baseClasses.Any(x => string.Equals(x, "group", StringComparison.OrdinalIgnoreCase));
-                        baseCanHaveChildren = baseClasses.Intersect(groupClasses, StringComparer.OrdinalIgnoreCase).Any();
+                        baseIsContainer = baseClasses.Intersect(containerClasses, StringComparer.OrdinalIgnoreCase).Any();
                     }
-                    if (baseIsGroup || !baseCanHaveChildren)
+                    if (baseIsGroup || !baseIsContainer)
                     {
                         results = baseResults;
                     }
@@ -468,6 +468,7 @@ namespace Tasks
                                 ? (object)NormalizeMetadataString(value)
                                 : item.Value);
                     bool isGroup = false;
+                    bool isContainer = false;
                     if(user.TryGetValue("objectclass", out object oc) && oc != null)
                     {
                         IEnumerable<string> classes = oc is IEnumerable<string> values
@@ -475,12 +476,11 @@ namespace Tasks
                             : new[] { oc.ToString() };
 
                         isGroup = classes.Any(x => string.Equals(x, "group", StringComparison.OrdinalIgnoreCase));
-                        if (classes.Intersect(groupClasses, StringComparer.OrdinalIgnoreCase).Any())
-                        {
-                            customBrowserEntry.CanHaveChildren = true;
-                        }
+                        isContainer = classes.Intersect(containerClasses, StringComparer.OrdinalIgnoreCase).Any();
+                        customBrowserEntry.CanHaveChildren = isGroup || isContainer;
 
                     }
+                    customBrowserEntry.Metadata["ldap_type"] = isGroup ? "group" : isContainer ? "container" : "object";
                     List<string> members = new List<string>();
                     if (user.TryGetValue("member", out object memberValue) && memberValue != null)
                     {
@@ -499,9 +499,11 @@ namespace Tasks
                         {
                             Name = memberDn,
                             DisplayPath = memberDn,
-                            CanHaveChildren = true,
+                            CanHaveChildren = false,
                             Metadata = new Dictionary<string, object>
                             {
+                                { "ldap_type", "member_link" },
+                                { "target_dn", memberDn },
                                 { "distinguishedname", memberDn },
                                 { "name", memberDn.Split(',')[0] }
                             }
