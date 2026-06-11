@@ -302,6 +302,52 @@ namespace Tasks
 
         string[] groupClasses = { "group", "domain", "domainDNS", "organizationalUnit", "container", "builtinDomain" };
 
+        private static string NormalizeLdapDn(string dn)
+        {
+            if (string.IsNullOrEmpty(dn))
+            {
+                return dn;
+            }
+            if (dn.StartsWith("LDAP://", StringComparison.OrdinalIgnoreCase))
+            {
+                dn = dn.Substring(7);
+            }
+            return string.Join(",", dn.Split(',')
+                .Select(piece => piece.Trim())
+                .Where(piece => piece != "")
+                .Select(piece =>
+                {
+                    int equalsIndex = piece.IndexOf('=');
+                    if (equalsIndex <= 0)
+                    {
+                        return piece;
+                    }
+                    string attribute = piece.Substring(0, equalsIndex).Trim();
+                    string value = piece.Substring(equalsIndex + 1).Trim();
+                    return string.Equals(attribute, "DC", StringComparison.OrdinalIgnoreCase)
+                        ? $"DC={value.ToUpperInvariant()}"
+                        : piece;
+                }));
+        }
+
+        private static string NormalizeMetadataString(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+            string candidate = value.StartsWith("LDAP://", StringComparison.OrdinalIgnoreCase)
+                ? value.Substring(7)
+                : value;
+            string[] pieces = candidate.Split(',')
+                .Select(piece => piece.Trim())
+                .Where(piece => piece != "")
+                .ToArray();
+            return pieces.Length > 1 && pieces.All(piece => piece.Contains("="))
+                ? NormalizeLdapDn(value)
+                : value;
+        }
+
         public override void Start()
         {
             MythicTaskResponse resp;
@@ -314,23 +360,24 @@ namespace Tasks
             customBrowser.SetAsUserOutput = true;
             //customBrowser.UpdateDeleted = true;
             customBrowser.Entries = new List<CustomBrowserEntry>();
-            string ldapBase = parameters.Base;
+            string ldapBase = NormalizeLdapDn(parameters.Base);
             ActiveDirectoryLdapQuery query;
-            if (ldapBase != "")
+            if (!string.IsNullOrEmpty(ldapBase))
             {
-                query = new ActiveDirectoryLdapQuery($"LDAP://{parameters.Base}");
-                string[] domainPieces = parameters.Base.Split(',')
+                query = new ActiveDirectoryLdapQuery($"LDAP://{ldapBase}");
+                string[] domainPieces = ldapBase.Split(',')
                     .Where(x => x.Trim().StartsWith("DC=", StringComparison.OrdinalIgnoreCase))
                     .ToArray();
-                customBrowser.Host = domainPieces.Length > 0 ? string.Join(",", domainPieces) : parameters.Base;
+                customBrowser.Host = domainPieces.Length > 0 ? string.Join(",", domainPieces) : ldapBase;
             } else
             {
                 Domain domain = Domain.GetCurrentDomain();
                 DirectoryEntry ent = domain.GetDirectoryEntry();
                 string path = ent.Path;
                 string[] pathPieces = ent.Path.Split('/');
-                query = new ActiveDirectoryLdapQuery($"LDAP://{pathPieces[pathPieces.Length - 1]}");
-                customBrowser.Host = pathPieces[pathPieces.Length - 1];
+                string domainDn = NormalizeLdapDn(pathPieces[pathPieces.Length - 1]);
+                query = new ActiveDirectoryLdapQuery($"LDAP://{domainDn}");
+                customBrowser.Host = domainDn;
             }
 
             List<Dictionary<string, object>> results = new List<Dictionary<string, object>>();
@@ -407,8 +454,7 @@ namespace Tasks
                 CustomBrowserEntry customBrowserEntry = new CustomBrowserEntry();
                 if(user.TryGetValue("DistinguishedName", out object dn))
                 {
-                    string dnString = dn.ToString();
-                    dnString = dnString.Replace("LDAP://", "");
+                    string dnString = NormalizeLdapDn(dn.ToString());
                     customBrowserEntry.DisplayPath = dnString;
                     string[] dnStringPieces = dnString.Split(',');
                     customBrowserEntry.Name = dnStringPieces[0];
@@ -417,8 +463,10 @@ namespace Tasks
                     customBrowserEntry.Metadata = user.ToDictionary(
                         item => item.Key,
                         item => item.Value is IEnumerable<string> values
-                            ? (object)string.Join(" | ", values)
-                            : item.Value);
+                            ? (object)string.Join(" | ", values.Select(NormalizeMetadataString))
+                            : item.Value is string value
+                                ? (object)NormalizeMetadataString(value)
+                                : item.Value);
                     bool isGroup = false;
                     if(user.TryGetValue("objectclass", out object oc) && oc != null)
                     {
@@ -438,11 +486,11 @@ namespace Tasks
                     {
                         if (memberValue is IEnumerable<string> memberValues)
                         {
-                            members = memberValues.ToList();
+                            members = memberValues.Select(NormalizeLdapDn).ToList();
                         }
                         else
                         {
-                            members.Add(memberValue.ToString());
+                            members.Add(NormalizeLdapDn(memberValue.ToString()));
                         }
                     }
                     if (isGroup && members.Count > 0)

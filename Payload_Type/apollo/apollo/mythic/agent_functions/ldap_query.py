@@ -85,7 +85,7 @@ class LdapQueryArguments(TaskArguments):
                 if isinstance(metadata, list):
                     metadata = {x["Key"]: x["Value"] for x in metadata if "Key" in x and "Value" in x}
                 dn = data.get("display_path") or metadata.get("distinguishedname") or metadata.get("DistinguishedName") or data["full_path"]
-                if dn.startswith("LDAP://"):
+                if dn.lower().startswith("ldap://"):
                     dn = dn[7:]
                 if dn == data["full_path"]:
                     dn_pieces = [x.strip() for x in dn.split(",") if x.strip()]
@@ -106,8 +106,15 @@ class LdapQueryArguments(TaskArguments):
                 query = data["query"].strip().strip('"') if "query" in data and data["query"] else "(objectClass=*)"
                 query_pieces = [x.strip() for x in query.split(",") if x.strip()]
                 if not query.startswith("(") and len(query_pieces) > 0 and all("=" in x for x in query_pieces):
-                    dn = query[7:] if query.startswith("LDAP://") else query
+                    dn = query[7:] if query.lower().startswith("ldap://") else query
                     query = "(objectClass=*)"
+                dn = ",".join([
+                    "DC={}".format(piece.split("=", 1)[1].strip().upper())
+                    if "=" in piece and piece.split("=", 1)[0].strip().lower() == "dc"
+                    else piece.strip()
+                    for piece in dn.split(",")
+                    if piece.strip()
+                ])
                 self.add_arg("base", dn)
                 self.add_arg("query", query)
                 raw_attributes = data["attributes"] if "attributes" in data else ""
