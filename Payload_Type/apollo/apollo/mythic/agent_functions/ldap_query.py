@@ -103,8 +103,13 @@ class LdapQueryArguments(TaskArguments):
                         dn = ",".join(list(reversed(dn_pieces)) + host_pieces)
                     elif len(dn_pieces) > 0 and dn_pieces[0].lower().startswith("dc="):
                         dn = ",".join(reversed(dn_pieces))
+                query = data["query"].strip().strip('"') if "query" in data and data["query"] else "(objectClass=*)"
+                query_pieces = [x.strip() for x in query.split(",") if x.strip()]
+                if not query.startswith("(") and len(query_pieces) > 0 and all("=" in x for x in query_pieces):
+                    dn = query[7:] if query.startswith("LDAP://") else query
+                    query = "(objectClass=*)"
                 self.add_arg("base", dn)
-                self.add_arg("query", data["query"] if "query" in data and data["query"] else "(objectClass=*)")
+                self.add_arg("query", query)
                 raw_attributes = data["attributes"] if "attributes" in data else ""
                 if isinstance(raw_attributes, list):
                     search_attributes = raw_attributes
