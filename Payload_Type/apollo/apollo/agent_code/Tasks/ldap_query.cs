@@ -300,7 +300,7 @@ namespace Tasks
         {
         }
 
-        string[] groupClasses = { "group", "domain", "organizationalUnit", "container" };
+        string[] groupClasses = { "group", "domain", "domainDNS", "organizationalUnit", "container", "builtinDomain" };
 
         public override void Start()
         {
@@ -350,12 +350,6 @@ namespace Tasks
             }
             try
             {
-                results = query.Query(
-                    filter: filter,
-                    attributesToReturn: parameters.attributes,
-                    limit: parameters.limit,
-                    searchScope: searchScope
-                );
                 if (searchScope == SearchScope.OneLevel && !string.IsNullOrEmpty(ldapBase))
                 {
                     string[] baseAttributes = (parameters.attributes ?? new string[0])
@@ -369,17 +363,37 @@ namespace Tasks
                         searchScope: SearchScope.Base
                     );
                     bool baseIsGroup = false;
+                    bool baseCanHaveChildren = false;
                     if (baseResults.Count > 0 && baseResults[0].TryGetValue("objectclass", out object baseObjectClass) && baseObjectClass != null)
                     {
                         IEnumerable<string> baseClasses = baseObjectClass is IEnumerable<string> baseValues
                             ? baseValues
                             : new[] { baseObjectClass.ToString() };
                         baseIsGroup = baseClasses.Any(x => string.Equals(x, "group", StringComparison.OrdinalIgnoreCase));
+                        baseCanHaveChildren = baseClasses.Intersect(groupClasses, StringComparer.OrdinalIgnoreCase).Any();
                     }
-                    if (baseIsGroup)
+                    if (baseIsGroup || !baseCanHaveChildren)
                     {
-                        results.Insert(0, baseResults[0]);
+                        results = baseResults;
                     }
+                    else
+                    {
+                        results = query.Query(
+                            filter: filter,
+                            attributesToReturn: parameters.attributes,
+                            limit: parameters.limit,
+                            searchScope: searchScope
+                        );
+                    }
+                }
+                else
+                {
+                    results = query.Query(
+                        filter: filter,
+                        attributesToReturn: parameters.attributes,
+                        limit: parameters.limit,
+                        searchScope: searchScope
+                    );
                 }
             }catch (Exception ex)
             {
