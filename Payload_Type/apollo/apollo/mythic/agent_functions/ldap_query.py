@@ -84,12 +84,24 @@ class LdapQueryArguments(TaskArguments):
                 metadata = data.get("metadata", {})
                 if isinstance(metadata, list):
                     metadata = {x["Key"]: x["Value"] for x in metadata if "Key" in x and "Value" in x}
-                dn = metadata.get("distinguishedname", metadata.get("DistinguishedName", data.get("display_path", data["full_path"])))
+                dn = data.get("display_path") or metadata.get("distinguishedname") or metadata.get("DistinguishedName") or data["full_path"]
                 if dn.startswith("LDAP://"):
                     dn = dn[7:]
                 if dn == data["full_path"]:
                     dn_pieces = [x.strip() for x in dn.split(",") if x.strip()]
-                    if len(dn_pieces) > 0 and dn_pieces[0].lower().startswith("dc="):
+                    host_pieces = [x.strip() for x in data.get("host", "").split(",") if x.strip()]
+                    lower_dn_pieces = [x.lower() for x in dn_pieces]
+                    lower_host_pieces = [x.lower() for x in host_pieces]
+                    lower_reversed_host_pieces = list(reversed(lower_host_pieces))
+                    if len(host_pieces) > 0 and lower_dn_pieces[-len(host_pieces):] == lower_host_pieces:
+                        dn = ",".join(dn_pieces)
+                    elif len(host_pieces) > 0 and lower_dn_pieces[:len(host_pieces)] == lower_host_pieces:
+                        dn = ",".join(list(reversed(dn_pieces[len(host_pieces):])) + host_pieces)
+                    elif len(host_pieces) > 0 and lower_dn_pieces[:len(host_pieces)] == lower_reversed_host_pieces:
+                        dn = ",".join(list(reversed(dn_pieces[len(host_pieces):])) + host_pieces)
+                    elif len(host_pieces) > 0:
+                        dn = ",".join(list(reversed(dn_pieces)) + host_pieces)
+                    elif len(dn_pieces) > 0 and dn_pieces[0].lower().startswith("dc="):
                         dn = ",".join(reversed(dn_pieces))
                 self.add_arg("base", dn)
                 self.add_arg("query", data["query"] if "query" in data and data["query"] else "(objectClass=*)")
