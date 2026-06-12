@@ -457,20 +457,11 @@ namespace Tasks
                     string dnString = NormalizeLdapDn(dn.ToString());
                     customBrowserEntry.DisplayPath = dnString;
                     string[] dnStringPieces = dnString.Split(',');
-                    customBrowserEntry.Name = dnStringPieces[0];
-                    dnStringPieces = dnStringPieces.Skip(1).Take(dnStringPieces.Length-1).Reverse().ToArray();
-                    customBrowserEntry.ParentPath = string.Join(",", dnStringPieces);
-                    customBrowserEntry.Metadata = user.ToDictionary(
-                        item => item.Key,
-                        item => item.Value is IEnumerable<string> values
-                            ? (object)string.Join(" | ", values.Select(NormalizeMetadataString))
-                            : item.Value is string value
-                                ? (object)NormalizeMetadataString(value)
-                                : item.Value);
-                    int nameEqualsIndex = customBrowserEntry.Name.IndexOf('=');
+                    string firstRdn = dnStringPieces[0];
+                    int nameEqualsIndex = firstRdn.IndexOf('=');
                     string displayName = nameEqualsIndex >= 0
-                        ? customBrowserEntry.Name.Substring(nameEqualsIndex + 1).Trim()
-                        : customBrowserEntry.Name;
+                        ? firstRdn.Substring(nameEqualsIndex + 1).Trim()
+                        : firstRdn;
                     foreach (string displayKey in new[] { "cn", "name", "samaccountname" })
                     {
                         KeyValuePair<string, object> displayItem = user.FirstOrDefault(item =>
@@ -481,6 +472,16 @@ namespace Tasks
                             break;
                         }
                     }
+                    customBrowserEntry.Name = displayName;
+                    dnStringPieces = dnStringPieces.Skip(1).Take(dnStringPieces.Length-1).Reverse().ToArray();
+                    customBrowserEntry.ParentPath = string.Join(",", dnStringPieces);
+                    customBrowserEntry.Metadata = user.ToDictionary(
+                        item => item.Key,
+                        item => item.Value is IEnumerable<string> values
+                            ? (object)string.Join(" | ", values.Select(NormalizeMetadataString))
+                            : item.Value is string value
+                                ? (object)NormalizeMetadataString(value)
+                                : item.Value);
                     bool isGroup = false;
                     bool isContainer = false;
                     if(user.TryGetValue("objectclass", out object oc) && oc != null)
@@ -495,8 +496,6 @@ namespace Tasks
 
                     }
                     customBrowserEntry.Metadata["ldap_type"] = isGroup ? "group" : isContainer ? "container" : "object";
-                    customBrowserEntry.Metadata["display_name"] = displayName;
-                    customBrowserEntry.Metadata["dn"] = dnString;
                     List<string> members = new List<string>();
                     if (user.TryGetValue("member", out object memberValue) && memberValue != null)
                     {
@@ -513,24 +512,20 @@ namespace Tasks
                     {
                         customBrowserEntry.Children = members.Select(memberDn =>
                         {
-                            string memberName = memberDn.Split(',')[0];
-                            int memberEqualsIndex = memberName.IndexOf('=');
+                            string memberFirstRdn = memberDn.Split(',')[0];
+                            int memberEqualsIndex = memberFirstRdn.IndexOf('=');
                             string memberDisplayName = memberEqualsIndex >= 0
-                                ? memberName.Substring(memberEqualsIndex + 1).Trim()
-                                : memberName;
+                                ? memberFirstRdn.Substring(memberEqualsIndex + 1).Trim()
+                                : memberFirstRdn;
                             return new CustomBrowserEntryChild
                             {
-                                Name = memberDn,
+                                Name = memberDisplayName,
                                 DisplayPath = memberDn,
                                 CanHaveChildren = false,
                                 Metadata = new Dictionary<string, object>
                                 {
                                     { "ldap_type", "member_link" },
-                                    { "display_name", memberDisplayName },
-                                    { "dn", memberDn },
-                                    { "target_dn", memberDn },
-                                    { "distinguishedname", memberDn },
-                                    { "name", memberName }
+                                    { "target_dn", memberDn }
                                 }
                             };
                         }).ToList();
