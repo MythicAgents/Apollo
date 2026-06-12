@@ -74,6 +74,8 @@ namespace Tasks
                 path = parameters.FileName.StartsWith(@"\\")
                     ? parameters.FileName
                     : $@"\\{parameters.Hostname}\{parameters.FileName}";
+                if (TryGetUncHost(path, out string uncHost))
+                    host = uncHost;
             }
 
             return new DownloadTarget
