@@ -94,7 +94,13 @@ class LdapQueryArguments(TaskArguments):
                 if isinstance(path_value, str) and path_value and data["full_path"].startswith(path_value + ","):
                     path_remainder = data["full_path"][len(path_value) + 1:]
                 path_remainder_pieces = [x.strip() for x in path_remainder.split(",") if x.strip()]
-                dn = data.get("display_path") or metadata.get("target_dn") or metadata.get("distinguishedname") or metadata.get("DistinguishedName")
+                def _is_valid_dn(value):
+                    if not value:
+                        return False
+                    pieces = [x.strip() for x in value.split(",") if x.strip()]
+                    return len(pieces) > 0 and all("=" in p for p in pieces)
+                display_path = data.get("display_path", "")
+                dn = (display_path if _is_valid_dn(display_path) else None) or metadata.get("target_dn") or metadata.get("distinguishedname") or metadata.get("DistinguishedName")
                 if not dn and len(file_dn_pieces) > 1 and all("=" in x for x in file_dn_pieces):
                     dn = file_dn
                 if not dn and len(path_remainder_pieces) > 1 and all("=" in x for x in path_remainder_pieces):
