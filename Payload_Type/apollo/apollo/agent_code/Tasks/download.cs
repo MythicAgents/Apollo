@@ -61,9 +61,12 @@ namespace Tasks
                     : Path.GetFullPath(Path.Combine(cwd, parameters.FileName));
                 host = TryGetUncHost(path, out string uncHost) ? uncHost : localHost;
             }
-            else if (localhostAliases.Contains(parameters.Hostname.ToLower()) && Path.IsPathRooted(parameters.FileName))
+            else if (localhostAliases.Contains(parameters.Hostname.ToLower()))
             {
-                path = Path.GetFullPath(parameters.FileName);
+                string cwd = Directory.GetCurrentDirectory();
+                path = Path.IsPathRooted(parameters.FileName)
+                    ? Path.GetFullPath(parameters.FileName)
+                    : Path.GetFullPath(Path.Combine(cwd, parameters.FileName));
                 host = localHost;
             }
             else
