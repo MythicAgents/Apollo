@@ -15,7 +15,7 @@ namespace ExecutePE.Patchers
         {
             _pe = peLoader = new PELoader(unpacked);
             _codebase = NativeDeclarations.VirtualAlloc(IntPtr.Zero, _pe.OptionalHeader64.SizeOfImage,
-                NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
+                NativeDeclarations.MEM_COMMIT, NativeDeclarations.MemoryProtectionConstant.PAGE_READWRITE);
             currentBase = _codebase.ToInt64();
 
             int relocTableFileOffset = 0;
@@ -67,7 +67,7 @@ namespace ExecutePE.Patchers
                 );
 
                 var y = NativeDeclarations.VirtualAlloc((IntPtr)(currentBase + _pe.ImageSectionHeaders[i].VirtualAddress),
-                    sectionSize, NativeDeclarations.MEM_COMMIT, NativeDeclarations.PAGE_READWRITE);
+                    sectionSize, NativeDeclarations.MEM_COMMIT, NativeDeclarations.MemoryProtectionConstant.PAGE_READWRITE);
                 if (y == null)
                 {
                     var sectionName = new string(_pe.ImageSectionHeaders[i].Name);
@@ -176,31 +176,31 @@ namespace ExecutePE.Patchers
                 var read = ((uint)_pe.ImageSectionHeaders[i].Characteristics & NativeDeclarations.IMAGE_SCN_MEM_READ) != 0;
                 var write = ((uint)_pe.ImageSectionHeaders[i].Characteristics & NativeDeclarations.IMAGE_SCN_MEM_WRITE) != 0;
 
-                var protection = NativeDeclarations.PAGE_EXECUTE_READWRITE;
+                var protection = NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE_READWRITE;
 
                 if (execute && read && write)
                 {
-                    protection = NativeDeclarations.PAGE_EXECUTE_READWRITE;
+                    protection = NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE_READWRITE;
                 }
                 else if (!execute && read && write)
                 {
-                    protection = NativeDeclarations.PAGE_READWRITE;
+                    protection = NativeDeclarations.MemoryProtectionConstant.PAGE_READWRITE;
                 }
                 else if (!write && execute && read)
                 {
-                    protection = NativeDeclarations.PAGE_EXECUTE_READ;
+                    protection = NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE_READ;
                 }
                 else if (!execute && !write && read)
                 {
-                    protection = NativeDeclarations.PAGE_READONLY;
+                    protection = NativeDeclarations.MemoryProtectionConstant.PAGE_READONLY;
                 }
                 else if (execute && !read && !write)
                 {
-                    protection = NativeDeclarations.PAGE_EXECUTE;
+                    protection = NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE;
                 }
                 else if (!execute && !read && !write)
                 {
-                    protection = NativeDeclarations.PAGE_NOACCESS;
+                    protection = NativeDeclarations.MemoryProtectionConstant.PAGE_NOACCESS;
                 }
 
                 NativeDeclarations.VirtualProtect((IntPtr)(_codebase.ToInt64() + _pe.ImageSectionHeaders[i].VirtualAddress),

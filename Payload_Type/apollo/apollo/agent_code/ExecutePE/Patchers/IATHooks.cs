@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ApolloInterop.Utils;
+using ExecutePE.Internals;
 
 namespace ExecutePE.Patchers
 {
@@ -108,7 +109,7 @@ namespace ExecutePE.Patchers
                 IntPtr.Zero,
                 (uint)_hookBytes.Count,
                 NativeDeclarations.MEM_COMMIT,
-                NativeDeclarations.PAGE_READWRITE
+                NativeDeclarations.MemoryProtectionConstant.PAGE_READWRITE
             );
 
             if (hookMemory == null)
@@ -123,7 +124,7 @@ namespace ExecutePE.Patchers
             if (!NativeDeclarations.VirtualProtect(
                 hookMemory,
                 (UIntPtr)_hookBytes.Count,
-                NativeDeclarations.PAGE_EXECUTE_READ,
+                NativeDeclarations.MemoryProtectionConstant.PAGE_EXECUTE_READ,
                 out _)
             )
             {
