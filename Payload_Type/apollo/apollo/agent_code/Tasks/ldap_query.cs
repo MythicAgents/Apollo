@@ -360,9 +360,9 @@ namespace Tasks
                     dnStringPieces = dnStringPieces.Skip(1).Take(dnStringPieces.Length-1).Reverse().ToArray();
                     customBrowserEntry.ParentPath = string.Join(",", dnStringPieces);
                     customBrowserEntry.Metadata = user;
-                    if(user.TryGetValue("objectclass", out object oc))
+                    if(user.TryGetValue("objectclass", out object oc) && oc is string ocString)
                     {
-                        List<string> classes = (List<string>)oc;
+                        string[] classes = ocString.Split(new[] { " | " }, StringSplitOptions.None);
 
                         if (classes.Intersect(groupClasses).Count() > 0)
                         {
