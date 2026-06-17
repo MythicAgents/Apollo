@@ -29,6 +29,10 @@ namespace ApolloInterop.Types
             {
                 return typeof(FileBrowser);
             }
+            else if (msg == MessageType.CustomBrowser)
+            {
+                return typeof(CustomBrowser);
+            }
             else if (msg == MessageType.EdgeNode)
             {
                 return typeof(EdgeNode);

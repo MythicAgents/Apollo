@@ -73,6 +73,9 @@ namespace ApolloInterop.Classes
                         case MessageType.FileBrowser:
                             resp.FileBrowser = (FileBrowser)msg;
                             break;
+                        case MessageType.CustomBrowser:
+                            resp.Browser = (CustomBrowser)msg;
+                            break;
                         case MessageType.Credential:
                             creds.Add((Credential)msg);
                             break;
