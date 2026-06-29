@@ -14,6 +14,8 @@ namespace PSKCryptography
             
         }
 
+        // This should be a safe way to compare secret values without leaking timing info
+        // https://github.com/veorq/cryptocoding#compare-secret-strings-in-constant-time
         static public bool ConstTimeCompare(string rhs, string lhs)
         {
             if (rhs.Length != lhs.Length)
@@ -22,7 +24,7 @@ namespace PSKCryptography
             }
             var missed = 0;
             for (var idx = 0; idx < rhs.Length; idx++) {
-                missed ^= lhs[idx] ^ rhs[idx];
+                missed |= lhs[idx] ^ rhs[idx];
             }
             return missed == 0;
         }
