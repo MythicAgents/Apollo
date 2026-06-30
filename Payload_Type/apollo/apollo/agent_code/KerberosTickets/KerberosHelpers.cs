@@ -21,7 +21,7 @@ namespace KerberosTickets;
 
 internal class KerberosHelpers
 {
-    private static HANDLE systemHandle { get; set; }
+    // Removed systemHandle cache: `systemHandle = new()` was always IsNull, so it never hit.
 
     private static List<Artifact> createdArtifacts = new List<Artifact>();
 
@@ -34,29 +34,37 @@ internal class KerberosHelpers
         HANDLE lsaHandle = new();
         try
         {
-            bool elevated = false;
             DebugHelp.DebugWriteLine("Getting LSA Handle");
             //if we are already high integrity, we need to elevate to system to get the handle to all the sessions
             if(Agent.GetIdentityManager().GetIntegrityLevel() is IntegrityLevel.HighIntegrity && elevateToSystem)
             {
-                //if we have a system handle already, we can use that
-                if(systemHandle.IsNull is false)
-                {
-                    elevated = true;
-                }
-                else
-                {
-                    elevated = Agent.GetIdentityManager().GetSystem();
-                    createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
-                }
+                // Snapshot identity: GetSystem() permanently overwrites primary+impersonation
+                // identity with winlogon, leaking SYSTEM into every later command.
+                var savedImpersonation = Agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                var savedPrimary = Agent.GetIdentityManager().GetCurrentPrimaryIdentity();
+                bool wasOriginalIdentity = Agent.GetIdentityManager().IsOriginalIdentity();
+
+                bool elevated = Agent.GetIdentityManager().GetSystem();
+                createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
                 if (elevated)
                 {
-                    systemHandle = new();
                     ImpersonationScope.Run(Agent.GetIdentityManager().GetCurrentImpersonationIdentity(), () =>
                     {
                         WindowsAPI.LsaConnectUntrustedDelegate(out lsaHandle);
                     });
                     createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaConnectUntrusted"));
+
+                    // Restore pre-call identity. Revert() if there was no impersonation
+                    // (clears _isImpersonating); otherwise put back the saved identities.
+                    if (wasOriginalIdentity)
+                    {
+                        Agent.GetIdentityManager().Revert();
+                    }
+                    else
+                    {
+                        Agent.GetIdentityManager().SetImpersonationIdentity(savedImpersonation);
+                        Agent.GetIdentityManager().SetPrimaryIdentity(savedPrimary);
+                    }
                 }
                 else
                 {
