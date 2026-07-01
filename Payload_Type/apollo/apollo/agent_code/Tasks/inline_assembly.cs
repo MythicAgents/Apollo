@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using ApolloInterop.Classes.Api;
+using ApolloInterop.Classes.Impersonation;
 using ApolloInterop.Utils;
 
 namespace Tasks
@@ -252,7 +253,8 @@ namespace Tasks
             AppDomain isolationDomain = AppDomain.CreateDomain(Guid.NewGuid().ToString());
             try
             {
-                isolationDomain.SetThreadPrincipal(new WindowsPrincipal(_agent.GetIdentityManager().GetCurrentImpersonationIdentity()));
+                WindowsIdentity impersonationIdentity = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
+                isolationDomain.SetThreadPrincipal(new WindowsPrincipal(impersonationIdentity));
                 isolationDomain.SetData("str", sParams);
                 bool defaultDomain = AppDomain.CurrentDomain.IsDefaultAppDomain();
                 // Load dependencies wrapped into a try catch to avoid non critical loading failures from causing the entire module to fail
@@ -315,7 +317,10 @@ namespace Tasks
                 {
                     _assemblyThread = new Thread(() =>
                     {
-                        isolationDomain.DoCallBack(sleeve);
+                        ImpersonationScope.Run(impersonationIdentity, () =>
+                        {
+                            isolationDomain.DoCallBack(sleeve);
+                        });
                     });
                     _assemblyThread.Start();
                     while (!_completed && !_cancellationToken.IsCancellationRequested)
