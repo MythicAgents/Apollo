@@ -38,33 +38,17 @@ internal class KerberosHelpers
             //if we are already high integrity, we need to elevate to system to get the handle to all the sessions
             if(Agent.GetIdentityManager().GetIntegrityLevel() is IntegrityLevel.HighIntegrity && elevateToSystem)
             {
-                // Snapshot identity: GetSystem() permanently overwrites primary+impersonation
-                // identity with winlogon, leaking SYSTEM into every later command.
-                var savedImpersonation = Agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                var savedPrimary = Agent.GetIdentityManager().GetCurrentPrimaryIdentity();
-                bool wasOriginalIdentity = Agent.GetIdentityManager().IsOriginalIdentity();
-
-                bool elevated = Agent.GetIdentityManager().GetSystem();
-                createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
-                if (elevated)
+                bool elevated = Agent.GetIdentityManager().RunAsSystem(systemIdentity =>
                 {
-                    ImpersonationScope.Run(Agent.GetIdentityManager().GetCurrentImpersonationIdentity(), () =>
+                    ImpersonationScope.Run(systemIdentity, () =>
                     {
                         WindowsAPI.LsaConnectUntrustedDelegate(out lsaHandle);
                     });
+                });
+                createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
+                if (elevated)
+                {
                     createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaConnectUntrusted"));
-
-                    // Restore pre-call identity. Revert() if there was no impersonation
-                    // (clears _isImpersonating); otherwise put back the saved identities.
-                    if (wasOriginalIdentity)
-                    {
-                        Agent.GetIdentityManager().Revert();
-                    }
-                    else
-                    {
-                        Agent.GetIdentityManager().SetImpersonationIdentity(savedImpersonation);
-                        Agent.GetIdentityManager().SetPrimaryIdentity(savedPrimary);
-                    }
                 }
                 else
                 {
