@@ -432,6 +432,36 @@ public class IdentityManager : IIdentityManager
         }
     }
 
+    public bool RunAsSystem(Action<WindowsIdentity> action)
+    {
+        if (action == null)
+            throw new ArgumentNullException(nameof(action));
+
+        lock (_identitySync)
+        {
+            var savedPrimaryIdentity = _currentPrimaryIdentity;
+            var savedImpersonationIdentity = _currentImpersonationIdentity;
+            var wasImpersonating = _isImpersonating;
+            var savedUserCredential = _userCredential;
+
+            try
+            {
+                if (!GetSystem())
+                    return false;
+
+                action(_currentImpersonationIdentity);
+                return true;
+            }
+            finally
+            {
+                _currentPrimaryIdentity = savedPrimaryIdentity;
+                _currentImpersonationIdentity = savedImpersonationIdentity;
+                _isImpersonating = wasImpersonating;
+                _userCredential = savedUserCredential;
+            }
+        }
+    }
+
     public void Revert()
     {
         lock (_identitySync)

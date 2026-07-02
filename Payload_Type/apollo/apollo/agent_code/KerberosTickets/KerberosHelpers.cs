@@ -21,7 +21,7 @@ namespace KerberosTickets;
 
 internal class KerberosHelpers
 {
-    private static HANDLE systemHandle { get; set; }
+    // Removed systemHandle cache: `systemHandle = new()` was always IsNull, so it never hit.
 
     private static List<Artifact> createdArtifacts = new List<Artifact>();
 
@@ -34,28 +34,20 @@ internal class KerberosHelpers
         HANDLE lsaHandle = new();
         try
         {
-            bool elevated = false;
             DebugHelp.DebugWriteLine("Getting LSA Handle");
             //if we are already high integrity, we need to elevate to system to get the handle to all the sessions
             if(Agent.GetIdentityManager().GetIntegrityLevel() is IntegrityLevel.HighIntegrity && elevateToSystem)
             {
-                //if we have a system handle already, we can use that
-                if(systemHandle.IsNull is false)
+                bool elevated = Agent.GetIdentityManager().RunAsSystem(systemIdentity =>
                 {
-                    elevated = true;
-                }
-                else
-                {
-                    elevated = Agent.GetIdentityManager().GetSystem();
-                    createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
-                }
-                if (elevated)
-                {
-                    systemHandle = new();
-                    ImpersonationScope.Run(Agent.GetIdentityManager().GetCurrentImpersonationIdentity(), () =>
+                    ImpersonationScope.Run(systemIdentity, () =>
                     {
                         WindowsAPI.LsaConnectUntrustedDelegate(out lsaHandle);
                     });
+                });
+                createdArtifacts.Add(Artifact.PrivilegeEscalation("SYSTEM"));
+                if (elevated)
+                {
                     createdArtifacts.Add(Artifact.WindowsAPIInvoke("LsaConnectUntrusted"));
                 }
                 else
