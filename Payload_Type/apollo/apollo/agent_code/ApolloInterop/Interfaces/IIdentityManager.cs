@@ -29,6 +29,7 @@ namespace ApolloInterop.Interfaces
         bool IsOriginalIdentity();
 
         bool GetSystem();
+        bool RunAsSystem(Action<WindowsIdentity> action);
 
     }
 }

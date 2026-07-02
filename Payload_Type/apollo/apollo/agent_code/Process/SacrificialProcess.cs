@@ -547,7 +547,9 @@ namespace Process
             }
             else
             {
-                return StartWithCredentials(_agent.GetIdentityManager().GetCurrentImpersonationIdentity().Token);
+                return StartWithCredentials(
+                    _agent.GetIdentityManager().GetCurrentPrimaryIdentity().Token,
+                    GetCurrentLogonInformation());
             }
             if (!bRet)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -737,14 +739,34 @@ namespace Process
                 {
                     _pCloseHandle(hToken);
                 };
-                return StartWithCredentials(hToken);
+                return StartWithCredentials(hToken, logonInfo);
             }
         }
 
         public override bool StartWithCredentials(IntPtr hToken)
         {
+            return StartWithCredentials(hToken, GetCurrentLogonInformation());
+        }
+
+        private ApolloLogonInformation? GetCurrentLogonInformation()
+        {
+            return _agent.GetIdentityManager().GetCurrentLogonInformation(out ApolloLogonInformation logonInfo)
+                ? logonInfo
+                : (ApolloLogonInformation?)null;
+        }
+
+        private static LogonFlags GetCredentialLogonFlags(ApolloLogonInformation? logonInfo)
+        {
+            return logonInfo?.NetOnly == true
+                ? LogonFlags.LOGON_NETCREDENTIALS_ONLY
+                : LogonFlags.NONE;
+        }
+
+        private bool StartWithCredentials(IntPtr hToken, ApolloLogonInformation? logonInfo)
+        {
             int dwError;
             var bRet = false;
+            LogonFlags credentialLogonFlags = GetCredentialLogonFlags(logonInfo);
 
             DebugHelp.DebugWriteLine($"calling InitializeStartupEnvironment");
             if (_agent.GetIdentityManager().GetOriginal().Name != _agent.GetIdentityManager().GetCurrentPrimaryIdentity().Name)
@@ -789,7 +811,8 @@ namespace Process
                     DebugHelp.DebugWriteLine("Failed to create process as user. Attempting to create process with token.");
                     bRet = _pCreateProcessWithTokenW(
                         hToken,
-                        LogonFlags.LOGON_NETCREDENTIALS_ONLY,
+                        // Preserve the supplied token's LUID. NETCREDENTIALS_ONLY creates a new LSA session.
+                        LogonFlags.NONE,
                         null,
                         CommandLine,
                         _processFlags,
@@ -802,15 +825,15 @@ namespace Process
 
                     if (!bRet && (dwError == 1314))
                     {
-                        if (_agent.GetIdentityManager().GetCurrentLogonInformation(out ApolloLogonInformation cred))
+                        if (logonInfo.HasValue)
                         {
+                            ApolloLogonInformation cred = logonInfo.Value;
                             DebugHelp.DebugWriteLine("Failed to create process with token. Attempting to create process with logon.");
                             bRet = _pCreateProcessWithLogonW(
                                 cred.Username,
                                 cred.Domain,
                                 cred.Password,
-                                //LogonFlags.NONE, //Atm I am getting error 142 but using NETCREDENTIALS_ONLY gives no error
-                                LogonFlags.LOGON_NETCREDENTIALS_ONLY,
+                                credentialLogonFlags,
                                 null,
                                 CommandLine,
                                 _processFlags,

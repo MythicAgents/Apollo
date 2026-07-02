@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.4.16] - 2026-07-02
+
+### Changed
+
+- Sacrificial process - stopped passing LOGON_NETCREDENTIALS_ONLY to CreateProcessWithTokenW unconditionally. Instead, launch the child with the current primary token
+- Sacrificial process - use LOGON_NETCREDENTIALS_ONLY in the fallback scenario when the original credential was actually created as net-only
+- Inline assembly execution started new thread but was not applying correct impersonation token
+- Fix system impersonation not restoring correct identity
+
+
 ## [v2.4.15] - 2026-04-30
 
 ### Changed
