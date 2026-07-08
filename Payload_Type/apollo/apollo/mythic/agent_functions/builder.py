@@ -140,7 +140,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    semver = "2.4.16"
+    semver = "2.4.17"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     c2_profiles = ["http", "httpx", "smb", "tcp", "websocket", "azure_blob"]
@@ -458,6 +458,8 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
 
                     # TODO: Prefix the AESPSK variable and also make it specific to each profile
                     special_files_map["Config.cs"][key] = val["enc_key"] if val["enc_key"] is not None else ""
+                    # fix bug that lead to fallthrough to generic dictionary parsing
+                    continue
                 elif isinstance(val, list):
                     # Handle list values (like callback_domains as an array)
                     val = ', '.join(str(item) for item in val)
