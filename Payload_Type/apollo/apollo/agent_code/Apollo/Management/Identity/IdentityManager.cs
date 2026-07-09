@@ -26,8 +26,12 @@ public class IdentityManager : IIdentityManager
     private IntPtr _executingThread = IntPtr.Zero;
     private IntPtr _originalImpersonationToken = IntPtr.Zero;
     private IntPtr _originalPrimaryToken = IntPtr.Zero;
+    private WindowsIdentity? _loadedProfileIdentity;
+    private IntPtr _loadedProfileHandle = IntPtr.Zero;
 
     #region Delegate Typedefs
+
+    private const int PI_NOUI = 0x00000001;
 
     private delegate IntPtr GetCurrentThread();
 
@@ -66,6 +70,24 @@ public class IdentityManager : IIdentityManager
     private delegate IntPtr GetSidSubAuthorityCount(IntPtr pSid);
     private delegate IntPtr GetSidSubAuthority(IntPtr pSid, int nSubAuthority);
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct ProfileInfo
+    {
+        public int dwSize;
+        public int dwFlags;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? lpUserName;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? lpProfilePath;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? lpDefaultPath;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? lpServerName;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? lpPolicyPath;
+        public IntPtr hProfile;
+    }
+
     [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet = CharSet.Unicode)]
     private delegate bool LogonUserW(
         [MarshalAs(UnmanagedType.LPWStr)] string lpszUsername,
@@ -74,6 +96,15 @@ public class IdentityManager : IIdentityManager
         LogonType dwLogonType,
         LogonProvider dwLogonProvider,
         out IntPtr phToken);
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+    private delegate bool LoadUserProfileW(
+        IntPtr hToken,
+        ref ProfileInfo lpProfileInfo);
+
+    private delegate bool UnloadUserProfile(
+        IntPtr hToken,
+        IntPtr hProfile);
 
     private readonly GetCurrentThread _GetCurrentThread;
     private readonly OpenThreadToken _OpenThreadToken;
@@ -86,6 +117,8 @@ public class IdentityManager : IIdentityManager
     private readonly GetSidSubAuthority _GetSidSubAuthority;
 
     private readonly LogonUserW _pLogonUserW;
+    private readonly LoadUserProfileW _pLoadUserProfileW;
+    private readonly UnloadUserProfile _pUnloadUserProfile;
 
     #endregion
 
@@ -103,6 +136,8 @@ public class IdentityManager : IIdentityManager
         _GetSidSubAuthorityCount = _agent.GetApi().GetLibraryFunction<GetSidSubAuthorityCount>(Library.ADVAPI32, "GetSidSubAuthorityCount");
         _GetSidSubAuthority = _agent.GetApi().GetLibraryFunction<GetSidSubAuthority>(Library.ADVAPI32, "GetSidSubAuthority");
         _pLogonUserW = _agent.GetApi().GetLibraryFunction<LogonUserW>(Library.ADVAPI32, "LogonUserW");
+        _pLoadUserProfileW = _agent.GetApi().GetLibraryFunction<LoadUserProfileW>(Library.USERENV, "LoadUserProfileW");
+        _pUnloadUserProfile = _agent.GetApi().GetLibraryFunction<UnloadUserProfile>(Library.USERENV, "UnloadUserProfile");
 
         _originalIdentity = WindowsIdentity.GetCurrent();
         _currentPrimaryIdentity = _originalIdentity;
@@ -186,12 +221,57 @@ public class IdentityManager : IIdentityManager
             _originalImpersonationToken = _originalIdentity.Token;
     }
 
+    private static string GetProfileUserName(WindowsIdentity identity)
+    {
+        string identityName = identity.Name;
+        int separatorIndex = identityName.LastIndexOf('\\');
+        return separatorIndex >= 0 ? identityName.Substring(separatorIndex + 1) : identityName;
+    }
+
+    private void LoadProfileForIdentity(WindowsIdentity identity)
+    {
+        ProfileInfo profileInfo = new ProfileInfo
+        {
+            dwSize = Marshal.SizeOf(typeof(ProfileInfo)),
+            dwFlags = PI_NOUI,
+            lpUserName = GetProfileUserName(identity),
+            hProfile = IntPtr.Zero
+        };
+
+        if (!_pLoadUserProfileW(identity.Token, ref profileInfo))
+        {
+            int dwError = Marshal.GetLastWin32Error();
+            DebugHelp.DebugWriteLine($"[!] LoadUserProfileW() failed for {identity.Name}: {dwError}");
+            return;
+        }
+
+        _loadedProfileIdentity = identity;
+        _loadedProfileHandle = profileInfo.hProfile;
+    }
+
+    private void UnloadLoadedProfile()
+    {
+        if (_loadedProfileIdentity == null || _loadedProfileHandle == IntPtr.Zero)
+            return;
+
+        if (!_pUnloadUserProfile(_loadedProfileIdentity.Token, _loadedProfileHandle))
+        {
+            int dwError = Marshal.GetLastWin32Error();
+            DebugHelp.DebugWriteLine($"[!] UnloadUserProfile() failed for {_loadedProfileIdentity.Name}: {dwError}");
+        }
+
+        _loadedProfileIdentity = null;
+        _loadedProfileHandle = IntPtr.Zero;
+    }
+
     private void RevertInternal()
     {
         if (!_SetThreadToken(ref _executingThread, _originalImpersonationToken))
         {
             DebugHelp.DebugWriteLine($"[!] Revert() failed to restore thread token: {Marshal.GetLastWin32Error()}");
         }
+
+        UnloadLoadedProfile();
 
         _userCredential = new ApolloLogonInformation();
         _currentImpersonationIdentity = _originalIdentity;
@@ -388,6 +468,7 @@ public class IdentityManager : IIdentityManager
             _currentImpersonationIdentity = new WindowsIdentity(dupToken);
             _isImpersonating = true;
             _userCredential = logonInfo;
+            LoadProfileForIdentity(_currentPrimaryIdentity);
 
             _CloseHandle(hToken);
             _CloseHandle(dupToken);
