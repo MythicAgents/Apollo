@@ -149,64 +149,66 @@ namespace Tasks
         {
             MythicTaskResponse resp;
             UploadParameters parameters = _jsonSerializer.Deserialize<UploadParameters>(_data.Parameters);
-            // some additional upload logic
-            if (_agent.GetFileManager().GetFile(
-                    _cancellationToken.Token,
-                    _data.ID,
-                    parameters.FileID,
-                    out byte[] fileData))
+            try
             {
-                try
+                string path = ParsePath(parameters);
+                using (FileStream fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    string path = ParsePath(parameters);
-                    File.WriteAllBytes(path, fileData);
-                    string host = Environment.GetEnvironmentVariable("COMPUTERNAME").ToUpper();
-                    if (!string.IsNullOrEmpty(parameters.HostName))
+                    if (_agent.GetFileManager().GetFile(
+                            _cancellationToken.Token,
+                            _data.ID,
+                            parameters.FileID,
+                            fileStream,
+                            out long bytesWritten))
                     {
-                        host = parameters.HostName;
+                        string host = Environment.GetEnvironmentVariable("COMPUTERNAME").ToUpper();
+                        if (!string.IsNullOrEmpty(parameters.HostName))
+                        {
+                            host = parameters.HostName;
+                        }
+                        else
+                        {
+                            string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
+                            if (cwd.StartsWith("\\\\"))
+                            {
+                                var hostPieces = cwd.Split('\\');
+                                if (hostPieces.Length > 2)
+                                {
+                                    host = hostPieces[2];
+                                }
+                            }
+                        }
+                        resp = CreateTaskResponse(
+                        $"Uploaded {bytesWritten} bytes to {path} on {host}",
+                        true,
+                        "completed",
+                        new IMythicMessage[]
+                        {
+                            new UploadMessage()
+                            {
+                                FileID = parameters.FileID,
+                                FullPath = path,
+                                Host = host,
+                            },
+                            Artifact.FileWrite(path, bytesWritten)
+                        });
                     }
                     else
                     {
-                        string cwd = System.IO.Directory.GetCurrentDirectory().ToString();
-                        if (cwd.StartsWith("\\\\"))
+                        if (_cancellationToken.IsCancellationRequested)
                         {
-                            var hostPieces = cwd.Split('\\');
-                            if (hostPieces.Length > 2)
-                            {
-                                host = hostPieces[2];
-                            }
+                            resp = CreateTaskResponse($"Task killed.", true, "killed");
+                        }
+                        else
+                        {
+                            resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
                         }
                     }
-                    resp = CreateTaskResponse(
-                    $"Uploaded {fileData.Length} bytes to {path} on {host}",
-                    true,
-                    "completed",
-                    new IMythicMessage[]
-                    {
-                        new UploadMessage()
-                        {
-                            FileID = parameters.FileID,
-                            FullPath = path,
-                            Host = host,
-                        },
-                        Artifact.FileWrite(path, fileData.Length)
-                    });
-                }
-                catch (Exception ex)
-                {
-                    resp = CreateTaskResponse($"Failed to upload file:\n{ex.Message}", true, "error");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                if (_cancellationToken.IsCancellationRequested)
-                {
-                    resp = CreateTaskResponse($"Task killed.", true, "killed");
-                }
-                else
-                {
-                    resp = CreateTaskResponse("Failed to fetch file due to unknown reason.", true, "error");
-                }
+                resp = CreateTaskResponse($"Failed to upload file:\n{ex.Message}", true, "error");
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);

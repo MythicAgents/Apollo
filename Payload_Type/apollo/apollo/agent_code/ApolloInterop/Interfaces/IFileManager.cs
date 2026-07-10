@@ -1,4 +1,5 @@
 ﻿using ApolloInterop.Structs.MythicStructs;
+using System.IO;
 using System.Threading;
 
 namespace ApolloInterop.Interfaces
@@ -10,7 +11,11 @@ namespace ApolloInterop.Interfaces
 
         bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes);
 
+        bool GetFile(CancellationToken ct, string taskID, string fileID, Stream destination, out long bytesWritten);
+
         bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, out string mythicFileId, bool isScreenshot = false, string originatingHost = null);
+
+        bool PutFile(CancellationToken ct, string taskID, Stream source, long sourceLength, string originatingPath, out string mythicFileId, bool isScreenshot = false, string originatingHost = null);
 
         string GetScript();
 

