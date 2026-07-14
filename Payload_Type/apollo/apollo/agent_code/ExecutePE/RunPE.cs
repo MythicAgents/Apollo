@@ -1938,6 +1938,7 @@ public static class PERunner
         protected virtual void Dispose(bool disposing)
         {
             RestoreCommandLine();
+            _disposed = true;
             return;
         }
 
