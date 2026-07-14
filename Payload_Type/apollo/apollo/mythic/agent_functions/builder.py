@@ -140,7 +140,7 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    semver = "2.4.19"
+    semver = "2.4.20"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     c2_profiles = ["http", "httpx", "smb", "tcp", "websocket", "azure_blob"]
@@ -206,7 +206,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
         BuildParameter(
             name="adjust_filename",
             parameter_type=BuildParameterType.Boolean,
-            default_value=False,
+            default_value=True,
             description="Automatically adjust payload extension based on selected choices.",
             ui_position=3,
         ),
