@@ -182,7 +182,7 @@ class AssemblyInjectCommand(CommandBase):
         response.DisplayParams = "-PID {} -Assembly {} -Arguments {}".format(
             taskData.args.get_arg("pid"),
             taskData.args.get_arg("assembly_name"),
-            taskData.args.get_arg("assembly_arguments")
+            taskData.Task.RevertKeywords(taskData.args.get_arg("assembly_arguments"), "assembly_arguments")
         )
         return response
 

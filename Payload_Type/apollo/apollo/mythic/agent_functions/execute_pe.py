@@ -317,7 +317,8 @@ class ExecutePECommand(CommandBase):
         taskData.args.remove_arg("arguments")
 
         response.DisplayParams = "-PE {} -Arguments {}".format(
-            taskData.args.get_arg("pe_name"), arguments
+            taskData.args.get_arg("pe_name"),
+            taskData.Task.RevertKeywords(arguments, "pe_arguments")
         )
         return response
 

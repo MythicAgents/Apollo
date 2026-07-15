@@ -140,14 +140,11 @@ class Apollo(PayloadType):
     supported_os = [
         SupportedOS.Windows
     ]
-    semver = "2.4.20"
+    semver = "2.5.0"
     wrapper = False
     wrapped_payloads = ["scarecrow_wrapper", "service_wrapper"]
     c2_profiles = ["http", "httpx", "smb", "tcp", "websocket", "azure_blob"]
-    note = """
-A fully featured .NET 4.0 compatible training agent. Version: {}. 
-NOTE: P2P Not compatible with v2.2 agents! 
-NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since their arguments are different
+    note = """ fully featured .NET 4.0 compatible training agent. Version: {}.
     """.format(semver)
     supports_dynamic_loading = True
     shellcode_format_options = ["Binary", "Base64", "C", "Ruby", "Python", "Powershell", "C#", "Hex"]
@@ -298,6 +295,11 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
     async def build(self) -> BuildResponse:
         # this function gets called to create an instance of your payload
         resp = BuildResponse(status=BuildStatus.Error)
+        output_type = self.get_parameter("output_type")
+        resp.build_metadata = PayloadBuildMetadata(
+            architecture=PayloadBuildMetadataArchitecture.X64,
+            format=PayloadBuildMetadataFormat.Exe if output_type == "WinExe" or output_type == "Service" else PayloadBuildMetadataFormat.Shellcode if output_type == "Shellcode" else "Source"
+        )
         # debugging
         # resp.status = BuildStatus.Success
         # return resp

@@ -38,7 +38,7 @@ class LinkCommand(CommandBase):
         )
         connection_info = taskData.args.get_arg("connection_info")
         if connection_info["c2_profile"]["name"] != "webshell":
-            response.DisplayParams = f"{connection_info['host']} via {connection_info['c2_profile']['name']}"
+            #response.DisplayParams = f"{connection_info['host']} via {connection_info['c2_profile']['name']}"
             return response
         if 'callback_uuid' not in connection_info or connection_info["callback_uuid"] == "":
             response.Success = False
