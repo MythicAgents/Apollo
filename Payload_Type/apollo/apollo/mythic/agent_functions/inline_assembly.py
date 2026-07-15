@@ -187,7 +187,7 @@ class InlineAssemblyCommand(CommandBase):
                 taskData.args.add_arg("assembly_id", file_resp.Files[0].AgentFileId)
             response.DisplayParams = "-Assembly {} -Arguments {}".format(
                 taskData.args.get_arg("assembly_name"),
-                taskData.args.get_arg("assembly_arguments")
+                taskData.Task.RevertKeywords(taskData.args.get_arg("assembly_arguments"), "assembly_arguments")
             )
 
         return response

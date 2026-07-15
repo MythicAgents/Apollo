@@ -81,7 +81,7 @@ class MakeTokenCommand(CommandBase):
         )
         if taskData.args.get_parameter_group_name() == "credential_store":
             cred = taskData.args.get_arg("credential")
-            response.DisplayParams = "{}\\{} {}".format(cred.get("realm"), cred.get("account"), cred.get("credential"))
+            response.DisplayParams = f"-Credential {taskData.Task.RevertKeywords(cred.get('credential'), 'credential')}"
         else:
             username = taskData.args.get_arg("username")
             password = taskData.args.get_arg("password")
@@ -97,7 +97,9 @@ class MakeTokenCommand(CommandBase):
                 "account": usernamePieces[1]
             }
             taskData.args.add_arg("credential", cred, type=ParameterType.Credential_JSON)
-            response.DisplayParams = "{}\\{} {} ({})".format(cred.get("realm"), cred.get("account"), cred.get("credential"),
+            response.DisplayParams = "{}\\{} {} ({})".format(taskData.Task.RevertKeywords(cred.get("realm"), "realm"),
+                                                             taskData.Task.RevertKeywords(cred.get("account"), "account"),
+                                                             taskData.Task.RevertKeywords(cred.get("credential"), "credential"),
                                                              "netOnly" if taskData.args.get_arg("netOnly") else "interactive")
         return response
 

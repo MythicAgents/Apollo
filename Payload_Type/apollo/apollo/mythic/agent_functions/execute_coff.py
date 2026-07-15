@@ -300,7 +300,7 @@ class ExecuteCoffCommand(CommandBase):
                     taskData.args.get_arg("coff_name"),
                     taskData.args.get_arg("function_name"),
                     taskData.args.get_arg("timeout"),
-                    argsString
+                    taskData.Task.RevertKeywords(argsString)
                 )
         return response
 

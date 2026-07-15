@@ -168,7 +168,7 @@ class ExecuteAssemblyCommand(CommandBase):
 
             taskData.args.add_arg("assembly_name", fileSearchResp.Files[0].Filename)
             if fileSearchResp.Files[0].AgentFileId in taskData.Task.OriginalParams:
-                response.DisplayParams = f"-Assembly {fileSearchResp.Files[0].Filename} -Arguments {taskData.args.get_arg('assembly_arguments')}"
+                response.DisplayParams = f"-Assembly {fileSearchResp.Files[0].Filename} -Arguments {taskData.Task.RevertKeywords(taskData.args.get_arg('assembly_arguments'), 'assembly_arguments')}"
             taskData.args.remove_arg("assembly_file")
             taskData.args.add_arg("assembly_id", fileSearchResp.Files[0].AgentFileId)
 
@@ -191,7 +191,8 @@ class ExecuteAssemblyCommand(CommandBase):
                 )
             else:
                 response.DisplayParams = "-Assembly {} -Arguments {}".format(
-                    taskData.args.get_arg("assembly_name"), taskargs
+                    taskData.args.get_arg("assembly_name"),
+                    taskData.Task.RevertKeywords(taskargs, 'assembly_arguments')
                 )
         taskData.args.add_arg("pipe_name", str(uuid4()))
         if not path.exists(EXEECUTE_ASSEMBLY_PATH):
