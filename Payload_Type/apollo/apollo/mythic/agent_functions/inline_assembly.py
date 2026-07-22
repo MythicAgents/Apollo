@@ -15,7 +15,7 @@ if platform.system() == 'Windows':
     INTEROP_ASSEMBLY_PATH = "C:\\Mythic\\Apollo\\srv\\ApolloInterop.dll"
 else:
     INTEROP_ASSEMBLY_PATH = "/srv/ApolloInterop.dll"
-INTEROP_FILE_ID = ""
+INTEROP_FILE_ID = {}
 
 
 class InlineAssemblyArguments(TaskArguments):
@@ -144,7 +144,7 @@ class InlineAssemblyCommand(CommandBase):
             ))
             await self.build_interop()
 
-        if INTEROP_FILE_ID == "":
+        if taskData.Callback.OperationID not in INTEROP_FILE_ID:
             with open(INTEROP_ASSEMBLY_PATH, "rb") as f:
                 interop_bytes = f.read()
             file_resp = await SendMythicRPCFileCreate(MythicRPCFileCreateMessage(
@@ -154,7 +154,7 @@ class InlineAssemblyCommand(CommandBase):
             ))
 
             if file_resp.Success:
-                INTEROP_FILE_ID = file_resp.AgentFileId
+                INTEROP_FILE_ID[taskData.Callback.OperationID] = file_resp.AgentFileId
             else:
                 raise Exception("Failed to register Interop DLL: {}".format(file_resp.Error))
         originalGroupNameIsDefault = taskData.args.get_parameter_group_name() == "Default"
@@ -172,7 +172,7 @@ class InlineAssemblyCommand(CommandBase):
             taskData.args.remove_arg("assembly_file")
             taskData.args.add_arg("assembly_id", fileSearchResp.Files[0].AgentFileId)
 
-        taskData.args.add_arg("interop_id", INTEROP_FILE_ID)
+        taskData.args.add_arg("interop_id", INTEROP_FILE_ID[taskData.Callback.OperationID])
         if originalGroupNameIsDefault:
             file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
                 Filename=taskData.args.get_arg("assembly_name"),

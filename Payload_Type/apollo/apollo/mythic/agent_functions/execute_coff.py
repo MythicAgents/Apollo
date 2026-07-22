@@ -10,7 +10,6 @@ if platform.system() == 'Windows':
     RUNOF_HOST_PATH = "C:\\Mythic\\Apollo\\srv\\COFFLoader.dll"
 else:
     RUNOF_HOST_PATH = "/srv/COFFLoader.dll"
-RUNOF_FILE_ID = ""
 
 
 class ExecuteCoffArguments(TaskArguments):

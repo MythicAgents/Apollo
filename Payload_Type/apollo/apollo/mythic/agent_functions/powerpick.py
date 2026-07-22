@@ -15,8 +15,6 @@ if platform.system() == 'Windows':
 else:
     POWERSHELL_HOST_PATH="/srv/PowerShellHost.exe"
 
-POWERSHELL_FILE_ID=""
-
 class PowerpickArguments(TaskArguments):
 
     def __init__(self, command_line, **kwargs):
