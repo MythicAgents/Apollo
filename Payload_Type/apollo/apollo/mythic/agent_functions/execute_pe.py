@@ -9,8 +9,8 @@ import os
 import asyncio
 import platform
 
-PRINTSPOOFER_FILE_ID = ""
-MIMIKATZ_FILE_ID = ""
+PRINTSPOOFER_FILE_ID = {}
+MIMIKATZ_FILE_ID = {}
 
 if platform.system() == "Windows":
     EXECUTE_PE_PATH = "C:\\Mythic\\Apollo\\srv\\ExecutePE.exe"
@@ -249,8 +249,8 @@ class ExecutePECommand(CommandBase):
             taskData.args.add_arg(PE_VARNAME, fileSearchResp.Files[0].AgentFileId)
         else:
             if taskData.args.get_arg("pe_name") == "mimikatz.exe":
-                if MIMIKATZ_FILE_ID != "":
-                    taskData.args.add_arg(PE_VARNAME, MIMIKATZ_FILE_ID)
+                if taskData.Callback.OperationID in MIMIKATZ_FILE_ID:
+                    taskData.args.add_arg(PE_VARNAME, MIMIKATZ_FILE_ID[taskData.Callback.OperationID])
                 else:
                     with open(mimikatz_path, "rb") as f:
                         mimibytes = f.read()
@@ -264,12 +264,12 @@ class ExecutePECommand(CommandBase):
                     )
                     if file_resp.Success:
                         taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
-                        MIMIKATZ_FILE_ID = file_resp.AgentFileId
+                        MIMIKATZ_FILE_ID[taskData.Callback.OperationID] = file_resp.AgentFileId
                     else:
                         raise Exception("Failed to register Mimikatz: " + file_resp.Error)
             elif taskData.args.get_arg("pe_name") == "printspoofer.exe":
-                if PRINTSPOOFER_FILE_ID != "":
-                    taskData.args.add_arg(PE_VARNAME, PRINTSPOOFER_FILE_ID)
+                if taskData.Callback.OperationID in PRINTSPOOFER_FILE_ID:
+                    taskData.args.add_arg(PE_VARNAME, PRINTSPOOFER_FILE_ID[taskData.Callback.OperationID])
                 else:
                     with open(printspoofer_path, "rb") as f:
                         psbytes = f.read()
@@ -283,7 +283,7 @@ class ExecutePECommand(CommandBase):
                     )
                     if file_resp.Success:
                         taskData.args.add_arg(PE_VARNAME, file_resp.AgentFileId)
-                        PRINTSPOOFER_FILE_ID = file_resp.AgentFileId
+                        PRINTSPOOFER_FILE_ID[taskData.Callback.OperationID] = file_resp.AgentFileId
                     else:
                         raise Exception(
                             "Failed to register PrintSpoofer: " + file_resp.Error
