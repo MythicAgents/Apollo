@@ -52,8 +52,18 @@ namespace ApolloInterop.Structs
             public string CompanyName;
             [DataMember(Name = "window_title")]
             public string WindowTitle;
+        }
+
+        [Serializable]
+        [DataContract]
+        public struct ProcessInformationMetadata
+        {
             [DataMember(Name = "update_deleted")]
-            public bool UpdateDeleted;
+            public string Host;
+            [DataMember(Name = "os")]
+            public string OS;
+            [DataMember(Name = "processes")]
+            public ProcessInformation[] Processes;
         }
         //
         [DataContract]
@@ -823,7 +833,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "file_browser")]
             public FileBrowser? FileBrowser;
             [DataMember(Name = "processes")]
-            public ProcessInformation[]? Processes;
+            public ProcessInformationMetadata? Processes;
             [DataMember(Name = "upload")]
             public UploadMessage? Upload;
             [DataMember(Name = "download")]

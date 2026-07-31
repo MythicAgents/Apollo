@@ -4,6 +4,7 @@ using ApolloInterop.Enums.ApolloEnums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using ApolloInterop.Serializers;
 using ApolloInterop.Classes.Impersonation;
@@ -112,7 +113,12 @@ namespace ApolloInterop.Classes
                 resp.Keylogs = keylogs.ToArray();
                 if (processes.Count > 0)
                 {
-                    resp.Processes = processes.ToArray();
+                    resp.Processes = new ProcessInformationMetadata
+                    {
+                        UpdateDeleted = true,
+                        OS = "windows",
+                        Processes = processes.ToArray()
+                    };
                 }
             }
             return resp;
