@@ -288,7 +288,6 @@ String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", pro
                 {
                     po.CancellationToken.ThrowIfCancellationRequested();
                     ProcessInformation current = new ProcessInformation();
-                    current.UpdateDeleted = true;
                     current.PID = proc.Id;
                     current.Name = proc.ProcessName;
                     try
