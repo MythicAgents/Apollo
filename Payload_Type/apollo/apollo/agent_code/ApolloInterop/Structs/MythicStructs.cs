@@ -58,8 +58,10 @@ namespace ApolloInterop.Structs
         [DataContract]
         public struct ProcessInformationMetadata
         {
-            [DataMember(Name = "update_deleted")]
+            [DataMember(Name = "host")]
             public string Host;
+            [DataMember(Name = "update_deleted")]
+            public bool UpdateDeleted;
             [DataMember(Name = "os")]
             public string OS;
             [DataMember(Name = "processes")]

@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored `ps` to enumerate processes with limited query access and reserve parent PID, command line, window title, and executable metadata for `-extended`, without WMI.
 - Updated `ps` process responses and browser script to report an embedded certificate signer when available and send numeric `0` when the process start time is unavailable.
 
+## [v2.5.2] - 2026-08-11
+
+### Changed
+
+- Fixed bug in updated `processes` information struct
+
 ## [v2.4.19] - 2026-07-10
 
 ### Changed
