@@ -228,7 +228,7 @@ namespace Tasks
                     }
 
                     SetValueType(tmpVal, ref res);
-                    res.ResultType = GetType(parameters.Hive, parameters.Key, valName);
+                    res.Type = GetType(parameters.Hive, parameters.Key, valName);
                     results.Add(res);
                     customBrowserEntry.Children.Add(new CustomBrowserEntryChild
                     {
@@ -254,7 +254,7 @@ namespace Tasks
             }
             else
             {
-                resp = CreateTaskResponse("", true, "completed", artifacts.ToArray());
+                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
             }
             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                 "", false, "", new IMythicMessage[]
