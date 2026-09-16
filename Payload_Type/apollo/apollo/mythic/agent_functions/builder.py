@@ -616,15 +616,13 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         break
 
             output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
-            apollo_output_type = (
-                "WinExe" if self.get_parameter("daemonize") else "Exe"
-            )
+            daemonize = str(self.get_parameter("daemonize")).lower()
 
             # Build command with conditional embedding
             if self.get_parameter('debug'):
-                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ -p:OutputType={apollo_output_type} --verbosity quiet"
+                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ -p:Daemonize={daemonize} --verbosity quiet"
             else:
-                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:DefineConstants=\"\" -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ -p:OutputType={apollo_output_type} --verbosity quiet"
+                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:DefineConstants=\"\" -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ -p:Daemonize={daemonize} --verbosity quiet"
             await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                 PayloadUUID=self.uuid,
                 StepName="Gathering Files",
