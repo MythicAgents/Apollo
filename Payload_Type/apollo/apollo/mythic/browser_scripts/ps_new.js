@@ -8,6 +8,7 @@ function(task, responses){
         let file = {};
         let data = "";
         let rows = [];
+        const displayId = value => Number.isInteger(value) && value >= 0 ? value : "";
         let headers = [
             {"plaintext": "actions", "type": "button", "cellStyle": {}, "width": 100, "disableSort": true},
             {"plaintext": "ppid", "type": "number", "copyIcon": true, "cellStyle": {}, "width": 100},
@@ -63,13 +64,13 @@ function(task, responses){
                     */
                     // If process name is BAD, then highlight red.
                     "rowStyle": rowStyle,
-                    "ppid": {"plaintext": pinfo["parent_process_id"], "cellStyle": {}, "copyIcon": true},
+                    "ppid": {"plaintext": displayId(pinfo["parent_process_id"]), "cellStyle": {}, "copyIcon": true},
                     "pid": {"plaintext": pinfo["process_id"], "cellStyle": {}, "copyIcon": true},
                     "arch": {"plaintext": pinfo["architecture"], "cellStyle": {}},
                     "name": {"plaintext": pinfo["name"], "cellStyle": {}},
                     "user": {"plaintext": pinfo["user"], "cellStyle": {}},
-                    "session": {"plaintext": pinfo["session_id"], "cellStyle": {}},
-                    "signer": {"plaintext": pinfo["company_name"], "cellStyle": {}},
+                    "session": {"plaintext": displayId(pinfo["session_id"]), "cellStyle": {}},
+                    "signer": {"plaintext": pinfo["signer"], "cellStyle": {}},
                     "actions": {"button": {
                         "name": "Actions",
                         "type": "menu",

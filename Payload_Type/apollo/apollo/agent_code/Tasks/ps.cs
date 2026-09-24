@@ -1,448 +1,475 @@
-﻿#define COMMAND_NAME_UPPER
+#define COMMAND_NAME_UPPER
 
 #if DEBUG
 #define PS
 #endif
 
 #if PS
-
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
 using ApolloInterop.Classes;
+using ApolloInterop.Classes.Api;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
-using System.Threading;
-using TT = System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using System.Management;
 using static ApolloInterop.Enums.Win32;
-using System.Security.Principal;
-using ApolloInterop.Classes.Api;
-using ApolloInterop.Classes.Collections;
-using ApolloInterop.Utils;
-using System.Net.Http;
 
 namespace Tasks
 {
     public class ps : Tasking
     {
-        #region delegates
-        private delegate bool OpenProcessToken(
-            IntPtr hProcess,
-            TokenAccessLevels dwAccess,
-            out IntPtr hToken);
-
-        private delegate bool NtQueryInformationProcess(
-            IntPtr hProcess,
-            int dwInformationClass,
-            ref ProcessBasicInformation pProcessInformation,
-            int dwProcessInformationLength,
-            out int dwLength);
-
-        private delegate bool GetTokenInformation(
-            IntPtr TokenHandle,
-            TokenInformationClass TokenInformationClass,
-            IntPtr TokenInformation,
-            int TokenInformationLength,
-            out int ReturnLength);
-
-        private delegate bool IsWow64Process(IntPtr hProcess, out bool Wow64Process);
-        private delegate bool IsWow64Process2(IntPtr hProcess, out IMAGE_FILE_MACHINE_ pProcessMachine, out IMAGE_FILE_MACHINE_ pNativeMachine);
-        private delegate bool ConvertSidToStringSid(IntPtr pSid, out string strSid);
-
-        private IsWow64Process2 _pIsWow64Process2 = null;
-        private IsWow64Process _pIsWow64Process = null;
-        private OpenProcessToken _pOpenProcessToken;
-        private NtQueryInformationProcess _pNtQueryInformationProcess;
-        private GetTokenInformation _pGetTokenInformation;
-        private ConvertSidToStringSid _pConvertSidToStringSid;
-
-        enum IMAGE_FILE_MACHINE_
+        [DataContract]
+        internal struct PsParameters
         {
-            IMAGE_FILE_MACHINE_UNKNOWN = 0,
-            IMAGE_FILE_MACHINE_TARGET_HOST = 0x001,
-            IMAGE_FILE_MACHINE_I386 = 0x014c,
-            IMAGE_FILE_MACHINE_R3000_LE = 0x0162,
-            IMAGE_FILE_MACHINE_R3000_BE = 0x160,
-            IMAGE_FILE_MACHINE_R4000_LE = 0x0166,
-            IMAGE_FILE_MACHINE_R10000_LE = 0x0168,
-            IMAGE_FILE_MACHINE_WCEMIPSV2_LE = 0x0169,
-            IMAGE_FILE_MACHINE_ALPHA = 0x0184,
-            IMAGE_FILE_MACHINE_SH3_LE = 0x01a2,
-            IMAGE_FILE_MACHINE_SH3DSP = 0x01a3,
-            IMAGE_FILE_MACHINE_SH3E_LE = 0x01a4,
-            IMAGE_FILE_MACHINE_SH4_LE = 0x01a6,
-            IMAGE_FILE_MACHINE_SH5 = 0x01a8,
-            IMAGE_FILE_MACHINE_ARM_LE = 0x01c0,
-            IMAGE_FILE_MACHINE_THUMB_LE = 0x01c2,
-            IMAGE_FILE_MACHINE_ARMNT_LE = 0x01c4,
-            IMAGE_FILE_MACHINE_AM33 = 0x01d3,
-            IMAGE_FILE_MACHINE_POWERPC = 0x01F0,
-            IMAGE_FILE_MACHINE_POWERPCFP = 0x01f1,
-            IMAGE_FILE_MACHINE_IA64 = 0x0200,
-            IMAGE_FILE_MACHINE_MIPS16 = 0x0266,
-            IMAGE_FILE_MACHINE_ALPHA64 = 0x0284,
-            IMAGE_FILE_MACHINE_MIPSFPU = 0x0366,
-            IMAGE_FILE_MACHINE_MIPSFPU16 = 0x0466,
-            IMAGE_FILE_MACHINE_AXP64 = 0x0284,
-            IMAGE_FILE_MACHINE_TRICORE = 0x0520,
-            IMAGE_FILE_MACHINE_CEF = 0x0CEF,
-            IMAGE_FILE_MACHINE_EBC = 0x0EBC,
-            IMAGE_FILE_MACHINE_AMD64 = 0x8664,
-            IMAGE_FILE_MACHINE_M32R_LE = 0x9041,
-            IMAGE_FILE_MACHINE_ARM64_LE = 0xAA64,
-            IMAGE_FILE_MACHINE_CEE = 0xC0EE,
-        };
-        
-        #endregion
+            [DataMember(Name = "extended")]
+            public bool Extended;
+        }
 
-        private Action<object> _flushMessages;
-        private ThreadSafeList<ProcessInformation> _processes = new ThreadSafeList<ProcessInformation>();
-        private AutoResetEvent _completed = new AutoResetEvent(false);
-        private bool _complete = false;
-        public ps(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
+        // NtQueryInformationProcess information class 0 is ProcessBasicInformation.
+        // Its PROCESS_BASIC_INFORMATION contains InheritedFromUniqueProcessId.
+        private const int ProcessBasicInformationClass = 0;
+
+        // NtQueryInformationProcess information class 60 is ProcessCommandLineInformation.
+        // It returns a UNICODE_STRING and its UTF-16 text in the caller's buffer.
+        // This class is undocumented; an unsupported query leaves CommandLine empty.
+        private const int ProcessCommandLineInformationClass = 60;
+
+        // QueryFullProcessImageName flag 0 requests a Win32 path, rather than a native path.
+        private const int Win32ImagePath = 0;
+        // Character capacity, including room for the terminator, for extended-length paths.
+        private const int ImagePathCapacity = 32768;
+
+        // IMAGE_FILE_MACHINE_* values returned by IsWow64Process2 (PE Machine field).
+        private const ushort ImageFileMachineUnknown = 0x0000;
+        private const ushort ImageFileMachineI386 = 0x014c;
+        private const ushort ImageFileMachineAmd64 = 0x8664;
+        private const ushort ImageFileMachineArm64 = 0xAA64;
+        private const ushort ImageFileMachineArmNt = 0x01c4;
+
+        // The final subauthority (RID) of S-1-16-* is the mandatory integrity level.
+        private const int LowIntegrityRid = 0x1000;
+        private const int MediumIntegrityRid = 0x2000;
+        private const int HighIntegrityRid = 0x3000;
+
+        // Begin with one page and retry once using NtQueryInformationProcess's required size.
+        private const int InitialCommandLineBufferBytes = 4096;
+        private const int CommandLineQueryAttempts = 2;
+        // Defensive 128 KiB allocation cap. UNICODE_STRING.Length is only 16 bits,
+        // so this exceeds its maximum UTF-16 byte length plus the structure itself.
+        private const int MaxCommandLineBufferBytes = 131072;
+
+        private delegate IntPtr OpenProcess(ProcessAccessFlags access, bool inheritHandle, int processId);
+        private delegate bool CloseHandle(IntPtr handle);
+        private delegate bool OpenProcessToken(SafeProcessHandle processHandle, TokenAccessLevels access, out IntPtr tokenHandle);
+        private delegate bool GetTokenInformation(SafeTokenHandle tokenHandle, TokenInformationClass informationClass,
+            IntPtr information, int informationLength, out int returnLength);
+        private delegate bool ConvertSidToStringSid(IntPtr sid, out IntPtr stringSid);
+        private delegate IntPtr LocalFree(IntPtr memory);
+        [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+        private delegate bool QueryFullProcessImageName(SafeProcessHandle processHandle, int flags, StringBuilder path, ref int size);
+        private delegate bool ProcessIdToSessionId(uint processId, out uint sessionId);
+        private delegate bool IsWow64Process(SafeProcessHandle processHandle, out bool wow64);
+        private delegate bool IsWow64Process2(SafeProcessHandle processHandle, out ushort processMachine, out ushort nativeMachine);
+        private delegate int NtQueryInformationProcess(SafeProcessHandle processHandle, int informationClass,
+            IntPtr information, int informationLength, out int returnLength);
+
+        // These wrappers own only real handles returned by OpenProcess and
+        // OpenProcessToken. GetCurrentProcess's valid -1 pseudo-handle is never wrapped.
+        private abstract class SafeCloseHandle : SafeHandleZeroOrMinusOneIsInvalid
         {
-            try
+            private readonly CloseHandle _release;
+
+            protected SafeCloseHandle(IntPtr value, CloseHandle release) : base(true)
             {
-                _pIsWow64Process2 = _agent.GetApi().GetLibraryFunction<IsWow64Process2>(Library.KERNEL32, "IsWow64Process2");   
-            } catch
-            {
-                _pIsWow64Process = _agent.GetApi().GetLibraryFunction<IsWow64Process>(Library.KERNEL32, "IsWow64Process");
+                _release = release;
+                SetHandle(value);
             }
-            _pOpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
-            _pNtQueryInformationProcess = _agent.GetApi().GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
-            _pGetTokenInformation = _agent.GetApi().GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
-            _pConvertSidToStringSid = _agent.GetApi().GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidA");
+
+            protected override bool ReleaseHandle()
+            {
+                try { return _release(handle); }
+                catch { return false; }
+            }
         }
 
-        #region helpers
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct ProcessBasicInformation
+        private sealed class SafeProcessHandle : SafeCloseHandle
         {
-            internal IntPtr ExitStatus;
-            internal IntPtr PebBaseAddress;
-            internal IntPtr AffinityMask;
-            internal IntPtr BasePriority;
-            internal UIntPtr UniqueProcessId;
-            internal IntPtr InheritedFromUniqueProcessId;
+            public SafeProcessHandle(IntPtr value, CloseHandle release) : base(value, release) { }
         }
-        public const UInt32 TOKEN_QUERY = 0x0008;
 
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct TokenMandatoryLevel
+        private sealed class SafeTokenHandle : SafeCloseHandle
         {
-
-            public SidAndAttributes Label;
-
+            public SafeTokenHandle(IntPtr value, CloseHandle release) : base(value, release) { }
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct SidAndAttributes
+        private struct ProcessBasicInformation
+        {
+            public int ExitStatus;
+            public IntPtr PebBaseAddress;
+            public IntPtr AffinityMask;
+            public int BasePriority;
+            public IntPtr UniqueProcessId;
+            public IntPtr InheritedFromUniqueProcessId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct UnicodeString
+        {
+            public ushort Length;
+            public ushort MaximumLength;
+            public IntPtr Buffer;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SidAndAttributes
         {
             public IntPtr Sid;
             public int Attributes;
         }
 
-        public string GetProcessUser(IntPtr procHandle)
+        private readonly OpenProcess _openProcess;
+        private readonly CloseHandle _closeHandle;
+        private readonly OpenProcessToken _openProcessToken;
+        private readonly GetTokenInformation _getTokenInformation;
+        private readonly ConvertSidToStringSid _convertSidToStringSid;
+        private readonly LocalFree _localFree;
+        private readonly QueryFullProcessImageName _queryFullProcessImageName;
+        private readonly ProcessIdToSessionId _processIdToSessionId;
+        private readonly NtQueryInformationProcess _ntQueryInformationProcess;
+        private readonly IsWow64Process2 _isWow64Process2;
+        private readonly IsWow64Process _isWow64Process;
+
+        public ps(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
+            var api = _agent.GetApi();
+            _openProcess = api.GetLibraryFunction<OpenProcess>(Library.KERNEL32, "OpenProcess");
+            _closeHandle = api.GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
+            _openProcessToken = api.GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
+            _getTokenInformation = api.GetLibraryFunction<GetTokenInformation>(Library.ADVAPI32, "GetTokenInformation");
+            _convertSidToStringSid = api.GetLibraryFunction<ConvertSidToStringSid>(Library.ADVAPI32, "ConvertSidToStringSidW");
+            _localFree = api.GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
+            _queryFullProcessImageName = api.GetLibraryFunction<QueryFullProcessImageName>(Library.KERNEL32, "QueryFullProcessImageNameW");
+            _processIdToSessionId = api.GetLibraryFunction<ProcessIdToSessionId>(Library.KERNEL32, "ProcessIdToSessionId");
+            _ntQueryInformationProcess = api.GetLibraryFunction<NtQueryInformationProcess>(Library.NTDLL, "NtQueryInformationProcess");
             try
             {
-                IntPtr tokenHandle = IntPtr.Zero;
-                _ = _pOpenProcessToken(
-                    procHandle,                                 // ProcessHandle
-                    TokenAccessLevels.MaximumAllowed,     // desiredAccess
-                    out procHandle);                            // TokenHandle
-                return new WindowsIdentity(procHandle).Name;
+                _isWow64Process2 = api.GetLibraryFunction<IsWow64Process2>(Library.KERNEL32, "IsWow64Process2");
             }
-            catch // If we can't open a handle to the process it will throw an exception
-            {
-                return "";
-            }
+            catch { }
+            _isWow64Process = api.GetLibraryFunction<IsWow64Process>(Library.KERNEL32, "IsWow64Process");
         }
 
-        public int GetParentProcess(IntPtr procHandle)
+        public override void Start()
         {
+            bool extended = !string.IsNullOrWhiteSpace(_data.Parameters) &&
+                _jsonSerializer.Deserialize<PsParameters>(_data.Parameters).Extended;
+            var results = new List<ProcessInformation>();
+            Process[] processes;
             try
             {
-                ProcessBasicInformation procinfo = new ProcessBasicInformation();
-                _ = _pNtQueryInformationProcess(
-                    procHandle,                 // ProcessHandle
-                    0,                          // processInformationClass
-                    ref procinfo,               // ProcessBasicInfo
-                    Marshal.SizeOf(procinfo),   // processInformationLength
-                    out _);                     // returnLength
-                return procinfo.InheritedFromUniqueProcessId.ToInt32();
+                // .NET Framework takes a system process snapshot here; it does not
+                // open handles. Avoid Process.Handle, which opens with all access.
+                processes = Process.GetProcesses();
             }
-            catch
+            catch (Exception ex)
             {
-                return -1;
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("Unable to enumerate processes: " + ex.Message, true, "error"));
+                return;
             }
-        }
 
-        private string GetProcessCommandLine(int processId)
-        {
-            string result = "";
             try
             {
-                using (ManagementObjectSearcher mos = new ManagementObjectSearcher(
-String.Format("SELECT CommandLine FROM Win32_Process WHERE ProcessId = {0}", processId)))
-
+                foreach (Process process in processes)
                 {
-                    foreach (ManagementObject mo in mos.Get())
+                    if (_cancellationToken.IsCancellationRequested)
+                        break;
 
+                    try
                     {
-                        if (mo.GetPropertyValue("CommandLine") != null)
+                        results.Add(ReadProcess(process, extended));
+                    }
+                    catch
+                    {
+                        // Processes can exit while the snapshot is being read.
+                    }
+                }
+            }
+            finally
+            {
+                foreach (Process process in processes)
+                    process.Dispose();
+            }
+
+            results.Sort((left, right) => left.PID.CompareTo(right.PID));
+            ProcessInformation[] output = results.ToArray();
+            if (output.Length == 0)
+            {
+                _agent.GetTaskManager().AddTaskResponseToQueue(
+                    CreateTaskResponse("No Process Data Collected", true));
+                return;
+            }
+
+            IMythicMessage[] messages = new IMythicMessage[output.Length];
+            Array.Copy(output, messages, output.Length);
+            _agent.GetTaskManager().AddTaskResponseToQueue(
+                CreateTaskResponse(_jsonSerializer.Serialize(output), true, "completed", messages));
+        }
+
+        private ProcessInformation ReadProcess(Process process, bool extended)
+        {
+            var result = new ProcessInformation
+            {
+                PID = process.Id,
+                Name = "",
+                Username = "",
+                Architecture = "",
+                ProcessPath = "",
+                ParentProcessId = -1, // Unknown until extended mode can query the parent PID.
+                CommandLine = "",
+                StartTime = 0, // Mythic expects a uint64; zero means unavailable.
+                Description = "",
+                Signer = "",
+                CompanyName = "",
+                WindowTitle = "",
+                SessionId = -1, // Unknown when ProcessIdToSessionId fails.
+                UpdateDeleted = true
+            };
+
+            try { result.Name = process.ProcessName; } catch { }
+            try
+            {
+                if (_processIdToSessionId((uint)result.PID, out uint sessionId))
+                    result.SessionId = (int)sessionId;
+            }
+            catch { }
+
+            try
+            {
+                // Do not use Process.Handle: .NET may request broader access on our behalf.
+                using (var processHandle = new SafeProcessHandle(
+                    _openProcess(ProcessAccessFlags.PROCESS_QUERY_LIMITED_INFORMATION, false, result.PID),
+                    _closeHandle))
+                {
+                    if (!processHandle.IsInvalid)
+                    {
+                        result.ProcessPath = GetProcessPath(processHandle);
+                        result.Architecture = GetArchitecture(processHandle);
+                        ReadTokenDetails(processHandle, ref result);
+                        if (extended)
                         {
-                            result = mo.GetPropertyValue("CommandLine").ToString();
-                            result = Uri.UnescapeDataString(result);
-                            break;
+                            result.ParentProcessId = GetParentProcessId(processHandle);
+                            result.CommandLine = GetCommandLine(processHandle);
                         }
                     }
                 }
             }
             catch { }
+
+            if (extended)
+                ReadExtendedFileDetails(process, ref result);
+
             return result;
         }
 
-        private int GetIntegerIntegrityLevel(string il)
+        private string GetProcessPath(SafeProcessHandle processHandle)
         {
-            int result = 0;
-            switch (il)
-            {
-                case "S-1-16-0":
-                    result = 0;
-                    break;
-                case "S-1-16-4096":
-                    result = 1;
-                    break;
-                case "S-1-16-8192":
-                    result = 2;
-                    break;
-                case "S-1-16-12288":
-                    result = 3;
-                    break;
-                case "S-1-16-16384":
-                    result = 3;
-                    break;
-                case "S-1-16-20480":
-                    result = 3;
-                    break;
-                case "S-1-16-28672":
-                    result = 3;
-                    break;
-                default:
-                    break;
-            }
-            return result;
-        }
-
-        private string GetIntegrityLevel(IntPtr procHandle)
-        {
-            // Returns all SIDs that the current user is a part of, whether they are disabled or not.
-            // slightly adapted from https://stackoverflow.com/questions/2146153/how-to-get-the-logon-sid-in-c-sharp/2146418#2146418
-            IntPtr hProcToken;
-            var TokenInfLength = 0;
-            TokenMandatoryLevel pTIL;
-            IntPtr StructPtr;
-            bool Result = false;
-            string sidString;
-            long dwIntegrityLevel = 0;
+            var path = new StringBuilder(ImagePathCapacity);
+            int length = path.Capacity;
             try
             {
-                Result = _pOpenProcessToken(procHandle, TokenAccessLevels.Query, out hProcToken);
+                return _queryFullProcessImageName(processHandle, Win32ImagePath, path, ref length)
+                    ? path.ToString() : "";
             }
-            catch
-            {
-                return "";
-            }
-            if (!Result) return "";
-            // first call gets length of TokenInformation
-            Result = _pGetTokenInformation(hProcToken, TokenInformationClass.TokenIntegrityLevel, IntPtr.Zero, TokenInfLength, out TokenInfLength);
-            var TokenInformation = Marshal.AllocHGlobal(TokenInfLength);
-            Result = _pGetTokenInformation(hProcToken, TokenInformationClass.TokenIntegrityLevel, TokenInformation, TokenInfLength, out TokenInfLength);
-
-            if (!Result)
-            {
-                Marshal.FreeHGlobal(TokenInformation);
-                return "";
-            }
-            pTIL = (TokenMandatoryLevel)Marshal.PtrToStructure(TokenInformation, typeof(TokenMandatoryLevel));
-            if (!_pConvertSidToStringSid(pTIL.Label.Sid, out sidString))
-            {
-                sidString = "";
-            }
-            Marshal.FreeHGlobal(TokenInformation);
-
-            return sidString;
+            catch { return ""; }
         }
-        #endregion
 
-
-        public override void Start()
+        private string GetArchitecture(SafeProcessHandle processHandle)
         {
-            TT.ParallelOptions po = new TT.ParallelOptions();
-            po.CancellationToken = _cancellationToken.Token;
-            po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
             try
             {
-                TT.Parallel.ForEach(System.Diagnostics.Process.GetProcesses(), (proc) =>
+                if (_isWow64Process2 != null &&
+                    _isWow64Process2(processHandle, out ushort processMachine, out ushort nativeMachine))
                 {
-                    po.CancellationToken.ThrowIfCancellationRequested();
-                    ProcessInformation current = new ProcessInformation();
-                    current.UpdateDeleted = true;
-                    current.PID = proc.Id;
-                    current.Name = proc.ProcessName;
-                    try
+                    ushort machine = processMachine == ImageFileMachineUnknown ? nativeMachine : processMachine;
+                    switch (machine)
                     {
-                        current.Username = GetProcessUser(proc.Handle);
+                        case ImageFileMachineI386: return "x86";
+                        case ImageFileMachineAmd64: return "x64";
+                        case ImageFileMachineArm64: return "arm64";
+                        case ImageFileMachineArmNt: return "arm";
                     }
-                    catch
-                    {
-                        current.Username = "";
-                    }
-
-                    try
-                    {
-                        current.ParentProcessId = GetParentProcess(proc.Handle);
-                    }
-                    catch
-                    {
-                        current.ParentProcessId = -1;
-                    }
-
-                    try
-                    {
-                        if (_pIsWow64Process2 != null)
-                        {
-                            if (_pIsWow64Process2(proc.Handle, out IMAGE_FILE_MACHINE_ processMachine, out _))
-                            {
-                                switch (processMachine)
-                                {
-                                    case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_UNKNOWN:
-                                        current.Architecture = "x64";
-                                        break;
-                                    case IMAGE_FILE_MACHINE_.IMAGE_FILE_MACHINE_I386:
-                                        current.Architecture = "x86";
-                                        break;
-                                    default:
-                                        current.Architecture = "x86";
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                current.Architecture = "";
-                            }
-                        }
-                        else
-                        {
-                            if (_pIsWow64Process(proc.Handle, out bool IsWow64))
-                            {
-                                current.Architecture = IsWow64 ? "x86" : "x64";
-                            }
-                            else
-                            {
-                                current.Architecture = "";
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        current.Architecture = "";
-                    }
-
-                    try
-                    {
-                        current.ProcessPath = proc.MainModule.FileVersionInfo.FileName;
-                    }
-                    catch
-                    {
-                        current.ProcessPath = "";
-                    }
-
-                    try
-                    {
-                        current.IntegrityLevel = GetIntegerIntegrityLevel(GetIntegrityLevel(proc.Handle));
-                    }
-                    catch
-                    {
-                        current.IntegrityLevel = 0; // probably redundant
-                    }
-
-                    try
-                    {
-                        current.SessionId = proc.SessionId;
-                    }
-                    catch
-                    {
-                        current.SessionId = -1;
-                    }
-
-                    try
-                    {
-                        current.CommandLine = GetProcessCommandLine(proc.Id);
-                    }
-                    catch
-                    {
-                        current.CommandLine = "";
-                    }
-
-                    try
-                    {
-                        current.Description = proc.MainModule.FileVersionInfo.FileDescription;
-                    }
-                    catch
-                    {
-                        current.Description = "";
-                    }
-
-                    try
-                    {
-                        current.CompanyName = proc.MainModule.FileVersionInfo.CompanyName;
-                        current.Signer = current.CompanyName;
-                    }
-                    catch
-                    {
-                        current.CompanyName = "";
-                    }
-
-                    try
-                    {
-                        current.WindowTitle = proc.MainWindowTitle;
-                    }
-                    catch
-                    {
-                        current.WindowTitle = "";
-                    }
-
-                    _processes.Add(current);
-                });
+                }
+                else if (_isWow64Process != null && _isWow64Process(processHandle, out bool wow64))
+                {
+                    return wow64 ? "x86" : (Environment.Is64BitOperatingSystem ? "x64" : "x86");
+                }
             }
-            catch (OperationCanceledException)
-            {
-            }
+            catch { }
+            return "";
+        }
 
-            _complete = true;
-            _completed.Set();
-            ProcessInformation[] output = null;
-            output = _processes.Flush();
-            if (output.Length > 0)
+        private void ReadTokenDetails(SafeProcessHandle processHandle, ref ProcessInformation result)
+        {
+            IntPtr tokenHandle = IntPtr.Zero;
+            try
             {
-                IMythicMessage[] procs = new IMythicMessage[output.Length];
-                Array.Copy(output, procs, procs.Length);
-                _agent.GetTaskManager().AddTaskResponseToQueue(
-                    CreateTaskResponse(
-                        _jsonSerializer.Serialize(output),
-                        true,
-                        "completed",
-                        procs));
-            } else
-            {
-                MythicTaskResponse resp = CreateTaskResponse(
-                "No Process Data Collected",
-                true);
-                _agent.GetTaskManager().AddTaskResponseToQueue(resp);
-            }
+                if (!_openProcessToken(processHandle, TokenAccessLevels.Query, out tokenHandle))
+                    return;
 
+                using (var token = new SafeTokenHandle(tokenHandle, _closeHandle))
+                {
+                    tokenHandle = IntPtr.Zero;
+                    try
+                    {
+                        using (var identity = new WindowsIdentity(token.DangerousGetHandle()))
+                            result.Username = identity.Name;
+                    }
+                    catch { }
+
+                    result.IntegrityLevel = GetIntegrityLevel(token);
+                }
+            }
+            catch { }
+            finally
+            {
+                // Ownership transfers to SafeTokenHandle after construction.
+                if (tokenHandle != IntPtr.Zero)
+                    _closeHandle(tokenHandle);
+            }
+        }
+
+        private int GetIntegrityLevel(SafeTokenHandle tokenHandle)
+        {
+            _getTokenInformation(tokenHandle, TokenInformationClass.TokenIntegrityLevel,
+                IntPtr.Zero, 0, out int length);
+            if (length <= 0)
+                return 0;
+
+            IntPtr information = Marshal.AllocHGlobal(length);
+            try
+            {
+                if (!_getTokenInformation(tokenHandle, TokenInformationClass.TokenIntegrityLevel,
+                    information, length, out _))
+                    return 0;
+
+                var label = (SidAndAttributes)Marshal.PtrToStructure(information, typeof(SidAndAttributes));
+                if (!_convertSidToStringSid(label.Sid, out IntPtr stringSid))
+                    return 0;
+
+                try
+                {
+                    string sid = Marshal.PtrToStringUni(stringSid);
+                    int separator = sid.LastIndexOf('-');
+                    if (separator < 0 || !int.TryParse(sid.Substring(separator + 1), out int rid))
+                        return 0;
+                    // Apollo's integrity field uses 0-3; system/protected RIDs
+                    // are folded into 3 (high) by this existing response schema.
+                    if (rid >= HighIntegrityRid) return 3;
+                    if (rid >= MediumIntegrityRid) return 2;
+                    if (rid >= LowIntegrityRid) return 1;
+                    return 0;
+                }
+                finally
+                {
+                    _localFree(stringSid);
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(information);
+            }
+        }
+
+        private int GetParentProcessId(SafeProcessHandle processHandle)
+        {
+            int size = Marshal.SizeOf(typeof(ProcessBasicInformation));
+            IntPtr buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                // NTSTATUS values below zero indicate failure.
+                if (_ntQueryInformationProcess(processHandle, ProcessBasicInformationClass, buffer, size, out _) < 0)
+                    return -1;
+                var information = (ProcessBasicInformation)Marshal.PtrToStructure(
+                    buffer, typeof(ProcessBasicInformation));
+                return information.InheritedFromUniqueProcessId.ToInt32();
+            }
+            catch { return -1; }
+            finally { Marshal.FreeHGlobal(buffer); }
+        }
+
+        private string GetCommandLine(SafeProcessHandle processHandle)
+        {
+            int size = InitialCommandLineBufferBytes;
+            for (int attempt = 0; attempt < CommandLineQueryAttempts; attempt++)
+            {
+                IntPtr buffer = Marshal.AllocHGlobal(size);
+                try
+                {
+                    int status = _ntQueryInformationProcess(processHandle, ProcessCommandLineInformationClass,
+                        buffer, size, out int required);
+                    if (status >= 0)
+                    {
+                        var value = (UnicodeString)Marshal.PtrToStructure(buffer, typeof(UnicodeString));
+                        long offset = value.Buffer.ToInt64() - buffer.ToInt64();
+                        // UNICODE_STRING.Length and MaximumLength count UTF-16 bytes.
+                        if (value.Length % sizeof(char) != 0 || value.Length > value.MaximumLength ||
+                            offset < Marshal.SizeOf(typeof(UnicodeString)) ||
+                            offset > size || value.Length > size - offset)
+                            return "";
+                        return Marshal.PtrToStringUni(value.Buffer, value.Length / sizeof(char)) ?? "";
+                    }
+
+                    if (required <= size || required > MaxCommandLineBufferBytes)
+                        return "";
+                    size = required;
+                }
+                catch { return ""; }
+                finally { Marshal.FreeHGlobal(buffer); }
+            }
+            return "";
+        }
+
+        private static void ReadExtendedFileDetails(Process process, ref ProcessInformation result)
+        {
+            try { result.WindowTitle = process.MainWindowTitle; } catch { }
+            if (result.ProcessPath.Length == 0)
+                return;
+
+            try
+            {
+                FileVersionInfo version = FileVersionInfo.GetVersionInfo(result.ProcessPath);
+                result.Description = version.FileDescription ?? "";
+                result.CompanyName = version.CompanyName ?? "";
+            }
+            catch { }
+
+            try
+            {
+                // This is the embedded certificate's subject, not a trust verdict.
+                // CreateFromSignedFile does not validate the file's signature.
+                X509Certificate certificate = null;
+                X509Certificate2 signer = null;
+                try
+                {
+                    certificate = X509Certificate.CreateFromSignedFile(result.ProcessPath);
+                    signer = new X509Certificate2(certificate);
+                    result.Signer = signer.GetNameInfo(X509NameType.SimpleName, false) ?? "";
+                }
+                finally
+                {
+                    if (signer != null) signer.Reset();
+                    if (certificate != null) certificate.Reset();
+                }
+            }
+            catch { }
         }
     }
 }
