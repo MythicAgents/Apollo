@@ -69,7 +69,7 @@ function(task, responses){
                     "name": {"plaintext": pinfo["name"], "cellStyle": {}},
                     "user": {"plaintext": pinfo["user"], "cellStyle": {}},
                     "session": {"plaintext": pinfo["session_id"], "cellStyle": {}},
-                    "signer": {"plaintext": pinfo["company_name"], "cellStyle": {}},
+                    "signer": {"plaintext": pinfo["signer"], "cellStyle": {}},
                     "actions": {"button": {
                         "name": "Actions",
                         "type": "menu",

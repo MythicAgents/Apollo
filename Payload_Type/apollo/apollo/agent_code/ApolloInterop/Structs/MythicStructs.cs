@@ -41,7 +41,7 @@ namespace ApolloInterop.Structs
             [DataMember(Name = "integrity_level")]
             public int IntegrityLevel;
             [DataMember(Name = "start_time")]
-            public string StartTime;
+            public ulong StartTime;
             [DataMember(Name = "description")]
             public string Description;
             [DataMember(Name = "signer")]

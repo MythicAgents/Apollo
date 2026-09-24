@@ -234,7 +234,7 @@ namespace Tasks
                 ProcessPath = "",
                 ParentProcessId = -1, // Unknown until extended mode can query the parent PID.
                 CommandLine = "",
-                StartTime = "",
+                StartTime = 0, // Mythic expects a uint64; zero means unavailable.
                 Description = "",
                 Signer = "",
                 CompanyName = "",
