@@ -32,7 +32,7 @@ class PsCommand(CommandBase):
     cmd = "ps"
     needs_admin = False
     help_cmd = "ps [--extended]"
-    description = "List processes with limited query access; --extended adds slower process details."
+    description = "List processes with limited query access; --extended adds additional process details."
     version = 4
     supported_ui_features = ["process_browser:list"]
     author = "@djhohnstein"

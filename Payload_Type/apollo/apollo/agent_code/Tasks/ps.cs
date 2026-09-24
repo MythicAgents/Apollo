@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
@@ -30,10 +31,38 @@ namespace Tasks
             public bool Extended;
         }
 
+        // NtQueryInformationProcess information class 0 is ProcessBasicInformation.
+        // Its PROCESS_BASIC_INFORMATION contains InheritedFromUniqueProcessId.
+        private const int ProcessBasicInformationClass = 0;
+
         // NtQueryInformationProcess information class 60 is ProcessCommandLineInformation.
         // It returns a UNICODE_STRING and its UTF-16 text in the caller's buffer.
         // This class is undocumented; an unsupported query leaves CommandLine empty.
         private const int ProcessCommandLineInformationClass = 60;
+
+        // QueryFullProcessImageName flag 0 requests a Win32 path, rather than a native path.
+        private const int Win32ImagePath = 0;
+        // Character capacity, including room for the terminator, for extended-length paths.
+        private const int ImagePathCapacity = 32768;
+
+        // IMAGE_FILE_MACHINE_* values returned by IsWow64Process2 (PE Machine field).
+        private const ushort ImageFileMachineUnknown = 0x0000;
+        private const ushort ImageFileMachineI386 = 0x014c;
+        private const ushort ImageFileMachineAmd64 = 0x8664;
+        private const ushort ImageFileMachineArm64 = 0xAA64;
+        private const ushort ImageFileMachineArmNt = 0x01c4;
+
+        // The final subauthority (RID) of S-1-16-* is the mandatory integrity level.
+        private const int LowIntegrityRid = 0x1000;
+        private const int MediumIntegrityRid = 0x2000;
+        private const int HighIntegrityRid = 0x3000;
+
+        // Begin with one page and retry once using NtQueryInformationProcess's required size.
+        private const int InitialCommandLineBufferBytes = 4096;
+        private const int CommandLineQueryAttempts = 2;
+        // Defensive 128 KiB allocation cap. UNICODE_STRING.Length is only 16 bits,
+        // so this exceeds its maximum UTF-16 byte length plus the structure itself.
+        private const int MaxCommandLineBufferBytes = 131072;
 
         private delegate IntPtr OpenProcess(ProcessAccessFlags access, bool inheritHandle, int processId);
         private delegate bool CloseHandle(IntPtr handle);
@@ -203,14 +232,14 @@ namespace Tasks
                 Username = "",
                 Architecture = "",
                 ProcessPath = "",
-                ParentProcessId = -1,
+                ParentProcessId = -1, // Unknown until extended mode can query the parent PID.
                 CommandLine = "",
                 StartTime = "",
                 Description = "",
                 Signer = "",
                 CompanyName = "",
                 WindowTitle = "",
-                SessionId = -1,
+                SessionId = -1, // Unknown when ProcessIdToSessionId fails.
                 UpdateDeleted = true
             };
 
@@ -252,11 +281,11 @@ namespace Tasks
 
         private string GetProcessPath(SafeProcessHandle processHandle)
         {
-            var path = new StringBuilder(32768);
+            var path = new StringBuilder(ImagePathCapacity);
             int length = path.Capacity;
             try
             {
-                return _queryFullProcessImageName(processHandle, 0, path, ref length)
+                return _queryFullProcessImageName(processHandle, Win32ImagePath, path, ref length)
                     ? path.ToString() : "";
             }
             catch { return ""; }
@@ -269,13 +298,13 @@ namespace Tasks
                 if (_isWow64Process2 != null &&
                     _isWow64Process2(processHandle, out ushort processMachine, out ushort nativeMachine))
                 {
-                    ushort machine = processMachine == 0 ? nativeMachine : processMachine;
+                    ushort machine = processMachine == ImageFileMachineUnknown ? nativeMachine : processMachine;
                     switch (machine)
                     {
-                        case 0x014c: return "x86";
-                        case 0x8664: return "x64";
-                        case 0xAA64: return "arm64";
-                        case 0x01c4: return "arm";
+                        case ImageFileMachineI386: return "x86";
+                        case ImageFileMachineAmd64: return "x64";
+                        case ImageFileMachineArm64: return "arm64";
+                        case ImageFileMachineArmNt: return "arm";
                     }
                 }
                 else if (_isWow64Process != null && _isWow64Process(processHandle, out bool wow64))
@@ -341,9 +370,11 @@ namespace Tasks
                     int separator = sid.LastIndexOf('-');
                     if (separator < 0 || !int.TryParse(sid.Substring(separator + 1), out int rid))
                         return 0;
-                    if (rid >= 12288) return 3;
-                    if (rid >= 8192) return 2;
-                    if (rid >= 4096) return 1;
+                    // Apollo's integrity field uses 0-3; system/protected RIDs
+                    // are folded into 3 (high) by this existing response schema.
+                    if (rid >= HighIntegrityRid) return 3;
+                    if (rid >= MediumIntegrityRid) return 2;
+                    if (rid >= LowIntegrityRid) return 1;
                     return 0;
                 }
                 finally
@@ -363,7 +394,8 @@ namespace Tasks
             IntPtr buffer = Marshal.AllocHGlobal(size);
             try
             {
-                if (_ntQueryInformationProcess(processHandle, 0, buffer, size, out _) < 0)
+                // NTSTATUS values below zero indicate failure.
+                if (_ntQueryInformationProcess(processHandle, ProcessBasicInformationClass, buffer, size, out _) < 0)
                     return -1;
                 var information = (ProcessBasicInformation)Marshal.PtrToStructure(
                     buffer, typeof(ProcessBasicInformation));
@@ -375,8 +407,8 @@ namespace Tasks
 
         private string GetCommandLine(SafeProcessHandle processHandle)
         {
-            int size = 4096;
-            for (int attempt = 0; attempt < 2; attempt++)
+            int size = InitialCommandLineBufferBytes;
+            for (int attempt = 0; attempt < CommandLineQueryAttempts; attempt++)
             {
                 IntPtr buffer = Marshal.AllocHGlobal(size);
                 try
@@ -387,14 +419,15 @@ namespace Tasks
                     {
                         var value = (UnicodeString)Marshal.PtrToStructure(buffer, typeof(UnicodeString));
                         long offset = value.Buffer.ToInt64() - buffer.ToInt64();
-                        if (value.Length % 2 != 0 || value.Length > value.MaximumLength ||
+                        // UNICODE_STRING.Length and MaximumLength count UTF-16 bytes.
+                        if (value.Length % sizeof(char) != 0 || value.Length > value.MaximumLength ||
                             offset < Marshal.SizeOf(typeof(UnicodeString)) ||
                             offset > size || value.Length > size - offset)
                             return "";
-                        return Marshal.PtrToStringUni(value.Buffer, value.Length / 2) ?? "";
+                        return Marshal.PtrToStringUni(value.Buffer, value.Length / sizeof(char)) ?? "";
                     }
 
-                    if (required <= size || required > 131072)
+                    if (required <= size || required > MaxCommandLineBufferBytes)
                         return "";
                     size = required;
                 }
@@ -415,6 +448,26 @@ namespace Tasks
                 FileVersionInfo version = FileVersionInfo.GetVersionInfo(result.ProcessPath);
                 result.Description = version.FileDescription ?? "";
                 result.CompanyName = version.CompanyName ?? "";
+            }
+            catch { }
+
+            try
+            {
+                // This is the embedded certificate's subject, not a trust verdict.
+                // CreateFromSignedFile does not validate the file's signature.
+                X509Certificate certificate = null;
+                X509Certificate2 signer = null;
+                try
+                {
+                    certificate = X509Certificate.CreateFromSignedFile(result.ProcessPath);
+                    signer = new X509Certificate2(certificate);
+                    result.Signer = signer.GetNameInfo(X509NameType.SimpleName, false) ?? "";
+                }
+                finally
+                {
+                    if (signer != null) signer.Reset();
+                    if (certificate != null) certificate.Reset();
+                }
             }
             catch { }
         }
