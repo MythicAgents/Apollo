@@ -174,10 +174,8 @@ namespace Tasks
             Process[] processes;
             try
             {
-                // On local Windows, .NET Framework queries system-wide process
-                // information and constructs Process objects from the result;
-                // it does not open a handle to each process here. Process.Handle
-                // would request all access, so avoid it.
+                // .NET Framework takes a system process snapshot here; it does not
+                // open handles. Avoid Process.Handle, which opens with all access.
                 processes = Process.GetProcesses();
             }
             catch (Exception ex)
