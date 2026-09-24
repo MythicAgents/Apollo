@@ -19,10 +19,10 @@ those values are available.
 
 ```
 ps
-ps --extended
+ps -extended
 ```
 
-`--extended` additionally reads parent PIDs and command lines through
+`-extended` additionally reads parent PIDs and command lines through
 `NtQueryInformationProcess`, then reads window titles, executable file
 version metadata, and the subject of an embedded signing certificate when
 present. It uses the same limited-access process handle as the
