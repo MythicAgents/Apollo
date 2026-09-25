@@ -497,29 +497,16 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     special_files_map["Config.cs"][prefixed_key] = json.dumps(val)
 
             # Azure Blob: provision container and get SAS token via RPC
+            # storage_account and account_key are read from the C2 profile's
+            # server-side config.json by generate_config, not from build params.
             if profile["name"] == "azure_blob":
                 params = c2.get_parameters_dict()
 
-
-                # Proxy params hardcoded at the minute as the profile doesn't support proxy
-                # Once the profile is updated, this should "magically" work.
                 proxy_host = params.get("proxy_host", "")
                 proxy_port = str(params.get("proxy_port", 0))
                 proxy_user = params.get("proxy_user", "")
                 proxy_pass = params.get("proxy_pass", "")
                 enable_certificate_check = params.get("enable_certificate_check", "True")
-
-                storage_account = params.get("storage_account", "")
-                account_key_param = params.get("account_key", "")
-                if isinstance(account_key_param, dict):
-                    account_key = account_key_param.get("enc_key", "") or account_key_param.get("value", "")
-                else:
-                    account_key = str(account_key_param) if account_key_param else ""
-
-                if not storage_account or not account_key:
-                    resp.build_stderr = "Missing storage_account or account_key"
-                    resp.set_status(BuildStatus.Error)
-                    return resp
 
                 killdate = params.get("killdate", "")
                 config_data = await SendMythicRPCOtherServiceRPC(MythicRPCOtherServiceRPCMessage(
@@ -527,8 +514,6 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                     ServiceRPCFunction="generate_config",
                     ServiceRPCFunctionArguments={
                         "killdate": killdate,
-                        "storage_account": storage_account,
-                        "account_key": account_key,
                         "payload_uuid": self.uuid,
                     }
                 ))
