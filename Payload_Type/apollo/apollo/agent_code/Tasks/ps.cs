@@ -240,7 +240,6 @@ namespace Tasks
                 CompanyName = "",
                 WindowTitle = "",
                 SessionId = -1, // Unknown when ProcessIdToSessionId fails.
-                UpdateDeleted = true
             };
 
             try { result.Name = process.ProcessName; } catch { }
