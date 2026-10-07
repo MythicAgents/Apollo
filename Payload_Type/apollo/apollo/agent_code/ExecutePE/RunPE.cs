@@ -748,6 +748,10 @@ public static class PERunner
     {
         #region Native Methods
 
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        private static extern bool RtlAddFunctionTable(IntPtr functionTable, uint entryCount, ulong baseAddress);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr VirtualAlloc(IntPtr lpAddress, UIntPtr dwSize,
                                                 uint flAllocationType, uint flProtect);
@@ -1259,6 +1263,7 @@ public static class PERunner
                 // Check optional header magic to determine if it's 32-bit or 64-bit
                 IntPtr ptrOptionalHeader = IntPtr.Add(ptrFileHeader, Marshal.SizeOf(typeof(IMAGE_FILE_HEADER)));
                 ushort magic = (ushort)Marshal.ReadInt16(ptrOptionalHeader);
+                IMAGE_DATA_DIRECTORY exceptionDirectory = default;
 
                 if (magic == OPTIONAL_HEADER32_MAGIC)
                 {
@@ -1275,6 +1280,7 @@ public static class PERunner
                     _imageBase = optionalHeader.ImageBase;
                     _sizeOfImage = optionalHeader.SizeOfImage;
                     _subsystem = optionalHeader.Subsystem;
+                    exceptionDirectory = optionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION];
                 }
                 else
                 {
@@ -1354,6 +1360,19 @@ public static class PERunner
                     else
                     {
                         throw new InvalidOperationException("PE file has no entry point.");
+                    }
+                    if (_is64Bit && exceptionDirectory.Size != 0)
+                    {
+                        const uint runtimeFunctionSize = 12;
+                        if (exceptionDirectory.VirtualAddress == 0 || exceptionDirectory.Size % runtimeFunctionSize != 0 ||
+                            exceptionDirectory.VirtualAddress > _sizeOfImage ||
+                            exceptionDirectory.Size > _sizeOfImage - exceptionDirectory.VirtualAddress)
+                            throw new BadImageFormatException("Invalid exception directory.");
+
+                        // Copying .pdata alone does not make native SEH handlers discoverable.
+                        if (!RtlAddFunctionTable(IntPtr.Add(_baseAddress, (int)exceptionDirectory.VirtualAddress),
+                            exceptionDirectory.Size / runtimeFunctionSize, (ulong)_baseAddress.ToInt64()))
+                            throw new InvalidOperationException("Failed to register the PE exception table.");
                     }
                 }
                 catch
@@ -1938,6 +1957,7 @@ public static class PERunner
         protected virtual void Dispose(bool disposing)
         {
             RestoreCommandLine();
+            // Keep the image and its unwind table alive for native worker threads until the host exits.
             return;
         }
 
