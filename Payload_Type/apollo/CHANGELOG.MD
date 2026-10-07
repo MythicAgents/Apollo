@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored `ps` to enumerate processes with limited query access and reserve parent PID, command line, window title, and executable metadata for `-extended`, without WMI.
 - Updated `ps` process responses and browser script to report an embedded certificate signer when available and send numeric `0` when the process start time is unavailable.
 
+## [v2.4.21] - 2026-10-05
+
+### Fixed
+
+- Registered x64 unwind metadata for in-memory PEs so native RPC exceptions reach their handlers.
+- Reported nonzero `execute_pe` host exit codes as task errors.
+
 ## [v2.4.19] - 2026-07-10
 
 ### Changed

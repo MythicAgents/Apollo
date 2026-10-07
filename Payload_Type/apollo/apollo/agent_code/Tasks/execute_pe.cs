@@ -272,26 +272,16 @@ namespace Tasks
                     procHandle.Kill();
                     resp.Artifacts = [Artifact.ProcessKill((int)procHandle.PID)];
                 }
-                /*
-                if (procHandle.ExitCode != 0)
-                {
-                    if ((procHandle.ExitCode & 0xc0000000) != 0
-                        && procHandle.GetExitCodeHResult() is int exitCodeHResult)
-                    {
-                        var errorMessage = new Win32Exception(exitCodeHResult).Message;
-                        resp.UserOutput += $"\n[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x} - {errorMessage}";
-                        resp.Status = "error";
-                    }
-                    else
-                    {
-                        resp.UserOutput += $"\n[*] Process exited with code: {procHandle.ExitCode} - 0x{(uint)procHandle.ExitCode:x}";
-                    }
-                } else
+                // Cleanup may observe STILL_ACTIVE (0x103) before killing the host.
+                if (procHandle.ExitCode != 0 && procHandle.ExitCode != 0x103)
                 {
                     resp.UserOutput += $"\n[*] Process exited with code: 0x{(uint)procHandle.ExitCode:x}";
+                    resp.Status = "error";
                 }
-                */
-                resp.UserOutput += $"\n[*] Process exited";
+                else
+                {
+                    resp.UserOutput += "\n[*] Process exited";
+                }
             }
 
             _agent.GetTaskManager().AddTaskResponseToQueue(resp);
