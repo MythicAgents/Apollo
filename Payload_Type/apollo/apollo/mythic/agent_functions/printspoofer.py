@@ -65,7 +65,7 @@ class PrintSpooferCommand(CommandBase):
         # update the response to make sure this gets pulled down as execute_pe instead of mimikatz
         newResp.CommandName = "execute_pe"
         newResp.DisplayParams = commandline
-        return response
+        return newResp
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
