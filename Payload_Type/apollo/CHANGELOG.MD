@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `run` no longer removes embedded copies of the executable name from arguments. The `shell` alias preserves that text as well.
+
 ### Changed
 
 - Refactored `ps` to enumerate processes with limited query access and reserve parent PID, command line, window title, and executable metadata for `-extended`, without WMI.

@@ -7,12 +7,10 @@
 #if RUN
 
 using ApolloInterop.Classes;
-using ApolloInterop.Classes.Api;
 using ApolloInterop.Classes.Core;
 using ApolloInterop.Interfaces;
 using ApolloInterop.Structs.MythicStructs;
 using System;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading;
 
@@ -26,20 +24,9 @@ namespace Tasks
             [DataMember(Name = "executable")] public string Executable;
             [DataMember(Name = "arguments")] public string Arguments;
         }
-        private delegate IntPtr CommandLineToArgvW(
-            [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine,
-            out int pNumArgs);
-
-        private delegate IntPtr LocalFree(IntPtr hMem);
-
-        private LocalFree _pLocalFree;
-        private CommandLineToArgvW _pCommandLineToArgvW;
-
         private AutoResetEvent _complete = new AutoResetEvent(false);
         public run(IAgent agent, MythicTask mythicTask) : base(agent, mythicTask)
         {
-            _pLocalFree = _agent.GetApi().GetLibraryFunction<LocalFree>(Library.KERNEL32, "LocalFree");
-            _pCommandLineToArgvW = _agent.GetApi().GetLibraryFunction<CommandLineToArgvW>(Library.SHELL32, "CommandLineToArgvW");
         }
 
         public override void Start()
@@ -54,28 +41,19 @@ namespace Tasks
             else
             {
                 RunParameters parameters = _jsonSerializer.Deserialize<RunParameters>(_data.Parameters);
-                string mythiccmd = parameters.Executable;
-                if (!string.IsNullOrEmpty(parameters.Arguments))
-                {
-                    mythiccmd += " " + parameters.Arguments;
-                }
-
-                string[] parts = ParseCommandLine(mythiccmd);
-                if (parts == null)
+                string app = parameters.Executable;
+                string cmdline = parameters.Arguments;
+                if (string.IsNullOrEmpty(app))
                 {
                     _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                        $"Failed to parse command line: {Marshal.GetLastWin32Error()}",
+                        "No executable passed.",
                         true,
                         "error"));
                 }
                 else
                 {
-                    string app = parts[0];
-                    string cmdline = null;
-                    if (parts.Length > 1)
-                    {
-                        cmdline = mythiccmd.Replace(app, "").TrimStart();
-                    }
+                    // The process layer assembles the command line. Preserve executable
+                    // quoting and arguments, including embedded copies of the executable.
 
                     proc = _agent.GetProcessManager().NewProcess(app, cmdline);
                     proc.OutputDataReceived += DataReceived;
@@ -137,42 +115,6 @@ namespace Tasks
                     e.Data,
                     false,
                     ""));
-            }
-        }
-
-        private string[] ParseCommandLine(string cmdline)
-        {
-            int numberOfArgs;
-            IntPtr ptrToSplitArgs;
-            string[] splitArgs;
-
-            ptrToSplitArgs = _pCommandLineToArgvW(cmdline, out numberOfArgs);
-
-            // CommandLineToArgvW returns NULL upon failure.
-            if (ptrToSplitArgs == IntPtr.Zero)
-                return null;
-
-            // Make sure the memory ptrToSplitArgs to is freed, even upon failure.
-            try
-            {
-                splitArgs = new string[numberOfArgs];
-
-                // ptrToSplitArgs is an array of pointers to null terminated Unicode strings.
-                // Copy each of these strings into our split argument array.
-                for (int i = 0; i < numberOfArgs; i++)
-                    splitArgs[i] = Marshal.PtrToStringUni(
-                        Marshal.ReadIntPtr(ptrToSplitArgs, i * IntPtr.Size));
-
-                return splitArgs;
-            }
-            catch
-            {
-                return null;
-            }
-            finally
-            {
-                // Free memory obtained by CommandLineToArgW.
-                _pLocalFree(ptrToSplitArgs);
             }
         }
     }
