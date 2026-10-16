@@ -14,6 +14,21 @@ namespace PSKCryptography
             
         }
 
+        // This should be a safe way to compare secret values without leaking timing info
+        // https://github.com/veorq/cryptocoding#compare-secret-strings-in-constant-time
+        static public bool ConstTimeCompare(string rhs, string lhs)
+        {
+            if (rhs.Length != lhs.Length)
+            {
+                return false;
+            }
+            var missed = 0;
+            for (var idx = 0; idx < rhs.Length; idx++) {
+                missed |= lhs[idx] ^ rhs[idx];
+            }
+            return missed == 0;
+        }
+
 
         public override string Encrypt(string plaintext)
         {
@@ -63,7 +78,7 @@ namespace PSKCryptography
             byte[] hmac = new byte[32];
             Array.Copy(input, uuidLength + 16 + ciphertext.Length, hmac, 0, 32);
 
-            if (Convert.ToBase64String(hmac) == Convert.ToBase64String(sha256.ComputeHash(IV.Concat(ciphertext).ToArray())))
+            if (ConstTimeCompare(Convert.ToBase64String(hmac), Convert.ToBase64String(sha256.ComputeHash(IV.Concat(ciphertext).ToArray()))))
             {
                 using (Aes scAes = Aes.Create())
                 {
