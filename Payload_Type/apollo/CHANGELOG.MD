@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactored `ps` to enumerate processes with limited query access and reserve parent PID, command line, window title, and executable metadata for `-extended`, without WMI.
 - Updated `ps` process responses and browser script to report an embedded certificate signer when available and send numeric `0` when the process start time is unavailable.
+- Updated for Mythic v4
+- Fixed some issues with SMB/TCP P2P comms windows
 
 ## [v2.5.2] - 2026-08-11
 
