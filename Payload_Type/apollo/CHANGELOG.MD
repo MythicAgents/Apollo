@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserved `run` and `shell` arguments containing the executable name and correctly parsed quoted executable paths.
+
 ### Changed
 
 - Refactored `ps` to enumerate processes with limited query access and reserve parent PID, command line, window title, and executable metadata for `-extended`, without WMI.
