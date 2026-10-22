@@ -38,7 +38,7 @@ class ShellCommand(CommandBase):
             CommandName="run"
         )
         taskData.args.add_arg("executable", "cmd.exe")
-        taskData.args.add_arg("arguments", f" /S /c {taskData.args.command_line}")
+        taskData.args.add_arg("arguments", f"/S /c {taskData.args.command_line}")
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
