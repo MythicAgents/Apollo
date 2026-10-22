@@ -68,7 +68,8 @@ namespace HttpTransport
 
             rsa = agent.GetApi().NewRSAKeyPair(4096);
 
-
+            if (string.IsNullOrEmpty(PostUri))
+                PostUri = "/";
             if (PostUri[0] != '/')
             {
                 PostUri = $"/{PostUri}";
