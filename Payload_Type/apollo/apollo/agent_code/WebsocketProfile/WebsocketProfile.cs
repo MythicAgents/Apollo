@@ -95,7 +95,10 @@ namespace WebsocketTransport
             DomainFront = data["domain_front"];
             EncryptedExchangeCheck = data["encrypted_exchange_check"] == "T";
             rsa = agent.GetApi().NewRSAKeyPair(4096);
-
+            if(string.IsNullOrEmpty(PostUri))
+            {
+                PostUri = "/";
+            }
             if (PostUri[0] != '/')
             {
                 PostUri = $"/{PostUri}";
