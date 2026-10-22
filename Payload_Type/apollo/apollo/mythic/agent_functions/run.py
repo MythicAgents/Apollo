@@ -2,6 +2,38 @@ from mythic_container.MythicCommandBase import *
 import json
 
 
+def split_command_line(command_line):
+    """Split the executable token from a Windows command line.
+
+    The executable token is kept verbatim, including any surrounding quotes, so
+    the agent can pass it directly to CreateProcess as part of the command line.
+    Arguments are otherwise left untouched.
+    """
+    command_line = command_line.lstrip()
+    if not command_line:
+        raise ValueError("No executable was provided.")
+
+    in_quotes = False
+    backslash_count = 0
+    for index, character in enumerate(command_line):
+        if character == "\\":
+            backslash_count += 1
+            continue
+
+        if character == '"' and backslash_count % 2 == 0:
+            in_quotes = not in_quotes
+        elif character.isspace() and not in_quotes:
+            arguments = command_line[index:].lstrip()
+            return command_line[:index], arguments or None
+
+        backslash_count = 0
+
+    if in_quotes:
+        raise ValueError("The executable contains an unmatched quote.")
+
+    return command_line, None
+
+
 class RunArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
@@ -36,10 +68,10 @@ class RunArguments(TaskArguments):
         if self.command_line[0] == "{":
             self.load_args_from_json_string(self.command_line)
         else:
-            parts = self.command_line.split(" ", 1)
-            self.add_arg("executable", parts[0])
-            if len(parts) > 1:
-                self.add_arg("arguments", parts[1])
+            executable, arguments = split_command_line(self.command_line)
+            self.add_arg("executable", executable)
+            if arguments is not None:
+                self.add_arg("arguments", arguments)
         pass
 
 
