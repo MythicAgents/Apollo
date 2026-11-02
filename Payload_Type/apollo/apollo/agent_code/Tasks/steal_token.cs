@@ -76,7 +76,15 @@ namespace Tasks
 
             if (!bRet)
             {
-                return CreateTaskResponse($"Failed to duplicate token: {dwError}", true, "error");
+                var current = identityManager.GetCurrentImpersonationIdentity();
+                return CreateTaskResponse(
+                    $"Failed to duplicate token: {dwError}\nReverted identity to {current.Name}.",
+                    true,
+                    "error",
+                    new IMythicMessage[]
+                    {
+                        new CallbackUpdate { ImpersonationContext = "", IntegrityLevel = (int)identityManager.GetIntegrityLevel() }
+                    });
             }
 
             var cur = identityManager.GetCurrentImpersonationIdentity();

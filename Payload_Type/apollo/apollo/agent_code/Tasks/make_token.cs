@@ -89,7 +89,7 @@ namespace Tasks
                         "completed",
                         new IMythicMessage[] {
                             Artifact.PlaintextLogon(cur.Name, true),
-                            new CallbackUpdate{  ImpersonationContext = $"{parameters.Credential.Realm}\\{parameters.Credential.Account}" }
+                            new CallbackUpdate{  ImpersonationContext = $"{parameters.Credential.Realm}\\{parameters.Credential.Account}", IntegrityLevel = (int)_agent.GetIdentityManager().GetIntegrityLevel() }
                         });
                     }
                     else
@@ -100,17 +100,23 @@ namespace Tasks
                         "completed",
                         new IMythicMessage[] {
                             Artifact.PlaintextLogon(cur.Name, true) ,
-                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}" }
+                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}", IntegrityLevel = (int)_agent.GetIdentityManager().GetIntegrityLevel() }
                         });
                     }
                 }
                 else
                 {
+                    int error = Marshal.GetLastWin32Error();
+                    var current = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
                     resp = CreateTaskResponse(
-                        $"Failed to impersonate {info.Username}: {Marshal.GetLastWin32Error()}",
+                        $"Failed to impersonate {info.Username}: {error}\nReverted identity to {current.Name}.",
                         true,
                         "error",
-                        new IMythicMessage[] {Artifact.PlaintextLogon(info.Username)});
+                        new IMythicMessage[]
+                        {
+                            Artifact.PlaintextLogon(info.Username),
+                            new CallbackUpdate { ImpersonationContext = "", IntegrityLevel = (int)_agent.GetIdentityManager().GetIntegrityLevel() }
+                        });
                 }
             }
 
