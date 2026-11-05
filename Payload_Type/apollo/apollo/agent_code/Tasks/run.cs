@@ -53,7 +53,7 @@ namespace Tasks
 
                 string app = parameters.Executable;
                 string cmdline = string.IsNullOrEmpty(parameters.Arguments) ?
-                    null : parameters.Arguments;
+                    string.Empty : parameters.Arguments;
 
                 proc = _agent.GetProcessManager().NewProcess(app, cmdline);
                 proc.OutputDataReceived += DataReceived;

@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated for Mythic v4
 - Fixed some issues with SMB/TCP P2P comms windows
 
+## [v2.5.7] - 2026-11-09
+
+### Fixed
+
+- Corrected native impersonation levels and primary/impersonation token duplication for `make_token`, `steal_token`, and `getsystem`.
+- Fixed process creation after identity changes, including transitions between different tokens for the same account, and cleared stale credentials when switching identities.
+- Updated callback identity and integrity after token changes, including resets to the original identity after a failed token change.
+
 ## [v2.5.2] - 2026-08-11
 
 ### Changed
