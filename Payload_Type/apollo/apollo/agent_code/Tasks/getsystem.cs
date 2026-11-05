@@ -24,7 +24,15 @@ namespace Tasks
             bool elevated = _agent.GetIdentityManager().GetSystem();
             if (elevated)
             {
-                resp = CreateTaskResponse("Elevated to SYSTEM", true, "completed");
+                var identityManager = _agent.GetIdentityManager();
+                resp = CreateTaskResponse("Elevated to SYSTEM", true, "completed", new IMythicMessage[]
+                {
+                    new CallbackUpdate
+                    {
+                        ImpersonationContext = identityManager.GetCurrentImpersonationIdentity().Name,
+                        IntegrityLevel = (int)identityManager.GetIntegrityLevel()
+                    }
+                });
             } else
             {
                 resp = CreateTaskResponse("Failed to elevate to SYSTEM", true, "error");

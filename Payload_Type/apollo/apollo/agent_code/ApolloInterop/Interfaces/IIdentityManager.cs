@@ -15,14 +15,8 @@ namespace ApolloInterop.Interfaces
 
         void Revert();
 
-        void SetPrimaryIdentity(WindowsIdentity identity);
-
-        void SetPrimaryIdentity(IntPtr hToken);
-
-        void SetImpersonationIdentity(WindowsIdentity identity);
-        void SetImpersonationIdentity(IntPtr hToken);
-
         bool SetIdentity(ApolloLogonInformation token);
+        bool SetIdentity(IntPtr hToken);
 
         IntegrityLevel GetIntegrityLevel();
 
