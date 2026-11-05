@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored `ps` to enumerate processes with limited query access and reserve parent PID, command line, window title, and executable metadata for `-extended`, without WMI.
 - Updated `ps` process responses and browser script to report an embedded certificate signer when available and send numeric `0` when the process start time is unavailable.
 
+## [v2.4.25] - 2026-11-05
+
+### Fixed
+
+- Corrected native impersonation levels and primary/impersonation token duplication for `make_token`, `steal_token`, and `getsystem`.
+- Fixed process creation after identity changes, including transitions between different tokens for the same account, and cleared stale credentials when switching identities.
+- Updated callback identity and integrity after token changes, including resets to the original identity after a failed token change.
+
 ## [v2.4.21] - 2026-10-05
 
 ### Fixed
