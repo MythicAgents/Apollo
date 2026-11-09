@@ -15,9 +15,11 @@ using ApolloInterop.Utils;
 
 namespace Apollo.Management.Tasks
 {
-    public class TaskManager : ITaskManager
+    public class TaskManager : ITaskManager, ITaskingMessageSource
     {
         protected IAgent _agent;
+        private readonly AutoResetEvent taskingAvailable = new AutoResetEvent(false);
+        public WaitHandle TaskingAvailable { get { return taskingAvailable; } }
 
         private ThreadSafeList<MythicTaskResponse> TaskResponseList = new();
         private ThreadSafeList<DelegateMessage> DelegateMessages = new();
@@ -182,20 +184,24 @@ namespace Apollo.Management.Tasks
         public void AddTaskResponseToQueue(MythicTaskResponse message)
         {
             TaskResponseList.Add(message);
+            taskingAvailable.Set();
         }
 
         public void AddDelegateMessageToQueue(DelegateMessage delegateMessage)
         {
             DelegateMessages.Add(delegateMessage);
+            taskingAvailable.Set();
         }
 
         public void AddSocksDatagramToQueue(MessageDirection direction, SocksDatagram dg)
         {
             SocksDatagramQueue[direction].Enqueue(dg);
+            if (direction == MessageDirection.ToMythic) taskingAvailable.Set();
         }
         public void AddRpfwdDatagramToQueue(MessageDirection direction, SocksDatagram dg)
         {
             RpfwdDatagramQueue[direction].Enqueue(dg);
+            if (direction == MessageDirection.ToMythic) taskingAvailable.Set();
         }
 
 

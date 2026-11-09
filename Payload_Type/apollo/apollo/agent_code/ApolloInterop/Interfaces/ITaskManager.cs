@@ -4,6 +4,11 @@ using ApolloInterop.Enums.ApolloEnums;
 
 namespace ApolloInterop.Interfaces
 {
+    public interface ITaskingMessageSource
+    {
+        System.Threading.WaitHandle TaskingAvailable { get; }
+    }
+
     public interface ITaskManager
     {
         string[] GetExecutingTaskIds();
