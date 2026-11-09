@@ -98,6 +98,7 @@ class RegQuery(CommandBase):
                             "task_id": taskData.Task.AgentTaskID,
                             "custom_browser": {
                                 "browser_name": "registry_browser",
+                                "set_as_user_output": True,
                                 "entries": [
                                     {
                                         "name": "HKLM",
@@ -125,8 +126,7 @@ class RegQuery(CommandBase):
                                         "can_have_children": True,
                                     }
                                 ]
-                            },
-                            "user_output": "Valid Hives are HKLM, HKCU, HKU, HKCR, and HKCC"
+                            }
                         }
                     ]
                 }

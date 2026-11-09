@@ -28,22 +28,6 @@ namespace Tasks
             [DataMember(Name = "key")]
             public string Key;
         }
-        [DataContract]
-        internal struct RegQueryResult
-        {
-            [DataMember(Name = "hive")]
-            public string Hive;
-            [DataMember(Name = "name")]
-            public string Name;
-            [DataMember(Name = "full_name")]
-            public string FullName;
-            [DataMember(Name = "value")]
-            public string Value;
-            [DataMember(Name = "value_type")]
-            public string Type;
-            [DataMember(Name = "result_type")]
-            public string ResultType;
-        }
         public reg_query(IAgent agent, ApolloInterop.Structs.MythicStructs.MythicTask data) : base(agent, data)
         {
         }
@@ -103,42 +87,21 @@ namespace Tasks
             }
         }
 
-        private void SetValueType(object tmpVal, ref RegQueryResult res)
+        private static string FormatValue(object value)
         {
-
-            if (tmpVal is String)
-            {
-                res.Value = tmpVal.ToString();
-            }
-            else if (tmpVal is int)
-            {
-                res.Value = tmpVal.ToString();
-            }
-            else if (tmpVal is byte[])
-            {
-                res.Value = BitConverter.ToString((byte[])tmpVal);
-            }
-            else if (tmpVal is null)
-            {
-                res.Value = "(value not set)";
-                res.Type = "null";
-            }
-            else if(tmpVal is System.String[])
-            {
-                res.Value = string.Join("\n", tmpVal);
-            }
-            else
-            {
-                res.Value = tmpVal.ToString();
-            }
+            if (value == null)
+                return "(value not set)";
+            if (value is byte[] bytes)
+                return BitConverter.ToString(bytes);
+            if (value is string[] strings)
+                return string.Join("\n", strings);
+            return value.ToString();
         }
 
 
         public override void Start()
         {
-            MythicTaskResponse resp;
             RegQueryParameters parameters = _jsonSerializer.Deserialize<RegQueryParameters>(_data.Parameters);
-            List<RegQueryResult> results = new List<RegQueryResult>();
             List<IMythicMessage> artifacts = new List<IMythicMessage>();
             string error = "";
             CustomBrowser customBrowser = new CustomBrowser();
@@ -150,7 +113,6 @@ namespace Tasks
             customBrowserEntry.Children = new List<CustomBrowserEntryChild>();
             try
             {
-                string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
                 customBrowserEntry.CanHaveChildren = true;
                 if (parameters.Key.Length > 0)
                 {
@@ -176,17 +138,11 @@ namespace Tasks
                     customBrowserEntry.Name = parameters.Hive;
                     customBrowserEntry.ParentPath = "";
                 }
+                string[] subkeys = GetSubKeys(parameters.Hive, parameters.Key);
                 customBrowserEntry.Success = true;
                 artifacts.Add(Artifact.RegistryRead(parameters.Hive, parameters.Key));
                 foreach (string subkey in subkeys)
                 {
-                    results.Add(new RegQueryResult
-                    {
-                        Name = subkey,
-                        FullName = parameters.Key.EndsWith("\\") ? $"{parameters.Key}{subkey}" : $"{parameters.Key}\\{subkey}",
-                        Hive = parameters.Hive,
-                        ResultType = "key"
-                    });
                     customBrowserEntry.Children.Add(new CustomBrowserEntryChild
                     {
                         CanHaveChildren = true,
@@ -211,13 +167,6 @@ namespace Tasks
                 string[] subValNames = GetValueNames(parameters.Hive, parameters.Key);
                 foreach (string valName in subValNames)
                 {
-                    RegQueryResult res = new RegQueryResult
-                    {
-                        Name = valName,
-                        FullName = parameters.Key,
-                        Hive = parameters.Hive,
-                        ResultType = "value"
-                    };
                     try
                     {
                         tmpVal = GetValue(parameters.Hive, parameters.Key, valName);
@@ -227,17 +176,16 @@ namespace Tasks
                         tmpVal = ex.Message;
                     }
 
-                    SetValueType(tmpVal, ref res);
-                    res.ResultType = GetType(parameters.Hive, parameters.Key, valName);
-                    results.Add(res);
+                    string value = FormatValue(tmpVal);
+                    string valueType = GetType(parameters.Hive, parameters.Key, valName);
                     customBrowserEntry.Children.Add(new CustomBrowserEntryChild
                     {
                         CanHaveChildren = false,
                         Name = valName == "" ? "(Default)" : valName,
                         Metadata = new Dictionary<string, object>
                         {
-                            { "type", GetType(parameters.Hive, parameters.Key, valName) },
-                            { "value", res.Value },
+                            { "type", valueType },
+                            { "value", value },
                         },
                     });
                     artifacts.Add(Artifact.RegistryRead(parameters.Hive, $"{parameters.Key} {valName}"));
@@ -248,20 +196,13 @@ namespace Tasks
                 error += $"\n{ex.Message}";
             }
             customBrowser.Entries.Add(customBrowserEntry);
-            if (results.Count == 0)
-            {
-                resp = CreateTaskResponse(error, true, "error", artifacts.ToArray());
-            }
-            else
-            {
-                resp = CreateTaskResponse("", true, "completed", artifacts.ToArray());
-            }
+            artifacts.Add(customBrowser);
+            bool failed = customBrowserEntry.Children.Count == 0 && !string.IsNullOrWhiteSpace(error);
             _agent.GetTaskManager().AddTaskResponseToQueue(CreateTaskResponse(
-                "", false, "", new IMythicMessage[]
-                {
-                    customBrowser
-                }));
-            _agent.GetTaskManager().AddTaskResponseToQueue(resp);
+                failed ? error : "",
+                true,
+                failed ? "error" : "completed",
+                artifacts.ToArray()));
 
         }
     }
