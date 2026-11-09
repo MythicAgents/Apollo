@@ -180,6 +180,16 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             ui_position=1,
         ),
         BuildParameter(
+            name="daemonize",
+            parameter_type=BuildParameterType.Boolean,
+            default_value=False,
+            description="Prevent a console window pop up when Apollo is invoked.",
+            hide_conditions=[
+                HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="WinExe")
+            ],
+            ui_position=4,
+        ),
+        BuildParameter(
             name="shellcode_format",
             parameter_type=BuildParameterType.ChooseOne,
             choices=shellcode_format_options,
@@ -189,7 +199,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             hide_conditions=[
                 HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="Shellcode")
             ],
-            ui_position=4
+            ui_position=5
         ),
         BuildParameter(
             name="shellcode_bypass",
@@ -201,7 +211,7 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
             hide_conditions=[
                 HideCondition(name="output_type", operand=HideConditionOperand.NotEQ, value="Shellcode")
             ],
-            ui_position=5
+            ui_position=6
         ),
         BuildParameter(
             name="adjust_filename",
@@ -591,12 +601,13 @@ NOTE: v2.3.2+ has a different bof loader than 2.3.1 and are incompatible since t
                         break
 
             output_path = f"{agent_build_path.name}/{buildPath}/Apollo.exe"
+            daemonize = str(self.get_parameter("daemonize")).lower()
 
             # Build command with conditional embedding
             if self.get_parameter('debug'):
-                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ --verbosity quiet"
+                command = f"dotnet build -c {compileType} -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ -p:Daemonize={daemonize} --verbosity quiet"
             else:
-                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:DefineConstants=\"\" -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ --verbosity quiet"
+                command = f"dotnet build -c {compileType} -p:DebugType=None -p:DebugSymbols=false -p:DefineConstants=\"\" -p:Platform=\"Any CPU\" -p:EmbedDefaultConfig={str(embed_default_config).lower()} -o {agent_build_path.name}/{buildPath}/ -p:Daemonize={daemonize} --verbosity quiet"
             await SendMythicRPCPayloadUpdatebuildStep(MythicRPCPayloadUpdateBuildStepMessage(
                 PayloadUUID=self.uuid,
                 StepName="Gathering Files",
