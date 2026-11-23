@@ -1,0 +1,9 @@
+{
+ "provenance": "Recorded Apollo dcsync output (mimikatz 2.2.0 lsadump::dcsync via execute_pe, Mythic 4.0.8), sanitized: every account, host, domain, SID, RID, salt, date and hex value was replaced with a random value of the same length. Labels, whitespace, CRLF line endings and the response chunk boundaries are as recorded.",
+ "description": "/user output where mimikatz printed an ERROR and no object.",
+ "chunks": [
+  "[Debug] New command line via PEB: \"mimikatz.exe\" \"lsadump::dcsync /domain:gjacekhogxbxo.jqskz /user:GJACEKHOGXBXO\\ifqfcg\"\r\n",
+  "[*] Calling PE entry point...\r\n\r\n  .#####.   mimikatz 2.2.0 (x64) #19041 Dec  1 2021 12:21:44\r\n .## ^ ##.  \"A La Vie, A L'Amour\" - (oe.eo)\r\n ## / \\ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )\r\n ## \\ / ##       > https://blog.gentilkiwi.com/mimikatz\r\n '## v ##'       Vincent LE TOUX             ( vincent.letoux@gmail.com )\r\n  '#####'        > https://pingcastle.com / https://mysmartlogon.com ***/\r\n\r\nmimikatz(commandline) # lsadump::dcsync /domain:gjacekhogxbxo.jqskz /user:GJACEKHOGXBXO\\ifqfcg\r\n[DC] 'gjacekhogxbxo.jqskz' will be the domain\r\n[DC] 'jienwbjlzahe.gjacekhogxbxo.jqskz' will be the DC server\r\n[DC] 'GJACEKHOGXBXO\\ifqfcg' will be the user account\r\n[rpc] Service  : ldap\r\n[rpc] AuthnSvc : GSS_NEGOTIATE (9)\r\nERROR kuhl_m_lsadump_dcsync ; GetNCChanges: 0x6c9b9333 (8439)\r\n\n[*] PE function returned with exit code: 0\r\n",
+  "\n[*] Process exited"
+ ]
+}

@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated for Mythic v4
 - Fixed some issues with SMB/TCP P2P comms windows
 
+### Fixed
+
+- Fixed `dcsync` failing with "Failed to register credential" and storing nothing on Mythic v4. It now registers each dumped account's NTLM hash, current AES-256 and AES-128 Kerberos keys and any `Primary:CLEARTEXT` password, with the account's SAM name and the domain, read by output label instead of line position (also fixes realm and password values taken from the wrong lines). Failures include Mythic's error text.
+
 ## [v2.5.7] - 2026-11-09
 
 ### Fixed
